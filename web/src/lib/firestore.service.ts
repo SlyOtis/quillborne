@@ -10,7 +10,6 @@ import type {
   CharacterMetadata,
   CharacterStatus,
   UserPreferences,
-  Party,
   Owner,
   Song,
   Vehicle,
@@ -233,42 +232,6 @@ export const characterService = {
   }
 };
 
-// Party Operations
-export const partyService = {
-  async postParty(fields: Omit<Party, 'id' | 'owner_id' | 'created_at' | 'updated_at'>): Promise<string> {
-    const created = await postApi<Party>('/party', fields);
-    return created.id;
-  },
-
-  async getParty(partyId: string): Promise<Party | null> {
-    return getApi<Party>(`/party/${partyId}`).catch((error) => getAbsent(error, null));
-  },
-
-  subscribeToParty(partyId: string, onChange: (party: Party | null) => void): Unsubscribe {
-    return getStream(`/party/${partyId}/stream`, 'party', () => this.getParty(partyId), onChange, (error) => console.error('Party did not load:', error));
-  },
-
-  async getParties(): Promise<Party[]> {
-    return getApi<Party[]>('/party');
-  },
-
-  async putParty(partyId: string, updates: Partial<Party>): Promise<void> {
-    await putApi(`/party/${partyId}`, updates);
-  },
-
-  async deleteParty(partyId: string): Promise<void> {
-    await deleteApi(`/party/${partyId}`);
-  },
-
-  async postPartyCharacter(partyId: string, characterId: string): Promise<void> {
-    await postApi(`/party/${partyId}/character/${characterId}`);
-  },
-
-  async deletePartyCharacter(partyId: string, characterId: string): Promise<void> {
-    await deleteApi(`/party/${partyId}/character/${characterId}`);
-  }
-};
-
 export const vehicleService = {
   async getVehicles(campaignId?: string): Promise<Vehicle[]> {
     return getApi<Vehicle[]>(`/vehicle${getQuery({ campaign_id: campaignId })}`);
@@ -306,8 +269,7 @@ export const campaignService = {
       name: campaignData.name,
       description: campaignData.description,
       is_active: campaignData.is_active,
-      settings: campaignData.settings,
-      party_ids: campaignData.party_ids ?? []
+      settings: campaignData.settings
     });
     return created.id;
   },
@@ -436,7 +398,6 @@ export const campaignService = {
       turn: encounter.turn ?? 0,
       is_active: encounter.is_active ?? false,
       share_campaigns: encounter.share_campaigns ?? [],
-      share_parties: encounter.share_parties ?? [],
       share_users: encounter.share_users ?? []
     });
     return created.id;

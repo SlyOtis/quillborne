@@ -12,7 +12,7 @@ One table: the DM and a handful of friends. Each player clones the repo and runs
 
 ## Product Purpose
 
-Quillborne is the table's character sheet and campaign book. A player builds a character from rule systems declared as JSON, plays it from the sheet (rolls, hit points, spells, rests, inventory), and the table shares a campaign: its roll log and chat, maps, lore, parties, encounters and music. Success is that nobody at the table reaches for paper or another app during a session.
+Quillborne is the table's character sheet and campaign book. A player builds a character from rule systems declared as JSON, plays it from the sheet (rolls, hit points, spells, rests, inventory), and the table shares a campaign: its roll log and chat, maps, lore, NPCs, ships, encounters and music. Everyone seated at a campaign is its party. Success is that nobody at the table reaches for paper or another app during a session.
 
 ## Positioning
 

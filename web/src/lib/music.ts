@@ -174,7 +174,6 @@ export async function postSong(campaignId: string, file: File): Promise<void> {
     address,
     duration,
     share_campaigns: [campaignId],
-    share_parties: [],
     share_users: []
   })
 }

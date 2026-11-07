@@ -5,7 +5,7 @@
   import { getTheme, setTheme } from '$lib/dialogs/theme'
   import { campaignService } from '$lib/firestore.service'
   import type { Campaign, CampaignMap, CharacterDocument, MapMarkerKind } from '$lib/firestore.types'
-  import { getAll, isResourceKind, type Character, type Place, type Quest, type Session } from '$lib/resources'
+  import { getAll, isResourceKind, type Npc, type Place, type Session } from '$lib/resources'
   import { user } from '$lib/stores/auth.store'
   import { anyDialogOpen, uiStore } from '$lib/stores/ui.store'
   import Button from '$components/ui/Button.svelte'
@@ -23,8 +23,6 @@
   import BaseDialog from '$components/BaseDialog.svelte'
   import Shell from '$components/ui/Shell.svelte'
   import Stops from '$components/ui/Stops.svelte'
-  import MenuPanel from '$components/MenuPanel.svelte'
-  import Chat from '$chat/Chat.svelte'
 
   const { route }: { route?: { params?: Record<string, string> } } = $props()
 
@@ -43,14 +41,11 @@
     { id: 'members', label: 'Members' }
   ] as const
 
-  const ROLLS = ['characters', 'items', 'places', 'entries'] as const
-
   let campaign = $state<Campaign | null>(null)
   let characters = $state<CharacterDocument[]>([])
   let maps = $state<CampaignMap[]>([])
   let sessions = $state<Session[]>([])
-  let quests = $state<Quest[]>([])
-  let npcs = $state<Character[]>([])
+  let npcs = $state<Npc[]>([])
   let places = $state<Place[]>([])
   let loading = $state(true)
   let error = $state<string | null>(null)
@@ -77,19 +72,15 @@
   const pins = $derived(maps.reduce((sum, entry) => sum + entry.markers.length, 0))
   const revealed = $derived(maps.filter((entry) => entry.is_visible).length)
   const latest = $derived(sessions[0] ?? null)
-  const openQuests = $derived(quests.filter((quest) => quest.state === 'active'))
-
-  const entries = $derived(
-    npcs.length +
-      places.length +
-      quests.length +
-      sessions.length
+  const party = $derived(
+    [...characters].sort((a, b) => Number(b.owner_id === $user?.uid) - Number(a.owner_id === $user?.uid))
   )
+  const yours = $derived(characters.filter((entry) => entry.owner_id === $user?.uid).length)
 
   const CAP = 5
 
   let introOpen = $state(true)
-  let more = $state<Record<string, boolean>>({ quests: false, characters: false, places: false })
+  let more = $state<Record<string, boolean>>({ npcs: false, places: false })
 
   function cut<T>(rows: T[], id: string): T[] {
     return more[id] ? rows : rows.slice(0, CAP)
@@ -109,19 +100,13 @@
         at: entry.created_at,
         tone: 'ember' as const,
         word: `Met ${entry.title}`,
-        where: `/main/campaign/${campaignId}/characters/${entry.id}`
+        where: `/main/campaign/${campaignId}/npcs/${entry.id}`
       })),
       ...places.map((entry) => ({
         at: entry.created_at,
         tone: 'verdigris' as const,
         word: `Found ${entry.title}`,
         where: `/main/campaign/${campaignId}/places/${entry.id}`
-      })),
-      ...quests.map((entry) => ({
-        at: entry.created_at,
-        tone: 'metal' as const,
-        word: `${entry.state === 'active' ? 'Took up' : 'Closed'} ${entry.title}`,
-        where: `/main/campaign/${campaignId}/quests/${entry.id}`
       })),
       ...maps.map((entry) => ({
         at: entry.created_at,
@@ -208,23 +193,33 @@
   })
 
   async function reload() {
-    const [party, board, log, tasks, cast, world] = await Promise.all([
+    const [seated, board, log, cast, world] = await Promise.all([
       campaignService.getCampaignCharacters(campaignId),
       campaignService.getMaps(campaignId),
       getAll({ at: 'campaigns', id: campaignId }, 'sessions') as Promise<Session[]>,
-      getAll({ at: 'campaigns', id: campaignId }, 'quests') as Promise<Quest[]>,
-      getAll({ at: 'campaigns', id: campaignId }, 'characters') as Promise<Character[]>,
+      getAll({ at: 'campaigns', id: campaignId }, 'npcs') as Promise<Npc[]>,
       getAll({ at: 'campaigns', id: campaignId }, 'places') as Promise<Place[]>
     ])
 
-    characters = party
+    characters = seated
     maps = board
     sessions = log
-    quests = tasks
     npcs = cast
     places = world
   }
 </script>
+
+{#snippet seat(entry: CharacterDocument)}
+  {@const mine = entry.owner_id === $user?.uid}
+  <Card
+    title={entry.metadata.name}
+    sub="{mine ? 'Yours, ' : ''}{entry.metadata.race} {entry.metadata.class}"
+    image={entry.character?.info?.imageUrl}
+    badge="Lv {entry.metadata.level}"
+    tone={mine ? 'ember' : 'metal'}
+    onclick={() => navigate(`/main/character/${entry.id}`)}
+  />
+{/snippet}
 
 {#snippet fold(id: string, total: number)}
   {#if total > CAP}
@@ -268,19 +263,12 @@
 {/snippet}
 
 <Shell
+  drawers
   title={campaign?.name ?? 'Campaign'}
   back={() => navigate('/main')}
   width={tab === 'maps' ? 'full' : 'wide'}
   flush={tab === 'maps'}
 >
-  {#snippet menu()}
-    <MenuPanel />
-  {/snippet}
-
-  {#snippet chat()}
-    <Chat />
-  {/snippet}
-
   {#snippet nav()}
     <Stops stops={SECTIONS} stop={getSection(tab)} onopen={openSection} />
   {/snippet}
@@ -308,21 +296,15 @@
         <section class="camp-plot camp-plot-roll" aria-label="Party">
           <header class="camp-divide">
             <h2 class="dnd-label camp-divide-name">Party</h2>
-            <span class="camp-divide-note">{characters.length} on the roll, average level {averageLevel}</span>
+            <span class="camp-divide-note">{characters.length} at the table, {yours} yours, average level {averageLevel}</span>
             <span class="camp-divide-run"></span>
           </header>
-          {#if characters.length === 0}
-            <p class="camp-note">Nobody has joined the party yet.</p>
+          {#if party.length === 0}
+            <p class="camp-note">No character sits at the table yet.</p>
           {:else}
             <div class="camp-cards">
-              {#each characters as entry (entry.id)}
-                <Card
-                  title={entry.metadata.name}
-                  sub="{entry.metadata.race} {entry.metadata.class}"
-                  image={entry.character?.info?.imageUrl}
-                  badge="Lv {entry.metadata.level}"
-                  onclick={() => navigate(`/main/character/${entry.id}`)}
-                />
+              {#each party as entry (entry.id)}
+                {@render seat(entry)}
               {/each}
             </div>
           {/if}
@@ -353,40 +335,24 @@
           {/if}
         </section>
 
-        <section class="camp-plot camp-plot-quests" aria-label="Quests">
+        <section class="camp-plot camp-plot-npcs" aria-label="NPCs">
           <header class="camp-divide">
-            <h2 class="dnd-label camp-divide-name">Quests</h2>
-            <span class="camp-divide-note">{openQuests.length} open</span>
+            <h2 class="dnd-label camp-divide-name">NPCs</h2>
+            <span class="camp-divide-note">{npcs.length} met</span>
             <span class="camp-divide-run"></span>
-            {@render fold('quests', openQuests.length)}
-          </header>
-          {#if openQuests.length === 0}
-            <p class="camp-note">No quest stands open.</p>
-          {:else}
-            <div class="camp-list">
-              {#each cut(openQuests, 'quests') as quest (quest.id)}
-                <ResourceCard under="/main/campaign/{campaignId}/quests" kind="quests" one={quest} />
-              {/each}
-              {@render rest('quests', openQuests.length)}
-            </div>
-          {/if}
-        </section>
-
-        <section class="camp-plot camp-plot-characters" aria-label="Characters">
-          <header class="camp-divide">
-            <h2 class="dnd-label camp-divide-name">Characters</h2>
-            <span class="camp-divide-note">{npcs.length} of {npcs.length} met</span>
-            <span class="camp-divide-run"></span>
-            {@render fold('characters', npcs.length)}
+            <IconBtn title="Add an NPC" onclick={() => navigate(`/main/campaign/${campaignId}/npcs/create`)}>
+              <Glyph name="add" size="sm" />
+            </IconBtn>
+            {@render fold('npcs', npcs.length)}
           </header>
           {#if npcs.length === 0}
             <p class="camp-note">Nobody has been met yet.</p>
           {:else}
             <div class="camp-list">
-              {#each cut(npcs, 'characters') as npc (npc.id)}
-                <ResourceCard under="/main/campaign/{campaignId}/characters" kind="characters" one={npc} tone="ember" />
+              {#each cut(npcs, 'npcs') as npc (npc.id)}
+                <ResourceCard under="/main/campaign/{campaignId}/npcs" kind="npcs" one={npc} tone="ember" />
               {/each}
-              {@render rest('characters', npcs.length)}
+              {@render rest('npcs', npcs.length)}
             </div>
           {/if}
         </section>
@@ -435,18 +401,12 @@
       </div>
     {:else if tab === 'party'}
       <Panel title="Party">
-        {#if characters.length === 0}
-          <p class="camp-note">No character has joined this campaign yet.</p>
+        {#if party.length === 0}
+          <p class="camp-note">No character sits at the table yet. Bring one from Players.</p>
         {:else}
           <div class="camp-party">
-            {#each characters as entry (entry.id)}
-              <Card
-                title={entry.metadata.name}
-                sub="{entry.metadata.race} {entry.metadata.class}"
-                image={entry.character?.info?.imageUrl}
-                badge="Lv {entry.metadata.level}"
-                onclick={() => navigate(`/main/character/${entry.id}`)}
-              />
+            {#each party as entry (entry.id)}
+              {@render seat(entry)}
             {/each}
           </div>
         {/if}
@@ -463,7 +423,6 @@
           {isDm}
           locations={places}
           {npcs}
-          {quests}
           {maps}
           bind:selectedId={mapId}
           bind:placing
@@ -491,7 +450,6 @@
             {isDm}
             locations={places}
             {npcs}
-            {quests}
             {maps}
             bind:selectedId={mapId}
             bind:placing
@@ -527,8 +485,7 @@
     grid-template-areas:
       'roll feed'
       'intro feed'
-      'quests feed'
-      'characters feed'
+      'npcs feed'
       'places feed';
     align-content: start;
     column-gap: var(--space-6);
@@ -551,12 +508,8 @@
     grid-area: intro;
   }
 
-  .camp-plot-quests {
-    grid-area: quests;
-  }
-
-  .camp-plot-characters {
-    grid-area: characters;
+  .camp-plot-npcs {
+    grid-area: npcs;
   }
 
   .camp-plot-places {
@@ -660,7 +613,7 @@
 
   .camp-cards {
     display: grid;
-    --camp-card: calc(var(--space-8) * 2.5);
+    --camp-card: calc(var(--space-8) * 4);
     grid-template-columns: repeat(auto-fill, minmax(min(var(--camp-card), 100%), 1fr));
     gap: var(--space-4);
     min-width: 0;
@@ -732,8 +685,7 @@
         'roll'
         'intro'
         'feed'
-        'quests'
-        'characters'
+        'npcs'
         'places';
     }
 

@@ -204,19 +204,6 @@ func putShare(ctx context.Context, tx bun.Tx, w *Writer, objectType string, obje
 			}
 		}
 	}
-	if len(share.ShareParties) > 0 {
-		parties := make([]db.Party, 0)
-		if err := tx.NewSelect().Model(&parties).Where("id IN (?)", bun.In(share.ShareParties)).Scan(ctx); err != nil {
-			return err
-		}
-		for _, party := range parties {
-			if party.MemberClaimID == nil {
-				continue
-			}
-			managed = append(managed, *party.MemberClaimID)
-			want[*party.MemberClaimID] = want[*party.MemberClaimID] | read
-		}
-	}
 	if share.ReaderClaimID == nil && len(share.ShareUsers) > 0 {
 		claimID, err := postClaim(ctx, tx, w, "Readers", "Read on one shared page", sdb.ACCESS_READ)
 		if err != nil {
@@ -249,18 +236,6 @@ func putShare(ctx context.Context, tx bun.Tx, w *Writer, objectType string, obje
 				if claimID != nil {
 					managed = append(managed, *claimID)
 				}
-			}
-		}
-	}
-	previousParties := make([]uuid.UUID, 0)
-	if err := tx.NewRaw("SELECT unnest(share_parties) FROM ? WHERE id = ?", bun.Ident(objectTypeTable(objectType)), objectID).Scan(ctx, &previousParties); err == nil && len(previousParties) > 0 {
-		parties := make([]db.Party, 0)
-		if err := tx.NewSelect().Model(&parties).Where("id IN (?)", bun.In(previousParties)).Scan(ctx); err != nil {
-			return err
-		}
-		for _, party := range parties {
-			if party.MemberClaimID != nil {
-				managed = append(managed, *party.MemberClaimID)
 			}
 		}
 	}

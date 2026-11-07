@@ -101,17 +101,17 @@ visit /main "$hearth" "the hearth" && check_page bar
 page="/main at 1280 and 1600"
 for w in 1280 1600; do
   pw resize "$w" 900 >/dev/null
-  wait_for "document.querySelectorAll('.hall-grid .hall-plot').length === 4 && document.querySelector('.hall-grid .dnd-loading') === null" "the four hearth regions at $w" || continue
+  wait_for "document.querySelectorAll('.hall-grid .hall-plot').length === 3 && document.querySelector('.hall-grid .dnd-loading') === null" "the three hearth regions at $w" || continue
   [ "$(js "document.querySelector('.hall-grid .hall-hero .hall-hero-name') !== null")" = "true" ] || fail "no hero over the regions at $w"
   regions="$(js "[...document.querySelectorAll('.hall-grid .hall-plot')].map((e) => e.getAttribute('aria-label')).join(',')")"
-  [ "$regions" = "Campaigns,Parties,Characters,Lore" ] || fail "the hearth regions are $regions at $w"
+  [ "$regions" = "Campaigns,Characters,Lore" ] || fail "the hearth regions are $regions at $w"
   plates="$(js "document.querySelectorAll('.hall-grid .dnd-panelbox-head, .hall-grid .dnd-rail-head, .hall-grid .dnd-rail-step').length")"
   [ "$plates" = "0" ] || fail "$plates header plates, rail heads or step arrows stand on the hearth at $w"
-  gone="$(js "[...document.querySelectorAll('.hall-grid [aria-label]')].map((e) => e.getAttribute('aria-label')).filter((n) => /^(Party|Cast|Catalog)$/.test(n)).join(',')")"
+  gone="$(js "[...document.querySelectorAll('.hall-grid [aria-label]')].map((e) => e.getAttribute('aria-label')).filter((n) => /^(Party|Parties|Cast|Catalog)$/.test(n)).join(',')")"
   [ -z "$gone" ] || fail "the hearth still carries $gone at $w"
-  laid="$(js "(() => { const g = document.querySelector('.hall-grid').getBoundingClientRect(); const c = document.querySelector('.hall-plot-camps').getBoundingClientRect(); const b = document.querySelector('.hall-plot-bands').getBoundingClientRect(); const r = document.querySelector('.hall-plot-roll').getBoundingClientRect(); const l = document.querySelector('.hall-plot-lore').getBoundingClientRect(); const wide = [c, b, r, l].every((e) => Math.abs(e.left - g.left) < 1 && Math.abs(e.right - g.right) < 1); const under = c.bottom <= b.top && b.bottom <= r.top && r.bottom <= l.top; return (wide ? 'wide' : 'narrow') + ':' + (under ? 'stacked' : 'shuffled') })()")"
-  [ "${laid%%:*}" = "wide" ] || fail "campaigns, parties, characters and lore do not span the hearth's width at $w"
-  [ "${laid##*:}" = "stacked" ] || fail "campaigns, parties, characters and lore do not stack in that order at $w"
+  laid="$(js "(() => { const g = document.querySelector('.hall-grid').getBoundingClientRect(); const c = document.querySelector('.hall-plot-camps').getBoundingClientRect(); const r = document.querySelector('.hall-plot-roll').getBoundingClientRect(); const l = document.querySelector('.hall-plot-lore').getBoundingClientRect(); const wide = [c, r, l].every((e) => Math.abs(e.left - g.left) < 1 && Math.abs(e.right - g.right) < 1); const under = c.bottom <= r.top && r.bottom <= l.top; return (wide ? 'wide' : 'narrow') + ':' + (under ? 'stacked' : 'shuffled') })()")"
+  [ "${laid%%:*}" = "wide" ] || fail "campaigns, characters and lore do not span the hearth's width at $w"
+  [ "${laid##*:}" = "stacked" ] || fail "campaigns, characters and lore do not stack in that order at $w"
   [ "$(js "document.querySelector('.hall-grid .hall-plot-friends') === null")" = "true" ] || fail "the hearth still carries a friends column at $w"
   over="$(js "Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth")"
   [ "$over" -le 0 ] || fail "the hearth is ${over}px wider than the viewport at $w"
@@ -121,7 +121,7 @@ for w in 1280 1600; do
   [ "$inner" = "0" ] || fail "$inner elements inside the hearth scroll within their cell at $w"
   clipped="$(js "(() => { const scroll = document.querySelector('.dnd-shell-scroll'); return [...document.querySelectorAll('.hall-grid .dnd-card')].filter((e) => { const r = e.getBoundingClientRect(); return r.right > window.innerWidth + 1 || r.bottom > scroll.scrollHeight + scroll.getBoundingClientRect().top - scroll.scrollTop + 1 }).length })()")"
   [ "$clipped" = "0" ] || fail "$clipped cards on the hearth cannot be reached by the page's own scroll at $w"
-  kinds="$(js "[...document.querySelectorAll('.hall-plot-lore .lore-kind')].map((e) => e.getAttribute('aria-label')).filter((n) => !/^(Entries|Characters|Places|Maps|Quests|Sessions|Items|Weapons|Armor|Heroes)$/.test(n)).join(',')")"
+  kinds="$(js "[...document.querySelectorAll('.hall-plot-lore .lore-kind')].map((e) => e.getAttribute('aria-label')).filter((n) => !/^(Entries|NPCs|Places|Maps|Sessions|Items|Weapons|Armor)$/.test(n)).join(',')")"
   [ -z "$kinds" ] || fail "the Lore list carries dividers for kinds it does not hold: $kinds at $w"
   headed="$(js "[...document.querySelectorAll('.hall-plot-lore .lore-kind')].every((e) => e.firstElementChild.classList.contains('lore-divide') && e.querySelector('.lore-divide-name').textContent.trim() === e.getAttribute('aria-label'))")"
   [ "$headed" = "true" ] || fail "a Lore kind does not open with the divider naming it at $w"
@@ -152,9 +152,9 @@ if wait_for "document.querySelector('.dnd-shell-chat-open .dnd-sidebar-end .dnd-
 fi
 
 page="encounter tracker"
-campaign_id="$(js "(async () => { const { userCampaigns } = await import('/src/lib/stores/campaign.store.ts'); let held = []; userCampaigns.subscribe((entries) => (held = entries))(); return held[0]?.id ?? '' })()")"
+campaign_id="$(js "(async () => { const { userCampaigns } = await import('/src/lib/stores/campaign.store.ts'); const { user } = await import('/src/lib/stores/auth.store.ts'); let held = []; let me = null; userCampaigns.subscribe((entries) => (held = entries))(); user.subscribe((one) => (me = one))(); return held.find((one) => one.dm_id === me?.uid)?.id ?? '' })()")"
 if [ -z "$campaign_id" ]; then
-  fail "no campaign to track an encounter in"
+  fail "no campaign the debug player runs to track an encounter in"
 else
   rows="[...document.querySelectorAll('.fray-row')]"
   pw goto "$base/main/campaign/$campaign_id?tab=encounter" >/dev/null
@@ -255,7 +255,8 @@ if [ "$(js "$campaign_card !== null")" = "true" ]; then
     pw fill ".dnd-sidebar-end textarea" "/roll 1d20" >/dev/null
     pw press Enter >/dev/null
     if wait_for "$rolls > $before" "the roll to show in the campaign chat"; then
-      logged="$(js "(async () => { const { campaignService } = await import('/src/lib/firestore.service.ts'); const held = await new Promise((done) => { let stop = () => {}; stop = campaignService.postChatListener('$campaign_id', (entries) => { stop(); done(entries) }) }); return String(held.filter((e) => e.kind === 'roll' && e.formula === '1d20').length) })()")"
+      here_id="$(js "location.pathname.split('/')[3]")"
+      logged="$(js "(async () => { const { campaignService } = await import('/src/lib/firestore.service.ts'); const held = await new Promise((done) => { let stop = () => {}; stop = campaignService.postChatListener('$here_id', (entries) => { stop(); done(entries) }) }); return String(held.filter((e) => e.kind === 'roll' && e.formula === '1d20').length) })()")"
       [ "${logged:-0}" -gt 0 ] || fail "the roll shows in the chat but the campaign log holds no 1d20 roll entry"
     fi
     pw click "getByTitle('Toggle the chat')" >/dev/null
