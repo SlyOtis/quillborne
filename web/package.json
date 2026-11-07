@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-check --tsgo --tsconfig ./tsconfig.json && tsc -p tsconfig.node.json",
-    "test": "vitest run"
+    "test": "vitest run --exclude test/nimap/tools/performance.spec.ts && vitest run test/nimap/tools/performance.spec.ts"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
@@ -27,7 +27,9 @@
   "dependencies": {
     "@octokit/rest": "^22.0.1",
     "cannon-es": "^0.20.0",
+    "clipper-lib": "6.4.2",
     "date-fns": "^4.4.0",
+    "earcut": "^3.2.4",
     "marked": "^18.0.11",
     "marked-emoji": "^2.0.3",
     "marked-gfm-heading-id": "^4.1.4",

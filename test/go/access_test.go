@@ -203,6 +203,28 @@ func TestOnlyTheDungeonMasterDrawsMaps(t *testing.T) {
 	if status, _ := call(t, player, http.MethodPut, "/", `{"title":"Renamed"}`, map[string]string{"id": campaignID, "map_id": id(t, made)}, handler.PutMap); status != http.StatusForbidden {
 		t.Fatalf("a player changed a map: %d", status)
 	}
+	mapParams := map[string]string{"id": campaignID, "map_id": id(t, made)}
+	if status, answer := call(t, dungeonMaster, http.MethodPut, "/", `{"plan":{"name":"The vale","levels":[]}}`, mapParams, handler.PutMap); status != http.StatusOK {
+		t.Fatalf("the dungeon master could not draw a plan: %d %+v", status, answer.Error)
+	}
+	if status, _ := call(t, player, http.MethodPut, "/", `{"plan":{"name":"Mine","levels":[]}}`, mapParams, handler.PutMap); status != http.StatusForbidden {
+		t.Fatalf("a player changed a plan: %d", status)
+	}
+	_, drawn := call(t, player, http.MethodGet, "/", "", params, handler.GetMaps)
+	rows := make([]map[string]any, 0)
+	if err := json.Unmarshal(drawn.Data, &rows); err != nil {
+		t.Fatalf("maps: %v", err)
+	}
+	for _, row := range rows {
+		if row["id"] != id(t, made) {
+			continue
+		}
+		if plan, _ := row["plan"].(map[string]any); plan["name"] != "The vale" {
+			t.Fatalf("a seated player misses the plan: %v", row["plan"])
+		}
+		return
+	}
+	t.Fatalf("a seated player misses the map")
 }
 
 func TestASheetIsReadByTheTableOnlyOnceItJoins(t *testing.T) {

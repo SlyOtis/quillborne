@@ -101,6 +101,7 @@ type CampaignMap struct {
 	IsVisible   bool            `bun:"is_visible" json:"is_visible"`
 	MinZoom     float64         `bun:"min_zoom" json:"min_zoom"`
 	MaxZoom     float64         `bun:"max_zoom" json:"max_zoom"`
+	Plan        json.RawMessage `bun:"plan,type:jsonb,nullzero" json:"plan"`
 	ParentMapID *uuid.UUID      `bun:"-" json:"parent_map_id,omitempty"`
 	OwnerID     uuid.UUID       `bun:"sa_owner_id" json:"-"`
 	ParentID    uuid.UUID       `bun:"sa_parent_id" json:"-"`

@@ -14,9 +14,15 @@ importers:
       cannon-es:
         specifier: ^0.20.0
         version: 0.20.0
+      clipper-lib:
+        specifier: 6.4.2
+        version: 6.4.2
       date-fns:
         specifier: ^4.4.0
         version: 4.4.0
+      earcut:
+        specifier: ^3.2.4
+        version: 3.2.4
       marked:
         specifier: ^18.0.11
         version: 18.0.11
@@ -722,6 +728,9 @@ packages:
     resolution: {integrity: sha512-Qgzu8kfBvo+cA4962jnP1KkS6Dop5NS6g7R5LFYJr4b8Ub94PPQXUksCw9PvXoeXPRRddRNC5C1JQUR2SMGtnA==}
     engines: {node: '>= 14.16.0'}
 
+  clipper-lib@6.4.2:
+    resolution: {integrity: sha512-knglhjQX5ihNj/XCIs6zCHrTemdvHY3LPZP9XB2nq2/3igyYMFueFXtfp84baJvEE+f8pO1ZS4UVeEgmLnAprQ==}
+
   clsx@2.1.1:
     resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
     engines: {node: '>=6'}
@@ -929,6 +938,9 @@ packages:
   dotenv@17.4.2:
     resolution: {integrity: sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw==}
     engines: {node: '>=12'}
+
+  earcut@3.2.4:
+    resolution: {integrity: sha512-FHc6yNpnTORB0tM5kmZ03iD2mDuNakDE2lvf4Hw1XkfxtEHIGVi01B/GqUSwx+NcC1WGjidAfpTXzeALtPtfpg==}
 
   elkjs@0.9.3:
     resolution: {integrity: sha512-f/ZeWvW/BCXbhGEf1Ujp29EASo/lk1FDnETgNKwJrsVvGZhUWCZyg3xLJjAsxfOmt8KjswHmI5EwCQcPMpOYhQ==}
@@ -1986,6 +1998,8 @@ snapshots:
     dependencies:
       readdirp: 4.1.2
 
+  clipper-lib@6.4.2: {}
+
   clsx@2.1.1: {}
 
   commander@7.2.0: {}
@@ -2207,6 +2221,8 @@ snapshots:
       '@types/trusted-types': 2.0.7
 
   dotenv@17.4.2: {}
+
+  earcut@3.2.4: {}
 
   elkjs@0.9.3: {}
 

@@ -17,6 +17,12 @@
   import IconBtn from '$components/ui/IconBtn.svelte'
   import MapCanvas from './MapCanvas.svelte'
   import MapIcon from './MapIcon.svelte'
+  import Glyph from '$components/ui/Glyph.svelte'
+  import DocumentEditor from '$components/nimap/DocumentEditor.svelte'
+  import MapView from '$components/nimap/MapView.svelte'
+  import { createDocument, createLevel, type MapDocument } from '$lib/nimap'
+  import { orderedLevels } from '$lib/nimap-editor/levels'
+  import { getLook } from '$lib/nimap-editor/look'
 
   let {
     campaignId,
@@ -73,6 +79,44 @@
 
   const visible = $derived(isDm ? maps : maps.filter((map) => map.is_visible))
   const selected = $derived(visible.find((map) => map.id === selectedId) ?? visible[0] ?? null)
+  const levels = $derived(selected?.plan ? orderedLevels(selected.plan) : [])
+  const level = $derived(levels.find((one) => one.id === levelId) ?? levels[0] ?? null)
+
+  let view = $state<'picture' | 'plan'>('picture')
+  let drawing = $state(false)
+  let levelId = $state<string | null>(null)
+  let saving: ReturnType<typeof setTimeout> | undefined
+
+  function putPlan(plan: MapDocument) {
+    const mapId = selected?.id
+    if (!mapId) return
+    clearTimeout(saving)
+    saving = setTimeout(() => {
+      campaignService.putMap(campaignId, mapId, { plan }).catch(report)
+    }, 600)
+  }
+
+  function chooseImage(): Promise<string | null> {
+    return new Promise((resolve) => {
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = 'image/*'
+      input.onchange = async () => {
+        const file = input.files?.[0]
+        if (!file) return resolve(null)
+        try {
+          resolve((await postFile(file, { kind: 'campaignMap', campaignId })).url)
+        } catch (reason) {
+          report(reason)
+          resolve(null)
+        }
+      }
+      input.oncancel = () => resolve(null)
+      input.click()
+    })
+  }
+
+  onDestroy(() => clearTimeout(saving))
   const marker = $derived(selected?.markers.find((entry) => entry.id === editing) ?? null)
 
   const trail = $derived.by(() => {
@@ -247,16 +291,61 @@
     {/if}
 
     {#if selected}
-      <MapCanvas
-        map={selected}
-        canEdit={isDm}
-        {placing}
-        onPlace={place}
-        onSelect={follow}
-        onDescend={follow}
-        {lookup}
-        onOpen={open}
-      />
+      {#if level || isDm}
+        <div class="dnd-maps-views" role="group" aria-label="How the map is shown">
+          <IconBtn title="The picture" active={view === 'picture' || !level} onclick={() => (view = 'picture')}>
+            <Glyph name="picture" size="sm" />
+          </IconBtn>
+          {#if level}
+            <IconBtn title="The plan in 3D" active={view === 'plan'} onclick={() => (view = 'plan')}>
+              <Glyph name="cube" size="sm" />
+            </IconBtn>
+          {/if}
+          {#if view === 'plan' && levels.length > 1}
+            <Field label="Level" id="map-level">
+              <select id="map-level" value={level?.id} onchange={(e) => (levelId = e.currentTarget.value)}>
+                {#each levels as one (one.id)}<option value={one.id}>{one.name}</option>{/each}
+              </select>
+            </Field>
+          {/if}
+          {#if isDm}
+            <IconBtn title="Draw the plan" onclick={() => (drawing = true)}>
+              <Glyph name="wall" size="sm" />
+            </IconBtn>
+          {/if}
+        </div>
+      {/if}
+
+      {#if view === 'plan' && level}
+        <div class="dnd-maps-scene">
+          <MapView {level} look={getLook()} />
+        </div>
+      {:else}
+        <MapCanvas
+          map={selected}
+          canEdit={isDm}
+          {placing}
+          onPlace={place}
+          onSelect={follow}
+          onDescend={follow}
+          {lookup}
+          onOpen={open}
+        />
+      {/if}
+
+      {#if drawing && isDm}
+        <dialog class="dnd-maps-drawing" aria-label="Draw the plan" {@attach (element: HTMLDialogElement) => element.showModal()} onclose={() => (drawing = false)}>
+          {#key selected.id}
+            <DocumentEditor
+              document={selected.plan ?? createDocument({ name: selected.title, levels: [createLevel({ name: '1' })] })}
+              title={selected.title}
+              onchange={putPlan}
+              {chooseImage}
+              actions={[{ label: 'Done', primary: true, run: () => (drawing = false) }]}
+            />
+          {/key}
+        </dialog>
+      {/if}
     {/if}
   {:else if selected && isDm}
     <Fold title="Drop a pin" count={selected.markers.length} open={shown.pins} ontoggle={() => toggle('pins')}>
@@ -393,6 +482,39 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
+  }
+
+  .dnd-maps-views {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    height: var(--space-6);
+  }
+
+  .dnd-maps-scene {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    border: var(--border-hair) solid var(--metal-dim);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .dnd-maps-drawing {
+    inline-size: 100%;
+    block-size: 100%;
+    max-inline-size: none;
+    max-block-size: none;
+    margin: 0;
+    padding: 0;
+    border: none;
+    color: var(--ink);
+    background: var(--ground-deep);
+  }
+
+  .dnd-maps-drawing[open] {
+    display: flex;
   }
 
   .dnd-maps-tools {

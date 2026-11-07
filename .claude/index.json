@@ -249,7 +249,7 @@
     {
       "path": "src/components/campaign/CampaignMaps.svelte",
       "kind": "component",
-      "answers": "The campaign map board. Lists maps, shows the selected one with its markers, and gives the DM adding, renaming, revealing and deleting. Markers are stored as relative coordinates so a map scales.",
+      "answers": "The campaign map board. Lists maps, shows the selected one with its markers or its drawn plan in 3D, and gives the DM adding, renaming, revealing, deleting and Draw the plan. Markers are stored as relative coordinates so a map scales.",
       "keywords": [
         "map",
         "marker",
@@ -257,7 +257,10 @@
         "dm",
         "reveal",
         "board",
-        "coordinates"
+        "coordinates",
+        "plan",
+        "3d",
+        "nimap"
       ]
     },
     {
@@ -467,7 +470,7 @@
       ]
     },
     {
-      "path": ".claude/skills/start-local-dev/SKILL.md",
+      "path": ".claude/skills/run/SKILL.md",
       "kind": "rule",
       "answers": "How an agent starts the local stack: the tools, .env and its local seed, the database image, the ports, just dev, what to ask the user and what to tell them.",
       "keywords": [
@@ -616,6 +619,85 @@
         "steward",
         "revision",
         "history"
+      ]
+    },
+    {
+      "path": ".claude/rules/maps.md",
+      "kind": "rule",
+      "answers": "How a map carries a drawn plan beside its picture, where the nimap code lives, its model rules, and how its tests run.",
+      "keywords": [
+        "map",
+        "plan",
+        "nimap",
+        "3d",
+        "editor",
+        "walls",
+        "floorplan"
+      ]
+    },
+    {
+      "path": "src/lib/nimap/",
+      "kind": "module",
+      "answers": "nimap copied from nimling/nimap: the planar geometry kernel, the map document model, the editing tools, furniture as parts, svg helpers and the three.js renderer.",
+      "keywords": [
+        "nimap",
+        "geometry",
+        "walls",
+        "plan",
+        "render",
+        "three",
+        "furniture"
+      ]
+    },
+    {
+      "path": "src/lib/nimap-editor/",
+      "kind": "module",
+      "answers": "The Svelte editor state for nimap in runes: document, view, tools, input, calibration, levels, cursors, and the look read from the theme tokens.",
+      "keywords": [
+        "nimap",
+        "editor",
+        "calibration",
+        "levels",
+        "look",
+        "runes"
+      ]
+    },
+    {
+      "path": "src/components/nimap/",
+      "kind": "component",
+      "answers": "The nimap editor and 3D view in Svelte: DocumentEditor, MapEditor, the canvas, toolbar, stage and status bars, the inspector sections, and MapView.",
+      "keywords": [
+        "nimap",
+        "editor",
+        "map",
+        "3d",
+        "plan",
+        "view"
+      ]
+    },
+    {
+      "path": "src/components/ui/Shell.svelte",
+      "kind": "component",
+      "answers": "The page frame: the bar with the crest, the menu drawer on the start edge, friends and chat on the end edge, and the page raised between them, bending into each open drawer with a gold double line and a stud.",
+      "keywords": [
+        "shell",
+        "drawer",
+        "sidebar",
+        "bar",
+        "crest",
+        "layout",
+        "bend"
+      ]
+    },
+    {
+      "path": "src/components/ui/Sidebar.svelte",
+      "kind": "component",
+      "answers": "A drawer that slides in from an edge on a starfield ground, laid out at its run width; edge rule draws its own gold rule and stud, edge none leaves it to what it sits beside.",
+      "keywords": [
+        "sidebar",
+        "drawer",
+        "edge",
+        "starfield"
       ]
     }
   ]

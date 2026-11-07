@@ -65,6 +65,20 @@
     | 'potion'
     | 'gem'
     | 'chest'
+    | 'pointer'
+    | 'lines'
+    | 'rectangle'
+    | 'ellipse'
+    | 'door'
+    | 'window'
+    | 'bend'
+    | 'floorplan'
+    | 'wall'
+    | 'furniture'
+    | 'fit'
+    | 'pane'
+    | 'split'
+    | 'cube'
 
   export function getMimeGlyph(mimeType: string): GlyphName {
     if (mimeType.startsWith('image/')) return 'picture'
@@ -316,6 +330,61 @@
   {:else if name === 'gear'}
     <path d="M12 4.2 13.6 6h2.3l.6 2.2 2 1.2-.8 2.1.8 2.1-2 1.2-.6 2.2h-2.3L12 19.8 10.4 18H8.1l-.6-2.2-2-1.2.8-2.1-.8-2.1 2-1.2.6-2.2h2.3L12 4.2Z" />
     <circle cx="12" cy="12" r="2.6" />
+
+  {:else if name === 'pointer'}
+    <path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z" />
+
+  {:else if name === 'lines'}
+    <path d="m10.586 5.414-5.172 5.172M18.586 13.414l-5.172 5.172M6 12h12" />
+    <circle cx="12" cy="20" r="2" />
+    <circle cx="12" cy="4" r="2" />
+    <circle cx="20" cy="12" r="2" />
+    <circle cx="4" cy="12" r="2" />
+
+  {:else if name === 'rectangle'}
+    <rect width="18" height="18" x="3" y="3" rx="2" />
+
+  {:else if name === 'ellipse'}
+    <circle cx="12" cy="12" r="9" />
+
+  {:else if name === 'door'}
+    <path d="M10 21H2M10 3H7a2 2 0 0 0-2 2v16M14 12h.01M22 21h-3" />
+    <path d="M19 21V5a2 2 0 0 0-1.675-1.974l-6.163-1.013A1 1 0 0 0 10 3v18a1 1 0 0 0 1.124.992z" />
+
+  {:else if name === 'window'}
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <path d="M12 3v18M3 12h18" />
+
+  {:else if name === 'bend'}
+    <circle cx="19" cy="5" r="2" />
+    <circle cx="5" cy="19" r="2" />
+    <path d="M5 17A12 12 0 0 1 17 5" />
+
+  {:else if name === 'floorplan'}
+    <path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" />
+    <path d="M15 5.764v15M9 3.236v15" opacity="0.7" />
+
+  {:else if name === 'wall'}
+    <rect width="18" height="18" x="3" y="3" rx="2" />
+    <path d="M12 9v6M16 15v6M16 3v6M3 15h18M3 9h18M8 15v6M8 3v6" opacity="0.7" />
+
+  {:else if name === 'furniture'}
+    <path d="M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3M5 18v2M19 18v2" />
+    <path d="M3 16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v1.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V11a2 2 0 0 0-4 0z" />
+
+  {:else if name === 'fit'}
+    <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" />
+
+  {:else if name === 'pane'}
+    <rect width="18" height="18" x="3" y="3" rx="2" />
+
+  {:else if name === 'split'}
+    <rect width="18" height="18" x="3" y="3" rx="2" />
+    <path d="M12 3v18" />
+
+  {:else if name === 'cube'}
+    <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+    <path d="m3.3 7 8.7 5 8.7-5M12 22V12" opacity="0.7" />
   {/if}
 </svg>
 

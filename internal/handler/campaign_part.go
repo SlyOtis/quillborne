@@ -25,6 +25,7 @@ type BodyMap struct {
 	IsVisible   *bool            `json:"is_visible"`
 	MinZoom     *float64         `json:"min_zoom"`
 	MaxZoom     *float64         `json:"max_zoom"`
+	Plan        *json.RawMessage `json:"plan"`
 	ParentMapID *uuid.UUID       `json:"parent_map_id"`
 }
 
@@ -187,6 +188,9 @@ func PostMap(ctx echo.Context) error {
 	if body.MaxZoom != nil {
 		item.MaxZoom = *body.MaxZoom
 	}
+	if body.Plan != nil {
+		item.Plan = *body.Plan
+	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		if _, err := tx.NewInsert().Model(&item).ExcludeColumn("sa_created_at", "sa_updated_at", "sa_deleted_at").Returning("*").Exec(tctx); err != nil {
 			return err
@@ -283,6 +287,10 @@ func PutMap(ctx echo.Context) error {
 	if body.MaxZoom != nil {
 		item.MaxZoom = *body.MaxZoom
 		columns = append(columns, "max_zoom")
+	}
+	if body.Plan != nil {
+		item.Plan = *body.Plan
+		columns = append(columns, "plan")
 	}
 	item.UpdatedAt = time.Now()
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {

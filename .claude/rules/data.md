@@ -26,7 +26,7 @@ The schema and the api are snake_case throughout: `user_id`, `campaign_id`, `par
 - `character` and its sources: the sheet as stored data.
 - `party`: a party stands on its own, with its `character_ids` and its `member_claim_id`.
 - `campaign`: identity, settings, `party_ids`, and the `dm_claim_id` and `player_claim_id` of its table.
-- Under a campaign by `campaign_id`: `campaign_map`, `encounter`, `chat_entry` and `song`.
+- Under a campaign by `campaign_id`: `campaign_map`, `encounter`, `chat_entry` and `song`. A `campaign_map` holds its picture, `layers` and `markers`, and an optional drawn `plan`, the nimap document of `maps.md`.
 - `resource`: every kind of lore, by `kind`, with `title`, the rest of the page in `fields`, a `campaign_id` when a campaign keeps it, and sub pages through `sa_parent_id` and `sa_root_id`. `resource_update` holds the Yjs updates of live editing.
 - `asset`: a file, a block document or a folder, in nimployer's model. A folder is `inode/directory` with type `folder`; a block document is `application/vnd.mar.document+json` with its body in `document`; a file's bytes sit in blob storage under `blob_url`. Folders nest through `sa_parent_id` and `sa_root_id`; the roots are a campaign's folder, slug `campaign-<campaign id>`, and a player's Personal folder, slug `user-<user id>`.
 - `object_asset`: attaches an asset to any row by `object_type` and `object_id`; its `properties` override the asset's key by key. `tag` and `tag_object` tag any row the same way.

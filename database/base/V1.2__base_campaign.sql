@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS campaign_map (
     is_visible     BOOLEAN NOT NULL DEFAULT FALSE,
     min_zoom       DOUBLE PRECISION NOT NULL DEFAULT 1,
     max_zoom       DOUBLE PRECISION NOT NULL DEFAULT 8,
+    plan           JSONB,
     sa_owner_id    UUID NOT NULL,
     sa_parent_id   UUID NOT NULL,
     sa_root_id     UUID NOT NULL,
@@ -79,6 +80,8 @@ CREATE TABLE IF NOT EXISTS campaign_map (
     sa_updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     sa_deleted_at  TIMESTAMPTZ
 );
+
+ALTER TABLE campaign_map ADD COLUMN IF NOT EXISTS plan JSONB;
 
 CREATE INDEX IF NOT EXISTS idx_campaign_map_campaign ON campaign_map (campaign_id);
 
@@ -93,6 +96,7 @@ COMMENT ON COLUMN campaign_map.markers IS 'The markers placed on the map, each p
 COMMENT ON COLUMN campaign_map.is_visible IS 'Whether the players see the map';
 COMMENT ON COLUMN campaign_map.min_zoom IS 'The smallest zoom the map allows';
 COMMENT ON COLUMN campaign_map.max_zoom IS 'The largest zoom the map allows';
+COMMENT ON COLUMN campaign_map.plan IS 'The drawn plan of the map as a stored nimap document, shown in 3D, null when none is drawn';
 COMMENT ON COLUMN campaign_map.sa_owner_id IS 'The owning organization';
 COMMENT ON COLUMN campaign_map.sa_parent_id IS 'The map this map sits inside, itself for a top map';
 COMMENT ON COLUMN campaign_map.sa_root_id IS 'The top map of the tree';

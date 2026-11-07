@@ -1,5 +1,6 @@
 import type { Character } from './character.types';
 import type { ComponentState, Customisation, InstalledComponent, Rulings, VehicleOverlay } from './rules/vehicle.types';
+import type { MapDocument } from './nimap';
 
 // A player's profile
 export interface UserProfile {
@@ -183,6 +184,7 @@ export interface CampaignMap {
   parent_map_id?: string;
   min_zoom: number;
   max_zoom: number;
+  plan?: MapDocument | null;
   created_at: string;
   updated_at: string;
 }
