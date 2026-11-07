@@ -560,7 +560,7 @@
     {
       "path": "web/src/pages/VehiclePage.svelte",
       "kind": "page",
-      "answers": "One vessel at /main/vehicles/:id with its stops Deck, Design, Crew, History, Rules and Papers. Picks the character the reader sails as and reads its abilities and crew perks from the rules engine.",
+      "answers": "One vessel at /main/vehicles/:id with its stops Deck, Design, Crew, History, Rules and Papers. The deck keeps the sailor's perks on the left, the map in the middle, and on the right the chosen component or, with none, every Ship Phase step a player can take.",
       "keywords": [
         "vehicle",
         "ship",
@@ -607,13 +607,13 @@
     {
       "path": "internal/handler/vehicle.go",
       "kind": "source",
-      "answers": "The /api/vehicle routes: list, build, read, change and scuttle a vessel, the Crew claim, the steward and crew rules, and the revision history.",
+      "answers": "The /api/vehicle routes: list, build, read, change and scuttle a vessel, the Crew claim, write for the whole table of a campaign vessel, and the revision history.",
       "keywords": [
         "vehicle",
         "api",
         "crew",
         "claim",
-        "steward",
+        "players",
         "revision",
         "history"
       ]

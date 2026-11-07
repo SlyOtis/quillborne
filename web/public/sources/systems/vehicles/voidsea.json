@@ -6258,5 +6258,80 @@
       "provisionalOption": "best",
       "affects": "Change of Facing statistic in the dashboard."
     }
-  ]
+  ],
+  "shipPhase": {
+    "rule": "A creature that is not Incapacitated, Stunned or Paralysed at the start of its ship’s turn takes one Ship Action in the Ship Phase. It then can’t move, take an action or Bonus Action, or use its object interaction in the Creature Phase that round (p. 4).",
+    "steps": [
+      {
+        "key": "command",
+        "name": "Command Step",
+        "needs": null,
+        "perks": [
+          "Command Step",
+          "Encourage",
+          "Take Aim"
+        ],
+        "text": "Each creature with points in the Captain perk tree can take a Ship Action that augments the rest of the crew. A creature benefits once from a Ship Action of the same name within a round (p. 4).",
+        "actions": []
+      },
+      {
+        "key": "helm",
+        "name": "Helm Step",
+        "needs": "control",
+        "perks": [
+          "Accelerate",
+          "Control",
+          "Manoeuvre"
+        ],
+        "text": "A creature at a Control component within reach can take (A) Accelerate, Decelerate or Zero Speed, and (B) Manoeuvre. The ship then moves its Current Speed on its facing (p. 5).",
+        "actions": [
+          {
+            "name": "Accelerate",
+            "text": "Current Speed rises by 30 ft, never past Top Speed. Not in the same round as Decelerate."
+          },
+          {
+            "name": "Decelerate",
+            "text": "Current Speed falls by 30 ft. Not in the same round as Accelerate."
+          },
+          {
+            "name": "Zero Speed",
+            "text": "Furl the sails and cut the engines: every Propulsion component adds 0 ft to Top Speed, and Current Speed falls 30 ft each Helm Step."
+          },
+          {
+            "name": "Manoeuvre",
+            "text": "Change facing as many times as the Control component’s Changes of Facing, at any point in the Helm Step."
+          }
+        ]
+      },
+      {
+        "key": "artillery",
+        "name": "Artillery Step",
+        "needs": "artillery",
+        "perks": [
+          "Artillery"
+        ],
+        "text": "The ship fires as many Artillery components as it has crew taking Ship Actions; each fires once per Ship Phase (p. 4).",
+        "actions": [
+          {
+            "name": "Artillery",
+            "text": "Load, aim and fire an Artillery component within reach, choosing a shot from its Shot Selection."
+          },
+          {
+            "name": "Hold Artillery",
+            "text": "Declare a trigger; right after it happens, take your Reaction to fire."
+          }
+        ]
+      },
+      {
+        "key": "miscellaneous",
+        "name": "Miscellaneous Step",
+        "needs": "miscellaneous",
+        "perks": [
+          "Miscellaneous Step"
+        ],
+        "text": "Take a Ship Action to cause the effect of a Miscellaneous component within reach. Bosun perks repair here (p. 4).",
+        "actions": []
+      }
+    ]
+  }
 }

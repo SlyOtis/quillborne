@@ -13,7 +13,6 @@ import (
 type vehicleView struct {
 	OwnerID       string           `json:"owner_id"`
 	CampaignID    *string          `json:"campaign_id"`
-	Customisation string           `json:"customisation"`
 	Revision      int              `json:"revision"`
 	History       []map[string]any `json:"history"`
 	Crew          []map[string]any `json:"crew"`
@@ -50,7 +49,7 @@ func TestAVehicleIsReadByItsBuilderAlone(t *testing.T) {
 		t.Fatalf("the builder was refused their vehicle: %d %+v", status, answer.Error)
 	}
 	view := getVehicleView(t, answer)
-	if view.OwnerID != dungeonMaster.String() || view.CampaignID != nil || view.Customisation != "locked" || view.Revision != 1 || len(view.History) != 1 || view.History[0]["note"] != "Built" {
+	if view.OwnerID != dungeonMaster.String() || view.CampaignID != nil || view.Revision != 1 || len(view.History) != 1 || view.History[0]["note"] != "Built" {
 		t.Fatalf("a new vehicle answered %s", string(answer.Data))
 	}
 	_, mine := call(t, dungeonMaster, http.MethodGet, "/api/vehicle", "", nil, handler.GetVehicles)
@@ -89,15 +88,18 @@ func TestACampaignVehicleIsReadAtItsTable(t *testing.T) {
 	if _, answer := call(t, player, http.MethodGet, target, "", nil, handler.GetVehicles); !listed(t, answer, vehicleID) {
 		t.Fatalf("the seated player's list of the table lacks the vehicle")
 	}
-	if status, _ := call(t, player, http.MethodPut, "/", `{"states":{"hull":{"hp":1}}}`, params, handler.PutVehicle); status != http.StatusForbidden {
-		t.Fatalf("a seated player not of the crew changed the vehicle: %d", status)
+	if status, answer := call(t, player, http.MethodPut, "/", `{"name":"Our Cauldron","states":{"hull":{"hp":1}}}`, params, handler.PutVehicle); status != http.StatusOK {
+		t.Fatalf("a seated player could not change the table's vehicle: %d %+v", status, answer.Error)
+	}
+	if status, _ := call(t, player, http.MethodDelete, "/", "", params, handler.DeleteVehicle); status != http.StatusForbidden {
+		t.Fatalf("a seated player scuttled the dungeon master's vehicle: %d", status)
 	}
 	status, built := call(t, player, http.MethodPost, "/api/vehicle", `{"system":"voidsea","layout":"jaws-deck","name":"Skiff","campaign_id":"`+campaignID+`"}`, nil, handler.PostVehicle)
 	if status != http.StatusCreated {
 		t.Fatalf("a seated player could not build a vehicle at the table: %d %+v", status, built.Error)
 	}
 	if status, answer := call(t, dungeonMaster, http.MethodPut, "/", `{"name":"Renamed"}`, map[string]string{"id": id(t, built)}, handler.PutVehicle); status != http.StatusOK {
-		t.Fatalf("the dungeon master is no steward of a vehicle at the table: %d %+v", status, answer.Error)
+		t.Fatalf("the dungeon master could not change a player's vehicle at the table: %d %+v", status, answer.Error)
 	}
 	if status, _ := call(t, dungeonMaster, http.MethodDelete, "/", "", map[string]string{"id": campaignID, "user_id": player.String()}, handler.DeleteCampaignPlayer); status != http.StatusOK {
 		t.Fatalf("DeleteCampaignPlayer: %d", status)
@@ -107,7 +109,7 @@ func TestACampaignVehicleIsReadAtItsTable(t *testing.T) {
 	}
 }
 
-func TestTheCrewChangesOnlyWhatTheVehicleAllows(t *testing.T) {
+func TestTheCrewChangesAnythingButCannotScuttle(t *testing.T) {
 	requireStack(t)
 	status, made := call(t, player, http.MethodPost, "/api/character", `{"character":{"info":{"name":"Wren"}},"metadata":{"name":"Wren","level":1}}`, nil, handler.PostCharacter)
 	if status != http.StatusCreated {
@@ -133,19 +135,13 @@ func TestTheCrewChangesOnlyWhatTheVehicleAllows(t *testing.T) {
 	if status, answer := call(t, player, http.MethodPut, "/", `{"states":{"hull":{"hp":3}}}`, params, handler.PutVehicle); status != http.StatusOK {
 		t.Fatalf("the crew could not mark damage: %d %+v", status, answer.Error)
 	}
-	if status, _ := call(t, player, http.MethodPut, "/", `{"name":"Mine"}`, params, handler.PutVehicle); status != http.StatusForbidden {
-		t.Fatalf("the crew renamed the vehicle: %d", status)
+	if status, answer := call(t, player, http.MethodPut, "/", `{"name":"Mine","rulings":{"AMB-SHIP-WEIGHT":"stated"}}`, params, handler.PutVehicle); status != http.StatusOK {
+		t.Fatalf("the crew could not rename the vehicle: %d %+v", status, answer.Error)
 	}
 	refit := `{"components":[{"id":"hull"},{"id":"sail"}],"revision":1,"note":"Sail"}`
-	if status, _ := call(t, player, http.MethodPut, "/", refit, params, handler.PutVehicle); status != http.StatusForbidden {
-		t.Fatalf("the crew refit a locked design: %d", status)
-	}
-	if status, answer := call(t, dungeonMaster, http.MethodPut, "/", `{"customisation":"full"}`, params, handler.PutVehicle); status != http.StatusOK {
-		t.Fatalf("the steward could not open the design: %d %+v", status, answer.Error)
-	}
 	status, answer = call(t, player, http.MethodPut, "/", refit, params, handler.PutVehicle)
 	if status != http.StatusOK {
-		t.Fatalf("the crew could not refit an open design: %d %+v", status, answer.Error)
+		t.Fatalf("the crew could not refit the design: %d %+v", status, answer.Error)
 	}
 	view = getVehicleView(t, answer)
 	if view.Revision != 2 || len(view.History) != 2 || view.History[1]["note"] != "Sail" || view.History[1]["user_id"] != player.String() {
