@@ -53,7 +53,7 @@ Every worktree runs a local stack of its own, side by side with the others, so e
 
 - The ports live in the checkout's own `.env`: `SERVER_PORT`, `PGPORT` and the port of the `BlobEndpoint`. The service reads `.env` itself and over the environment, so a port is changed there and nowhere else. Vite takes `5173 + SERVER_PORT - 4290` and holds it strictly, failing rather than moving to a port that belongs to another checkout.
 - The containers, the volume and the database image are named after the checkout's folder: `<folder>-db`, `<folder>-db-data` and `<folder>-blob`. `just build-db` builds the image with this checkout's migrations and its `PGPORT`, and `just dev` and `just clean` touch only this checkout's.
-- A new worktree takes its slot when step 2 of `start-local-dev` writes its `.env`: the lowest from 1 that no other worktree's `.env` holds and on which nothing listens. It keeps that `.env` until the worktree is removed.
+- A new worktree takes its slot when step 2 of the `run` skill writes its `.env`: the lowest from 1 that no other worktree's `.env` holds and on which nothing listens. It keeps that `.env` until the worktree is removed.
 - Stop a run by the `just dev` whose working directory is this checkout, never by the first one found.
 
 ## Local test data
@@ -73,7 +73,7 @@ A change that adds or alters something a player sees adds or updates its steps i
 
 ## Tests
 
-`vitest` for the web and `go test` for the service, both run by `just test`. The rules engine is the tested surface on the web: the parser, the resolver, the bridge and the store. A new system or a new formula ships with a case.
+`vitest` for the web and `go test` for the service, both run by `just test`. The rules engine and the nimap core are the tested surfaces on the web: the parser, the resolver, the bridge and the store, and the geometry, model and tools of `maps.md`. A new system or a new formula ships with a case. The web `test` script runs `web/test/nimap/tools/performance.spec.ts` alone after the rest, because it measures time.
 
 Every route ships with a Go test of who may and who may not reach it, the way `test/go/access_test.go` proves that a player reads a campaign only once seated and a hidden roll reaches the DM alone. Every stream ships with a test of what it delivers to whom, the way `test/go/stream_test.go` proves a hidden roll never reaches a player's stream.
 

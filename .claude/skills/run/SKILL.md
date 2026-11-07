@@ -1,5 +1,5 @@
 ---
-name: start-local-dev
+name: run
 description: Start Quillborne locally (the database, the blob store, the Go service and the Vite dev server), signed in as the debug user and without anyone else's secrets. Use when the user says "start local dev", "run it locally", "start the app" or "spin it up", or when a local run does not come up.
 ---
 
