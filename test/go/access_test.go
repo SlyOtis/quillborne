@@ -330,31 +330,6 @@ func TestAPageSharedWithACampaignReachesItsTable(t *testing.T) {
 	}
 }
 
-func TestAPartyIsReadByItsMembers(t *testing.T) {
-	requireStack(t)
-	status, made := call(t, dungeonMaster, http.MethodPost, "/api/party", `{"name":"The Ladle"}`, nil, handler.PostParty)
-	if status != http.StatusCreated {
-		t.Fatalf("PostParty: %d %+v", status, made.Error)
-	}
-	partyID := id(t, made)
-	params := map[string]string{"id": partyID}
-	if status, _ := call(t, player, http.MethodGet, "/", "", params, handler.GetParty); status == http.StatusOK {
-		t.Fatalf("a non member read the party")
-	}
-	if status, _ := call(t, dungeonMaster, http.MethodPut, "/", `{"member_ids":["`+player.String()+`"]}`, params, handler.PutParty); status != http.StatusOK {
-		t.Fatalf("PutParty members: %d", status)
-	}
-	if status, _ := call(t, player, http.MethodGet, "/", "", params, handler.GetParty); status != http.StatusOK {
-		t.Fatalf("a member was refused the party: %d", status)
-	}
-	if status, _ := call(t, player, http.MethodPut, "/", `{"name":"Mine"}`, params, handler.PutParty); status != http.StatusForbidden {
-		t.Fatalf("a member renamed the party: %d", status)
-	}
-	if status, _ := call(t, player, http.MethodPost, "/", "", map[string]string{"id": partyID, "character_id": uuid.NewString()}, handler.PostPartyCharacter); status != http.StatusOK {
-		t.Fatalf("a member could not bring a character: %d", status)
-	}
-}
-
 func TestIntegrationKeysAreReadByTheirOwnerAlone(t *testing.T) {
 	requireStack(t)
 	ensureProfile(t, dungeonMaster, "testy@quillborne.local")

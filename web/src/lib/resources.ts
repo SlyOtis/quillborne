@@ -36,7 +36,6 @@ export interface Resource extends Access {
 
 export type Disposition = 'friendly' | 'neutral' | 'hostile' | 'unknown'
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'very rare' | 'legendary' | 'artifact'
-export type QuestState = 'active' | 'done' | 'abandoned'
 export type DamageKind =
   | 'bludgeoning' | 'piercing' | 'slashing' | 'fire' | 'cold' | 'lightning' | 'necrotic' | 'radiant'
 export type ArmorWeight = 'light' | 'medium' | 'heavy' | 'shield'
@@ -46,21 +45,11 @@ export type PlaceKind =
 /** A story entry or a note. */
 export interface Entry extends Resource {}
 
-/** An NPC of some kind. */
-export interface Character extends Resource {
+/** Someone the party meets, written down by the DM or a player. */
+export interface Npc extends Resource {
   role: string
   disposition: Disposition
   species: string
-}
-
-/** A playable character. */
-export interface Hero extends Resource {
-  player: string
-  class: string
-  species: string
-  level: number
-  /** The character sheet this page belongs to, or none yet. */
-  sheet_id: string
 }
 
 /** Any object that is not a weapon or armor. */
@@ -103,11 +92,6 @@ export interface Session extends Resource {
   played_at: string
 }
 
-export interface Quest extends Resource {
-  state: QuestState
-  level: number
-  giver: string
-}
 
 
 type Stored = Record<string, unknown> & { id: string }
@@ -128,7 +112,6 @@ function getShared(stored: Stored): Resource {
     group_id: String(stored.group_id ?? ''),
     owner_id: String(stored.owner_id ?? ''),
     share_campaigns: Array.isArray(stored.share_campaigns) ? (stored.share_campaigns as string[]) : [],
-    share_parties: Array.isArray(stored.share_parties) ? (stored.share_parties as string[]) : [],
     share_users: Array.isArray(stored.share_users) ? (stored.share_users as string[]) : [],
     created_at: (stored.created_at as string | undefined) ?? null
   }
@@ -150,7 +133,6 @@ function putShared(one: Partial<Resource>): Record<string, unknown> {
     group_id: one.group_id ?? '',
     owner_id: one.owner_id ?? '',
     share_campaigns: one.share_campaigns ?? [],
-    share_parties: one.share_parties ?? [],
     share_users: one.share_users ?? []
   }
 }
@@ -170,9 +152,9 @@ export function putEntry(owner: Owner, id: string, one: Partial<Entry>): Promise
   return campaignService.putPart(owner, 'entries', id, putShared(one))
 }
 
-// Characters
+// NPCs
 
-export async function getCharacters(owner: Owner): Promise<Character[]> {
+export async function getNpcs(owner: Owner): Promise<Npc[]> {
   const stored = await campaignService.getPart<Stored>(owner, 'npcs')
   return stored.map((one) => ({
     ...getShared(one),
@@ -182,7 +164,7 @@ export async function getCharacters(owner: Owner): Promise<Character[]> {
   }))
 }
 
-export function postCharacter(owner: Owner, one: Partial<Character>): Promise<string> {
+export function postNpc(owner: Owner, one: Partial<Npc>): Promise<string> {
   return campaignService.postPart(owner, 'npcs', {
     ...putShared(one),
     role: one.role ?? '',
@@ -191,48 +173,12 @@ export function postCharacter(owner: Owner, one: Partial<Character>): Promise<st
   })
 }
 
-export function putCharacter(owner: Owner, id: string, one: Partial<Character>): Promise<void> {
+export function putNpc(owner: Owner, id: string, one: Partial<Npc>): Promise<void> {
   return campaignService.putPart(owner, 'npcs', id, {
     ...putShared(one),
     role: one.role ?? '',
     disposition: one.disposition ?? 'unknown',
     species: one.species ?? ''
-  })
-}
-
-// Heroes
-
-export async function getHeroes(owner: Owner): Promise<Hero[]> {
-  const stored = await campaignService.getPart<Stored>(owner, 'heroes')
-  return stored.map((one) => ({
-    ...getShared(one),
-    player: String(one.player ?? ''),
-    class: String(one.class ?? ''),
-    species: String(one.species ?? ''),
-    level: Number(one.level ?? 1),
-    sheet_id: String(one.sheet_id ?? '')
-  }))
-}
-
-export function postHero(owner: Owner, one: Partial<Hero>): Promise<string> {
-  return campaignService.postPart(owner, 'heroes', {
-    ...putShared(one),
-    player: one.player ?? '',
-    class: one.class ?? '',
-    species: one.species ?? '',
-    level: one.level ?? 1,
-    sheet_id: one.sheet_id ?? ''
-  })
-}
-
-export function putHero(owner: Owner, id: string, one: Partial<Hero>): Promise<void> {
-  return campaignService.putPart(owner, 'heroes', id, {
-    ...putShared(one),
-    player: one.player ?? '',
-    class: one.class ?? '',
-    species: one.species ?? '',
-    level: one.level ?? 1,
-    sheet_id: one.sheet_id ?? ''
   })
 }
 
@@ -418,41 +364,10 @@ export function putSession(owner: Owner, id: string, one: Partial<Session>): Pro
   })
 }
 
-// Quests
-
-export async function getQuests(owner: Owner): Promise<Quest[]> {
-  const stored = await campaignService.getPart<Stored>(owner, 'quests')
-  return stored.map((one) => ({
-    ...getShared(one),
-    state: (one.state as QuestState) ?? 'active',
-    level: Number(one.level ?? 1),
-    giver: String(one.giver ?? '')
-  }))
-}
-
-export function postQuest(owner: Owner, one: Partial<Quest>): Promise<string> {
-  return campaignService.postPart(owner, 'quests', {
-    ...putShared(one),
-    state: one.state ?? 'active',
-    level: one.level ?? 1,
-    giver: one.giver ?? ''
-  })
-}
-
-export function putQuest(owner: Owner, id: string, one: Partial<Quest>): Promise<void> {
-  return campaignService.putPart(owner, 'quests', id, {
-    ...putShared(one),
-    state: one.state ?? 'active',
-    level: one.level ?? 1,
-    giver: one.giver ?? ''
-  })
-}
-
 // What a page needs to draw a resource it was handed by name
 
 export type ResourceKind =
-  | 'entries' | 'characters' | 'heroes' | 'items' | 'weapons' | 'armor' | 'places' | 'maps' | 'quests'
-  | 'sessions'
+  | 'entries' | 'npcs' | 'items' | 'weapons' | 'armor' | 'places' | 'maps' | 'sessions'
 
 export type FieldForm = 'text' | 'number' | 'choice' | 'flag'
 
@@ -464,10 +379,13 @@ export interface ResourceField {
 }
 
 export interface ResourceShape {
-  /** The collection it is stored in, which is the old name for characters and places. */
+  /** The kind it is stored as, which is the old name for places. */
   part: string
   one: string
   many: string
+  /** The name as it reads inside a sentence. */
+  word: string
+  words: string
   fields: readonly ResourceField[]
   /** The one fact that tells this type apart, written on the card wherever it is drawn. */
   mark: (one: Resource) => string
@@ -486,7 +404,7 @@ A note, a rumour, a scrap of lore. Write it however it is useful.
 - Who repeats it
 - What it would cost to check`,
 
-  characters: `## At a glance
+  npcs: `## At a glance
 
 Write the one line you would say at the table.
 
@@ -502,23 +420,6 @@ The thing they are chasing, and what they will trade for it.
 ## Voice
 
 > "Say that again, slower."`,
-
-  heroes: `## Who they are
-
-A line on where they come from and why they are here.
-
-## Bonds
-
-- Who they owe
-- Who they would cross the map for
-
-## Flaws
-
-The thing that gets them into trouble.
-
-## Notes between sessions
-
-Kept here so nothing is lost between one night and the next.`,
 
   items: `## What it is
 
@@ -604,58 +505,31 @@ The run of play, in the order it happened.
 
 Threads to pick up next time.
 
-## Loot`,
-
-  quests: `## The ask
-
-Who wants it done, and what they say they want.
-
-## The truth
-
-What is actually going on. The party does not have this yet.
-
-## Steps
-
-1. What starts it
-2. What complicates it
-3. What ends it
-
-## Reward
-
-> Promised, and actual.`
+## Loot`
 }
 
 export const RESOURCES: Record<ResourceKind, ResourceShape> = {
-  entries: { part: 'entries', one: 'Entry', many: 'Entries', fields: [], mark: () => '', example: EXAMPLES.entries },
-  characters: {
+  entries: { part: 'entries', one: 'Entry', many: 'Entries', word: 'entry', words: 'entries', fields: [], mark: () => '', example: EXAMPLES.entries },
+  npcs: {
     part: 'npcs',
-    one: 'Character',
-    many: 'Characters',
+    one: 'NPC',
+    many: 'NPCs',
+    word: 'NPC',
+    words: 'NPCs',
     fields: [
       { key: 'role', label: 'Role', form: 'text' },
       { key: 'disposition', label: 'Disposition', form: 'choice', choices: ['friendly', 'neutral', 'hostile', 'unknown'] },
       { key: 'species', label: 'Species', form: 'text' }
     ],
-    mark: (one) => (one as Character).role || (one as Character).disposition,
-    example: EXAMPLES.characters
-  },
-  heroes: {
-    part: 'heroes',
-    one: 'Hero',
-    many: 'Heroes',
-    fields: [
-      { key: 'player', label: 'Played by', form: 'text' },
-      { key: 'class', label: 'Class', form: 'text' },
-      { key: 'species', label: 'Species', form: 'text' },
-      { key: 'level', label: 'Level', form: 'number' }
-    ],
-    mark: (one) => `Lv ${(one as Hero).level} ${(one as Hero).class}`.trim(),
-    example: EXAMPLES.heroes
+    mark: (one) => (one as Npc).role || (one as Npc).disposition,
+    example: EXAMPLES.npcs
   },
   items: {
     part: 'items',
     one: 'Item',
     many: 'Items',
+    word: 'item',
+    words: 'items',
     fields: [
       { key: 'category', label: 'Kind', form: 'text' },
       { key: 'rarity', label: 'Rarity', form: 'choice', choices: ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact'] },
@@ -670,6 +544,8 @@ export const RESOURCES: Record<ResourceKind, ResourceShape> = {
     part: 'weapons',
     one: 'Weapon',
     many: 'Weapons',
+    word: 'weapon',
+    words: 'weapons',
     fields: [
       { key: 'damage', label: 'Damage', form: 'text' },
       { key: 'damage_kind', label: 'Damage kind', form: 'choice', choices: ['bludgeoning', 'piercing', 'slashing', 'fire', 'cold', 'lightning', 'necrotic', 'radiant'] },
@@ -685,6 +561,8 @@ export const RESOURCES: Record<ResourceKind, ResourceShape> = {
     part: 'armor',
     one: 'Armor',
     many: 'Armor',
+    word: 'armor',
+    words: 'armor',
     fields: [
       { key: 'armor_class', label: 'Armor class', form: 'number' },
       { key: 'category', label: 'Weight class', form: 'choice', choices: ['light', 'medium', 'heavy', 'shield'] },
@@ -699,6 +577,8 @@ export const RESOURCES: Record<ResourceKind, ResourceShape> = {
     part: 'locations',
     one: 'Place',
     many: 'Places',
+    word: 'place',
+    words: 'places',
     fields: [
       { key: 'category', label: 'Kind', form: 'choice', choices: ['region', 'city', 'town', 'village', 'keep', 'tower', 'dungeon', 'cave', 'ruin', 'temple', 'inn'] },
       { key: 'map_id', label: 'On the map', form: 'text' }
@@ -706,29 +586,19 @@ export const RESOURCES: Record<ResourceKind, ResourceShape> = {
     mark: (one) => (one as Place).category,
     example: EXAMPLES.places
   },
-  maps: { part: 'maps', one: 'Map', many: 'Maps', fields: [], mark: () => '', example: EXAMPLES.maps },
+  maps: { part: 'maps', one: 'Map', many: 'Maps', word: 'map', words: 'maps', fields: [], mark: () => '', example: EXAMPLES.maps },
   sessions: {
     part: 'sessions',
     one: 'Session',
     many: 'Sessions',
+    word: 'session',
+    words: 'sessions',
     fields: [
       { key: 'number', label: 'Number', form: 'number' },
       { key: 'played_at', label: 'Played on', form: 'text' }
     ],
     mark: (one) => `Session ${(one as Session).number}`,
     example: EXAMPLES.sessions
-  },
-  quests: {
-    part: 'quests',
-    one: 'Quest',
-    many: 'Quests',
-    fields: [
-      { key: 'state', label: 'State', form: 'choice', choices: ['active', 'done', 'abandoned'] },
-      { key: 'level', label: 'Level', form: 'number' },
-      { key: 'giver', label: 'Given by', form: 'text' }
-    ],
-    mark: (one) => (one as Quest).state,
-    example: EXAMPLES.quests
   }
 }
 
@@ -753,7 +623,6 @@ export function getBlank(kind: ResourceKind, ownerId: string): Record<string, un
     group_id: '',
     owner_id: ownerId,
     share_campaigns: [],
-    share_parties: [],
     share_users: [],
     created_at: null
   }
@@ -767,28 +636,24 @@ export async function getAll(owner: Owner, kind: ResourceKind, groups = false): 
 
 export function getEvery(owner: Owner, kind: ResourceKind): Promise<Resource[]> {
   if (kind === 'entries') return getEntries(owner)
-  if (kind === 'characters') return getCharacters(owner)
-  if (kind === 'heroes') return getHeroes(owner)
+  if (kind === 'npcs') return getNpcs(owner)
   if (kind === 'items') return getItems(owner)
   if (kind === 'weapons') return getWeapons(owner)
   if (kind === 'armor') return getArmor(owner)
   if (kind === 'places') return getPlaces(owner)
   if (kind === 'maps') return getCharts(owner)
-  if (kind === 'sessions') return getSessions(owner)
-  return getQuests(owner)
+  return getSessions(owner)
 }
 
 export function postOne(owner: Owner, kind: ResourceKind, one: Record<string, unknown>): Promise<string> {
   if (kind === 'entries') return postEntry(owner, one)
-  if (kind === 'characters') return postCharacter(owner, one)
-  if (kind === 'heroes') return postHero(owner, one)
+  if (kind === 'npcs') return postNpc(owner, one)
   if (kind === 'items') return postItem(owner, one)
   if (kind === 'weapons') return postWeapon(owner, one)
   if (kind === 'armor') return postArmor(owner, one)
   if (kind === 'places') return postPlace(owner, one)
   if (kind === 'maps') return postChart(owner, one)
-  if (kind === 'sessions') return postSession(owner, one)
-  return postQuest(owner, one)
+  return postSession(owner, one)
 }
 
 export function putOne(
@@ -798,15 +663,13 @@ export function putOne(
   one: Record<string, unknown>
 ): Promise<void> {
   if (kind === 'entries') return putEntry(owner, id, one)
-  if (kind === 'characters') return putCharacter(owner, id, one)
-  if (kind === 'heroes') return putHero(owner, id, one)
+  if (kind === 'npcs') return putNpc(owner, id, one)
   if (kind === 'items') return putItem(owner, id, one)
   if (kind === 'weapons') return putWeapon(owner, id, one)
   if (kind === 'armor') return putArmor(owner, id, one)
   if (kind === 'places') return putPlace(owner, id, one)
   if (kind === 'maps') return putChart(owner, id, one)
-  if (kind === 'sessions') return putSession(owner, id, one)
-  return putQuest(owner, id, one)
+  return putSession(owner, id, one)
 }
 
 /**

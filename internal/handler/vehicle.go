@@ -466,3 +466,16 @@ func DeleteVehicle(ctx echo.Context) error {
 	postVehicleEvents(rctx, &item, broker.OpDelete)
 	return respond.NoContent(ctx, http.StatusOK)
 }
+
+func getUnique(ids []uuid.UUID) []uuid.UUID {
+	seen := map[uuid.UUID]bool{}
+	unique := make([]uuid.UUID, 0, len(ids))
+	for _, id := range ids {
+		if id == uuid.Nil || seen[id] {
+			continue
+		}
+		seen[id] = true
+		unique = append(unique, id)
+	}
+	return unique
+}

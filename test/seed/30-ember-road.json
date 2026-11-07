@@ -6,8 +6,7 @@
     "body": {
       "name": "The Ember Road",
       "description": "Lamplighters are vanishing along the road to Hollowmere, and the fog that follows them smells of cinders.",
-      "is_active": true,
-      "party_ids": []
+      "is_active": true
     }
   },
   {
@@ -18,22 +17,6 @@
   {
     "as": "pip",
     "call": "POST /api/campaign/${ember}/character/${wren}"
-  },
-  {
-    "as": "pip",
-    "call": "POST /api/party",
-    "save": "lantern",
-    "body": {
-      "name": "The Lantern Company",
-      "description": "Hired to find Hollowmere's missing lamplighters, paid in lamp oil and promises.",
-      "member_ids": ["${testy}"],
-      "character_ids": ["${wren}"]
-    }
-  },
-  {
-    "as": "testy",
-    "call": "PUT /api/campaign/${ember}",
-    "body": { "party_ids": ["${lantern}"] }
   },
   {
     "as": "testy",
@@ -71,28 +54,11 @@
     "as": "testy",
     "call": "POST /api/resource",
     "body": {
-      "kind": "quests",
+      "kind": "entries",
       "campaign_id": "${ember}",
-      "title": "Clear Cinder Bridge",
-      "description": "Drive the ash-cloaked bandits off the only road into Hollowmere.",
-      "state": "done",
-      "level": 1,
-      "giver": "Reeve Halda Morrow",
-      "share_campaigns": ["${ember}"]
-    }
-  },
-  {
-    "as": "testy",
-    "call": "POST /api/resource",
-    "body": {
-      "kind": "quests",
-      "campaign_id": "${ember}",
-      "title": "Find the Missing Lamplighters",
-      "description": "Five lamplighters have vanished in a month. Find them, or find out what took them.",
+      "title": "The Missing Lamplighters",
+      "description": "Five lamplighters have vanished from Hollowmere in a month, and nobody knows what took them.",
       "tags": ["main"],
-      "state": "active",
-      "level": 2,
-      "giver": "Old Tamsin",
       "body": "{\"blocks\":[{\"id\":\"eq2a\",\"kind\":\"paragraph\",\"text\":\"Every disappearance happened on a night the fog came in from the east.\",\"options\":{}},{\"id\":\"eq2b\",\"kind\":\"callout\",\"text\":\"Reward: 200 gp and free lodging at the Drowned Lantern.\",\"options\":{}}]}",
       "share_campaigns": ["${ember}"]
     }
@@ -126,6 +92,21 @@
       "species": "Tiefling",
       "image_url": "/sources/art/races/tiefling.svg",
       "body": "{\"blocks\":[{\"id\":\"ena1\",\"kind\":\"heading\",\"text\":\"DM only\",\"options\":{\"level\":2}},{\"id\":\"ena2\",\"kind\":\"paragraph\",\"text\":\"Feeds the stolen lamplight to an ember spirit bound beneath Cinder Bridge. Wants Hollowmere dark by midwinter.\",\"options\":{}}]}"
+    }
+  },
+  {
+    "as": "pip",
+    "call": "POST /api/resource",
+    "body": {
+      "kind": "npcs",
+      "campaign_id": "${ember}",
+      "title": "Old Tamsin",
+      "description": "Hollowmere's last lamplighter, who swore she saw a burning hand in the fog the night before she vanished.",
+      "role": "Lamplighter",
+      "disposition": "friendly",
+      "species": "Halfling",
+      "image_url": "/sources/art/races/halfling.svg",
+      "share_campaigns": ["${ember}"]
     }
   },
   {

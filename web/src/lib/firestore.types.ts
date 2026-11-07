@@ -42,21 +42,7 @@ export interface Song extends Access {
 export interface Access {
   owner_id: string;
   share_campaigns: string[];
-  share_parties: string[];
   share_users: string[];
-}
-
-// A group that plays together. It stands on its own and a campaign gathers them.
-export interface Party {
-  id: string;
-  name: string;
-  description: string;
-  image_url: string;
-  owner_id: string;
-  member_ids: string[];
-  character_ids: string[];
-  created_at: string;
-  updated_at: string;
 }
 
 // A table of play
@@ -66,7 +52,6 @@ export interface Campaign {
   description: string;
   dm_id: string;
   player_ids: string[];
-  party_ids: string[];
   character_ids: string[];
   is_active: boolean;
   created_at: string;
@@ -123,7 +108,6 @@ export type MapMarkerKind =
   | 'inn'
   | 'temple'
   | 'npc'
-  | 'quest'
   | 'danger'
   | 'treasure'
   | 'note'
@@ -187,7 +171,7 @@ export interface CampaignMap {
   updated_at: string;
 }
 
-export type CampaignRecordKind = 'place' | 'character' | 'item' | 'quest' | 'session';
+export type CampaignRecordKind = 'place' | 'npc' | 'item' | 'session';
 
 export type CampaignChatKind = 'message' | 'roll';
 
@@ -293,7 +277,6 @@ export const COLLECTIONS = {
   USERS: 'users',
   CHARACTERS: 'characters',
   CAMPAIGNS: 'campaigns',
-  PARTIES: 'parties',
   CHAT: 'chat',
   MAPS: 'maps',
   ENCOUNTERS: 'encounters',

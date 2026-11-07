@@ -1,8 +1,6 @@
 <script lang="ts">
-  import { getContext } from 'svelte'
-  import type { CharacterContext } from '$lib/types'
   import type { SoundBoard } from '$lib/character.types'
-  import { uiStore, menuView } from '$lib/stores/ui.store'
+  import { uiStore, menuView, soundBoard } from '$lib/stores/ui.store'
   import { currentCampaignId, userCampaigns } from '$lib/stores/campaign.store'
   import { openLibrary } from '$lib/music'
   import Button from '$components/ui/Button.svelte'
@@ -13,8 +11,7 @@
   import Playlist from '$components/music/Playlist.svelte'
   import SongImportDialog from '$components/music/SongImportDialog.svelte'
 
-  const chContext = getContext<CharacterContext | undefined>('character')
-  const soundBoardStore = chContext?.soundBoard
+  const soundBoardStore = $derived($soundBoard)
 
   let search = $state('')
   let importOpen = $state(false)
