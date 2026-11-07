@@ -13,6 +13,7 @@ import {
   getPerkIssues,
   getPerkLimit,
   getRepair,
+  getAttacks,
   getTemplateBuild,
   getTemplateDrift,
   getTopSpeed,
@@ -136,6 +137,17 @@ describe('artillery with the crewman aboard', () => {
     const chain = getWeaponModes(ctx, gun, null, 'functional').find((m) => m.key === 'chain')!
     expect(chain.ranges.find((r) => r.label === 'Long')?.value).toBe('960')
     expect(chain.pendingRuling).toBeUndefined()
+  })
+})
+
+describe('what the vessel can attack with', () => {
+  it('lists every weapon and the tail club with what a broken one cannot do', () => {
+    const components = built()
+    const gun = bySlot(components, 'A1')
+    const attacks = getAttacks(ctxFor(components, { [gun.id]: st(0, 'broken') }), gunner)
+    expect(attacks.map((entry) => entry.component.slot)).toEqual(expect.arrayContaining(['A1', 'A2', 'A3', 'A4', 'M2']))
+    expect(attacks.find((entry) => entry.component.slot === 'A1')?.modes.every((mode) => mode.unavailable)).toBe(true)
+    expect(attacks.find((entry) => entry.component.slot === 'M2')?.modes[0].kind).toBe('melee')
   })
 })
 

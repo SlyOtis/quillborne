@@ -1121,3 +1121,33 @@ export function getTemplateDrift(system: VehicleSystem, template: VehicleTemplat
       heldName: held ? (getDef(system, held.component)?.name ?? held.component) : null
     }))
 }
+
+export function getAttacks(ctx: VehicleContext, crewman: Crewman | null) {
+  return ctx.components
+    .map((component) => {
+      const cond = getPenalty(ctx, component)
+      const bonus = component.def.stats.attackBonus ?? null
+      const actions: WeaponMode[] = (component.def.stats.actions ?? []).map((action) => {
+        const hit = action.text.match(/Hit: \d+ \(([^)]+)\) (\w+)/)
+        return {
+          key: action.name,
+          name: action.name,
+          kind: 'melee',
+          toHit: bonus != null ? getSigned(bonus) : null,
+          bonus,
+          ability: null,
+          damageShort: hit ? `${hit[1]} ${hit[2]}` : '',
+          damageDice: hit ? hit[1].replace(/\s+/g, '') : null,
+          tags: action.text.match(/reach [\d ]+ft/)?.slice(0, 1) ?? [],
+          unavailable: cond === 'broken',
+          formula: bonus != null ? `d20 ${getSigned(bonus)} (component attack bonus)` : action.text,
+          damage: action.text.match(/Hit: ([^.]+)\./)?.[1] ?? '',
+          ranges: [],
+          properties: [],
+          notes: [action.text]
+        }
+      })
+      return { component, cond, modes: [...getWeaponModes(ctx, component, crewman, cond), ...actions] }
+    })
+    .filter((entry) => entry.modes.length > 0)
+}

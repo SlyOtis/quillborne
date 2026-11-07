@@ -30,6 +30,7 @@
   import MenuPanel from '$components/MenuPanel.svelte'
   import Chat from '$chat/Chat.svelte'
   import ComponentPanel from '$components/vehicle/ComponentPanel.svelte'
+  import DeckActions from '$components/vehicle/DeckActions.svelte'
   import DeckSheet from '$components/vehicle/DeckSheet.svelte'
   import VehicleCrew from '$components/vehicle/VehicleCrew.svelte'
   import VehicleDesign from '$components/vehicle/VehicleDesign.svelte'
@@ -373,10 +374,7 @@
                 {/snippet}
               </ComponentPanel>
             {:else}
-              <div class="dnd-empty">
-                <p class="dnd-heading">Choose a component</p>
-                <p>Press one on the deck to read its statistics, change its hit points and condition, and see where a weapon reaches.</p>
-              </div>
+              <DeckActions {ctx} {crewman} onselect={(id) => (selected = id)} />
             {/if}
           </aside>
         </div>
