@@ -152,7 +152,6 @@
         ],
         "source": "VoidSea Naval Combat Lite B0.51, p. 44"
       },
-      "customisation": "approved",
       "crew": [
         {
           "character_id": "${brann}",
@@ -190,128 +189,7 @@
           "condition": "broken",
           "destroyed": false
         }
-      },
-      "requests": [
-        {
-          "id": "wren-ray",
-          "user_id": "${pip}",
-          "at": "2026-11-06T12:00:00Z",
-          "note": "Swap the aft starboard cannon for an energy ray",
-          "base_revision": 1,
-          "components": [
-            {
-              "id": "gull-hull",
-              "slot": "HULL",
-              "component": "jaws-mimicflesh-hull-superior",
-              "label": null,
-              "x": null,
-              "y": null,
-              "rotation": null,
-              "override": false,
-              "overrideReason": null
-            },
-            {
-              "id": "gull-r1",
-              "slot": "R1",
-              "component": "jaws-jaw-ram-basic",
-              "label": null,
-              "x": null,
-              "y": null,
-              "rotation": null,
-              "override": true,
-              "overrideReason": "Stat-block size exceeds the slot maximum (AMB-JAWS-SIZES)."
-            },
-            {
-              "id": "gull-m1",
-              "slot": "M1",
-              "component": "jaws-auxiliary-mast-foresail",
-              "label": "Foresail",
-              "x": null,
-              "y": null,
-              "rotation": null,
-              "override": true,
-              "overrideReason": "Stat-block size exceeds the slot maximum (AMB-JAWS-SIZES). Slot assignment per AMB-JAWS-PLACEMENT."
-            },
-            {
-              "id": "gull-a1",
-              "slot": "A1",
-              "component": "magitech-cannon-basic",
-              "label": "Cannon A1",
-              "x": null,
-              "y": null,
-              "rotation": null,
-              "override": false,
-              "overrideReason": null
-            },
-            {
-              "id": "gull-a2",
-              "slot": "A2",
-              "component": "magitech-cannon-basic",
-              "label": "Cannon A2",
-              "x": null,
-              "y": null,
-              "rotation": null,
-              "override": false,
-              "overrideReason": null
-            },
-            {
-              "id": "gull-a3",
-              "slot": "A3",
-              "component": "magitech-cannon-basic",
-              "label": "Cannon A3",
-              "x": null,
-              "y": null,
-              "rotation": null,
-              "override": false,
-              "overrideReason": null
-            },
-            {
-              "id": "gull-a4-ray",
-              "slot": "A4",
-              "component": "energy-ray-basic",
-              "label": "Ray A4",
-              "x": null,
-              "y": null,
-              "rotation": null,
-              "override": false,
-              "overrideReason": null
-            },
-            {
-              "id": "gull-p1",
-              "slot": "P1",
-              "component": "jaws-mainsail-mast-superior",
-              "label": "Mainsail Mast",
-              "x": null,
-              "y": null,
-              "rotation": null,
-              "override": true,
-              "overrideReason": "Stat-block size exceeds the slot maximum (AMB-JAWS-SIZES)."
-            },
-            {
-              "id": "gull-c1",
-              "slot": "C1",
-              "component": "magitech-control-basic",
-              "label": "Helm",
-              "x": null,
-              "y": null,
-              "rotation": null,
-              "override": false,
-              "overrideReason": null
-            },
-            {
-              "id": "gull-m2",
-              "slot": "M2",
-              "component": "jaws-tail-club-superior",
-              "label": "Tail Club",
-              "x": null,
-              "y": null,
-              "rotation": null,
-              "override": false,
-              "overrideReason": null
-            }
-          ]
-        }
-      ]
+      }
     }
   },
   {
@@ -467,7 +345,6 @@
         ],
         "source": "VoidSea Naval Combat Lite B0.51, p. 44"
       },
-      "customisation": "locked",
       "crew": [
         {
           "character_id": "${brann}",

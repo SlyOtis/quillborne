@@ -1,5 +1,5 @@
 import type { Character } from './character.types';
-import type { ComponentState, Customisation, InstalledComponent, Rulings, VehicleOverlay } from './rules/vehicle.types';
+import type { ComponentState, InstalledComponent, Rulings, VehicleOverlay } from './rules/vehicle.types';
 
 // A player's profile
 export interface UserProfile {
@@ -253,11 +253,9 @@ export interface Vehicle {
   stats: Record<string, unknown>;
   rulings: Rulings;
   overlay: VehicleOverlay;
-  customisation: Customisation;
   crew: VehicleCrewman[];
   revision: number;
   history: VehicleRevision[];
-  requests: VehicleRequest[];
   created_at: string;
   updated_at: string;
 }
@@ -273,16 +271,6 @@ export interface VehicleRevision {
   at: string;
   user_id: string;
   note: string;
-  components: InstalledComponent[];
-}
-
-// A design a crewman proposes when the vessel's customisation does not let them save it
-export interface VehicleRequest {
-  id: string;
-  user_id: string;
-  at: string;
-  note: string;
-  base_revision: number;
   components: InstalledComponent[];
 }
 

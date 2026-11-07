@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getAttacks, getPerkSummary, getSigned } from '$lib/rules/vehicle'
+  import { getPerkSummary, getSigned } from '$lib/rules/vehicle'
   import type { Crewman, VehicleContext } from '$lib/rules/vehicle.types'
   import Button from '$components/ui/Button.svelte'
   import Fold from '$components/ui/Fold.svelte'
@@ -7,18 +7,12 @@
   const {
     ctx,
     crewman,
-    selected = null,
-    onselect,
     onperks
   }: {
-    /** The vessel whose weapons are listed. */
+    /** The vessel whose perks are read. */
     ctx: VehicleContext
     /** The character the reader sails as, whose abilities and perks fill the sheet. */
     crewman: Crewman | null
-    /** The component chosen on the deck. */
-    selected?: string | null
-    /** Runs with a weapon the reader picked from the sheet. */
-    onselect?: (id: string) => void
     /** Opens the place where the perks are taken. */
     onperks?: () => void
   } = $props()
@@ -27,7 +21,6 @@
 
   let open = $state<string[]>([])
 
-  const attacks = $derived(getAttacks(ctx, crewman))
   const perks = $derived(
     (crewman?.perks ?? []).flatMap((entry) => {
       const perk = ctx.system.perks.find((candidate) => candidate.id === entry.id)
@@ -76,32 +69,6 @@
         <p class="ds-quiet">No perks taken yet.</p>
       {/each}
     {/if}
-  </section>
-
-  <section class="ds-part" aria-label="What you can attack with">
-    <h3 class="dnd-label ds-head">Attack with</h3>
-    <ul class="ds-weapons">
-      {#each attacks as { component, cond, modes } (component.id)}
-        <li>
-          <button
-            type="button"
-            class="ds-weapon"
-            class:ds-weapon-on={component.id === selected}
-            class:ds-weapon-off={cond === 'broken'}
-            aria-pressed={component.id === selected}
-            onclick={() => onselect?.(component.id)}
-          >
-            <span class="ds-weapon-line">
-              <span class="ds-weapon-name">{component.label ?? component.def.name}</span>
-              <small class="ds-cond-{cond}">{component.slot ?? ''}{cond !== 'functional' ? ` · ${cond}` : ''}</small>
-            </span>
-            <span class="ds-brief">{modes.map((mode) => `${mode.name.replace(/ Shot$/, '')} ${mode.unavailable ? '—' : (mode.toHit ?? '')}`).join(' · ')}</span>
-          </button>
-        </li>
-      {:else}
-        <li class="ds-quiet">No weapon is installed.</li>
-      {/each}
-    </ul>
   </section>
 </div>
 
@@ -203,78 +170,6 @@
 
   .ds-tree-3 {
     background: var(--verdigris);
-  }
-
-  .ds-weapons {
-    display: grid;
-    gap: var(--space-1);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .ds-weapon {
-    display: grid;
-    gap: var(--space-0);
-    inline-size: 100%;
-    padding: var(--space-2);
-    border: none;
-    border-radius: var(--radius-sm);
-    background: var(--texture-noise), linear-gradient(180deg, var(--ground-raised), var(--ground-deep));
-    box-shadow: var(--rim-thin);
-    color: var(--ink);
-    font: inherit;
-    text-align: start;
-    cursor: pointer;
-  }
-
-  .ds-weapon:hover {
-    filter: brightness(1.08);
-  }
-
-  .ds-weapon:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
-  }
-
-  .ds-weapon-on {
-    box-shadow: var(--rim-thin), 0 0 10px var(--ember-glow);
-  }
-
-  .ds-weapon-off {
-    opacity: 0.55;
-  }
-
-  .ds-weapon-line {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-2);
-  }
-
-  .ds-weapon-name {
-    font-family: var(--font-display);
-    letter-spacing: var(--tracking-wide);
-    color: var(--metal-bright);
-  }
-
-  .ds-weapon-line small {
-    font-size: var(--text-xs);
-    color: var(--ink-faint);
-  }
-
-  .ds-brief {
-    font-family: var(--font-figures);
-    font-size: var(--text-xs);
-    color: var(--ink-dim);
-  }
-
-  .ds-cond-impaired {
-    color: var(--state-warn);
-  }
-
-  .ds-cond-broken {
-    color: var(--state-bad);
   }
 
   .ds-text {

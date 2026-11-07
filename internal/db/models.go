@@ -153,11 +153,9 @@ type Vehicle struct {
 	Stats           json.RawMessage `bun:"stats,type:jsonb" json:"stats"`
 	Rulings         json.RawMessage `bun:"rulings,type:jsonb" json:"rulings"`
 	Overlay         json.RawMessage `bun:"overlay,type:jsonb" json:"overlay"`
-	Customisation   string          `bun:"customisation" json:"customisation"`
 	Crew            json.RawMessage `bun:"crew,type:jsonb" json:"crew"`
 	Revision        int             `bun:"revision" json:"revision"`
 	History         json.RawMessage `bun:"history,type:jsonb" json:"history"`
-	Requests        json.RawMessage `bun:"requests,type:jsonb" json:"requests"`
 	CrewClaimID     *uuid.UUID      `bun:"crew_claim_id" json:"-"`
 	OwnerID         uuid.UUID       `bun:"sa_owner_id" json:"-"`
 	CreatedBy       *uuid.UUID      `bun:"sa_created_by" json:"-"`

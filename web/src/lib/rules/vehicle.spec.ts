@@ -14,6 +14,7 @@ import {
   getPerkLimit,
   getRepair,
   getAttacks,
+  getShipSteps,
   getTemplateBuild,
   getTemplateDrift,
   getTopSpeed,
@@ -148,6 +149,25 @@ describe('what the vessel can attack with', () => {
     expect(attacks.map((entry) => entry.component.slot)).toEqual(expect.arrayContaining(['A1', 'A2', 'A3', 'A4', 'M2']))
     expect(attacks.find((entry) => entry.component.slot === 'A1')?.modes.every((mode) => mode.unavailable)).toBe(true)
     expect(attacks.find((entry) => entry.component.slot === 'M2')?.modes[0].kind).toBe('melee')
+  })
+})
+
+describe('the ship phase', () => {
+  it('walks the four steps and stops the helm when every control is broken', () => {
+    const components = built()
+    const helm = bySlot(components, 'C1')
+    const healthy = getShipSteps(ctxFor(components), gunner)
+    expect(healthy.steps.map((entry) => entry.step.key)).toEqual(['command', 'helm', 'artillery', 'miscellaneous'])
+    expect(healthy.steps.find((entry) => entry.step.key === 'helm')?.blocked).toBeNull()
+    const broken = getShipSteps(ctxFor(components, { [helm.id]: st(0, 'broken') }), gunner)
+    expect(broken.steps.find((entry) => entry.step.key === 'helm')?.blocked).toMatch(/Broken/)
+  })
+
+  it('files a perk action under its step', () => {
+    const captain = { ...gunner, perks: [{ id: 'encourage', count: 1 }, { id: 'quick-fix', count: 1 }] }
+    const { steps } = getShipSteps(ctxFor(built()), captain)
+    expect(steps.find((entry) => entry.step.key === 'command')?.perks.map((entry) => entry.perk.id)).toContain('encourage')
+    expect(steps.find((entry) => entry.step.key === 'miscellaneous')?.perks.map((entry) => entry.perk.id)).toContain('quick-fix')
   })
 })
 

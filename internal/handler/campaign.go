@@ -175,7 +175,7 @@ func PostCampaign(ctx echo.Context) error {
 		if err != nil {
 			return err
 		}
-		playerClaimID, err := postClaim(tctx, tx, w, "Players", "Plays at the table of "+campaign.Name, sdb.ACCESS_READ)
+		playerClaimID, err := postClaim(tctx, tx, w, "Players", "Plays at the table of "+campaign.Name, sdb.ACCESS_READ|sdb.ACCESS_WRITE)
 		if err != nil {
 			return err
 		}

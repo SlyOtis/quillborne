@@ -1151,3 +1151,20 @@ export function getAttacks(ctx: VehicleContext, crewman: Crewman | null) {
     })
     .filter((entry) => entry.modes.length > 0)
 }
+
+export function getShipSteps(ctx: VehicleContext, crewman: Crewman | null) {
+  const taken = (crewman?.perks ?? []).flatMap((entry) => {
+    const perk = ctx.system.perks.find((candidate) => candidate.id === entry.id)
+    return perk && !perk.actionType.startsWith('Passive') ? [{ perk, count: entry.count }] : []
+  })
+  const placed = new Set<string>()
+  const steps = ctx.system.shipPhase.steps.map((step) => {
+    const components = step.needs ? ctx.components.filter((component) => component.def.category === step.needs) : []
+    const working = components.filter((component) => getPenalty(ctx, component) !== 'broken')
+    const blocked = step.needs === null ? null : components.length === 0 ? `No ${step.needs} component is installed.` : working.length === 0 ? `Every ${step.needs} component is Broken.` : null
+    const perks = taken.filter(({ perk }) => !placed.has(perk.id) && step.perks.some((word) => perk.actionType.includes(word)))
+    for (const { perk } of perks) placed.add(perk.id)
+    return { step, components, working, blocked, perks }
+  })
+  return { steps, others: taken.filter(({ perk }) => !placed.has(perk.id)) }
+}
