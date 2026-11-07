@@ -12,8 +12,6 @@ export type Condition = 'functional' | 'impaired' | 'broken'
 
 export type OverlayKey = 'arcs' | 'movement' | 'locations' | 'conditions' | 'navalGrid' | 'boardingGrid'
 
-export type Customisation = 'locked' | 'approved' | 'full'
-
 export type RulingRef = { ruling: string }
 
 export type ShotRanges = { close: number | null; normal: number | null; long: number | null }
@@ -192,6 +190,15 @@ export type RuleQuestion = {
   affects: string
 }
 
+export type ShipStep = {
+  key: string
+  name: string
+  needs: string | null
+  perks: string[]
+  text: string
+  actions: { name: string; text: string }[]
+}
+
 export type CoreStats = { ac: number; dt: number; hp: number; it: number; con: number }
 
 export type VehicleSystem = {
@@ -242,6 +249,7 @@ export type VehicleSystem = {
   layouts: Layout[]
   templates: VehicleTemplate[]
   rulings: RuleQuestion[]
+  shipPhase: { rule: string; steps: ShipStep[] }
 }
 
 export type VehicleOverlay = { components?: ComponentDef[] }

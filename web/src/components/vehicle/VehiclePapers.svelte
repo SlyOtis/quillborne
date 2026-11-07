@@ -3,7 +3,7 @@
   import { vehicleService } from '$lib/firestore.service'
   import type { Vehicle, VehicleFields } from '$lib/firestore.types'
   import { getDef, getTemplateDrift, getVehiclePackage } from '$lib/rules/vehicle'
-  import type { ComponentDef, Customisation, InstalledComponent, VehicleSystem } from '$lib/rules/vehicle.types'
+  import type { ComponentDef, InstalledComponent, VehicleSystem } from '$lib/rules/vehicle.types'
   import BaseDialog from '$components/BaseDialog.svelte'
   import Button from '$components/ui/Button.svelte'
   import Field from '$components/ui/Field.svelte'
@@ -18,17 +18,11 @@
     vehicle: Vehicle
     /** The vehicle system with the vessel's homebrew merged in. */
     system: VehicleSystem
-    /** The builder or the campaign DM, who may change the papers. */
+    /** The builder or the campaign DM, the only ones who may scuttle her. */
     steward?: boolean
     /** Writes the given vessel fields. */
     onsave: (fields: VehicleFields) => Promise<void>
   } = $props()
-
-  const LEVELS: { id: Customisation; label: string; help: string }[] = [
-    { id: 'locked', label: 'Locked', help: 'The crew tracks hit points and asks the DM for every change to the design.' },
-    { id: 'approved', label: 'Approved components', help: 'The crew installs and swaps what the DM approved for players, and asks for the rest.' },
-    { id: 'full', label: 'Full customisation', help: 'The crew changes the design freely.' }
-  ]
 
   let name = $state('')
   let named = $state('')
@@ -152,8 +146,7 @@
         components: vehicle.components.map((row) => ({ ...row, id: crypto.randomUUID() })),
         stats: vehicle.stats,
         rulings: vehicle.rulings,
-        overlay: vehicle.overlay,
-        customisation: vehicle.customisation
+        overlay: vehicle.overlay
       })
       navigate(`/main/vehicles/${made.id}`)
     } catch (reason) {
@@ -183,20 +176,13 @@
     <p class="vp-bad" role="alert">{error}</p>
   {/if}
 
-  <section class="vp-part" aria-label="Name and customisation">
+  <section class="vp-part" aria-label="Name">
     <h2 class="dnd-label vp-head">The vessel</h2>
     <Field id="vp-name" label="What she is called">
-      <input id="vp-name" type="text" maxlength="120" bind:value={name} disabled={!steward || busy} onkeydown={(event) => event.key === 'Enter' && rename()} />
+      <input id="vp-name" type="text" maxlength="120" bind:value={name} disabled={busy} onkeydown={(event) => event.key === 'Enter' && rename()} />
       {#snippet action()}
-        <Button variant="secondary" size="sm" disabled={!steward || busy || !name.trim() || name.trim() === vehicle.name} onclick={rename}>Rename</Button>
+        <Button variant="secondary" size="sm" disabled={busy || !name.trim() || name.trim() === vehicle.name} onclick={rename}>Rename</Button>
       {/snippet}
-    </Field>
-    <Field id="vp-level" label="What the crew may change" help={LEVELS.find((entry) => entry.id === vehicle.customisation)?.help}>
-      <select id="vp-level" value={vehicle.customisation} disabled={!steward || busy} onchange={(event) => void write({ customisation: event.currentTarget.value as Customisation })}>
-        {#each LEVELS as level (level.id)}
-          <option value={level.id}>{level.label}</option>
-        {/each}
-      </select>
     </Field>
     <dl class="dnd-facts">
       <dt>System</dt>
@@ -231,7 +217,6 @@
               <label class="vp-take">
                 <input
                   type="checkbox"
-                  disabled={!steward}
                   checked={taking.includes(row.slot)}
                   onchange={(event) => (taking = event.currentTarget.checked ? [...taking, row.slot] : taking.filter((entry) => entry !== row.slot))}
                 />
@@ -240,9 +225,7 @@
             </li>
           {/each}
         </ul>
-        {#if steward}
-          <Button variant="primary" size="sm" loading={busy} disabled={taking.length === 0} onclick={takeTemplate}>Take from the template</Button>
-        {/if}
+        <Button variant="primary" size="sm" loading={busy} disabled={taking.length === 0} onclick={takeTemplate}>Take from the template</Button>
       {/if}
     </section>
   {/if}
@@ -255,7 +238,6 @@
         {#each homebrew as entry (entry.key)}
           <li class="vp-brew">
             <span><strong>{entry.name}</strong> · {entry.category} · AC {entry.stats.ac} · HP {entry.stats.hp}</span>
-            {#if steward}
               <Button
                 variant="ghost"
                 size="sm"
@@ -263,12 +245,10 @@
                 title={vehicle.components.some((row) => row.component === entry.key) ? 'Installed: remove it from the deck first' : `Remove ${entry.name}`}
                 onclick={() => unforge(entry.key)}>Remove</Button
               >
-            {/if}
           </li>
         {/each}
       </ul>
     {/if}
-    {#if steward}
       <Field id="vp-base" label="Forge one, starting from">
         <select id="vp-base" bind:value={forgeBase} disabled={busy}>
           <option value="">Choose a component</option>
@@ -312,7 +292,6 @@
           </div>
         </div>
       {/if}
-    {/if}
   </section>
 </div>
 

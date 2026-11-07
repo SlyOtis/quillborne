@@ -154,8 +154,7 @@
         template_version: chosen.template?.version ?? 0,
         layout: chosen.layout,
         components: chosen.template ? getTemplateBuild(chosen.system, chosen.template, () => crypto.randomUUID()) : [],
-        stats: chosen.template?.stats ?? {},
-        customisation: 'locked'
+        stats: chosen.template?.stats ?? {}
       })
       building = false
       navigate(`/main/vehicles/${made.id}`)
@@ -190,8 +189,7 @@
         components: pkg.components.map((row) => ({ ...row, id: crypto.randomUUID() })),
         stats: pkg.stats,
         rulings: pkg.rulings,
-        overlay: pkg.overlay,
-        customisation: 'locked'
+        overlay: pkg.overlay
       })
       navigate(`/main/vehicles/${made.id}`)
     } catch (reason) {
@@ -282,11 +280,7 @@
                 <Card
                   title={entry.name}
                   sub={summary(entry)}
-                  badge={entry.requests.length
-                    ? `${entry.requests.length} request${entry.requests.length === 1 ? '' : 's'}`
-                    : entry.crew.length
-                      ? `${entry.crew.length} crew`
-                      : undefined}
+                  badge={entry.crew.length ? `${entry.crew.length} crew` : undefined}
                   tone={entry.owner_id === $user?.uid ? 'ember' : 'verdigris'}
                   onclick={() => navigate(`/main/vehicles/${entry.id}`)}
                 />
@@ -345,7 +339,7 @@
           {/each}
         </select>
       </Field>
-      <Field id="build-harbour" label="Sails in" help="A campaign’s vessel is read by its table, and its DM holds the helm as well as you.">
+      <Field id="build-harbour" label="Sails in" help="A campaign’s vessel belongs to its whole table: everyone seated there can change it.">
         <select id="build-harbour" bind:value={harbour} disabled={busy}>
           <option value="">Your own waters</option>
           {#each campaigns as entry (entry.id)}

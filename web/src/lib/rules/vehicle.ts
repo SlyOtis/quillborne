@@ -1121,3 +1121,50 @@ export function getTemplateDrift(system: VehicleSystem, template: VehicleTemplat
       heldName: held ? (getDef(system, held.component)?.name ?? held.component) : null
     }))
 }
+
+export function getAttacks(ctx: VehicleContext, crewman: Crewman | null) {
+  return ctx.components
+    .map((component) => {
+      const cond = getPenalty(ctx, component)
+      const bonus = component.def.stats.attackBonus ?? null
+      const actions: WeaponMode[] = (component.def.stats.actions ?? []).map((action) => {
+        const hit = action.text.match(/Hit: \d+ \(([^)]+)\) (\w+)/)
+        return {
+          key: action.name,
+          name: action.name,
+          kind: 'melee',
+          toHit: bonus != null ? getSigned(bonus) : null,
+          bonus,
+          ability: null,
+          damageShort: hit ? `${hit[1]} ${hit[2]}` : '',
+          damageDice: hit ? hit[1].replace(/\s+/g, '') : null,
+          tags: action.text.match(/reach [\d ]+ft/)?.slice(0, 1) ?? [],
+          unavailable: cond === 'broken',
+          formula: bonus != null ? `d20 ${getSigned(bonus)} (component attack bonus)` : action.text,
+          damage: action.text.match(/Hit: ([^.]+)\./)?.[1] ?? '',
+          ranges: [],
+          properties: [],
+          notes: [action.text]
+        }
+      })
+      return { component, cond, modes: [...getWeaponModes(ctx, component, crewman, cond), ...actions] }
+    })
+    .filter((entry) => entry.modes.length > 0)
+}
+
+export function getShipSteps(ctx: VehicleContext, crewman: Crewman | null) {
+  const taken = (crewman?.perks ?? []).flatMap((entry) => {
+    const perk = ctx.system.perks.find((candidate) => candidate.id === entry.id)
+    return perk && !perk.actionType.startsWith('Passive') ? [{ perk, count: entry.count }] : []
+  })
+  const placed = new Set<string>()
+  const steps = ctx.system.shipPhase.steps.map((step) => {
+    const components = step.needs ? ctx.components.filter((component) => component.def.category === step.needs) : []
+    const working = components.filter((component) => getPenalty(ctx, component) !== 'broken')
+    const blocked = step.needs === null ? null : components.length === 0 ? `No ${step.needs} component is installed.` : working.length === 0 ? `Every ${step.needs} component is Broken.` : null
+    const perks = taken.filter(({ perk }) => !placed.has(perk.id) && step.perks.some((word) => perk.actionType.includes(word)))
+    for (const { perk } of perks) placed.add(perk.id)
+    return { step, components, working, blocked, perks }
+  })
+  return { steps, others: taken.filter(({ perk }) => !placed.has(perk.id)) }
+}

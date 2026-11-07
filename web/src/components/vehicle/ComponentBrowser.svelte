@@ -9,8 +9,6 @@
     slot = null,
     current = null,
     replacing = null,
-    approved = false,
-    steward = false,
     onpick
   }: {
     /** The vessel as it is drafted, which the candidates are checked against. */
@@ -21,10 +19,6 @@
     current?: ComponentDef | null
     /** The installed component being replaced, excluded from the occupancy check. */
     replacing?: string | null
-    /** Offers only what the DM approved for players. */
-    approved?: boolean
-    /** Lets the reader install over a compatibility error as an override. */
-    steward?: boolean
     /** Runs with the chosen definition, and the override reason when it is installed over an error. */
     onpick?: (def: ComponentDef, override: string | null) => void
   } = $props()
@@ -47,8 +41,7 @@
       .filter((def) => !def.retired && def.key !== current?.key)
       .map((def) => {
         const issues = slot ? getCompatibility(system, slot, def, ctx.components, replacing) : []
-        const unapproved = approved && !def.playerAvailable
-        return { def, issues, fits: !issues.some((issue) => issue.severity === 'error'), unapproved }
+        return { def, issues, fits: !issues.some((issue) => issue.severity === 'error') }
       })
       .filter((row) => {
         const words = `${row.def.name} ${row.def.family ?? ''} ${categoryName(row.def.category)}`.toLowerCase()
@@ -56,7 +49,7 @@
         if (shown === 'fit') return slot ? [row.def.category, ...row.def.slotTypes].some((type) => slot.acceptedTypes.includes(type)) : true
         return shown === 'all' || row.def.category === shown
       })
-      .filter((row) => !slot || loose || (row.fits && !row.unapproved))
+      .filter((row) => !slot || loose || row.fits)
       .sort(
         (a, b) =>
           Number(b.fits) - Number(a.fits) ||
@@ -94,7 +87,7 @@
 
   function pick() {
     if (!candidate) return
-    const override = candidate.fits ? null : reason.trim() || 'Installed by the DM despite compatibility issues.'
+    const override = candidate.fits ? null : reason.trim() || 'Installed despite compatibility issues.'
     onpick?.(candidate.def, override)
   }
 
@@ -120,7 +113,7 @@
       {#if slot}
         <label class="cb-loose">
           <input type="checkbox" bind:checked={loose} />
-          <span>Show what does not fit{approved ? ' or is not approved' : ''}</span>
+          <span>Show what does not fit</span>
         </label>
       {/if}
     </div>
@@ -128,13 +121,11 @@
     <ul class="dnd-scroll cb-rows" aria-label="Components">
       {#each rows as row (row.def.key)}
         <li>
-          <button type="button" class="cb-row" class:cb-row-on={chosen === row.def.key} class:cb-row-off={!row.fits || row.unapproved} onclick={() => (chosen = row.def.key)}>
+          <button type="button" class="cb-row" class:cb-row-on={chosen === row.def.key} class:cb-row-off={!row.fits} onclick={() => (chosen = row.def.key)}>
             <span class="cb-row-head">
               <span class="cb-row-name">{row.def.name}</span>
               {#if slot}
-                <span class="cb-mark" class:cb-mark-bad={!row.fits} class:cb-mark-warn={row.fits && row.unapproved}>
-                  {!row.fits ? 'Does not fit' : row.unapproved ? 'Not approved' : 'Fits'}
-                </span>
+                <span class="cb-mark" class:cb-mark-bad={!row.fits}>{row.fits ? 'Fits' : 'Does not fit'}</span>
               {:else if row.def.homebrew}
                 <span class="cb-mark cb-mark-warn">Homebrew</span>
               {/if}
@@ -190,15 +181,11 @@
       {/if}
       {#if onpick}
         {#if !candidate.fits}
-          {#if steward}
-            <Field id="cb-reason" label="Override reason" help="The DM may install it anyway; the reason is kept on the component.">
-              <input id="cb-reason" type="text" bind:value={reason} placeholder="Stat block size exceeds the slot" />
-            </Field>
-          {:else}
-            <p class="cb-why">It does not fit this slot.</p>
-          {/if}
+          <Field id="cb-reason" label="Why it goes in anyway" help="It does not fit this slot; the reason is kept on the component.">
+            <input id="cb-reason" type="text" bind:value={reason} placeholder="Stat block size exceeds the slot" />
+          </Field>
         {/if}
-        <Button variant="primary" fill disabled={!candidate.fits && !steward} onclick={pick}>
+        <Button variant="primary" fill onclick={pick}>
           {candidate.fits ? (current ? 'Swap it in' : 'Install') : 'Install as override'}
         </Button>
       {/if}
