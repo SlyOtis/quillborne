@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-check --tsgo --tsconfig ./tsconfig.json && tsc -p tsconfig.node.json",
-    "test": "vitest run"
+    "test": "vitest run --exclude test/nimap/tools/performance.spec.ts && vitest run test/nimap/tools/performance.spec.ts"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
