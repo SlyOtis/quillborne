@@ -58,26 +58,31 @@
         "token",
         "theme",
         "accessibility",
-        "variant"
+        "variant",
+        "frame",
+        "shell",
+        "drawers",
+        "transition"
       ]
     },
     {
       "path": ".claude/rules/data.md",
       "kind": "rule",
-      "answers": "The Firestore casing, the campaign subcollections and their reveal flags, the pin to record link, the upload path, and who may read and write what.",
+      "answers": "The Postgres schema, the campaign as the one grouping whose seated players are the party, the resource kinds, the claims that decide who reads and writes what, the api, live events and uploads.",
       "keywords": [
         "firestore",
         "schema",
         "snake_case",
         "campaign",
         "session",
-        "quest",
         "npc",
         "location",
         "upload",
         "storage",
         "rules",
-        "access"
+        "access",
+        "party",
+        "claim"
       ]
     },
     {
@@ -263,7 +268,7 @@
     {
       "path": "src/pages/CampaignPage.svelte",
       "kind": "page",
-      "answers": "Loads a campaign and its characters by the :id route param and shows overview, party and maps. Grants the DM controls when the signed in user is dm_id.",
+      "answers": "Loads a campaign by the :id route param and shows its overview, party, NPCs, maps, encounter and players. The reader's own characters lead the party and are marked Yours. Grants the DM controls when the signed in user is dm_id.",
       "keywords": [
         "campaign",
         "page",
@@ -271,7 +276,8 @@
         "maps",
         "dm",
         "route",
-        "load"
+        "load",
+        "npc"
       ]
     },
     {
@@ -616,6 +622,23 @@
         "players",
         "revision",
         "history"
+      ]
+    },
+    {
+      "path": "src/components/Frame.svelte",
+      "kind": "component",
+      "answers": "The frame mounted once around the router: the bar, the crest, the lanterns, the drawers with the one MenuPanel and Chat, and the scroll. A page's Shell hands it its parts through the shell store, so a page change swaps only the body.",
+      "keywords": [
+        "frame",
+        "shell",
+        "bar",
+        "drawer",
+        "menu",
+        "chat",
+        "transition",
+        "page",
+        "scroll",
+        "router"
       ]
     }
   ]

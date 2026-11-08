@@ -54,7 +54,7 @@ vi.mock('./storage.service', () => ({
   }
 }))
 
-import { campaignService, characterService, getCharacterMetadata, partyService, userService } from './firestore.service'
+import { campaignService, characterService, getCharacterMetadata, userService } from './firestore.service'
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0))
 
@@ -175,7 +175,7 @@ describe('characters', () => {
   })
 })
 
-describe('the table and the party', () => {
+describe('the table', () => {
   it('seats a player by address and unseats them by id', async () => {
     await campaignService.postCampaignPlayer('camp-1', 'dis@example.test')
     await campaignService.deleteCampaignPlayer('camp-1', 'dis')
@@ -186,15 +186,13 @@ describe('the table and the party', () => {
     ])
   })
 
-  it('brings a character to the table and the party', async () => {
+  it('brings a character to the table and takes it away', async () => {
     await campaignService.postCampaignCharacter('camp-1', 'char-1')
-    await partyService.postPartyCharacter('party-1', 'char-1')
-    await partyService.deletePartyCharacter('party-1', 'char-1')
+    await campaignService.deleteCampaignCharacter('camp-1', 'char-1')
 
     expect(wire.calls.map((call) => `${call.method} ${call.path}`)).toEqual([
       'POST /campaign/camp-1/character/char-1',
-      'POST /party/party-1/character/char-1',
-      'DELETE /party/party-1/character/char-1'
+      'DELETE /campaign/camp-1/character/char-1'
     ])
   })
 
@@ -225,14 +223,14 @@ describe('the parts a campaign or a player keeps', () => {
   })
 
   it('writes a kind with its campaign, and a song under the campaign', async () => {
-    await campaignService.postPart({ at: 'campaigns', id: 'camp-1' }, 'quests', { title: 'Find the ladle' })
+    await campaignService.postPart({ at: 'campaigns', id: 'camp-1' }, 'npcs', { title: 'The ladle keeper' })
     await campaignService.postPart({ at: 'campaigns', id: 'camp-1' }, 'songs', { title: 'Drums' })
-    await campaignService.putPart({ at: 'campaigns', id: 'camp-1' }, 'quests', 'q-1', { title: 'Found' })
+    await campaignService.putPart({ at: 'campaigns', id: 'camp-1' }, 'npcs', 'n-1', { title: 'Found' })
 
     expect(wire.calls).toEqual([
-      { method: 'POST', path: '/resource', body: { title: 'Find the ladle', kind: 'quests', campaign_id: 'camp-1' } },
+      { method: 'POST', path: '/resource', body: { title: 'The ladle keeper', kind: 'npcs', campaign_id: 'camp-1' } },
       { method: 'POST', path: '/campaign/camp-1/song', body: { title: 'Drums' } },
-      { method: 'PUT', path: '/resource/q-1', body: { title: 'Found' } }
+      { method: 'PUT', path: '/resource/n-1', body: { title: 'Found' } }
     ])
   })
 })

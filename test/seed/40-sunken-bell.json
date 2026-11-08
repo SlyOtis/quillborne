@@ -6,8 +6,7 @@
     "body": {
       "name": "The Sunken Bell",
       "description": "A drowned abbey rings its bell at low tide, and everyone who hears it dreams of the same door.",
-      "is_active": true,
-      "party_ids": []
+      "is_active": true
     }
   },
   {
@@ -37,13 +36,10 @@
     "as": "pip",
     "call": "POST /api/resource",
     "body": {
-      "kind": "quests",
+      "kind": "entries",
       "campaign_id": "${bell}",
-      "title": "Silence the Bell",
-      "description": "Climb the tower before the tide turns and find out who rings the bell.",
-      "state": "active",
-      "level": 3,
-      "giver": "Abbess Morwen",
+      "title": "Who Rings the Bell",
+      "description": "Someone climbs the drowned tower and rings the bell at every low tide, though no one has been seen going up.",
       "share_campaigns": ["${bell}"]
     }
   },

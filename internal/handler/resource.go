@@ -18,13 +18,13 @@ import (
 )
 
 var resourceKinds = map[string]bool{
-	"entries": true, "npcs": true, "heroes": true, "items": true, "weapons": true,
-	"armor": true, "locations": true, "maps": true, "sessions": true, "quests": true,
+	"entries": true, "npcs": true, "items": true, "weapons": true,
+	"armor": true, "locations": true, "maps": true, "sessions": true,
 }
 
 var resourceColumns = map[string]bool{
 	"id": true, "kind": true, "owner_id": true, "campaign_id": true, "created_at": true, "updated_at": true,
-	"share_users": true, "share_campaigns": true, "share_parties": true, "readers": true,
+	"share_users": true, "share_campaigns": true, "readers": true,
 }
 
 type BodyUpdate struct {
@@ -40,7 +40,6 @@ func getResourceRecord(resource db.Resource) map[string]any {
 	record["title"] = resource.Title
 	record["share_users"] = resource.ShareUsers
 	record["share_campaigns"] = resource.ShareCampaigns
-	record["share_parties"] = resource.ShareParties
 	record["created_at"] = resource.CreatedAt
 	record["updated_at"] = resource.UpdatedAt
 	if resource.CampaignID != nil {
@@ -51,7 +50,7 @@ func getResourceRecord(resource db.Resource) map[string]any {
 	} else {
 		record["parent_id"] = ""
 	}
-	for _, key := range []string{"share_users", "share_campaigns", "share_parties"} {
+	for _, key := range []string{"share_users", "share_campaigns"} {
 		if record[key] == nil {
 			record[key] = []uuid.UUID{}
 		}
@@ -85,7 +84,7 @@ func putResourceRecord(resource *db.Resource, body map[string]any) (bool, error)
 	shared := false
 	for key, value := range body {
 		switch key {
-		case "share_users", "share_campaigns", "share_parties":
+		case "share_users", "share_campaigns":
 			if value == nil {
 				value = []any{}
 			}
@@ -98,8 +97,6 @@ func putResourceRecord(resource *db.Resource, body map[string]any) (bool, error)
 				resource.ShareUsers = ids
 			case "share_campaigns":
 				resource.ShareCampaigns = ids
-			case "share_parties":
-				resource.ShareParties = ids
 			}
 			shared = true
 			continue
@@ -323,7 +320,7 @@ func PutResource(ctx echo.Context) error {
 				return err
 			}
 		}
-		if _, err := tx.NewUpdate().Model(&resource).Column("title", "fields", "share_users", "share_campaigns", "share_parties", "sa_updated_at").WherePK().Exec(tctx); err != nil {
+		if _, err := tx.NewUpdate().Model(&resource).Column("title", "fields", "share_users", "share_campaigns", "sa_updated_at").WherePK().Exec(tctx); err != nil {
 			return err
 		}
 		return sdb.Write(tctx, tx, "PutResource", "update", db.OBJECT_TYPE_RESOURCE, resource.ID, resource.OwnerID, ac.UserClaimID, resource.Title)

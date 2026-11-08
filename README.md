@@ -1,7 +1,7 @@
 # Quillborne
 
 The table's character sheet and campaign book. Players build and play characters from rule systems written as
-JSON. The table shares campaigns: the roll log and chat, maps, lore, parties, encounters and music. A Go service
+JSON. The table shares campaigns: the roll log and chat, maps, lore, NPCs, ships, encounters and music. A Go service
 owns the data in Postgres and serves the Svelte app in `web/`.
 
 ## Run it locally

@@ -7,7 +7,7 @@
   import { uiStore, isSearchDialogOpen, searchSeed } from "$lib/stores/ui.store";
   import { user } from "$lib/stores/auth.store";
   import { ACTIONS, actionBlocks, shortcuts } from "$lib/actions";
-  import { campaignService, characterService, partyService } from "$lib/firestore.service";
+  import { campaignService, characterService } from "$lib/firestore.service";
   import type { Owner } from "$lib/firestore.types";
   import { getEvery, RESOURCES, type Resource, type ResourceKind } from "$lib/resources";
   import { getDocument, getDocumentText } from "$lib/blocks";
@@ -28,15 +28,13 @@
 
   const GLYPHS: Record<ResourceKind, GlyphName> = {
     entries: 'scroll',
-    characters: 'character',
-    heroes: 'character',
+    npcs: 'character',
     items: 'gear',
     weapons: 'gear',
     armor: 'gear',
     places: 'campaign',
     maps: 'picture',
-    sessions: 'scroll',
-    quests: 'scroll'
+    sessions: 'scroll'
   };
 
   let isOpen = $derived($isSearchDialogOpen);
@@ -111,9 +109,8 @@
   }
 
   async function getPages(uid: string): Promise<Hit[]> {
-    const [campaigns, parties, sheets] = await Promise.all([
+    const [campaigns, sheets] = await Promise.all([
       campaignService.getUserCampaigns().catch(() => []),
-      partyService.getParties().catch(() => []),
       characterService.getUserCharacters().catch(() => [])
     ]);
 
@@ -155,16 +152,6 @@
         key: '',
         hay: getHay([one.name, one.description]),
         run: () => navigate(`/main/campaign/${one.id}`)
-      })),
-      ...parties.map((one) => ({
-        id: `/main/party/${one.id}`,
-        title: one.name,
-        sub: one.description,
-        kind: 'Party',
-        glyph: 'group' as GlyphName,
-        key: '',
-        hay: getHay([one.name, one.description]),
-        run: () => navigate(`/main/party/${one.id}`)
       })),
       ...rolls.flat()
     ];
@@ -247,7 +234,7 @@
         bind:this={searchInput}
         bind:value={searchQuery}
         type="text"
-        placeholder="Actions, sheets, campaigns, parties, and every page you can read..."
+        placeholder="Actions, sheets, campaigns, and every page you can read..."
       />
     </Field>
   </div>

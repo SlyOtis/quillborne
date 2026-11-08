@@ -27,10 +27,8 @@
   import Ornament from '$components/ui/Ornament.svelte'
   import Shell from '$components/ui/Shell.svelte'
   import Stops from '$components/ui/Stops.svelte'
-  import MenuPanel from '$components/MenuPanel.svelte'
   import CampaignBar, { SECTIONS, getSection } from '$components/campaign/CampaignBar.svelte'
   import { isResourceKind } from '$lib/resources'
-  import Chat from '$chat/Chat.svelte'
   import ComponentBrowser from '$components/vehicle/ComponentBrowser.svelte'
   import VehicleRulings from '$components/vehicle/VehicleRulings.svelte'
 
@@ -217,15 +215,7 @@
   }
 </script>
 
-<Shell title={campaign ? `${campaign.name} · Vehicles` : 'The Dock'} width="wide" back={() => navigate(campaignId ? `/main/campaign/${campaignId}` : '/main')}>
-  {#snippet menu()}
-    <MenuPanel />
-  {/snippet}
-
-  {#snippet chat()}
-    <Chat />
-  {/snippet}
-
+<Shell drawers title={campaign ? `${campaign.name} · Vehicles` : 'The Dock'} width="wide" back={() => navigate(campaignId ? `/main/campaign/${campaignId}` : '/main')}>
   {#snippet nav()}
     {#if campaignId}
       <Stops stops={SECTIONS} stop={getSection('vehicles')} onopen={openSection} />

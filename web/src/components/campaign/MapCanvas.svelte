@@ -501,11 +501,6 @@
     border-color: var(--state-bad);
   }
 
-  .dnd-map-pin-quest {
-    color: var(--state-warn);
-    border-color: var(--state-warn);
-  }
-
   .dnd-map-pin-treasure {
     color: var(--metal);
   }

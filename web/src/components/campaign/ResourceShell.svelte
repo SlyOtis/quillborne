@@ -40,10 +40,8 @@
   import IconBtn from '$components/ui/IconBtn.svelte'
   import Ornament from '$components/ui/Ornament.svelte'
   import Shell from '$components/ui/Shell.svelte'
-  import MenuPanel from '$components/MenuPanel.svelte'
   import Tree, { type TreeRow } from '$components/ui/Tree.svelte'
   import StoredImage from '$components/ui/StoredImage.svelte'
-  import Chat from '$chat/Chat.svelte'
 
   const {
     kind,
@@ -199,7 +197,7 @@
   }
 
   function blank(): Record<string, unknown> & Resource {
-    return getBlank(kind, $user?.uid ?? '')
+    return { ...getBlank(kind, $user?.uid ?? ''), share_campaigns: owner.at === 'campaigns' ? [owner.id] : [] }
   }
 
   onMount(() => setTheme(getTheme()))
@@ -488,19 +486,12 @@
 {/snippet}
 
 <Shell
+  drawers
   title={fresh ? `New ${shape.one}` : one.title || shape.one}
   width="full"
   back={() => navigate(under)}
   tools={bar && !fresh ? acts : undefined}
 >
-  {#snippet menu()}
-    <MenuPanel />
-  {/snippet}
-
-  {#snippet chat()}
-    <Chat />
-  {/snippet}
-
   {#if loading}
     <div class="dnd-loading"><span class="dnd-spinner"></span></div>
   {:else}
@@ -546,7 +537,7 @@
               {step.title}
             </button>{#if index < trail.length - 1}<span class="page-step-mark"> / </span>{/if}
           {/each}
-          {#if fresh}New {shape.one.toLowerCase()}{/if}
+          {#if fresh}New {shape.word}{/if}
         </p>
 
         {#if writing}
@@ -587,7 +578,7 @@
             <IconBtn title="Choose the frame" disabled={!canWrite || !one.image} onclick={openFrame}>
               <Glyph name="gear" size="md" />
             </IconBtn>
-            <IconBtn title={canWrite ? `Delete this ${shape.one.toLowerCase()}` : 'Only the owner may delete this'} disabled={!canWrite || busy} onclick={() => (dropOpen = true)}>
+            <IconBtn title={canWrite ? `Delete this ${shape.word}` : 'Only the owner may delete this'} disabled={!canWrite || busy} onclick={() => (dropOpen = true)}>
               <Glyph name="remove" size="md" />
             </IconBtn>
             <IconBtn title={tabsOpen ? 'Fold the head' : 'Unfold the head'} active={!tabsOpen} onclick={() => (tabsOpen = !tabsOpen)}>
@@ -730,7 +721,7 @@
     {#if fresh}
       <div class="page-acts-row">
         <Button variant="primary" loading={busy} disabled={!named} onclick={save}>
-          Create the {shape.one.toLowerCase()}
+          Create the {shape.word}
         </Button>
         <Button variant="ghost" onclick={() => navigate(under)}>Cancel</Button>
       </div>
@@ -766,7 +757,7 @@
     {/if}
 
     {#if dropOpen}
-      <BaseDialog bind:isOpen={dropOpen} title="Delete {shape.one.toLowerCase()}" zIndex={9999}>
+      <BaseDialog bind:isOpen={dropOpen} title="Delete {shape.word}" zIndex={9999}>
         <div class="page-drop">
           <p class="page-drop-lede">{one.title} goes for good, with its pictures and every edit written into it. Its sub pages stay on the roll.</p>
           <div class="page-drop-acts">
@@ -789,7 +780,6 @@
     {/if}
   {/if}
 </Shell>
-
 
 <style>
   .page-band-grid {

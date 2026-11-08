@@ -11,12 +11,16 @@
   import Search from "$components/search/Search.svelte";
   import Dialogs from "$dialogs/Dialogs.svelte";
   import SoundManager from "$components/SoundManager.svelte";
+  import Frame from "$components/Frame.svelte";
   import { handleGlobalKeydown } from "$lib/globalEvents";
 
   const requireSignIn: RouteGuard = async () =>
     get(isAuthenticated) ? null : authService.signIn();
 
+  const loaders: (() => Promise<unknown>)[] = [];
+
   function page(name: string, load: () => Promise<unknown>) {
+    loaders.push(load);
     return async () => {
       try {
         return (await load()) as any;
@@ -69,7 +73,7 @@
       component: page("CampaignCreatePage", () => import("./pages/CampaignCreatePage.svelte")),
       guard: requireSignIn
     },
-    "/main/character": "/main/characters",
+    "/main/character": "/main",
     "/main/character/:id": {
       name: "character-view",
       component: page("CharacterPage", () => import("./pages/CharacterPage.svelte")),
@@ -89,16 +93,6 @@
     "/main/campaign/:id": {
       name: "campaign-view",
       component: page("CampaignPage", () => import("./pages/CampaignPage.svelte")),
-      guard: requireSignIn
-    },
-    "/main/create/party": {
-      name: "party-create",
-      component: page("PartyCreatePage", () => import("./pages/PartyCreatePage.svelte")),
-      guard: requireSignIn
-    },
-    "/main/party/:id": {
-      name: "party-view",
-      component: page("PartyPage", () => import("./pages/PartyPage.svelte")),
       guard: requireSignIn
     },
     "/main/vehicle": "/main/vehicles",
@@ -133,15 +127,10 @@
       roll: () => import("./pages/resource/EntryListPage.svelte"),
       one: () => import("./pages/resource/EntryPage.svelte")
     },
-    characters: {
+    npcs: {
       name: "Npc",
       roll: () => import("./pages/resource/NpcListPage.svelte"),
       one: () => import("./pages/resource/NpcPage.svelte")
-    },
-    heroes: {
-      name: "Hero",
-      roll: () => import("./pages/resource/HeroListPage.svelte"),
-      one: () => import("./pages/resource/HeroPage.svelte")
     },
     items: {
       name: "Item",
@@ -172,11 +161,6 @@
       name: "Session",
       roll: () => import("./pages/resource/SessionListPage.svelte"),
       one: () => import("./pages/resource/SessionPage.svelte")
-    },
-    quests: {
-      name: "Quest",
-      roll: () => import("./pages/resource/QuestListPage.svelte"),
-      one: () => import("./pages/resource/QuestPage.svelte")
     }
   };
 
@@ -199,6 +183,9 @@
 
   onMount(() => {
     unsubscribeAuth = initializeAuth();
+    setTimeout(() => {
+      for (const load of loaders) void load().catch(() => {});
+    }, 2000);
   });
 
   onDestroy(() => {
@@ -232,17 +219,11 @@
   </div>
 {:else}
   <svelte:boundary>
-    <Router {routes} fallback={() => import("./pages/NotFoundPage.svelte")}>
-      <div class="loading-screen">
-        <Aura variant="motes" tone="ember" density="thick" />
-
-        <div class="loading-content">
-          <img class="loading-mark" src="/favicon.svg" alt="" />
-          <span class="loading-rule"><Ornament name="divider" tone="metal" /></span>
-          <p class="dnd-label loading-note">Turning the page</p>
-        </div>
-      </div>
-    </Router>
+    <Frame>
+      <Router {routes} fallback={() => import("./pages/NotFoundPage.svelte")}>
+        <div class="dnd-loading" role="status" aria-label="Turning the page"><span class="dnd-spinner"></span></div>
+      </Router>
+    </Frame>
 
     {#snippet failed(error: unknown, reset: () => void)}
       <div class="page-broke" role="alert">

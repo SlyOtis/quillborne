@@ -30,16 +30,6 @@ func PutRoutes(api *echo.Group, userAuth echo.MiddlewareFunc) {
 	character.PUT("/:id/sources", PutCharacterSources)
 	character.GET("/:id/stream", GetCharacterStream)
 
-	party := api.Group("/party", userAuth)
-	party.GET("", GetParties)
-	party.POST("", PostParty)
-	party.GET("/:id", GetParty)
-	party.GET("/:id/stream", GetPartyStream)
-	party.PUT("/:id", PutParty)
-	party.DELETE("/:id", DeleteParty)
-	party.POST("/:id/character/:character_id", PostPartyCharacter)
-	party.DELETE("/:id/character/:character_id", DeletePartyCharacter)
-
 	vehicle := api.Group("/vehicle", userAuth)
 	vehicle.GET("", GetVehicles)
 	vehicle.POST("", PostVehicle)
