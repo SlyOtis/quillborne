@@ -34,7 +34,7 @@
         onclick={() => openCampaign(entry.id)}
       >
         <span>Players {entry.player_ids.length}</span>
-        <span>Heroes {entry.character_ids.length}</span>
+        <span>Characters {entry.character_ids.length}</span>
       </Card>
     {/each}
   </div>

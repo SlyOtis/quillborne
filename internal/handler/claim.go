@@ -16,7 +16,6 @@ import (
 
 var claimObjectTypes = map[string]string{
 	"campaign":  db.OBJECT_TYPE_CAMPAIGN,
-	"party":     db.OBJECT_TYPE_PARTY,
 	"character": db.OBJECT_TYPE_CHARACTER,
 	"resource":  db.OBJECT_TYPE_RESOURCE,
 	"encounter": db.OBJECT_TYPE_ENCOUNTER,

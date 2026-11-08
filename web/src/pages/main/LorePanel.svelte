@@ -8,24 +8,20 @@
 
   const KINDS: ResourceKind[] = [
     'entries',
-    'characters',
+    'npcs',
     'places',
     'maps',
-    'quests',
     'sessions',
     'items',
     'weapons',
-    'armor',
-    'heroes'
+    'armor'
   ]
 
   const TONES: Record<ResourceKind, 'metal' | 'ember' | 'verdigris'> = {
     entries: 'metal',
-    characters: 'ember',
-    heroes: 'ember',
+    npcs: 'ember',
     places: 'verdigris',
     maps: 'verdigris',
-    quests: 'metal',
     sessions: 'metal',
     items: 'metal',
     weapons: 'metal',

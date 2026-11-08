@@ -45,7 +45,7 @@ BEGIN
     IF member_claim_id IS NULL THEN
         member_claim_id := (claimius.insert_claim(
             p_name          => 'Member',
-            p_description   => 'Entry to the table: may sign in and create characters, parties and campaigns',
+            p_description   => 'Entry to the table: may sign in and create characters and campaigns',
             p_sa_access     => 40,
             p_sa_owner_id   => org_id,
             p_sa_root_id    => org_id,

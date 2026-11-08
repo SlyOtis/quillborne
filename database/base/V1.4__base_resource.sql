@@ -1,9 +1,7 @@
 DO $$ BEGIN
-    CREATE TYPE resource_kind AS ENUM ('entries', 'npcs', 'heroes', 'items', 'weapons', 'armor', 'locations', 'maps', 'sessions', 'quests');
+    CREATE TYPE resource_kind AS ENUM ('entries', 'npcs', 'items', 'weapons', 'armor', 'locations', 'maps', 'sessions');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
-
-COMMENT ON TYPE resource_kind IS 'The ten kinds of lore a player or a campaign keeps';
 
 CREATE TABLE IF NOT EXISTS resource (
     id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -14,7 +12,6 @@ CREATE TABLE IF NOT EXISTS resource (
     fields            JSONB NOT NULL DEFAULT '{}'::jsonb,
     share_users       UUID[] NOT NULL DEFAULT '{}',
     share_campaigns   UUID[] NOT NULL DEFAULT '{}',
-    share_parties     UUID[] NOT NULL DEFAULT '{}',
     reader_claim_id   UUID,
     sa_owner_id       UUID NOT NULL,
     sa_parent_id      UUID NOT NULL,
@@ -25,20 +22,37 @@ CREATE TABLE IF NOT EXISTS resource (
     sa_deleted_at     TIMESTAMPTZ
 );
 
+ALTER TABLE resource DROP COLUMN IF EXISTS share_parties;
+
+DO $$ BEGIN
+    IF EXISTS (
+        SELECT 1 FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid
+         WHERE t.typname = 'resource_kind' AND e.enumlabel IN ('heroes', 'quests')
+    ) THEN
+        UPDATE resource SET kind = 'entries' WHERE kind = 'quests';
+        UPDATE resource SET kind = 'npcs' WHERE kind = 'heroes';
+        ALTER TYPE resource_kind RENAME TO resource_kind_old;
+        CREATE TYPE resource_kind AS ENUM ('entries', 'npcs', 'items', 'weapons', 'armor', 'locations', 'maps', 'sessions');
+        ALTER TABLE resource ALTER COLUMN kind TYPE resource_kind USING kind::text::resource_kind;
+        DROP TYPE resource_kind_old;
+    END IF;
+END $$;
+
+COMMENT ON TYPE resource_kind IS 'The eight kinds of lore a player or a campaign keeps';
+
 CREATE INDEX IF NOT EXISTS idx_resource_campaign_kind ON resource (campaign_id, kind);
 CREATE INDEX IF NOT EXISTS idx_resource_user_kind ON resource (user_id, kind);
 CREATE INDEX IF NOT EXISTS idx_resource_root ON resource (sa_root_id);
 
-COMMENT ON TABLE resource IS 'A piece of lore kept by a player or a campaign, of one of the ten kinds, with its block document and pictures, nested under a parent resource';
+COMMENT ON TABLE resource IS 'A piece of lore kept by a player or a campaign, of one of the eight kinds, with its block document and pictures, nested under a parent resource';
 COMMENT ON COLUMN resource.id IS 'The resource id';
-COMMENT ON COLUMN resource.kind IS 'Which of the ten kinds the resource is';
+COMMENT ON COLUMN resource.kind IS 'Which of the eight kinds the resource is';
 COMMENT ON COLUMN resource.user_id IS 'The player who wrote it down';
 COMMENT ON COLUMN resource.campaign_id IS 'The campaign that keeps the resource, empty for a player''s own';
 COMMENT ON COLUMN resource.title IS 'The title shown at the head, what a list sorts by';
 COMMENT ON COLUMN resource.fields IS 'Everything else the page carries: lede, tags, facts, pictures, frame, block document, grouping and the fields of its own kind';
 COMMENT ON COLUMN resource.share_users IS 'The players it is shared with by name';
 COMMENT ON COLUMN resource.share_campaigns IS 'The campaigns whose tables read it';
-COMMENT ON COLUMN resource.share_parties IS 'The parties whose members read it';
 COMMENT ON COLUMN resource.reader_claim_id IS 'The claim the players it is shared with by name hold';
 COMMENT ON COLUMN resource.sa_owner_id IS 'The owning organization';
 COMMENT ON COLUMN resource.sa_parent_id IS 'The resource this one is a sub page of, itself for a top resource';

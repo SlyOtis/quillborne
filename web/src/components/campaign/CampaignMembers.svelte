@@ -1,6 +1,6 @@
 <script lang="ts">
   import { navigate } from 'sly-svelte-location-router'
-  import { campaignService, characterService, partyService, userService } from '$lib/firestore.service'
+  import { campaignService, characterService, userService } from '$lib/firestore.service'
   import type { Campaign, CampaignSettings, CharacterDocument, Owner, UserProfile } from '$lib/firestore.types'
   import { deleteResources } from '$lib/resources'
   import { user } from '$lib/stores/auth.store'

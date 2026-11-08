@@ -1,11 +1,11 @@
 <script lang="ts">
   import ResourceShell from '$components/campaign/ResourceShell.svelte'
-  import type { Character } from '$lib/resources'
+  import type { Npc } from '$lib/resources'
 </script>
 
-<ResourceShell kind="characters">
+<ResourceShell kind="npcs">
   {#snippet facts(one)}
-    {@const it = one as unknown as Character}
+    {@const it = one as unknown as Npc}
     {#if it.role}<dt>Role</dt><dd>{it.role}</dd>{/if}
     <dt>Disposition</dt>
     <dd>{it.disposition}</dd>

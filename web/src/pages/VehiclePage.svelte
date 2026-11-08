@@ -27,8 +27,6 @@
   import Shell from '$components/ui/Shell.svelte'
   import Stat from '$components/ui/Stat.svelte'
   import Stops from '$components/ui/Stops.svelte'
-  import MenuPanel from '$components/MenuPanel.svelte'
-  import Chat from '$chat/Chat.svelte'
   import ComponentPanel from '$components/vehicle/ComponentPanel.svelte'
   import DeckActions from '$components/vehicle/DeckActions.svelte'
   import DeckSheet from '$components/vehicle/DeckSheet.svelte'
@@ -264,15 +262,7 @@
   const back = $derived(vehicle?.campaign_id ? `/main/campaign/${vehicle.campaign_id}/vehicles` : '/main/vehicles')
 </script>
 
-<Shell title={vehicle?.name ?? 'Vehicle'} width="full" back={() => navigate(back)}>
-  {#snippet menu()}
-    <MenuPanel />
-  {/snippet}
-
-  {#snippet chat()}
-    <Chat />
-  {/snippet}
-
+<Shell drawers title={vehicle?.name ?? 'Vehicle'} width="full" back={() => navigate(back)}>
   {#snippet nav()}
     <Stops stops={STOPS} {stop} onopen={open} />
   {/snippet}
@@ -456,7 +446,6 @@
     gap: var(--space-2);
   }
 
-
   .ves-aboard {
     display: grid;
     gap: var(--space-2);
@@ -470,7 +459,6 @@
     gap: var(--space-2);
     padding-block: var(--space-2);
   }
-
 
   .ves-toggle {
     display: flex;
