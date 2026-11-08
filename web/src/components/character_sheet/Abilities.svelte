@@ -26,11 +26,6 @@
 
 <style>
     .root {
-        position: relative;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
-        align-items: stretch;
-        gap: var(--space-3);
-        min-width: 0;
+        display: contents;
     }
 </style>

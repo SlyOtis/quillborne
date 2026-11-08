@@ -14,7 +14,6 @@
     updateCharacterWithChangeLog
   } from "$lib/engine";
   import Orb from "$components/ui/Orb.svelte";
-  import Meter from "$components/ui/Meter.svelte";
   import Button from "$components/ui/Button.svelte";
   import Ornament from "$components/ui/Ornament.svelte";
 
@@ -75,9 +74,12 @@
   <div class="vitals-body">
     <span class="dnd-label">Hit Points</span>
 
-    <Meter value={hp.current} max={hp.max} tone="life" size="sm" showValue />
-
     <div class="vitals-fields">
+      <span class="vitals-field">
+        <span>Current</span>
+        <span class="vitals-figure">{hp.current}</span>
+      </span>
+
       <label class="vitals-field">
         <span>Max</span>
         <input class="dnd-num" type="number" value={hp.max} onchange={putMax} min="1" />
@@ -99,6 +101,11 @@
       <Button variant="danger" size="sm" title="Take {amount} damage, temporary hit points first" onclick={damage}>Damage</Button>
       <Button variant="secondary" size="sm" title="Heal {amount}, up to the maximum" onclick={heal}>Heal</Button>
       <Button variant="ghost" size="sm" title="Set {amount} temporary hit points" onclick={() => putTemporaryHitPoints(amount)}>Temp</Button>
+      <span class="vitals-rest">
+        <input class="dnd-num vitals-amount" type="number" min="0" max={hitDice?.remaining ?? 0} bind:value={dice} aria-label="Hit dice to spend" />
+        <Button variant="secondary" size="sm" title="Short rest, spending {dice} hit dice" loading={resting} disabled={!$rules.resolved} onclick={shortRest}>Short rest</Button>
+        <Button variant="secondary" size="sm" title="Long rest" disabled={!$rules.resolved} onclick={longRest}>Long rest</Button>
+      </span>
     </div>
 
     {#if hp.current === 0}
@@ -126,12 +133,6 @@
         </Button>
       </div>
     {/if}
-
-    <div class="vitals-acts">
-      <input class="dnd-num vitals-amount" type="number" min="0" max={hitDice?.remaining ?? 0} bind:value={dice} aria-label="Hit dice to spend" />
-      <Button variant="secondary" size="sm" title="Short rest, spending {dice} hit dice" loading={resting} disabled={!$rules.resolved} onclick={shortRest}>Short rest</Button>
-      <Button variant="secondary" size="sm" title="Long rest" disabled={!$rules.resolved} onclick={longRest}>Long rest</Button>
-    </div>
   </div>
 </div>
 
@@ -142,7 +143,7 @@
     align-items: center;
     gap: var(--space-3);
     min-width: 0;
-    padding: var(--space-4);
+    padding: var(--space-3) var(--space-4);
     background:
       radial-gradient(ellipse 60% 70% at 0% 50%, color-mix(in srgb, var(--state-bad) 10%, transparent) 0%, transparent 70%),
       var(--texture-noise),
@@ -211,9 +212,15 @@
   }
 
   .vitals-amount {
-    flex: 1 1 0;
-    min-width: 3ch;
-    max-width: 8ch;
+    flex: none;
+    width: calc(3ch + var(--space-4));
+  }
+
+  .vitals-rest {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-inline-start: auto;
   }
 
   .vitals-tally {
