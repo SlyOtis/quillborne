@@ -399,7 +399,7 @@
     {
       "path": "web/src/lib/api/index.ts",
       "kind": "source",
-      "answers": "Every call the web makes as a plain Get, Post, Put or Delete function: profiles, characters, parties, vehicles, campaigns and their maps, songs, encounters and chat, resources, uploads through postFile, assets and the catalog. Types come from api/types.ts over the tygo generated.ts.",
+      "answers": "Every call the web makes as a plain Get, Post, Put or Delete function: profiles, characters, vehicles, campaigns and their maps, songs, encounters and chat, resources, uploads through postFile, assets and the catalog. Types come from api/types.ts over the tygo generated.ts.",
       "keywords": [
         "api",
         "service",
