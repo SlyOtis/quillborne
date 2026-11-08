@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as api from '$lib/api'
-  import { getCharacter, postCharacterCopy, postFile, putCharacterPlayed, putProfileRecentCharacters } from '$lib/api'
+  import { getCampaign, getCharacter, postCharacterCopy, postFile, putCharacterPlayed, putProfileRecentCharacters } from '$lib/api'
   import type { Character } from '$lib/api/types'
   import { getTheme, setTheme } from "$lib/dialogs/theme";
   import Senses from "$character-sheet/Senses.svelte";
@@ -21,7 +21,6 @@
   import MainTabs from "$character-sheet/main_tabs/MainTabs.svelte";
   import ActionsTab from "$character-sheet/main_tabs/ActionsTab.svelte";
   import SpellsTab from "$character-sheet/main_tabs/SpellsTab.svelte";
-  import Special from "$character-sheet/Special.svelte";
   import Background from "$components/Background.svelte";
   import { applyStateToCharacter, characterWriteError, getCharacterStore, setCharacterReadOnly } from "$lib/engine";
   import { getRulesStore } from "$lib/rules/store";
@@ -46,6 +45,7 @@
   const { route }: { route?: { params?: Record<string, string> } } = $props();
   const characterId = untrack(() => route?.params?.id) ?? "local";
 
+  let campaign = $state<{ id: string, name: string } | null>(null);
   const {unsubscribe, ...chStore} = getCharacterStore(characterId)
   const unsubscribeSidebar = sidebarStore.subscribe(() => {});
 
@@ -84,6 +84,12 @@
         if (document.owner_id === $user?.user_id) {
           putCharacterPlayed(characterId)
             .catch((reason) => characterWriteError.set(reason instanceof Error ? reason.message : String(reason)));
+        }
+
+        if (document.campaign_id) {
+          getCampaign(document.campaign_id)
+            .then((found) => (campaign = found && { id: found.id, name: found.name }))
+            .catch(() => (campaign = null));
         }
       })
       .catch(() => navigate("/main"))
@@ -227,7 +233,6 @@
 <Overlay />
 
 {#snippet saves()}<SavingThrows/>{/snippet}
-{#snippet special()}<Special/>{/snippet}
 {#snippet senses()}<Senses/>{/snippet}
 {#snippet proficiencies()}<Proficiencies/>{/snippet}
 {#snippet ruleBlocks()}<RulePanels skip={['abilities', 'defence', 'saves', 'senses']}/>{/snippet}
@@ -311,7 +316,7 @@
             src={imageUrl}
             alt={$info.name || 'Character'}
             frame={($info.imageFrame as PortraitFrame) ?? 'lancet'}
-            size="md"
+            size="sm"
           />
         </button>
 
@@ -339,8 +344,14 @@
           {/if}
           <span class="sheet-meta">
             <span class="sheet-level">Level {$info.level || 1}</span>
-            <span class="sheet-kin">{$info.class?.name || 'Unknown'} {$info.race?.name || 'Unknown'}</span>
+            <span class="sheet-kin">{$info.race?.name || 'Unknown'} {$info.class?.name || 'Unknown'}</span>
           </span>
+          {#if campaign}
+            <a class="sheet-campaign" href="/main/campaign/{campaign.id}">
+              <span class="sheet-campaign-word">Campaign</span>
+              <span class="sheet-campaign-name">{campaign.name}</span>
+            </a>
+          {/if}
         </span>
 
         <span class="sheet-gear">
@@ -384,7 +395,8 @@
 
     <div class="sheet-still" class:sheet-still-on={reading} use:still={reading}>
 
-    <div class="sheet-slots">
+    <div class="sheet-stats">
+      <Abilities/>
       <PlainBox value={$rules.resolved?.proficiency ?? $info.proficiencyBonus}
                 title="Proficiency"
                 subTitle="bonus"
@@ -395,22 +407,11 @@
                 subTitle="speed"
       />
       <Inspiration />
-      <Initiative bind:initiative={$info.initiative}/>
-      <PlainBox bind:value={$info.ac}
-                title="Armor"
-                subTitle="class"
-      />
-      {#each slots as slot (slot.id)}
-        <PlainBox value={slot.value} title={slot.title} subTitle={slot.unit}/>
-      {/each}
     </div>
-
-    <Abilities/>
 
     <div class="sheet-grid" bind:clientWidth={room}>
       <div class="sheet-column">
         {@render group('saves', 'Saving throws', saves)}
-        {@render group('special', 'Special', special)}
         {@render group('senses', 'Senses', senses)}
         {@render group('proficiencies', 'Proficiencies', proficiencies)}
         {@render group('rules', 'Rules', ruleBlocks)}
@@ -420,6 +421,16 @@
       {@render group('skills', 'Skills', skills)}
 
       <div class="sheet-tabs">
+        <div class="sheet-slots">
+          <Initiative bind:initiative={$info.initiative}/>
+          <PlainBox bind:value={$info.ac}
+                    title="Armor"
+                    subTitle="class"
+          />
+          {#each slots as slot (slot.id)}
+            <PlainBox value={slot.value} title={slot.title} subTitle={slot.unit}/>
+          {/each}
+        </div>
         {@render group('actions', 'Actions and inventory', tabs)}
       </div>
     </div>
@@ -471,7 +482,7 @@
 
   .sheet-band {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
+    grid-template-columns: minmax(min(30rem, 100%), 1fr) minmax(0, 48rem);
     align-items: stretch;
     gap: var(--space-3);
     min-width: 0;
@@ -482,7 +493,7 @@
     align-items: center;
     min-width: 0;
     gap: var(--space-4);
-    padding: var(--space-4) var(--space-5);
+    padding: var(--space-3) var(--space-4);
     background:
       radial-gradient(ellipse 45% 90% at 0% 50%, color-mix(in srgb, var(--ember) 16%, transparent) 0%, transparent 70%),
       linear-gradient(180deg, color-mix(in srgb, var(--ground-raised) 78%, transparent) 0%, color-mix(in srgb, var(--ground-deep) 90%, transparent) 100%),
@@ -603,17 +614,60 @@
     font-style: italic;
   }
 
+  .sheet-campaign {
+    display: inline-flex;
+    align-items: baseline;
+    align-self: flex-start;
+    gap: var(--space-2);
+    min-width: 0;
+    font-size: var(--text-xs);
+    color: var(--ink-dim);
+    text-decoration: none;
+    text-shadow: 0 1px 0 #000;
+  }
+
+  .sheet-campaign-word {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    color: var(--metal);
+  }
+
+  .sheet-campaign-name {
+    font-family: var(--font-display);
+    letter-spacing: var(--tracking-wide);
+    overflow-wrap: anywhere;
+  }
+
+  .sheet-campaign:hover .sheet-campaign-name {
+    color: var(--metal-bright);
+  }
+
+  .sheet-campaign:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  .sheet-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(6.5rem, 100%), 1fr));
+    align-items: stretch;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
   .sheet-slots {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(6.5rem, 100%), 1fr));
     align-items: stretch;
-    gap: var(--space-3);
+    gap: var(--space-2);
     min-width: 0;
   }
 
   .sheet-grid {
     display: grid;
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.1fr) minmax(0, 2fr);
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 2fr);
     align-items: start;
     gap: var(--space-3);
     min-width: 0;
@@ -623,6 +677,7 @@
     display: flex;
     flex-direction: column;
     align-self: stretch;
+    gap: var(--space-3);
     min-width: 0;
     min-height: 0;
     contain: inline-size;
@@ -630,7 +685,7 @@
 
   .sheet-column {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
     grid-auto-rows: min-content;
     align-items: stretch;
     gap: var(--space-3);

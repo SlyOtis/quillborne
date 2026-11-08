@@ -28,7 +28,7 @@
     {id: 'actionsTab', title: 'Actions'},
     {id: 'spellsTab', title: 'Spells'},
     {id: 'inventoryTab', title: 'Inventory'},
-    {id: 'featsTab', title: 'Feats'},
+    {id: 'featsTab', title: 'Features'},
     {id: 'backgroundTab', title: 'Background'}
   ]
 

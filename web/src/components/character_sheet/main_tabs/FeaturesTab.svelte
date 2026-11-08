@@ -2,8 +2,9 @@
   import {getContext} from "svelte";
   import type {CharacterContext} from "$lib/types";
   import Marked from "$components/Marked.svelte";
+  import Special from "../Special.svelte";
 
-  const {feats} = getContext<CharacterContext>('character')
+  const {feats, special} = getContext<CharacterContext>('character')
 
   let orderFeats = $derived([...$feats].sort((a, b) => a.level - b.level));
 
@@ -12,6 +13,9 @@
 
 <div class="root">
     <div class="scroll">
+        {#if $special.max > 0}
+            <Special/>
+        {/if}
         <ul>
             {#each orderFeats as feat}
                 <li class="feat">
@@ -47,6 +51,9 @@
         overflow-y: auto;
         flex: 1;
         min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
     }
 
     ul, li {
