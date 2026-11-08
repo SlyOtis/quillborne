@@ -1,9 +1,5 @@
 FROM golang:1.26-alpine AS smig-build
-ARG GH_REPO_TOKEN
 RUN apk add --no-cache git
-RUN git config --global url."https://${GH_REPO_TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
-ENV GOPRIVATE=github.com/nimling/*
-ENV GOSUMDB=off
 RUN go install -ldflags "-X github.com/nimling/samna-migrate/pkg/cli.Version=v1.5.13" github.com/nimling/samna-migrate/cmd@v1.5.13 \
     && mv /go/bin/cmd /usr/local/bin/smig
 

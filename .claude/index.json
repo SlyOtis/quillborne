@@ -2,9 +2,9 @@
   "what": "The keyword index of the rules and the files that own each concern. Query it with jq, never read it whole.",
   "invoke": "jq -r --arg k <keyword> '.entries[] | select((.keywords | index($k)) or (.path | contains($k))) | \"\\(.path): \\(.answers)\"' .claude/index.json",
   "entry_points": [
-    "src/App.svelte",
-    "src/lib/rules/derive.ts",
-    "src/lib/engine.ts"
+    "web/src/App.svelte",
+    "web/src/lib/rules/derive.ts",
+    "web/src/lib/engine.ts"
   ],
   "discipline": [
     "Name what the evidence can establish before acting on it.",
@@ -64,20 +64,21 @@
     {
       "path": ".claude/rules/data.md",
       "kind": "rule",
-      "answers": "The Firestore casing, the campaign subcollections and their reveal flags, the pin to record link, the upload path, and who may read and write what.",
+      "answers": "The Postgres casing, the claims bound to every row and who may read and write what, the campaign rows and their reveal flags, the api the web reaches it through, live events and uploads.",
       "keywords": [
-        "firestore",
+        "postgres",
         "schema",
         "snake_case",
+        "claim",
+        "claimius",
+        "access",
         "campaign",
-        "session",
-        "quest",
         "npc",
         "location",
         "upload",
         "storage",
-        "rules",
-        "access"
+        "stream",
+        "api"
       ]
     },
     {
@@ -102,7 +103,7 @@
       ]
     },
     {
-      "path": "src/lib/rules/spec.types.ts",
+      "path": "web/src/lib/rules/spec.types.ts",
       "kind": "source",
       "answers": "The shape of a rule system: attributes, skills, saves, senses, pools, derived values, progression and panels, plus the resolved character a page renders.",
       "keywords": [
@@ -119,7 +120,7 @@
       ]
     },
     {
-      "path": "src/lib/rules/expression.ts",
+      "path": "web/src/lib/rules/expression.ts",
       "kind": "source",
       "answers": "The formula language every rule system is written in. Parses and evaluates arithmetic, comparisons, ternaries and maths helpers against a flat scope of numbers. No eval, no code execution.",
       "keywords": [
@@ -133,7 +134,7 @@
       ]
     },
     {
-      "path": "src/lib/rules/system.ts",
+      "path": "web/src/lib/rules/system.ts",
       "kind": "source",
       "answers": "Loads a rule system from /sources/systems, resolves its extends chain, and merges one system over another by id.",
       "keywords": [
@@ -148,7 +149,7 @@
       ]
     },
     {
-      "path": "src/lib/rules/derive.ts",
+      "path": "web/src/lib/rules/derive.ts",
       "kind": "source",
       "answers": "Computes every value on a character sheet from the rule system and the sheet, resolving dependencies in any order and reporting a cycle instead of hanging.",
       "keywords": [
@@ -162,7 +163,7 @@
       ]
     },
     {
-      "path": "public/sources/systems/dnd5e.json",
+      "path": "web/public/sources/systems/dnd5e.json",
       "kind": "data",
       "answers": "The 5e core system every character builds on: six attributes, eighteen skills, four proficiency tiers, the standard derived values and pools.",
       "keywords": [
@@ -176,7 +177,7 @@
       ]
     },
     {
-      "path": "public/sources/systems/nimble.json",
+      "path": "web/public/sources/systems/nimble.json",
       "kind": "data",
       "answers": "The Nimble overlay: armor as damage reduction, mana, an action budget per turn, wounds, and hit points that scale off a progression step.",
       "keywords": [
@@ -190,7 +191,7 @@
       ]
     },
     {
-      "path": "public/sources/systems/gunslinger.json",
+      "path": "web/public/sources/systems/gunslinger.json",
       "kind": "data",
       "answers": "A custom character system: adds a Grit attribute the core does not have, two skills, grit and misfire pools, and firearm derived values.",
       "keywords": [
@@ -204,7 +205,7 @@
       ]
     },
     {
-      "path": "src/lib/rules/sheet.ts",
+      "path": "web/src/lib/rules/sheet.ts",
       "kind": "source",
       "answers": "Bridges the stored Character onto the engine input. Maps ability titles and skill names to system ids, proficiency multipliers to tier ids, and recovers the armour, hit point, initiative and speed bonuses from the stored totals.",
       "keywords": [
@@ -219,7 +220,7 @@
       ]
     },
     {
-      "path": "src/lib/rules/store.ts",
+      "path": "web/src/lib/rules/store.ts",
       "kind": "source",
       "answers": "The Svelte store the character page provides as the rules context. Loads the system stack, derives on every change to info, abilities, skills, saves or special, and reports a load or cycle failure instead of throwing.",
       "keywords": [
@@ -233,7 +234,7 @@
       ]
     },
     {
-      "path": "src/components/character_sheet/RulePanels.svelte",
+      "path": "web/src/components/character_sheet/RulePanels.svelte",
       "kind": "component",
       "answers": "Renders whatever panels the active rule system declares, skipping the ones the bespoke sheet already draws. A system that adds a pool or a derived value appears here with no code change.",
       "keywords": [
@@ -247,7 +248,7 @@
       ]
     },
     {
-      "path": "src/components/campaign/CampaignMaps.svelte",
+      "path": "web/src/components/campaign/CampaignMaps.svelte",
       "kind": "component",
       "answers": "The campaign map board. Lists maps, shows the selected one with its markers or its drawn plan in 3D, and gives the DM adding, renaming, revealing, deleting and Draw the plan. Markers are stored as relative coordinates so a map scales.",
       "keywords": [
@@ -264,7 +265,7 @@
       ]
     },
     {
-      "path": "src/pages/CampaignPage.svelte",
+      "path": "web/src/pages/CampaignPage.svelte",
       "kind": "page",
       "answers": "Loads a campaign and its characters by the :id route param and shows overview, party and maps. Grants the DM controls when the signed in user is dm_id.",
       "keywords": [
@@ -280,7 +281,7 @@
     {
       "path": "justfile",
       "kind": "rule",
-      "answers": "Every command this repo runs. env checks .env against .env.example, dev and build require it, gate runs check test build, deploy pushes hosting and both rule files.",
+      "answers": "Every command this repo runs. env checks .env against .env.example, dev runs the database, the blob store, the service and the web seeded, and gate runs check, test, build and vet. There is no deploy recipe; a merge to main deploys to tst.",
       "keywords": [
         "just",
         "justfile",
@@ -295,32 +296,34 @@
     {
       "path": ".env.example",
       "kind": "rule",
-      "answers": "The Firebase keys a build needs. Copy to .env and fill in. The Replicate key is never here; each player stores their own in Firestore.",
+      "answers": "Every key the service and the local stack read, with the working local value of each one that is not a secret. No GitHub token and no Replicate key: the nimling modules are public, and each player keeps their own Replicate key as a Samna Auth secret.",
       "keywords": [
         "env",
         "keys",
-        "firebase",
         "example",
-        "replicate",
-        "secrets"
+        "secrets",
+        "sauth",
+        "postgres",
+        "azurite",
+        "replicate"
       ]
     },
     {
-      "path": "src/lib/storage.service.ts",
+      "path": "web/src/lib/api/core.ts",
       "kind": "source",
-      "answers": "Every upload goes through postFile with a scope of user, campaignMap or campaignAudio. It checks the signed in user, the content type and the size limit, writes to Storage and returns the download address.",
+      "answers": "The fetch envelope, ApiError, the session, the csrf header, path, request, unwrap and getStream, the one EventSource per stream.",
       "keywords": [
-        "upload",
-        "storage",
-        "file",
-        "image",
-        "audio",
-        "limit",
-        "scope"
+        "api",
+        "fetch",
+        "envelope",
+        "session",
+        "csrf",
+        "stream",
+        "eventsource"
       ]
     },
     {
-      "path": "src/lib/integrations.ts",
+      "path": "web/src/lib/integrations.ts",
       "kind": "source",
       "answers": "The one list of services the app talks to, what each is for, whether it is live and which profile field holds a per player key. Suno is listed as unavailable because it publishes no public API.",
       "keywords": [
@@ -329,12 +332,11 @@
         "key",
         "replicate",
         "suno",
-        "firebase",
         "github"
       ]
     },
     {
-      "path": "src/components/campaign/MapCanvas.svelte",
+      "path": "web/src/components/campaign/MapCanvas.svelte",
       "kind": "component",
       "answers": "The pan and zoom surface. Wheel and drag move the view, layers swap the picture once the zoom passes a threshold, and a pin shows only inside its own zoom band.",
       "keywords": [
@@ -348,7 +350,7 @@
       ]
     },
     {
-      "path": "src/components/campaign/MapIcon.svelte",
+      "path": "web/src/components/campaign/MapIcon.svelte",
       "kind": "component",
       "answers": "The twelve inline glyphs a map pin can carry. Nothing is fetched and the glyph inherits currentColor.",
       "keywords": [
@@ -361,7 +363,7 @@
       ]
     },
     {
-      "path": "src/pages/UserPage.svelte",
+      "path": "web/src/pages/UserPage.svelte",
       "kind": "page",
       "answers": "The account page. Edits the display name and picture and lists every integration with its status, its link and its key field.",
       "keywords": [
@@ -374,7 +376,7 @@
       ]
     },
     {
-      "path": "src/lib/engine.ts",
+      "path": "web/src/lib/engine.ts",
       "kind": "source",
       "answers": "Dice rolling, the roll log, currency, the per character store keyed by id and persisted to localStorage, and the character construction primitives.",
       "keywords": [
@@ -388,21 +390,25 @@
       ]
     },
     {
-      "path": "src/lib/firestore.service.ts",
+      "path": "web/src/lib/api/index.ts",
       "kind": "source",
-      "answers": "Every read and write against Firestore for characters, campaigns and users. The document schema is snake_case throughout.",
+      "answers": "Every call the web makes as a plain Get, Post, Put or Delete function: profiles, characters, parties, vehicles, campaigns and their maps, songs, encounters and chat, resources, uploads through postFile, assets and the catalog. Types come from api/types.ts over the tygo generated.ts.",
       "keywords": [
-        "firestore",
+        "api",
         "service",
         "character",
         "campaign",
         "user",
-        "document",
-        "schema"
+        "vehicle",
+        "upload",
+        "asset",
+        "stream",
+        "types",
+        "tygo"
       ]
     },
     {
-      "path": "src/lib/chat.ts",
+      "path": "web/src/lib/chat.ts",
       "kind": "source",
       "answers": "The AI action layer. Detects an action from a prompt and applies it to the character. Also holds equipment and NPC loading and the HTML card templates.",
       "keywords": [
@@ -416,7 +422,7 @@
       ]
     },
     {
-      "path": "src/components/ui/Button.svelte",
+      "path": "web/src/components/ui/Button.svelte",
       "kind": "component",
       "answers": "The only button primitive. Variants primary, secondary, ghost and danger, with fill and loading. Never hand roll a button beside it.",
       "keywords": [
@@ -429,7 +435,7 @@
       ]
     },
     {
-      "path": "src/components/ui/Field.svelte",
+      "path": "web/src/components/ui/Field.svelte",
       "kind": "component",
       "answers": "The label, control and message wrapper for every form control. Styles the input it wraps through the token layer.",
       "keywords": [
@@ -443,7 +449,7 @@
       ]
     },
     {
-      "path": "src/app.css",
+      "path": "web/src/app.css",
       "kind": "style",
       "answers": "The token layer: colour, size, spacing, radius, type and shadow tokens, plus the five theme blocks medieval, forest, fire, arcane and ocean.",
       "keywords": [
@@ -458,7 +464,7 @@
       ]
     },
     {
-      "path": "src/lib/dialogs/theme.ts",
+      "path": "web/src/lib/dialogs/theme.ts",
       "kind": "source",
       "answers": "The one theme list and the one localStorage key. getTheme and setTheme are the only way a theme is read or applied.",
       "keywords": [
@@ -636,7 +642,7 @@
       ]
     },
     {
-      "path": "src/lib/nimap/",
+      "path": "web/src/lib/nimap/",
       "kind": "module",
       "answers": "nimap copied from nimling/nimap: the planar geometry kernel, the map document model, the editing tools, furniture as parts, svg helpers and the three.js renderer.",
       "keywords": [
@@ -650,7 +656,7 @@
       ]
     },
     {
-      "path": "src/lib/nimap-editor/",
+      "path": "web/src/lib/nimap-editor/",
       "kind": "module",
       "answers": "The Svelte editor state for nimap in runes: document, view, tools, input, calibration, levels, cursors, and the look read from the theme tokens.",
       "keywords": [
@@ -663,7 +669,7 @@
       ]
     },
     {
-      "path": "src/components/nimap/",
+      "path": "web/src/components/nimap/",
       "kind": "component",
       "answers": "The nimap editor and 3D view in Svelte: DocumentEditor, MapEditor, the canvas, toolbar, stage and status bars, the inspector sections, and MapView.",
       "keywords": [
@@ -676,7 +682,7 @@
       ]
     },
     {
-      "path": "src/components/ui/Shell.svelte",
+      "path": "web/src/components/ui/Shell.svelte",
       "kind": "component",
       "answers": "The page frame: the bar with the crest, the menu drawer on the start edge, friends and chat on the end edge, and the page raised between them, bending into each open drawer with a gold double line and a stud.",
       "keywords": [
@@ -690,7 +696,7 @@
       ]
     },
     {
-      "path": "src/components/ui/Sidebar.svelte",
+      "path": "web/src/components/ui/Sidebar.svelte",
       "kind": "component",
       "answers": "A drawer that slides in from an edge on a starfield ground, laid out at its run width; edge rule draws its own gold rule and stud, edge none leaves it to what it sits beside.",
       "keywords": [

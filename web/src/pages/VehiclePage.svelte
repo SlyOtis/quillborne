@@ -1,9 +1,9 @@
 <script lang="ts">
+  import { getCampaign, getCampaignCharacters, getCharacter, getCharacters, getProfiles, getVehicleStream, putCharacter, putVehicle } from '$lib/api'
+  import type { Campaign, Character, Vehicle, VehicleFields } from '$lib/api/types'
   import { onMount, setContext } from 'svelte'
   import { navigate, resolvedRoute } from 'sly-svelte-location-router'
   import { getTheme, setTheme } from '$lib/dialogs/theme'
-  import { campaignService, characterService, userService, vehicleService } from '$lib/firestore.service'
-  import type { Campaign, CharacterDocument, Vehicle, VehicleFields } from '$lib/firestore.types'
   import {
     getContext as getVehicleContext,
     getCrewman,
@@ -74,9 +74,9 @@
   let vehicle = $state<Vehicle | null>(null)
   let base = $state<VehicleSystem | null>(null)
   let campaign = $state<Campaign | null>(null)
-  let mine = $state<CharacterDocument[]>([])
-  let table = $state<CharacterDocument[]>([])
-  let seats = $state<Record<string, CharacterDocument>>({})
+  let mine = $state<Character[]>([])
+  let table = $state<Character[]>([])
+  let seats = $state<Record<string, Character>>({})
   let names = $state<Record<string, string>>({})
   let aboard = $state('')
   let sheetsRead = $state(false)
@@ -113,7 +113,7 @@
     if (!id) return
     loading = true
     error = null
-    const live = vehicleService.subscribeToVehicle(id, (loaded) => {
+    const live = getVehicleStream(id, (loaded) => {
       vehicle = loaded
       loading = false
     })
@@ -136,7 +136,7 @@
       return
     }
     if (campaign?.id === id) return
-    void Promise.all([campaignService.getCampaign(id), campaignService.getCampaignCharacters(id).catch(() => [])]).then(([record, sheets]) => {
+    void Promise.all([getCampaign(id), getCampaignCharacters(id).catch(() => [])]).then(([record, sheets]) => {
       campaign = record
       table = sheets
     })
@@ -144,8 +144,7 @@
 
   $effect(() => {
     if (!$user) return
-    void characterService
-      .getUserCharacters()
+    void getCharacters()
       .then((sheets) => (mine = sheets))
       .finally(() => (sheetsRead = true))
   })
@@ -154,8 +153,8 @@
 
   $effect(() => {
     const ids = JSON.parse(crewKey) as string[]
-    void Promise.all(ids.map((id) => characterService.getCharacter(id).catch(() => null))).then((sheets) => {
-      seats = Object.fromEntries(sheets.filter((sheet): sheet is CharacterDocument => sheet !== null).map((sheet) => [sheet.id, sheet]))
+    void Promise.all(ids.map((id) => getCharacter(id).catch(() => null))).then((sheets) => {
+      seats = Object.fromEntries(sheets.filter((sheet): sheet is Character => sheet !== null).map((sheet) => [sheet.id, sheet]))
     })
   })
 
@@ -164,12 +163,12 @@
   $effect(() => {
     const ids = JSON.parse(peopleKey) as string[]
     if (ids.length === 0) return
-    void userService.getProfiles(ids).then((profiles) => {
-      names = Object.fromEntries(profiles.map((profile) => [profile.uid, profile.display_name || profile.email]))
+    void getProfiles(ids).then((profiles) => {
+      names = Object.fromEntries(profiles.map((profile) => [profile.user_id, profile.display_name || profile.email]))
     })
   })
 
-  const me = $derived($user?.uid ?? '')
+  const me = $derived($user?.user_id ?? '')
   const steward = $derived(Boolean(vehicle && me && (vehicle.owner_id === me || campaign?.dm_id === me)))
   const crew = $derived(Boolean(vehicle?.crew.some((entry) => entry.user_id === me)))
   const keeps = $derived(steward || crew)
@@ -196,10 +195,10 @@
   const sailors = $derived([...mine, ...table.filter((entry) => !mine.some((own) => own.id === entry.id))])
   const choices = $derived(
     [...mine].sort((a, b) => {
-      const crewed = (doc: CharacterDocument) => Number(Boolean(vehicle?.crew.some((entry) => entry.character_id === doc.id)))
-      const seated = (doc: CharacterDocument) => Number(Boolean(vehicle?.campaign_id && doc.campaign_id === vehicle.campaign_id))
-      const trained = (doc: CharacterDocument) => Number(Boolean(vehicle && doc.character?.crew?.[vehicle.system]))
-      const played = (doc: CharacterDocument) => Date.parse(String(doc.metadata.last_played_at ?? '')) || 0
+      const crewed = (doc: Character) => Number(Boolean(vehicle?.crew.some((entry) => entry.character_id === doc.id)))
+      const seated = (doc: Character) => Number(Boolean(vehicle?.campaign_id && doc.campaign_id === vehicle.campaign_id))
+      const trained = (doc: Character) => Number(Boolean(vehicle && doc.character?.crew?.[vehicle.system]))
+      const played = (doc: Character) => Date.parse(String(doc.metadata.last_played_at ?? '')) || 0
       return crewed(b) - crewed(a) || seated(b) - seated(a) || trained(b) - trained(a) || played(b) - played(a)
     })
   )
@@ -239,7 +238,7 @@
 
   async function save(fields: VehicleFields) {
     if (!vehicle) return
-    vehicle = await vehicleService.putVehicle(vehicle.id, fields)
+    vehicle = await putVehicle(vehicle.id, fields)
   }
 
   function putState(id: string, state: ComponentState) {
@@ -252,7 +251,7 @@
   async function putPerks(level: number, perks: CrewPerk[]) {
     if (!sheet || !system) return
     const character = { ...sheet.character, crew: { ...(sheet.character.crew ?? {}), [system.id]: { level, perks } } }
-    await characterService.updateCharacter(sheet.id, character)
+    await putCharacter(sheet.id, character)
     mine = mine.map((entry) => (entry.id === sheet.id ? { ...entry, character } : entry))
   }
 

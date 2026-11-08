@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getFileUrl } from '$lib/api'
   import {
     getColumns,
     getDocument,
@@ -13,7 +14,6 @@
     type MentionSearch,
     type Reference
   } from '$lib/blocks'
-  import { getFileUrl } from '$lib/storage.service'
   import BlockReader from './BlockReader.svelte'
   import Glyph, { getMimeGlyph } from './Glyph.svelte'
   import StoredImage from './StoredImage.svelte'
@@ -42,7 +42,7 @@
     openAsset?: (assetId: string) => void
     /** Prefixes every heading with its outline number. */
     headingNumbering?: boolean
-    /** The reader's own uid, so their own answer is marked. */
+    /** The reader's own user id, so their own answer is marked. */
     mine?: string
   } = $props()
 

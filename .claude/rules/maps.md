@@ -13,7 +13,7 @@ paths:
 ## Two ways to show one map
 
 1. A `campaign_map` is a picture with layers and pins (`MapCanvas.svelte`), and beside it an optional drawn plan in `plan`, the nimap document as `storeMap` writes it, null when none is drawn. Neither replaces the other: `CampaignMaps.svelte` switches the picture and the plan in 3D, and pins stay on the picture.
-2. Only the DM draws, as for the picture: `Draw the plan` opens `DocumentEditor` in a modal `dialog` and saves through `campaignService.putMap` as it is drawn. A seated player reads the plan; `TestOnlyTheDungeonMasterDrawsMaps` pins it.
+2. Only the DM draws, as for the picture: `Draw the plan` opens `DocumentEditor` in a modal `dialog` and saves through `putCampaignMap` as it is drawn. A seated player reads the plan; `TestOnlyTheDungeonMasterDrawsMaps` pins it.
 
 ## The code is nimling/nimap
 

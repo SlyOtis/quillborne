@@ -1,4 +1,5 @@
 <script module lang="ts">
+  import { getFileUrl } from '$lib/api'
   import type { BlockKind, BlockOptions } from '$lib/blocks'
   import type { GlyphName } from './Glyph.svelte'
 
@@ -73,7 +74,6 @@
     type MentionSearch
   } from '$lib/blocks'
   import { tick } from 'svelte'
-  import { getFileUrl } from '$lib/storage.service'
   import BlockReader from './BlockReader.svelte'
   import Glyph, { getMimeGlyph } from './Glyph.svelte'
   import IconBtn from './IconBtn.svelte'

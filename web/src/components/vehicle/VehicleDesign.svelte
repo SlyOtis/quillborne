@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Vehicle, VehicleFields, VehicleRequest } from '$lib/api/types'
   import {
     getCompatibility,
     getComponentSummary,
@@ -8,7 +9,6 @@
     getVehicleStats
   } from '$lib/rules/vehicle'
   import type { ComponentDef, InstalledComponent, Issue, Layout, OverlayKey, VehicleSystem } from '$lib/rules/vehicle.types'
-  import type { Vehicle, VehicleFields, VehicleRequest } from '$lib/firestore.types'
   import BaseDialog from '$components/BaseDialog.svelte'
   import Button from '$components/ui/Button.svelte'
   import Field from '$components/ui/Field.svelte'

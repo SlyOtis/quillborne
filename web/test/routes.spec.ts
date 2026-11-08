@@ -62,7 +62,7 @@ describe('every route the app can reach resolves to its own page', () => {
 
 describe('character status', () => {
   it('marks a character with an unknown race as a draft', async () => {
-    const { getCharacterStatus } = await import('../src/lib/firestore.service')
+    const { getCharacterStatus } = await import('../src/lib/api')
     const doc: any = {
       character: { info: { name: 'Testy', class: { name: 'Cleric' }, race: { name: 'Unknown' } } }
     }
@@ -70,7 +70,7 @@ describe('character status', () => {
   })
 
   it('marks a fully configured character as ready', async () => {
-    const { getCharacterStatus } = await import('../src/lib/firestore.service')
+    const { getCharacterStatus } = await import('../src/lib/api')
     const doc: any = {
       character: { info: { name: 'Fatty', class: { name: 'Gunslinger' }, race: { name: 'Human' } } }
     }
@@ -78,7 +78,7 @@ describe('character status', () => {
   })
 
   it('marks a nameless character as a draft', async () => {
-    const { getCharacterStatus } = await import('../src/lib/firestore.service')
+    const { getCharacterStatus } = await import('../src/lib/api')
     const doc: any = {
       character: { info: { name: '  ', class: { name: 'Rogue' }, race: { name: 'Elf' } } }
     }

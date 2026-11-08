@@ -1,7 +1,7 @@
 <script lang="ts">
+  import type { Vehicle, VehicleFields, VehicleRevision } from '$lib/api/types'
   import { getDef } from '$lib/rules/vehicle'
   import type { InstalledComponent, VehicleSystem } from '$lib/rules/vehicle.types'
-  import type { Vehicle, VehicleFields, VehicleRevision } from '$lib/firestore.types'
   import Button from '$components/ui/Button.svelte'
 
   const {

@@ -1,10 +1,9 @@
 <script lang="ts">
+  import { redirectToLogin } from '$lib/api'
   import {Router, type RouteComponent, type RouteGuard, type Routes} from "sly-svelte-location-router";
   import {onMount, onDestroy} from "svelte";
   import { get } from "svelte/store";
-  import { initializeAuth } from "$lib/auth.init";
-  import { authService } from "$lib/auth.service";
-  import { isAuthenticated, isLoading } from "$lib/stores/auth.store";
+  import { initializeAuth, isAuthenticated, isLoading } from "$lib/stores/auth.store";
   import EffectDefs from "$components/ui/EffectDefs.svelte";
   import Aura from "$components/ui/Aura.svelte";
   import Ornament from "$components/ui/Ornament.svelte";
@@ -14,7 +13,7 @@
   import { handleGlobalKeydown } from "$lib/globalEvents";
 
   const requireSignIn: RouteGuard = async () =>
-    get(isAuthenticated) ? null : authService.signIn();
+    get(isAuthenticated) ? null : redirectToLogin();
 
   function page(name: string, load: () => Promise<unknown>) {
     return async () => {

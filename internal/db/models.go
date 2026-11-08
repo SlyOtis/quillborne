@@ -32,10 +32,10 @@ const (
 )
 
 type Profile struct {
-	bun.BaseModel `bun:"table:profile"`
+	bun.BaseModel `json:"-" bun:"table:profile"`
 
 	ID          uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"-"`
-	UserID      uuid.UUID       `bun:"user_id" json:"uid"`
+	UserID      uuid.UUID       `bun:"user_id" json:"user_id"`
 	Email       string          `bun:"email" json:"email"`
 	DisplayName string          `bun:"display_name" json:"display_name"`
 	PhotoURL    string          `bun:"photo_url" json:"photo_url"`
@@ -50,7 +50,7 @@ type Profile struct {
 }
 
 type Campaign struct {
-	bun.BaseModel `bun:"table:campaign"`
+	bun.BaseModel `json:"-" bun:"table:campaign"`
 
 	ID            uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
 	UserID        uuid.UUID       `bun:"user_id" json:"dm_id"`
@@ -71,7 +71,7 @@ type Campaign struct {
 }
 
 type Party struct {
-	bun.BaseModel `bun:"table:party"`
+	bun.BaseModel `json:"-" bun:"table:party"`
 
 	ID            uuid.UUID    `bun:"id,pk,default:gen_random_uuid()" json:"id"`
 	UserID        uuid.UUID    `bun:"user_id" json:"owner_id"`
@@ -89,7 +89,7 @@ type Party struct {
 }
 
 type CampaignMap struct {
-	bun.BaseModel `bun:"table:campaign_map"`
+	bun.BaseModel `json:"-" bun:"table:campaign_map"`
 
 	ID          uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
 	CampaignID  uuid.UUID       `bun:"campaign_id" json:"campaign_id"`
@@ -120,7 +120,7 @@ type Share struct {
 }
 
 type Encounter struct {
-	bun.BaseModel `bun:"table:encounter"`
+	bun.BaseModel `json:"-" bun:"table:encounter"`
 
 	ID         uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
 	CampaignID uuid.UUID       `bun:"campaign_id" json:"campaign_id"`
@@ -130,7 +130,7 @@ type Encounter struct {
 	Round      int             `bun:"round" json:"round"`
 	Turn       int             `bun:"turn" json:"turn"`
 	IsActive   bool            `bun:"is_active" json:"is_active"`
-	Share
+	Share `tstype:",extends"`
 	OwnerID   uuid.UUID    `bun:"sa_owner_id" json:"-"`
 	CreatedBy *uuid.UUID   `bun:"sa_created_by" json:"-"`
 	CreatedAt time.Time    `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
@@ -139,7 +139,7 @@ type Encounter struct {
 }
 
 type Vehicle struct {
-	bun.BaseModel `bun:"table:vehicle"`
+	bun.BaseModel `json:"-" bun:"table:vehicle"`
 
 	ID              uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
 	UserID          uuid.UUID       `bun:"user_id" json:"owner_id"`
@@ -168,7 +168,7 @@ type Vehicle struct {
 }
 
 type ChatEntry struct {
-	bun.BaseModel `bun:"table:chat_entry"`
+	bun.BaseModel `json:"-" bun:"table:chat_entry"`
 
 	ID         uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
 	CampaignID uuid.UUID       `bun:"campaign_id" json:"campaign_id"`
@@ -192,7 +192,7 @@ type ChatEntry struct {
 }
 
 type Song struct {
-	bun.BaseModel `bun:"table:song"`
+	bun.BaseModel `json:"-" bun:"table:song"`
 
 	ID         uuid.UUID `bun:"id,pk,default:gen_random_uuid()" json:"id"`
 	CampaignID uuid.UUID `bun:"campaign_id" json:"campaign_id"`
@@ -200,7 +200,7 @@ type Song struct {
 	Title      string    `bun:"title" json:"title"`
 	Address    string    `bun:"address" json:"address"`
 	Duration   float64   `bun:"duration" json:"duration"`
-	Share
+	Share `tstype:",extends"`
 	OwnerID   uuid.UUID    `bun:"sa_owner_id" json:"-"`
 	CreatedBy *uuid.UUID   `bun:"sa_created_by" json:"-"`
 	CreatedAt time.Time    `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
@@ -209,13 +209,13 @@ type Song struct {
 }
 
 type Character struct {
-	bun.BaseModel `bun:"table:character"`
+	bun.BaseModel `json:"-" bun:"table:character"`
 
 	ID           uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
 	UserID       uuid.UUID       `bun:"user_id" json:"owner_id"`
 	CampaignID   *uuid.UUID      `bun:"campaign_id" json:"campaign_id,omitempty"`
 	Sheet        json.RawMessage `bun:"sheet,type:jsonb" json:"character"`
-	Metadata     json.RawMessage `bun:"metadata,type:jsonb" json:"-"`
+	Metadata     json.RawMessage `bun:"metadata,type:jsonb" json:"metadata"`
 	Sources      json.RawMessage `bun:"sources,type:jsonb" json:"-"`
 	IsPublic     bool            `bun:"is_public" json:"-"`
 	LastPlayedAt *time.Time      `bun:"last_played_at" json:"-"`
@@ -227,7 +227,7 @@ type Character struct {
 }
 
 type Resource struct {
-	bun.BaseModel `bun:"table:resource"`
+	bun.BaseModel `json:"-" bun:"table:resource"`
 
 	ID         uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
 	Kind       string          `bun:"kind" json:"kind"`
@@ -235,7 +235,7 @@ type Resource struct {
 	CampaignID *uuid.UUID      `bun:"campaign_id" json:"campaign_id,omitempty"`
 	Title      string          `bun:"title" json:"title"`
 	Fields     json.RawMessage `bun:"fields,type:jsonb" json:"-"`
-	Share
+	Share `tstype:",extends"`
 	OwnerID   uuid.UUID    `bun:"sa_owner_id" json:"-"`
 	ParentID  uuid.UUID    `bun:"sa_parent_id" json:"-"`
 	RootID    uuid.UUID    `bun:"sa_root_id" json:"-"`
@@ -246,7 +246,7 @@ type Resource struct {
 }
 
 type ResourceUpdate struct {
-	bun.BaseModel `bun:"table:resource_update"`
+	bun.BaseModel `json:"-" bun:"table:resource_update"`
 
 	ID         uuid.UUID `bun:"id,pk,default:gen_random_uuid()" json:"id"`
 	ResourceID uuid.UUID `bun:"resource_id" json:"resource_id"`
@@ -256,7 +256,7 @@ type ResourceUpdate struct {
 }
 
 type Asset struct {
-	bun.BaseModel `bun:"table:asset"`
+	bun.BaseModel `json:"-" bun:"table:asset"`
 
 	ID               uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
 	ObjectID         *uuid.UUID      `bun:"object_id,nullzero" json:"object_id"`
@@ -290,7 +290,7 @@ type Asset struct {
 }
 
 type ObjectAsset struct {
-	bun.BaseModel `bun:"table:object_asset"`
+	bun.BaseModel `json:"-" bun:"table:object_asset"`
 
 	ID         uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
 	ObjectType string          `bun:"object_type" json:"object_type"`
@@ -306,7 +306,7 @@ type ObjectAsset struct {
 }
 
 type Tag struct {
-	bun.BaseModel `bun:"table:tag"`
+	bun.BaseModel `json:"-" bun:"table:tag"`
 
 	ID        uuid.UUID    `bun:"id,pk,default:gen_random_uuid()" json:"id"`
 	Name      string       `bun:"name" json:"name"`
@@ -319,7 +319,7 @@ type Tag struct {
 }
 
 type TagObject struct {
-	bun.BaseModel `bun:"table:tag_object"`
+	bun.BaseModel `json:"-" bun:"table:tag_object"`
 
 	ID         uuid.UUID    `bun:"id,pk,default:gen_random_uuid()" json:"id"`
 	TagID      uuid.UUID    `bun:"tag_id" json:"tag_id"`
@@ -335,7 +335,7 @@ type TagObject struct {
 }
 
 type CatalogEntry struct {
-	bun.BaseModel `bun:"table:catalog_entry"`
+	bun.BaseModel `json:"-" bun:"table:catalog_entry"`
 
 	ID          uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"-"`
 	Kind        string          `bun:"kind" json:"kind"`

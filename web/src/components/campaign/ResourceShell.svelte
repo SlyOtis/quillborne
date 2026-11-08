@@ -1,10 +1,9 @@
 <script lang="ts">
+  import { getAssets, getAssetTab, getCampaign, postFile, putAttachments, type UploadScope } from '$lib/api'
+  import type { Campaign, Owner } from '$lib/api/types'
   import { onMount, setContext, type Snippet } from 'svelte'
   import { navigate, resolvedRoute } from 'sly-svelte-location-router'
   import { getTheme, setTheme } from '$lib/dialogs/theme'
-  import { campaignService } from '$lib/firestore.service'
-  import { getAssets, getAssetTab, postFile, putAttachments, type UploadScope } from '$lib/storage.service'
-  import type { Campaign } from '$lib/firestore.types'
   import { user } from '$lib/stores/auth.store'
   import { anyDialogOpen, uiStore } from '$lib/stores/ui.store'
   import {
@@ -20,7 +19,6 @@
     type Resource,
     type ResourceKind
   } from '$lib/resources'
-  import type { Owner } from '$lib/firestore.types'
   import { joinDoc, type Session } from '$lib/collab'
   import { getDocument, getDocumentMarkdown, type MediaAsset, type MediaKind, type Mention, type Reference } from '$lib/blocks'
   import ResourceAccess from '$components/campaign/ResourceAccess.svelte'
@@ -72,7 +70,7 @@
   const campaignId = $derived(steps[0] === 'campaign' ? steps[1] ?? '' : '')
   const shape = $derived(RESOURCES[kind])
   const owner = $derived<Owner>(
-    campaignId ? { at: 'campaigns', id: campaignId } : { at: 'users', id: $user?.uid ?? '' }
+    campaignId ? { at: 'campaign', id: campaignId } : { at: 'user', id: $user?.user_id ?? '' }
   )
   const under = $derived(campaignId ? `/main/campaign/${campaignId}/${kind}` : `/main/${kind}`)
   const scope = $derived<UploadScope>(campaignId ? { kind: 'campaignFile', campaignId } : { kind: 'user' })
@@ -105,7 +103,7 @@
   const traced = $derived(one.frame in SHAPES ? (one.frame as PortraitFrame) : null)
 
   const canWrite = $derived(
-    fresh || !one.owner_id ? Boolean($user) : Boolean($user && one.owner_id === $user.uid)
+    fresh || !one.owner_id ? Boolean($user) : Boolean($user && one.owner_id === $user.user_id)
   )
   let editing = $state(false)
   const writing = $derived(editing || fresh)
@@ -199,7 +197,7 @@
   }
 
   function blank(): Record<string, unknown> & Resource {
-    return getBlank(kind, $user?.uid ?? '')
+    return getBlank(kind, $user?.user_id ?? '')
   }
 
   onMount(() => setTheme(getTheme()))
@@ -215,7 +213,7 @@
 
     void (async () => {
       try {
-        campaign = campaignId ? await campaignService.getCampaign(campaignId) : null
+        campaign = campaignId ? await getCampaign(campaignId) : null
         await reload()
       } catch (reason) {
         error = reason instanceof Error ? reason.message : String(reason)
@@ -342,8 +340,8 @@
 
   /** A poll is answered in place, and the answer is written with the resource. */
   async function vote(index: number, choice: string) {
-    const uid = $user?.uid
-    if (!uid) return
+    const userId = $user?.user_id
+    if (!userId) return
 
     // A block id is made fresh on every parse, so where it sits is what identifies it.
     const document = getDocument(one.content)
@@ -351,8 +349,8 @@
     if (!block || block.kind !== 'poll') return
 
     const votes = { ...(block.options.votes ?? {}) }
-    if (votes[uid] === choice) delete votes[uid]
-    else votes[uid] = choice
+    if (votes[userId] === choice) delete votes[userId]
+    else votes[userId] = choice
     block.options = { ...block.options, votes }
 
     const written = getDocumentMarkdown(document)
@@ -723,7 +721,7 @@
         </Sidebar>
         </div>
       {:else}
-        <BlockReader value={one.content} onopen={follow} onvote={vote} onsearch={seek} openAsset={getAssetTab} mine={$user?.uid ?? ''} />
+        <BlockReader value={one.content} onopen={follow} onvote={vote} onsearch={seek} openAsset={getAssetTab} mine={$user?.user_id ?? ''} />
       {/if}
     </section>
 

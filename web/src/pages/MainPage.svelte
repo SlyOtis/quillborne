@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { getCampaigns, getCharacters } from '$lib/api'
+  import type { Campaign, Character } from '$lib/api/types'
   import { getTheme, setTheme } from "$lib/dialogs/theme";
   import { onMount, setContext, onDestroy } from "svelte";
   import { getCharacterStore } from "$lib/engine";
@@ -9,7 +11,6 @@
   import { uiStore, anyDialogOpen } from "$lib/stores/ui.store";
   import { userCharacters } from "$lib/stores/character.store";
   import { userCampaigns } from "$lib/stores/campaign.store";
-  import { characterService, campaignService } from "$lib/firestore.service";
   import { userProfile, userDetails } from "$lib/stores/auth.store";
   import { navigate } from "sly-svelte-location-router";
   import CharactersPanel from "./main/CharactersPanel.svelte";
@@ -48,8 +49,8 @@
 
     try {
       const [characters, campaigns] = await Promise.all([
-        characterService.getUserCharacters(),
-        campaignService.getUserCampaigns()
+        getCharacters(),
+        getCampaigns()
       ]);
       userCharacters.set(characters);
       userCampaigns.set(campaigns);

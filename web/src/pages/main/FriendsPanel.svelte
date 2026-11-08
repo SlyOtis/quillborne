@@ -1,19 +1,19 @@
 <script lang="ts">
+  import { deleteProfileFriend, postProfileFriend } from '$lib/api'
+  import type { Profile } from '$lib/api/types'
   import Glyph from "$components/ui/Glyph.svelte";
-  import { userService } from "$lib/firestore.service";
-  import type { UserProfile } from "$lib/firestore.types";
   import Button from "$components/ui/Button.svelte";
   import Card from "$components/ui/Card.svelte";
   import Field from "$components/ui/Field.svelte";
 
   let {
     loading = false,
-    friends = $bindable([] as UserProfile[])
+    friends = $bindable([] as Profile[])
   }: {
     /** Whether the hearth is still reading who the friends are. */
     loading?: boolean
     /** The profiles of the friends, rewritten when one is added or removed. */
-    friends?: UserProfile[]
+    friends?: Profile[]
   } = $props();
 
   let address = $state('');
@@ -27,8 +27,8 @@
     busy = true;
     error = null;
     try {
-      const found = await userService.postFriend(wanted);
-      if (!friends.some((entry) => entry.uid === found.uid)) friends = [...friends, found];
+      const found = await postProfileFriend(wanted);
+      if (!friends.some((entry) => entry.user_id === found.user_id)) friends = [...friends, found];
       address = '';
     } catch (reason) {
       error = reason instanceof Error ? reason.message : String(reason);
@@ -37,12 +37,12 @@
     }
   }
 
-  async function drop(uid: string) {
+  async function drop(userId: string) {
     busy = true;
     error = null;
     try {
-      await userService.deleteFriend(uid);
-      friends = friends.filter((entry) => entry.uid !== uid);
+      await deleteProfileFriend(userId);
+      friends = friends.filter((entry) => entry.user_id !== userId);
     } catch (reason) {
       error = reason instanceof Error ? reason.message : String(reason);
     } finally {
@@ -61,14 +61,14 @@
     </div>
   {:else}
     <div class="dnd-stack">
-      {#each friends as entry (entry.uid)}
+      {#each friends as entry (entry.user_id)}
         <Card
           title={entry.display_name || entry.email}
           sub={entry.email}
           image={entry.photo_url}
           tone="metal"
         >
-          <Button variant="ghost" size="sm" disabled={busy} onclick={() => drop(entry.uid)}>Remove</Button>
+          <Button variant="ghost" size="sm" disabled={busy} onclick={() => drop(entry.user_id)}>Remove</Button>
         </Card>
       {/each}
     </div>

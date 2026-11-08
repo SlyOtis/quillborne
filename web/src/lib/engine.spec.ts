@@ -21,17 +21,14 @@ const wire = vi.hoisted(() => {
   }
 })
 
-vi.mock('./firestore.service', () => ({
-  characterService: {
-    updateCharacter: (id: string, character: Character) => {
-      if (wire.refuse) return Promise.reject(new Error('permission-denied'))
-      wire.updates.push({ id, character })
-      return Promise.resolve()
-    }
+vi.mock('./api', () => ({
+  putCharacter: (id: string, character: Character) => {
+    if (wire.refuse) return Promise.reject(new Error('permission-denied'))
+    wire.updates.push({ id, character })
+    return Promise.resolve()
   },
-  campaignService: {
-    postChatEntry: () => Promise.resolve('entry-1')
-  }
+  postCampaignChat: () => Promise.resolve('entry-1'),
+  getUserName: () => ''
 }))
 
 vi.mock('./dice', () => ({

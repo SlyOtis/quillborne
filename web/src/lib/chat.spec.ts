@@ -1,7 +1,8 @@
+import { getCharacter, getVehicle } from './api'
+import type { CardKind, ChatEntry, Profile, SamnaUser } from './api/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { get } from 'svelte/store'
 import type { Readable, Unsubscriber, Writable } from 'svelte/store'
-import type { CampaignCardKind, CampaignChatEntry, UserProfile } from './firestore.types'
 import type { RollLogItem } from './types'
 import type { ChatLog, ReplicateLogItem } from './chat'
 import chatItemSource from '../components/chat/ChatItem.svelte?raw'
@@ -21,7 +22,7 @@ const wire = vi.hoisted(() => {
 
   return {
     posted: [] as Array<{ campaignId: string, entry: Record<string, unknown> }>,
-    listeners: [] as Array<{ campaignId: string, onChange: (entries: CampaignChatEntry[]) => void }>,
+    listeners: [] as Array<{ campaignId: string, onChange: (entries: ChatEntry[]) => void }>,
     stopped: [] as string[]
   }
 })
@@ -31,23 +32,18 @@ vi.mock('sly-svelte-location-router', async () => {
   return { currentRoute: writable(null) }
 })
 
-vi.mock('./firestore.service', () => ({
-  campaignService: {
-    postChatEntry: (campaignId: string, entry: Record<string, unknown>) => {
-      wire.posted.push({ campaignId, entry })
-      return Promise.resolve('entry-1')
-    },
-    postChatListener: (campaignId: string, onChange: (entries: CampaignChatEntry[]) => void) => {
-      wire.listeners.push({ campaignId, onChange })
-      return () => wire.stopped.push(campaignId)
-    }
+vi.mock('./api', () => ({
+  postCampaignChat: (campaignId: string, entry: Record<string, unknown>) => {
+    wire.posted.push({ campaignId, entry })
+    return Promise.resolve('entry-1')
   },
-  characterService: {
-    getCharacter: () => Promise.resolve({ campaign_id: null })
+  getCampaignChatStream: (campaignId: string, onChange: (entries: ChatEntry[]) => void) => {
+    wire.listeners.push({ campaignId, onChange })
+    return () => wire.stopped.push(campaignId)
   },
-  vehicleService: {
-    getVehicle: (id: string) => Promise.resolve(id === 'ship-1' ? { campaign_id: 'camp-9' } : null)
-  }
+  getCharacter: () => Promise.resolve({ campaign_id: null }),
+  getVehicle: (id: string) => Promise.resolve(id === 'ship-1' ? { campaign_id: 'camp-9' } : null),
+  getCsrfHeaders: () => ({})
 }))
 
 import { getChatLog, rollFormula } from './chat'
@@ -67,8 +63,9 @@ const { rollStore } = getRollLog()
 
 const stamp = (at: string) => at
 
-const shared = (fields: Partial<CampaignChatEntry>): CampaignChatEntry => ({
+const shared = (fields: Partial<ChatEntry>): ChatEntry => ({
   id: 'shared-1',
+  campaign_id: 'camp-1',
   author_id: 'dis',
   author_name: 'Dis',
   kind: 'roll',
@@ -98,12 +95,12 @@ const rolled = (rolledAt: string, text: string): RollLogItem => ({
 const items = (store: Readable<ChatLog>) =>
   get(store) as unknown as Array<{ createdAt: Date, type: string, data: RollLogItem }>
 
-const signedIn = (uid: string, name: string) => {
-  user.set({ uid, email: '', display_name: '', photo_url: '' })
-  userProfile.set({ display_name: name } as unknown as UserProfile)
+const signedIn = (userId: string, name: string) => {
+  user.set({ id: userId, user_id: userId, email: '', profile: null } as unknown as SamnaUser)
+  userProfile.set({ display_name: name } as unknown as Profile)
 }
 
-const card = (fields: Partial<CampaignChatEntry>): CampaignChatEntry =>
+const card = (fields: Partial<ChatEntry>): ChatEntry =>
   shared({
     id: 'shared-card',
     kind: 'message',
@@ -120,7 +117,7 @@ const card = (fields: Partial<CampaignChatEntry>): CampaignChatEntry =>
 const chats = (store: Readable<ChatLog>) =>
   get(store) as unknown as Array<{ createdAt: Date, type: string, data: ReplicateLogItem }>
 
-const streamed = (entry: CampaignChatEntry) => {
+const streamed = (entry: ChatEntry) => {
   signedIn('lars', 'Lars')
   const log = getChatLog()
   close = log.unsubscribeChat
@@ -362,7 +359,7 @@ describe('the card payload another member reads off the shared log', () => {
   })
 
   it('narrows a kind the treatment does not know to no payload', () => {
-    const item = streamed(card({ card_kind: 'monster_card' as unknown as CampaignCardKind }))
+    const item = streamed(card({ card_kind: 'monster_card' as unknown as CardKind }))
 
     expect(item.data.data).toBeUndefined()
   })

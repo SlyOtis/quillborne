@@ -116,7 +116,7 @@ describe("the walk's sign in waits for the hearth", () => {
   })
 
   it('sends a signed out visitor to Samna Auth and lands on the hearth', () => {
-    expect(read('src/App.svelte')).toContain('authService.signIn()')
+    expect(read('src/App.svelte')).toContain('redirectToLogin()')
     expect(read('src/App.svelte')).toMatch(/"\/":\s*\{[^}]*guard: async \(\) => "\/main"/)
   })
 

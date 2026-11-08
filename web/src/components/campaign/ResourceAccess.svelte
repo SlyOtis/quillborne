@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { campaignService, partyService, userService } from '$lib/firestore.service'
-  import type { Campaign, Owner, Party } from '$lib/firestore.types'
+  import { getCampaigns, getParties, getProfileEmail, getProfiles } from '$lib/api'
+  import type { Campaign, Owner, Party } from '$lib/api/types'
   import { user, userProfile } from '$lib/stores/auth.store'
   import { getAll, putOne, RESOURCES, type Resource, type ResourceKind } from '$lib/resources'
   import BaseDialog from '$components/BaseDialog.svelte'
@@ -79,14 +79,14 @@
       try {
         const kinds = Object.keys(RESOURCES) as ResourceKind[]
         const [foundCampaigns, foundParties, ...rolls] = await Promise.all([
-          campaignService.getUserCampaigns(),
-          partyService.getParties(),
+          getCampaigns(),
+          getParties(),
           ...kinds.map((entry) => getAll(owner, entry).catch(() => [] as Resource[]))
         ])
         campaigns = foundCampaigns
         parties = foundParties
         held = kinds.flatMap((entry, index) =>
-          rolls[index].filter((found) => found.owner_id === $user?.uid).map((found) => ({ kind: entry, one: found }))
+          rolls[index].filter((found) => found.owner_id === $user?.user_id).map((found) => ({ kind: entry, one: found }))
         )
 
         const uids = new Set<string>([
@@ -95,10 +95,10 @@
           ...foundCampaigns.flatMap((entry) => [entry.dm_id, ...entry.player_ids]),
           ...foundParties.flatMap((entry) => entry.member_ids)
         ])
-        uids.delete($user?.uid ?? '')
-        const profiles = await userService.getProfiles([...uids])
+        uids.delete($user?.user_id ?? '')
+        const profiles = await getProfiles([...uids])
         people = profiles
-          .map((entry) => ({ id: entry.uid, mark: 'person', name: entry.display_name || entry.email, tone: 'person' as const }))
+          .map((entry) => ({ id: entry.user_id, mark: 'person', name: entry.display_name || entry.email, tone: 'person' as const }))
           .sort((a, b) => a.name.localeCompare(b.name))
 
         who = [
@@ -119,12 +119,12 @@
     busy = 'mail'
     error = null
     try {
-      const found = await userService.getProfileEmail(address)
+      const found = await getProfileEmail(address)
       if (!found) {
         error = 'Nobody signs in with that address.'
         return
       }
-      const tag = { id: found.uid, mark: 'person', name: found.display_name || found.email, tone: 'person' as const }
+      const tag = { id: found.user_id, mark: 'person', name: found.display_name || found.email, tone: 'person' as const }
       if (!people.some((entry) => entry.id === tag.id)) people = [...people, tag]
       if (!who.some((entry) => entry.id === tag.id)) who = [...who, tag]
     } catch (reason) {

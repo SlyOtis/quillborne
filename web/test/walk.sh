@@ -159,7 +159,7 @@ else
   rows="[...document.querySelectorAll('.fray-row')]"
   pw goto "$base/main/campaign/$campaign_id?tab=encounter" >/dev/null
   wait_for "document.querySelector('.fray') !== null && document.querySelector('.dnd-loading') === null" "the encounter tab"
-  encounter_id="$(js "(async () => { const { campaignService } = await import('/src/lib/firestore.service.ts'); return campaignService.postEncounter('$campaign_id', { title: 'Walk Ambush', is_active: true, is_known: true, round: 3, turn: 1, combatants: [{ id: 'w1', name: 'Goblin Cutter', kind: 'npc', npc_id: 'w-n1', initiative: 8, hit_points: 5, max_hit_points: 12, conditions: ['prone'], is_hit_points_known: true }, { id: 'w2', name: 'Walk Hero', kind: 'character', character_id: 'w-c1', initiative: 17, hit_points: 22, max_hit_points: 30, conditions: [], is_hit_points_known: true }, { id: 'w3', name: 'Dire Wolf', kind: 'npc', npc_id: 'w-n2', initiative: 12, hit_points: 9, max_hit_points: 26, conditions: [], is_hit_points_known: true }] }) })()")"
+  encounter_id="$(js "(async () => { const { postCampaignEncounter } = await import('/src/lib/api/index.ts'); return postCampaignEncounter('$campaign_id', { title: 'Walk Ambush', is_active: true, is_known: true, round: 3, turn: 1, combatants: [{ id: 'w1', name: 'Goblin Cutter', kind: 'npc', npc_id: 'w-n1', initiative: 8, hit_points: 5, max_hit_points: 12, conditions: ['prone'], is_hit_points_known: true }, { id: 'w2', name: 'Walk Hero', kind: 'character', character_id: 'w-c1', initiative: 17, hit_points: 22, max_hit_points: 30, conditions: [], is_hit_points_known: true }, { id: 'w3', name: 'Dire Wolf', kind: 'npc', npc_id: 'w-n2', initiative: 12, hit_points: 9, max_hit_points: 26, conditions: [], is_hit_points_known: true }] }) })()")"
   wait_for "document.querySelector('#fray-chosen option[value=\"$encounter_id\"]') !== null" "the new encounter in the picker"
   js "(() => { const pick = document.querySelector('#fray-chosen'); pick.value = '$encounter_id'; pick.dispatchEvent(new Event('change', { bubbles: true })); return true })()" >/dev/null
   if wait_for "$rows.length === 3 && document.querySelector('.fray').textContent.includes('Walk Ambush')" "the combatants to stream into the tracker"; then
@@ -170,7 +170,7 @@ else
     [ "$(js "document.querySelector('.fray').textContent.includes('Walk Ambush')")" = "true" ] || fail "the tracker does not name the encounter it lists"
     [ "$(js "document.querySelector('.fray').textContent.includes('Round 3')")" = "true" ] || fail "the tracker does not show round 3"
   fi
-  js "(async () => { const { campaignService } = await import('/src/lib/firestore.service.ts'); await campaignService.deleteEncounter('$campaign_id', '$encounter_id'); return true })()" >/dev/null
+  js "(async () => { const { deleteCampaignEncounter } = await import('/src/lib/api/index.ts'); await deleteCampaignEncounter('$campaign_id', '$encounter_id'); return true })()" >/dev/null
   wait_for "!document.querySelector('.fray').textContent.includes('Walk Ambush')" "the struck encounter to leave the tracker"
 fi
 
@@ -255,7 +255,7 @@ if [ "$(js "$campaign_card !== null")" = "true" ]; then
     pw fill ".dnd-sidebar-end textarea" "/roll 1d20" >/dev/null
     pw press Enter >/dev/null
     if wait_for "$rolls > $before" "the roll to show in the campaign chat"; then
-      logged="$(js "(async () => { const { campaignService } = await import('/src/lib/firestore.service.ts'); const held = await new Promise((done) => { let stop = () => {}; stop = campaignService.postChatListener('$campaign_id', (entries) => { stop(); done(entries) }) }); return String(held.filter((e) => e.kind === 'roll' && e.formula === '1d20').length) })()")"
+      logged="$(js "(async () => { const { getCampaignChatStream } = await import('/src/lib/api/index.ts'); const held = await new Promise((done) => { let stop = () => {}; stop = getCampaignChatStream('$campaign_id', (entries) => { stop(); done(entries) }) }); return String(held.filter((e) => e.kind === 'roll' && e.formula === '1d20').length) })()")"
       [ "${logged:-0}" -gt 0 ] || fail "the roll shows in the chat but the campaign log holds no 1d20 roll entry"
     fi
     pw click "getByTitle('Toggle the chat')" >/dev/null

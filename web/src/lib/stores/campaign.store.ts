@@ -1,5 +1,5 @@
+import type { Campaign } from '../api/types'
 import { writable } from 'svelte/store';
-import type { Campaign } from '../firestore.types';
 
 // Current campaign
 export const currentCampaign = writable<Campaign | null>(null);

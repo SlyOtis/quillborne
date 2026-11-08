@@ -1,7 +1,6 @@
+import { deleteFile, deleteResource, getResources, isStoredFile, postResource, putResource } from './api'
+import type { Access, Owner } from './api/types'
 import { dropDoc } from './collab'
-import { campaignService } from './firestore.service'
-import type { Access, Owner } from './firestore.types'
-import { deleteFile, isStoredFile } from './storage.service'
 
 /** A label the writer added to the head, with the line written next to it. */
 export interface Fact {
@@ -158,22 +157,22 @@ function putShared(one: Partial<Resource>): Record<string, unknown> {
 // Entries
 
 export async function getEntries(owner: Owner): Promise<Entry[]> {
-  const stored = await campaignService.getPart<Stored>(owner, 'entries')
+  const stored = await getResources<Stored>(owner, 'entries')
   return stored.map((one) => ({ ...getShared(one) }))
 }
 
 export function postEntry(owner: Owner, one: Partial<Entry>): Promise<string> {
-  return campaignService.postPart(owner, 'entries', putShared(one))
+  return postResource(owner, 'entries', putShared(one))
 }
 
 export function putEntry(owner: Owner, id: string, one: Partial<Entry>): Promise<void> {
-  return campaignService.putPart(owner, 'entries', id, putShared(one))
+  return putResource(id, putShared(one))
 }
 
 // Characters
 
 export async function getCharacters(owner: Owner): Promise<Character[]> {
-  const stored = await campaignService.getPart<Stored>(owner, 'npcs')
+  const stored = await getResources<Stored>(owner, 'npcs')
   return stored.map((one) => ({
     ...getShared(one),
     role: String(one.role ?? ''),
@@ -183,7 +182,7 @@ export async function getCharacters(owner: Owner): Promise<Character[]> {
 }
 
 export function postCharacter(owner: Owner, one: Partial<Character>): Promise<string> {
-  return campaignService.postPart(owner, 'npcs', {
+  return postResource(owner, 'npcs', {
     ...putShared(one),
     role: one.role ?? '',
     disposition: one.disposition ?? 'unknown',
@@ -192,7 +191,7 @@ export function postCharacter(owner: Owner, one: Partial<Character>): Promise<st
 }
 
 export function putCharacter(owner: Owner, id: string, one: Partial<Character>): Promise<void> {
-  return campaignService.putPart(owner, 'npcs', id, {
+  return putResource(id, {
     ...putShared(one),
     role: one.role ?? '',
     disposition: one.disposition ?? 'unknown',
@@ -203,7 +202,7 @@ export function putCharacter(owner: Owner, id: string, one: Partial<Character>):
 // Heroes
 
 export async function getHeroes(owner: Owner): Promise<Hero[]> {
-  const stored = await campaignService.getPart<Stored>(owner, 'heroes')
+  const stored = await getResources<Stored>(owner, 'heroes')
   return stored.map((one) => ({
     ...getShared(one),
     player: String(one.player ?? ''),
@@ -215,7 +214,7 @@ export async function getHeroes(owner: Owner): Promise<Hero[]> {
 }
 
 export function postHero(owner: Owner, one: Partial<Hero>): Promise<string> {
-  return campaignService.postPart(owner, 'heroes', {
+  return postResource(owner, 'heroes', {
     ...putShared(one),
     player: one.player ?? '',
     class: one.class ?? '',
@@ -226,7 +225,7 @@ export function postHero(owner: Owner, one: Partial<Hero>): Promise<string> {
 }
 
 export function putHero(owner: Owner, id: string, one: Partial<Hero>): Promise<void> {
-  return campaignService.putPart(owner, 'heroes', id, {
+  return putResource(id, {
     ...putShared(one),
     player: one.player ?? '',
     class: one.class ?? '',
@@ -239,7 +238,7 @@ export function putHero(owner: Owner, id: string, one: Partial<Hero>): Promise<v
 // Items
 
 export async function getItems(owner: Owner): Promise<Item[]> {
-  const stored = await campaignService.getPart<Stored>(owner, 'items')
+  const stored = await getResources<Stored>(owner, 'items')
   return stored.map((one) => ({
     ...getShared(one),
     category: String(one.category ?? ''),
@@ -251,7 +250,7 @@ export async function getItems(owner: Owner): Promise<Item[]> {
 }
 
 export function postItem(owner: Owner, one: Partial<Item>): Promise<string> {
-  return campaignService.postPart(owner, 'items', {
+  return postResource(owner, 'items', {
     ...putShared(one),
     category: one.category ?? '',
     rarity: one.rarity ?? 'common',
@@ -262,7 +261,7 @@ export function postItem(owner: Owner, one: Partial<Item>): Promise<string> {
 }
 
 export function putItem(owner: Owner, id: string, one: Partial<Item>): Promise<void> {
-  return campaignService.putPart(owner, 'items', id, {
+  return putResource(id, {
     ...putShared(one),
     category: one.category ?? '',
     rarity: one.rarity ?? 'common',
@@ -275,7 +274,7 @@ export function putItem(owner: Owner, id: string, one: Partial<Item>): Promise<v
 // Weapons
 
 export async function getWeapons(owner: Owner): Promise<Weapon[]> {
-  const stored = await campaignService.getPart<Stored>(owner, 'weapons')
+  const stored = await getResources<Stored>(owner, 'weapons')
   return stored.map((one) => ({
     ...getShared(one),
     damage: String(one.damage ?? ''),
@@ -288,7 +287,7 @@ export async function getWeapons(owner: Owner): Promise<Weapon[]> {
 }
 
 export function postWeapon(owner: Owner, one: Partial<Weapon>): Promise<string> {
-  return campaignService.postPart(owner, 'weapons', {
+  return postResource(owner, 'weapons', {
     ...putShared(one),
     damage: one.damage ?? '',
     damage_kind: one.damage_kind ?? 'slashing',
@@ -300,7 +299,7 @@ export function postWeapon(owner: Owner, one: Partial<Weapon>): Promise<string> 
 }
 
 export function putWeapon(owner: Owner, id: string, one: Partial<Weapon>): Promise<void> {
-  return campaignService.putPart(owner, 'weapons', id, {
+  return putResource(id, {
     ...putShared(one),
     damage: one.damage ?? '',
     damage_kind: one.damage_kind ?? 'slashing',
@@ -314,7 +313,7 @@ export function putWeapon(owner: Owner, id: string, one: Partial<Weapon>): Promi
 // Armor
 
 export async function getArmor(owner: Owner): Promise<Armor[]> {
-  const stored = await campaignService.getPart<Stored>(owner, 'armor')
+  const stored = await getResources<Stored>(owner, 'armor')
   return stored.map((one) => ({
     ...getShared(one),
     armor_class: Number(one.armor_class ?? 10),
@@ -326,7 +325,7 @@ export async function getArmor(owner: Owner): Promise<Armor[]> {
 }
 
 export function postArmor(owner: Owner, one: Partial<Armor>): Promise<string> {
-  return campaignService.postPart(owner, 'armor', {
+  return postResource(owner, 'armor', {
     ...putShared(one),
     armor_class: one.armor_class ?? 10,
     category: one.category ?? 'light',
@@ -337,7 +336,7 @@ export function postArmor(owner: Owner, one: Partial<Armor>): Promise<string> {
 }
 
 export function putArmor(owner: Owner, id: string, one: Partial<Armor>): Promise<void> {
-  return campaignService.putPart(owner, 'armor', id, {
+  return putResource(id, {
     ...putShared(one),
     armor_class: one.armor_class ?? 10,
     category: one.category ?? 'light',
@@ -350,7 +349,7 @@ export function putArmor(owner: Owner, id: string, one: Partial<Armor>): Promise
 // Places
 
 export async function getPlaces(owner: Owner): Promise<Place[]> {
-  const stored = await campaignService.getPart<Stored>(owner, 'locations')
+  const stored = await getResources<Stored>(owner, 'locations')
   return stored.map((one) => ({
     ...getShared(one),
     category: (one.category as PlaceKind) ?? (one.kind as PlaceKind) ?? 'region',
@@ -359,7 +358,7 @@ export async function getPlaces(owner: Owner): Promise<Place[]> {
 }
 
 export function postPlace(owner: Owner, one: Partial<Place>): Promise<string> {
-  return campaignService.postPart(owner, 'locations', {
+  return postResource(owner, 'locations', {
     ...putShared(one),
     category: one.category ?? 'region',
     kind: one.category ?? 'region',
@@ -368,7 +367,7 @@ export function postPlace(owner: Owner, one: Partial<Place>): Promise<string> {
 }
 
 export function putPlace(owner: Owner, id: string, one: Partial<Place>): Promise<void> {
-  return campaignService.putPart(owner, 'locations', id, {
+  return putResource(id, {
     ...putShared(one),
     category: one.category ?? 'region',
     kind: one.category ?? 'region',
@@ -379,22 +378,22 @@ export function putPlace(owner: Owner, id: string, one: Partial<Place>): Promise
 // Charts, the maps a campaign holds
 
 export async function getCharts(owner: Owner): Promise<Chart[]> {
-  const stored = await campaignService.getPart<Stored>(owner, 'maps')
+  const stored = await getResources<Stored>(owner, 'maps')
   return stored.map((one) => ({ ...getShared(one) }))
 }
 
 export function postChart(owner: Owner, one: Partial<Chart>): Promise<string> {
-  return campaignService.postPart(owner, 'maps', putShared(one))
+  return postResource(owner, 'maps', putShared(one))
 }
 
 export function putChart(owner: Owner, id: string, one: Partial<Chart>): Promise<void> {
-  return campaignService.putPart(owner, 'maps', id, putShared(one))
+  return putResource(id, putShared(one))
 }
 
 // Sessions
 
 export async function getSessions(owner: Owner): Promise<Session[]> {
-  const stored = await campaignService.getPart<Stored>(owner, 'sessions')
+  const stored = await getResources<Stored>(owner, 'sessions')
   return stored.map((one) => ({
     ...getShared(one),
     number: Number(one.number ?? 0),
@@ -403,7 +402,7 @@ export async function getSessions(owner: Owner): Promise<Session[]> {
 }
 
 export function postSession(owner: Owner, one: Partial<Session>): Promise<string> {
-  return campaignService.postPart(owner, 'sessions', {
+  return postResource(owner, 'sessions', {
     ...putShared(one),
     number: one.number ?? 0,
     played_at: one.played_at ?? ''
@@ -411,7 +410,7 @@ export function postSession(owner: Owner, one: Partial<Session>): Promise<string
 }
 
 export function putSession(owner: Owner, id: string, one: Partial<Session>): Promise<void> {
-  return campaignService.putPart(owner, 'sessions', id, {
+  return putResource(id, {
     ...putShared(one),
     number: one.number ?? 0,
     played_at: one.played_at ?? ''
@@ -421,7 +420,7 @@ export function putSession(owner: Owner, id: string, one: Partial<Session>): Pro
 // Quests
 
 export async function getQuests(owner: Owner): Promise<Quest[]> {
-  const stored = await campaignService.getPart<Stored>(owner, 'quests')
+  const stored = await getResources<Stored>(owner, 'quests')
   return stored.map((one) => ({
     ...getShared(one),
     state: (one.state as QuestState) ?? 'active',
@@ -431,7 +430,7 @@ export async function getQuests(owner: Owner): Promise<Quest[]> {
 }
 
 export function postQuest(owner: Owner, one: Partial<Quest>): Promise<string> {
-  return campaignService.postPart(owner, 'quests', {
+  return postResource(owner, 'quests', {
     ...putShared(one),
     state: one.state ?? 'active',
     level: one.level ?? 1,
@@ -440,7 +439,7 @@ export function postQuest(owner: Owner, one: Partial<Quest>): Promise<string> {
 }
 
 export function putQuest(owner: Owner, id: string, one: Partial<Quest>): Promise<void> {
-  return campaignService.putPart(owner, 'quests', id, {
+  return putResource(id, {
     ...putShared(one),
     state: one.state ?? 'active',
     level: one.level ?? 1,
@@ -818,7 +817,7 @@ export async function deleteOne(owner: Owner, kind: ResourceKind, one: Resource)
   const part = RESOURCES[kind].part
   await dropDoc(owner, part, one.id)
   await Promise.all([...new Set([one.image, ...one.images])].filter(isStoredFile).map((address) => deleteFile(address)))
-  await campaignService.deletePart(owner, part, one.id)
+  await deleteResource(one.id)
 }
 
 /** Removes every resource of every kind the owner holds that ownerId wrote, which a campaign does before it is deleted. */

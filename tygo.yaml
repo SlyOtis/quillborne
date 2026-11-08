@@ -1,0 +1,21 @@
+packages:
+  - path: "github.com/SlyOtis/quillborne/internal/db"
+    type_mappings:
+      time.Time: "string"
+      uuid.UUID: "string"
+      json.RawMessage: "any"
+      bun.NullTime: "string"
+    output_path: "web/src/lib/api/generated.ts"
+    exclude_files:
+      - "main.go"
+  - path: "github.com/nimling/samna-auth-middleware/v2/shared"
+    type_mappings:
+      time.Time: "string"
+      uuid.UUID: "string"
+      json.RawMessage: "any"
+      context.Context: "any"
+      driver.Value: "any"
+    output_path: "web/src/lib/api/generated_auth.ts"
+    include_files:
+      - "models.go"
+      - "code.go"

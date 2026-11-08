@@ -1,4 +1,7 @@
 <script lang="ts">
+  import * as api from '$lib/api'
+  import { getCharacter, postCharacterCopy, postFile, putCharacterPlayed, putProfileRecentCharacters } from '$lib/api'
+  import type { Character, Owner } from '$lib/api/types'
   import { getTheme, setTheme } from "$lib/dialogs/theme";
   import Senses from "$character-sheet/Senses.svelte";
   import PlainBox from "$character-sheet/PlainBox.svelte";
@@ -21,7 +24,6 @@
   import Special from "$character-sheet/Special.svelte";
   import Background from "$components/Background.svelte";
   import { applyStateToCharacter, characterWriteError, getCharacterStore } from "$lib/engine";
-  import { characterService, userService } from "$lib/firestore.service";
   import { getRulesStore } from "$lib/rules/store";
   import { setContext, onDestroy, onMount, untrack, type Snippet } from "svelte";
   import Fold from "$components/ui/Fold.svelte";
@@ -40,9 +42,7 @@
   import Button from "$components/ui/Button.svelte";
   import BaseDialog from "$components/BaseDialog.svelte";
   import { postUIAction } from "$lib/chat";
-  import { postFile } from "$lib/storage.service";
   import { getAll, getBlank, postOne, type Hero } from "$lib/resources";
-  import type { Owner } from "$lib/firestore.types";
   import { user, userProfile } from "$lib/stores/auth.store";
   import { currentCharacterId, getRecentCharacters } from "$lib/stores/character.store";
 
@@ -54,7 +54,7 @@
   let writingPage = $state(false);
 
   const heroRoll = $derived(
-    heroOwner?.at === 'campaigns' ? `/main/campaign/${heroOwner.id}/heroes` : '/main/heroes'
+    heroOwner?.at === 'campaign' ? `/main/campaign/${heroOwner.id}/heroes` : '/main/heroes'
   );
 
   function openPage() {
@@ -71,7 +71,7 @@
     const species = $info.race?.name && $info.race.name !== 'Unknown' ? $info.race.name : '';
 
     postOne(owner, 'heroes', {
-      ...getBlank('heroes', $user?.uid ?? ''),
+      ...getBlank('heroes', $user?.user_id ?? ''),
       title: $info.name || 'Unnamed Character',
       description: $info.description,
       image: $info.imageUrl,
@@ -111,7 +111,7 @@
   onMount(() => {
     setTheme(getTheme());
 
-    characterService.getCharacter(characterId)
+    getCharacter(characterId)
       .then((document) => {
         if (!document?.character) {
           navigate("/main");
@@ -121,16 +121,16 @@
         applyStateToCharacter(document.character, true);
         ownerId = document.owner_id;
         currentCharacterId.set(characterId);
-        userService.putRecentCharacters(getRecentCharacters($userProfile?.preferences?.recent_characters ?? [], characterId))
+        putProfileRecentCharacters(getRecentCharacters($userProfile?.preferences?.recent_characters ?? [], characterId))
           .catch((reason) => characterWriteError.set(reason instanceof Error ? reason.message : String(reason)));
-        if (document.owner_id === $user?.uid) {
-          characterService.putPlayed(characterId)
+        if (document.owner_id === $user?.user_id) {
+          putCharacterPlayed(characterId)
             .catch((reason) => characterWriteError.set(reason instanceof Error ? reason.message : String(reason)));
         }
 
         const owner: Owner = document.campaign_id
-          ? { at: 'campaigns', id: document.campaign_id }
-          : { at: 'users', id: document.owner_id };
+          ? { at: 'campaign', id: document.campaign_id }
+          : { at: 'user', id: document.owner_id };
         heroOwner = owner;
 
         getAll(owner, 'heroes')
@@ -156,7 +156,7 @@
   let deleting = $state(false)
   let working = $state(false)
 
-  const owned = $derived(Boolean(ownerId) && ownerId === $user?.uid)
+  const owned = $derived(Boolean(ownerId) && ownerId === $user?.user_id)
 
   $effect(() => {
     if (naming) nameInput?.focus()
@@ -185,7 +185,7 @@
     if (working) return
     working = true
 
-    characterService.postCharacterCopy(characterId)
+    postCharacterCopy(characterId)
       .then((copyId) => window.location.assign(`/main/character/${copyId}`))
       .catch((reason) => characterWriteError.set(reason instanceof Error ? reason.message : String(reason)))
       .finally(() => (working = false))
@@ -195,7 +195,7 @@
     if (working) return
     working = true
 
-    characterService.deleteCharacter(characterId)
+    api.deleteCharacter(characterId)
       .then(() => {
         deleting = false
         navigate('/main')

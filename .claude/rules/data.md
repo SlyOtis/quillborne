@@ -4,10 +4,8 @@ paths:
   - "database/**"
   - "internal/**"
   - "cmd/**"
-  - "web/src/lib/api.ts"
-  - "web/src/lib/firestore.service.ts"
-  - "web/src/lib/firestore.types.ts"
-  - "web/src/lib/storage.service.ts"
+  - "web/src/lib/api/**"
+  - "tygo.yaml"
   - "web/src/lib/collab.ts"
   - "web/src/lib/ai.ts"
 ---
@@ -72,7 +70,7 @@ A claim, a binding or a grant is made only through the claim helpers in `interna
 
 `handler.PutRoutes` in `internal/handler/routes.go` mounts every route under `/api`, behind the Samna Auth user middleware `cmd/main.go` hands it: `/profile` with its `details`, `/character`, `/party`, `/campaign` with its `map`, `encounter`, `song` and `chat`, `/resource` with its `update`, `/asset` with its `data` and `object`, `/file` with the folder tree and `move`, `/tag` with its `object`, `/ai`, `/catalog`, `/vehicle`, and `/claim` with `/:type/:id/claim`. Sign in, the callback, sign out and `/api/auth/me` come from the middleware and stay in `cmd/main.go`. The local test data in `test/seed/` runs through the same `PutRoutes` with a middleware of its own that signs each step in as the player it names.
 
-On the web, `web/src/lib/api.ts` holds the fetch envelope, the session and `getStream`. The service objects in `firestore.service.ts` (`userService`, `characterService`, `partyService`, `campaignService`, `vehicleService`) keep their exported names and call the api; a new read or write is a typed method beside the others, never a second helper.
+On the web the api layer is `web/src/lib/api/`, the shape nimployer and bookable use. `core.ts` holds `ApiError`, the session, `path`, `request`, `unwrap` and `getStream`. `index.ts` holds every call as a plain exported function, `getCharacter`, `postCampaignMap`, `getCampaignChatStream`, and a new read or write is one more function there, never a helper of its own. `types.ts` re-exports `generated.ts` and `generated_auth.ts`, which `just gen-types` writes with tygo from `internal/db` and the middleware's `shared` models, and narrows a jsonb field with `extends Omit<...>` where the web needs its shape. No type the Go models carry is written by hand: a model change is followed by `just gen-types`.
 
 Function names start with `get`, `post`, `put` or `delete`, in Go and in TypeScript.
 
@@ -84,11 +82,11 @@ The streams are `/api/campaign/:id/stream`, `/api/profile/stream`, `/api/resourc
 
 A broker counts as started only once its own notify has come back through its listener, because a `LISTEN` the driver has written is not yet active on the server; an instance that answers before then would miss what another instance sends.
 
-On the web a listener (`postChatListener`, `postMapsListener`, `postEncountersListener`, `postSongsListener`, `postCharactersListener`, `subscribeToProfile`, `subscribeToCharacter`, `subscribeToParty`, `subscribeToVehicle`, `postVehiclesListener`, the updates in `collab.ts`) shares one EventSource per stream and reloads through its REST getter on connect and on every event of its kind, so what it shows always matches the api.
+On the web a stream function (`getCampaignChatStream`, `getCampaignMapsStream`, `getCampaignEncountersStream`, `getCampaignSongsStream`, `getCampaignCharactersStream`, `getCampaignVehiclesStream`, `getProfileStream`, `getCharacterStream`, `getPartyStream`, `getVehicleStream`, `getResourceUpdatesStream`) shares one EventSource per stream and reloads through its REST getter on connect and on every event of its kind, so what it shows always matches the api.
 
 ## Uploads
 
-Every upload goes through `postFile` in `web/src/lib/storage.service.ts` with a scope of `user`, `campaignMap`, `campaignAudio` or `campaignFile`. It checks the signed in player and the content type, and posts one multipart form to `/api/asset`: the file, its `name` and `mime_type`, and the `campaign_id` of a campaign scope. Never write a file any other way.
+Every upload goes through `postFile` in `web/src/lib/api/index.ts` with a scope of `user`, `campaignMap`, `campaignAudio` or `campaignFile`. It checks the signed in player and the content type, and posts one multipart form to `/api/asset`: the file, its `name` and `mime_type`, and the `campaign_id` of a campaign scope. Never write a file any other way.
 
 The service places the asset by what the form names. A `parent_id` needs write on that folder. A `campaign_id` needs read on the campaign, as a seated player's upload always has, and lands in the campaign's folder. Neither lands in the player's Personal folder, made on their first upload. The blob key is the folder chain, slug or name per folder, and the asset id: `campaign-<id>/<asset id>`. The service sets `size_bytes` and `etag`, the SHA-256 of the original or of the stored document, whenever bytes are stored, so `etag` is the version: it changes when the bytes change. `POST /api/asset/:id` replaces the bytes and needs write on the asset.
 
@@ -104,4 +102,4 @@ An address held on a row is a hosted URL, an `/api/asset/<id>/data` address, or 
 
 ## Sign in
 
-The app has no sign in form of its own. A guarded route in `App.svelte` sends a visitor without a session straight to Samna Auth at `/api/auth/login` through `authService.signIn`, `/login` and `/signup` lead to `/main`, and signing out goes through `/api/auth/logout`. GitHub is the one provider bound to the app, open to any GitHub account, on Knights of the Cauldron. A local run signs in as `SAUTH_DEBUG_USER_ID` with no browser login.
+The app has no sign in form of its own. A guarded route in `App.svelte` sends a visitor without a session straight to Samna Auth at `/api/auth/login` through `redirectToLogin`, `/login` and `/signup` lead to `/main`, and signing out goes through `/api/auth/logout`. GitHub is the one provider bound to the app, open to any GitHub account, on Knights of the Cauldron. A local run signs in as `SAUTH_DEBUG_USER_ID` with no browser login.

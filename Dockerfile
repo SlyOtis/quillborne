@@ -8,14 +8,8 @@ RUN pnpm build
 FROM golang:1.26-alpine AS go-builder
 
 ARG IMAGE_VERSION=dev
-ARG GH_REPO_TOKEN=
 
 RUN apk add --no-cache git
-RUN if [ -n "$GH_REPO_TOKEN" ]; then \
-        git config --global url."https://${GH_REPO_TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"; \
-    fi
-ENV GOPRIVATE=github.com/nimling/*
-ENV GOSUMDB=off
 
 WORKDIR /app
 COPY go.mod go.sum ./
@@ -27,13 +21,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
     -o main ./cmd
 
 FROM golang:1.26-alpine AS smig-builder
-ARG GH_REPO_TOKEN=
 RUN apk add --no-cache git
-RUN if [ -n "$GH_REPO_TOKEN" ]; then \
-        git config --global url."https://${GH_REPO_TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"; \
-    fi
-ENV GOPRIVATE=github.com/nimling/*
-ENV GOSUMDB=off
 RUN go install -ldflags "-X github.com/nimling/samna-migrate/pkg/cli.Version=v1.5.13" github.com/nimling/samna-migrate/cmd@v1.5.13 \
     && mv /go/bin/cmd /go/bin/smig
 

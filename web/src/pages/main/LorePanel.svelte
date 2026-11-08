@@ -41,15 +41,15 @@
   const filled = $derived(KINDS.filter((kind) => (held[kind]?.length ?? 0) > 0))
 
   $effect(() => {
-    const uid = $user?.uid ?? ''
-    if (!uid || uid === read) return
-    read = uid
+    const userId = $user?.user_id ?? ''
+    if (!userId || userId === read) return
+    read = userId
 
     void (async () => {
       loading = true
       error = null
       try {
-        const rolls = await Promise.all(KINDS.map((kind) => getAll({ at: 'users', id: uid }, kind)))
+        const rolls = await Promise.all(KINDS.map((kind) => getAll({ at: 'user', id: userId }, kind)))
         held = Object.fromEntries(KINDS.map((kind, index) => [kind, rolls[index]]))
       } catch (reason) {
         error = reason instanceof Error ? reason.message : String(reason)

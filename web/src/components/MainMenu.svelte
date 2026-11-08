@@ -1,15 +1,9 @@
 <script lang="ts">
+  import { getCampaign, getCampaignCharacters, getCampaignEncountersStream, getCampaignMaps, getCampaignVehiclesStream, getProfile } from '$lib/api'
+  import type { Campaign, CampaignMap, Encounter, EncounterCombatant, Party, Vehicle } from '$lib/api/types'
+  import type * as api from '$lib/api/types'
   import type { Snippet } from 'svelte'
   import { navigate, currentRoute, resolvedRoute } from 'sly-svelte-location-router'
-  import { campaignService, userService, vehicleService } from '$lib/firestore.service'
-  import type {
-    Campaign,
-    CampaignEncounter,
-    CampaignMap,
-    CharacterDocument,
-    EncounterCombatant,
-    Vehicle
-  } from '$lib/firestore.types'
   import { getAll, getChildren, getRoots, isResourceKind, RESOURCES, type Character, type Place, type Quest, type Resource, type ResourceKind } from '$lib/resources'
   import { user } from '$lib/stores/auth.store'
   import { userCampaigns } from '$lib/stores/campaign.store'
@@ -23,12 +17,12 @@
 
   let addOpen = $state(false)
   let campaign = $state<Campaign | null>(null)
-  let characters = $state<CharacterDocument[]>([])
+  let characters = $state<api.Character[]>([])
   let quests = $state<Quest[]>([])
   let npcs = $state<Character[]>([])
   let places = $state<Place[]>([])
   let maps = $state<CampaignMap[]>([])
-  let encounters = $state<CampaignEncounter[]>([])
+  let encounters = $state<Encounter[]>([])
   let vehicles = $state<Vehicle[]>([])
   let players = $state<{ id: string; name: string }[]>([])
   let loading = $state(false)
@@ -65,7 +59,7 @@
 
   let more = $state<Record<string, Resource[]>>({})
 
-  const isDm = $derived(Boolean(campaign && $user && campaign.dm_id === $user.uid))
+  const isDm = $derived(Boolean(campaign && $user && campaign.dm_id === $user.user_id))
   const activeQuests = $derived(quests.filter((quest) => quest.state === 'active'))
   const lore = $derived(npcs.length + places.length)
   const knownEncounters = $derived(
@@ -95,10 +89,10 @@
     }
 
     loading = true
-    const release = campaignService.postEncountersListener(id, (entries) => {
+    const release = getCampaignEncountersStream(id, (entries) => {
       if (live) encounters = entries
     })
-    const releaseVehicles = vehicleService.postVehiclesListener(id, (entries) => {
+    const releaseVehicles = getCampaignVehiclesStream(id, (entries) => {
       if (live) vehicles = entries
     })
     error = null
@@ -106,12 +100,12 @@
     void (async () => {
       try {
         const [record, party, errands, cast, sites, charts] = await Promise.all([
-          campaignService.getCampaign(id),
-          campaignService.getCampaignCharacters(id),
-          getAll({ at: 'campaigns', id }, 'quests') as Promise<Quest[]>,
-          getAll({ at: 'campaigns', id }, 'characters') as Promise<Character[]>,
-          getAll({ at: 'campaigns', id }, 'places') as Promise<Place[]>,
-          campaignService.getMaps(id)
+          getCampaign(id),
+          getCampaignCharacters(id),
+          getAll({ at: 'campaign', id }, 'quests') as Promise<Quest[]>,
+          getAll({ at: 'campaign', id }, 'characters') as Promise<Character[]>,
+          getAll({ at: 'campaign', id }, 'places') as Promise<Place[]>,
+          getCampaignMaps(id)
         ])
         if (!live) return
         campaign = record
@@ -121,13 +115,13 @@
         places = sites
         maps = charts
 
-        const held = await Promise.all(ROLLS.map((roll) => getAll({ at: 'campaigns', id }, roll)))
+        const held = await Promise.all(ROLLS.map((roll) => getAll({ at: 'campaign', id }, roll)))
         if (!live) return
         more = Object.fromEntries(ROLLS.map((roll, index) => [roll, held[index]]))
         players = await Promise.all(
-          record?.player_ids.map(async (uid) => ({
-            id: uid,
-            name: (await userService.getProfile(uid).catch(() => null))?.display_name || 'Unnamed player'
+          record?.player_ids.map(async (userId) => ({
+            id: userId,
+            name: (await getProfile(userId).catch(() => null))?.display_name || 'Unnamed player'
           })) ?? []
         )
       } catch (reason) {

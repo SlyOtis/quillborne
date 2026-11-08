@@ -1,8 +1,8 @@
 <script lang="ts">
+  import { getCampaigns } from '$lib/api'
   import { onMount, setContext } from 'svelte'
   import { navigate } from 'sly-svelte-location-router'
   import { getTheme, setTheme } from '$lib/dialogs/theme'
-  import { campaignService } from '$lib/firestore.service'
   import { userCampaigns } from '$lib/stores/campaign.store'
   import { anyDialogOpen, uiStore } from '$lib/stores/ui.store'
   import Button from '$components/ui/Button.svelte'
@@ -29,7 +29,7 @@
     setTheme(getTheme())
 
     try {
-      userCampaigns.set(await campaignService.getUserCampaigns())
+      userCampaigns.set(await getCampaigns())
     } catch (reason) {
       error = reason instanceof Error ? reason.message : 'The archive did not answer'
     } finally {

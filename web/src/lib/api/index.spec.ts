@@ -1,40 +1,67 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import portraitSource from '../components/ui/Portrait.svelte?raw'
-import storedImageSource from '../components/ui/StoredImage.svelte?raw'
-import createPageSource from '../pages/CharacterCreatePage.svelte?raw'
-import resourceShellSource from '../components/campaign/ResourceShell.svelte?raw'
-import resourceRollSource from '../components/campaign/ResourceRoll.svelte?raw'
-import backgroundTabSource from '../components/character_sheet/main_tabs/BackgroundTab.svelte?raw'
-import blockEditorSource from '../components/ui/BlockEditor.svelte?raw'
-import blockReaderSource from '../components/ui/BlockReader.svelte?raw'
-import mediaDialogSource from '../components/MediaDialog.svelte?raw'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Character } from './types'
+import portraitSource from '../../components/ui/Portrait.svelte?raw'
+import storedImageSource from '../../components/ui/StoredImage.svelte?raw'
+import createPageSource from '../../pages/CharacterCreatePage.svelte?raw'
+import resourceShellSource from '../../components/campaign/ResourceShell.svelte?raw'
+import resourceRollSource from '../../components/campaign/ResourceRoll.svelte?raw'
+import backgroundTabSource from '../../components/character_sheet/main_tabs/BackgroundTab.svelte?raw'
+import blockEditorSource from '../../components/ui/BlockEditor.svelte?raw'
+import blockReaderSource from '../../components/ui/BlockReader.svelte?raw'
+import mediaDialogSource from '../../components/MediaDialog.svelte?raw'
 
-const wire = vi.hoisted(() => ({ reads: [] as string[], deletes: [] as string[], posts: [] as { path: string; body: unknown }[], answers: {} as Record<string, unknown> }))
+const wire = vi.hoisted(() => ({
+  reads: [] as string[],
+  deletes: [] as string[],
+  posts: [] as { path: string; body: unknown }[],
+  answers: {} as Record<string, unknown>,
+  calls: [] as Array<{ method: string; path: string; body?: unknown }>,
+  replies: new Map<string, unknown>(),
+  refusals: new Map<string, number>(),
+  polls: [] as Array<{ path: string; kind: string; stopped: boolean }>
+}))
 
-vi.mock('./api', async (original) => ({
-  ...(await original<typeof import('./api')>()),
-  getSession: () => ({ uid: 'lars', email: '', display_name: '', photo_url: '' }),
-  getApi: (path: string) => {
-    wire.reads.push(path)
+vi.mock('./core', async (original) => {
+  const real = await original<typeof import('./core')>()
+  const answer = (method: string, url: string, body?: unknown) => {
+    const path = `/${url}`
+    wire.calls.push({ method, path, body })
+    if (method === 'GET') wire.reads.push(path)
+    if (method === 'POST') wire.posts.push({ path, body })
+    if (method === 'DELETE') wire.deletes.push(path)
+    const refused = wire.refusals.get(`${method} ${path}`)
+    if (refused) return Promise.reject(new real.ApiError(refused, 'refused'))
+    if (wire.replies.has(`${method} ${path}`)) return Promise.resolve(wire.replies.get(`${method} ${path}`))
+    if (method !== 'GET') return Promise.resolve({ id: 'made-1' })
     if (path in wire.answers) return Promise.resolve(wire.answers[path])
     return Promise.resolve(path.includes('?') ? [] : { id: 'a1', name: 'theme.mp3', mime_type: 'audio/mpeg', size_bytes: 3, etag: 'tag-a', uploaded_by: 'lars' })
-  },
-  deleteApi: (path: string) => {
-    wire.deletes.push(path)
-    return Promise.resolve(null)
-  },
-  postApi: (path: string, body: unknown) => {
-    wire.posts.push({ path, body })
-    return Promise.resolve(null)
-  },
-  getCsrfHeaders: () => ({ 'SAuth-CSRF-Token': 'tok' })
-}))
+  }
+  return {
+    ...real,
+    getSession: () => ({ user_id: 'lars', email: '' }),
+    getSessionId: () => 'lars',
+    unwrap: (url: string, options: { method?: string; body?: unknown } = {}) => {
+      if (options.body instanceof FormData) return real.unwrap(url, options as Parameters<typeof real.unwrap>[1])
+      return answer(options.method ?? 'GET', url, options.body)
+    },
+    request: async (url: string, options: { method?: string } = {}) => {
+      await answer(options.method ?? 'GET', url)
+      return new Response(null)
+    },
+    getStream: (path: string, kind: string, load: () => Promise<unknown>, onChange: (value: unknown) => void) => {
+      const poll = { path: `/${path}`, kind, stopped: false }
+      wire.polls.push(poll)
+      load().then((value) => !poll.stopped && onChange(value))
+      return () => (poll.stopped = true)
+    }
+  }
+})
 
 import {
   deleteFile,
   getAssets,
   getAssetTab,
-  getFileRecord,
+  getAsset,
   getFileUrl,
   getMediaUrl,
   isDeadFile,
@@ -42,8 +69,29 @@ import {
   isStoredFile,
   postFile,
   putAttachments,
-  UploadError
-} from './storage.service'
+  UploadError,
+  deleteCampaign,
+  deleteCampaignPlayer,
+  deletePartyCharacter,
+  deleteProfileFriend,
+  getCampaignChatStream,
+  getCharacter,
+  getCharacterMetadata,
+  getCharacters,
+  getProfile,
+  getResources,
+  postCampaignCharacter,
+  postCampaignChat,
+  postCampaignPlayer,
+  postCampaignSong,
+  postCharacter,
+  postCharacterCopy,
+  postPartyCharacter,
+  postProfileFriend,
+  postResource,
+  putProfileDetails,
+  putResource
+} from './index'
 
 const dead = 'blob:http://localhost:5174/5d0c2b1e-4f1a-4b7e-9d1c-0b6e7f3a2c11'
 const stored = '/api/asset/0b6e7f3a-2c11-4f1a-9d1c-5d0c2b1e4b7e/data'
@@ -148,6 +196,7 @@ describe('the media contract', () => {
 
 function getStore(answer: (url: string, init: RequestInit) => Response) {
   const calls: { url: string; init: RequestInit }[] = []
+  vi.stubGlobal('document', { cookie: 'sauth_csrf_token=tok' })
   vi.stubGlobal('fetch', (url: string, init: RequestInit = {}) => {
     calls.push({ url, init })
     return Promise.resolve(answer(url, init))
@@ -245,8 +294,8 @@ describe('the service asset store', () => {
   })
 
   it('reads and deletes an asset by the id in its address, and leaves an old file: record alone', async () => {
-    expect(await getFileRecord(stored)).toMatchObject({ id: 'a1', mime_type: 'audio/mpeg' })
-    expect(await getFileRecord('file:users/lars/files/1-a.webp')).toBeNull()
+    expect(await getAsset(stored)).toMatchObject({ id: 'a1', mime_type: 'audio/mpeg' })
+    expect(await getAsset('file:users/lars/files/1-a.webp')).toBeNull()
     await deleteFile(stored)
     await deleteFile('file:users/lars/files/1-a.webp')
 
@@ -357,5 +406,212 @@ describe('the media a page attaches', () => {
   it('follows the page on every save of the shell', () => {
     expect(resourceShellSource).toContain('await putAttachments(id, one.content)')
     expect(resourceShellSource).toContain('await putAttachments(recordId, one.content)')
+  })
+})
+
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0))
+
+const sheet = (name: string, imageUrl = '') =>
+  ({ info: { name, level: 2, class: { name: 'Bard' }, race: { name: 'Gnome' }, imageUrl } }) as unknown as Character['character']
+
+const row = (fields: Partial<Character> = {}): Character => ({
+  id: 'char-1',
+  owner_id: 'lars',
+  character: sheet('Lyra'),
+  metadata: {
+    name: 'Lyra',
+    level: 2,
+    class: 'Bard',
+    race: 'Gnome',
+    status: 'ready',
+    created_at: '2026-09-06T10:00:00.000Z',
+    updated_at: '2026-09-06T10:00:00.000Z',
+    version: '1.0.0',
+    tags: ['bard'],
+    is_template: false,
+    is_public: false
+  },
+  ...fields
+})
+
+beforeEach(() => {
+  wire.calls.length = 0
+  wire.replies.clear()
+  wire.refusals.clear()
+  wire.polls.length = 0
+  wire.reads = []
+  wire.deletes = []
+  wire.posts = []
+})
+
+describe('the campaign chat the table reads', () => {
+  it('reads the campaign chat, which the service filters for hidden rolls', async () => {
+    const seen: unknown[] = []
+    wire.replies.set('GET /campaign/camp-1/chat', [{ id: 'one' }])
+
+    getCampaignChatStream('camp-1', (entries) => seen.push(entries))
+    await settle()
+
+    expect(wire.calls).toEqual([{ method: 'GET', path: '/campaign/camp-1/chat', body: undefined }])
+    expect(seen).toEqual([[{ id: 'one' }]])
+    expect(wire.polls[0]).toMatchObject({ path: '/campaign/camp-1/stream', kind: 'chat' })
+  })
+
+  it('stops reading once stopped', () => {
+    const stop = getCampaignChatStream('camp-1', () => {})
+    stop()
+
+    expect(wire.polls[0].stopped).toBe(true)
+  })
+
+  it('posts an entry to the campaign it is said at', async () => {
+    await postCampaignChat('camp-1', { author_id: 'lars', author_name: 'Lars', kind: 'message', body: 'Hi' } as never)
+
+    expect(wire.calls[0]).toMatchObject({ method: 'POST', path: '/campaign/camp-1/chat', body: { body: 'Hi' } })
+  })
+})
+
+describe('characters', () => {
+  it('creates one with the summary its sheet derives', async () => {
+    wire.replies.set('POST /character', { id: 'char-9' })
+
+    const id = await postCharacter(sheet('Brann'), { tags: ['dwarf'] }, 'camp-1')
+
+    expect(id).toBe('char-9')
+    expect(wire.calls[0]).toMatchObject({
+      method: 'POST',
+      path: '/character',
+      body: { campaign_id: 'camp-1', metadata: { name: 'Brann', level: 2, class: 'Bard', race: 'Gnome', tags: ['dwarf'] } }
+    })
+  })
+
+  it('reads as nothing what the service refuses or lacks', async () => {
+    wire.refusals.set('GET /character/char-1', 403)
+    expect(await getCharacter('char-1')).toBeNull()
+
+    wire.refusals.set('GET /character/char-2', 404)
+    expect(await getCharacter('char-2')).toBeNull()
+  })
+
+  it('clears a dead portrait and writes the sheet back', async () => {
+    wire.replies.set('GET /character/char-1', row({ character: sheet('Lyra', 'blob:gone') }))
+
+    const found = await getCharacter('char-1')
+
+    expect(found?.character.info.imageUrl).toBe('')
+    expect(wire.calls.some((call) => call.method === 'PUT' && call.path === '/character/char-1')).toBe(true)
+  })
+
+  it('refreshes a stale summary on the list', async () => {
+    wire.replies.set('GET /character', [row({ metadata: { ...row().metadata, level: 1 } })])
+
+    const [found] = await getCharacters()
+
+    expect(found.metadata.level).toBe(2)
+    expect(wire.calls.find((call) => call.method === 'PUT')).toMatchObject({
+      path: '/character/char-1',
+      body: { metadata: getCharacterMetadata(sheet('Lyra')) }
+    })
+  })
+
+  it('copies the sources along only for the owner', async () => {
+    wire.replies.set('GET /character/char-1', row())
+    wire.replies.set('POST /character', { id: 'copy-1' })
+    wire.replies.set('GET /character/char-1/sources', ['a.pdf'])
+
+    expect(await postCharacterCopy('char-1')).toBe('copy-1')
+    expect(wire.calls.find((call) => call.path === '/character/copy-1/sources')).toMatchObject({ method: 'PUT', body: { sources: ['a.pdf'] } })
+
+    wire.calls.length = 0
+    wire.replies.set('GET /character/char-1', row({ owner_id: 'dis' }))
+    await postCharacterCopy('char-1')
+    expect(wire.calls.some((call) => call.path.endsWith('/sources'))).toBe(false)
+  })
+})
+
+describe('the table and the party', () => {
+  it('seats a player by address and unseats them by id', async () => {
+    await postCampaignPlayer('camp-1', 'dis@example.test')
+    await deleteCampaignPlayer('camp-1', 'dis')
+
+    expect(wire.calls).toEqual([
+      { method: 'POST', path: '/campaign/camp-1/player', body: { email: 'dis@example.test' } },
+      { method: 'DELETE', path: '/campaign/camp-1/player/dis', body: undefined }
+    ])
+  })
+
+  it('brings a character to the table and the party', async () => {
+    await postCampaignCharacter('camp-1', 'char-1')
+    await postPartyCharacter('party-1', 'char-1')
+    await deletePartyCharacter('party-1', 'char-1')
+
+    expect(wire.calls.map((call) => `${call.method} ${call.path}`)).toEqual([
+      'POST /campaign/camp-1/character/char-1',
+      'POST /party/party-1/character/char-1',
+      'DELETE /party/party-1/character/char-1'
+    ])
+  })
+
+  it('removes the stored map pictures and the songs it added before the campaign', async () => {
+    wire.replies.set('GET /campaign/camp-1/map', [{ image_url: '/api/asset/0a1/data', layers: [{ image_url: '/api/asset/0b2/data' }, { image_url: 'https://x' }] }])
+    wire.replies.set('GET /campaign/camp-1/song', [
+      { owner_id: 'lars', address: '/api/asset/0c3/data' },
+      { owner_id: 'dis', address: '/api/asset/0d4/data' }
+    ])
+
+    await deleteCampaign('camp-1')
+
+    expect(wire.deletes.slice(0, 3)).toEqual(['/asset/0a1', '/asset/0b2', '/asset/0c3'])
+    expect(wire.calls.at(-1)).toMatchObject({ method: 'DELETE', path: '/campaign/camp-1' })
+  })
+})
+
+describe('the parts a campaign or a player keeps', () => {
+  it('lists a kind under the campaign or under the player', async () => {
+    wire.replies.set('GET /resource?kind=npcs&campaign_id=camp-1', [{ id: 'b', title: 'Zed' }, { id: 'a', title: 'Ann' }])
+    wire.replies.set('GET /resource?kind=entries&user_id=lars', [])
+
+    const found = await getResources({ at: 'campaign', id: 'camp-1' }, 'npcs')
+    await getResources({ at: 'user', id: 'lars' }, 'entries')
+
+    expect(found.map((one) => one.id)).toEqual(['a', 'b'])
+    expect(wire.calls[1].path).toBe('/resource?kind=entries&user_id=lars')
+  })
+
+  it('writes a kind with its campaign, and a song under the campaign', async () => {
+    await postResource({ at: 'campaign', id: 'camp-1' }, 'quests', { title: 'Find the ladle' })
+    await postCampaignSong('camp-1', { title: 'Drums' })
+    await putResource('q-1', { title: 'Found' })
+
+    expect(wire.calls).toEqual([
+      { method: 'POST', path: '/resource', body: { title: 'Find the ladle', kind: 'quests', campaign_id: 'camp-1' } },
+      { method: 'POST', path: '/campaign/camp-1/song', body: { title: 'Drums' } },
+      { method: 'PUT', path: '/resource/q-1', body: { title: 'Found' } }
+    ])
+  })
+})
+
+describe('the profile', () => {
+  it('reads the own profile at its own address and another by id', async () => {
+    await getProfile()
+    await getProfile('dis')
+
+    expect(wire.calls.map((call) => call.path)).toEqual(['/profile', '/profile/dis'])
+  })
+
+  it('adds and drops a friend', async () => {
+    await postProfileFriend('dis@example.test')
+    await deleteProfileFriend('dis')
+
+    expect(wire.calls).toEqual([
+      { method: 'POST', path: '/profile/friend', body: { email: 'dis@example.test' } },
+      { method: 'DELETE', path: '/profile/friend/dis', body: undefined }
+    ])
+  })
+
+  it('keeps the integration keys apart from the profile', async () => {
+    await putProfileDetails({ replicate_api_key: 'r8_x' })
+
+    expect(wire.calls[0]).toEqual({ method: 'PUT', path: '/profile/details', body: { replicate_api_key: 'r8_x' } })
   })
 })

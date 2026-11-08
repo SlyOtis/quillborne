@@ -39,9 +39,9 @@ afterEach(() => {
 
 describe('a live list over the stream', () => {
   it('shares one connection between the lists of a campaign', async () => {
-    const { getStream } = await import('./api')
-    const stopChat = getStream('/campaign/c/stream', 'chat', async () => [], () => {})
-    const stopMaps = getStream('/campaign/c/stream', 'map', async () => [], () => {})
+    const { getStream } = await import('./core')
+    const stopChat = getStream('campaign/c/stream', 'chat', async () => [], () => {})
+    const stopMaps = getStream('campaign/c/stream', 'map', async () => [], () => {})
 
     expect(FakeSource.made).toHaveLength(1)
     expect(FakeSource.made[0].url).toBe('/api/campaign/c/stream')
@@ -52,10 +52,10 @@ describe('a live list over the stream', () => {
   })
 
   it('reloads on its own kind and on a reconnect, not on another kind', async () => {
-    const { getStream } = await import('./api')
+    const { getStream } = await import('./core')
     let loads = 0
     const seen: number[] = []
-    const stop = getStream('/campaign/k/stream', 'chat', async () => ++loads, (value) => seen.push(value))
+    const stop = getStream('campaign/k/stream', 'chat', async () => ++loads, (value) => seen.push(value))
     await settle()
 
     FakeSource.made[0].fire('map')
@@ -70,21 +70,21 @@ describe('a live list over the stream', () => {
   })
 
   it('hands nothing on when the reload answers the same list', async () => {
-    const { getStream } = await import('./api')
+    const { getStream } = await import('./core')
     const seen: unknown[] = []
-    const stop = getStream('/profile/stream', 'profile', async () => ({ uid: 'u' }), (value) => seen.push(value))
+    const stop = getStream('profile/stream', 'profile', async () => ({ user_id: 'u' }), (value) => seen.push(value))
     await settle()
     FakeSource.made[0].fire('profile')
     await settle()
 
-    expect(seen).toEqual([{ uid: 'u' }])
+    expect(seen).toEqual([{ user_id: 'u' }])
     stop()
   })
 
   it('tells the list when the stream is refused', async () => {
-    const { getStream } = await import('./api')
+    const { getStream } = await import('./core')
     const errors: unknown[] = []
-    const stop = getStream('/resource/r/stream', 'update', async () => [], () => {}, (error) => errors.push(error))
+    const stop = getStream('resource/r/stream', 'update', async () => [], () => {}, (error) => errors.push(error))
     await settle()
     FakeSource.made[0].readyState = FakeSource.CLOSED
     FakeSource.made[0].fire('error')
@@ -102,11 +102,11 @@ describe('a write carries the session csrf token', () => {
       sent.push({ method: init.method, headers: init.headers })
       return { ok: true, json: async () => ({ data: null }) }
     })
-    const { getApi, postApi, putApi, deleteApi } = await import('./api')
-    await getApi('/thing')
-    await postApi('/thing', { a: 1 })
-    await putApi('/thing', { a: 2 })
-    await deleteApi('/thing')
+    const { request, unwrap } = await import('./core')
+    await unwrap('thing')
+    await unwrap('thing', { method: 'POST', body: { a: 1 } })
+    await unwrap('thing', { method: 'PUT', body: { a: 2 } })
+    await request('thing', { method: 'DELETE' })
     expect(sent.map((call) => [call.method, call.headers['SAuth-CSRF-Token']])).toEqual([
       ['GET', undefined],
       ['POST', 'tok=value'],
@@ -117,7 +117,7 @@ describe('a write carries the session csrf token', () => {
 
   it('sends no token when the session has no csrf cookie', async () => {
     vi.stubGlobal('document', { cookie: 'other=1' })
-    const { getCsrfHeaders } = await import('./api')
+    const { getCsrfHeaders } = await import('./core')
     expect(getCsrfHeaders()).toEqual({})
   })
 })

@@ -1,7 +1,6 @@
+import { getCsrfHeaders, getProfileDetails } from './api'
 import { derived, get, type Readable } from "svelte/store";
 import { userDetails } from "./stores/auth.store";
-import { userService } from "./firestore.service";
-import { getCsrfHeaders } from "./api";
 
 export interface AIRequest {
   prompt: string;
@@ -46,7 +45,7 @@ export const hasReplicateKey: Readable<boolean> = derived(
 
 class AIService {
   async getKeyHeld(): Promise<void> {
-    const details = get(userDetails) ?? (await userService.getUserDetails());
+    const details = get(userDetails) ?? (await getProfileDetails());
 
     if (!details?.replicate_api_key) {
       throw new Error("No Replicate key is on your account. Add one on your profile page.");

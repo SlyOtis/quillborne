@@ -1,10 +1,9 @@
 <script lang="ts">
+  import { getAssetTab, getCampaign } from '$lib/api'
+  import type { Campaign, Owner } from '$lib/api/types'
   import { onMount, setContext, type Snippet } from 'svelte'
   import { navigate, resolvedRoute } from 'sly-svelte-location-router'
   import { getTheme, setTheme } from '$lib/dialogs/theme'
-  import { campaignService } from '$lib/firestore.service'
-  import type { Campaign } from '$lib/firestore.types'
-  import { getAssetTab } from '$lib/storage.service'
   import { user } from '$lib/stores/auth.store'
   import { anyDialogOpen, uiStore } from '$lib/stores/ui.store'
   import {
@@ -17,7 +16,6 @@
     type Resource,
     type ResourceKind
   } from '$lib/resources'
-  import type { Owner } from '$lib/firestore.types'
   import { SECTIONS, getSection } from '$components/campaign/CampaignBar.svelte'
   import BlockReader from '$components/ui/BlockReader.svelte'
   import Button from '$components/ui/Button.svelte'
@@ -65,7 +63,7 @@
   const campaignId = $derived(steps[0] === 'campaign' ? steps[1] ?? '' : '')
   const shape = $derived(RESOURCES[kind])
   const owner = $derived<Owner>(
-    campaignId ? { at: 'campaigns', id: campaignId } : { at: 'users', id: $user?.uid ?? '' }
+    campaignId ? { at: 'campaign', id: campaignId } : { at: 'user', id: $user?.user_id ?? '' }
   )
   const under = $derived(campaignId ? `/main/campaign/${campaignId}/${kind}` : `/main/${kind}`)
   const leadUnder = $derived(campaignId ? `/main/campaign/${campaignId}/${lead}` : `/main/${lead}`)
@@ -79,7 +77,7 @@
   let hunt = $state('')
   const player = $derived(new URLSearchParams($resolvedRoute.search).get('player') ?? '')
 
-  const canWrite = $derived(campaignId ? Boolean(campaign && $user && campaign.dm_id === $user.uid) : true)
+  const canWrite = $derived(campaignId ? Boolean(campaign && $user && campaign.dm_id === $user.user_id) : true)
   const canArrange = $derived(Boolean(campaignId) && canWrite)
 
   let picked = $state<string[]>([])
@@ -159,7 +157,7 @@
   async function reload() {
     loading = true
     try {
-      campaign = campaignId ? await campaignService.getCampaign(campaignId) : null
+      campaign = campaignId ? await getCampaign(campaignId) : null
       ;[rows, groups, leads] = await Promise.all([
         getAll(owner, kind),
         getAll(owner, kind, true),
@@ -208,7 +206,7 @@
         parent_id: '',
         group: true,
         group_id: '',
-        owner_id: $user?.uid ?? '',
+        owner_id: $user?.user_id ?? '',
         share_campaigns: campaignId ? [campaignId] : [],
         share_parties: [],
         share_users: []

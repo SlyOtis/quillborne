@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { getCampaigns, getCharacters, getParties } from '$lib/api'
+  import type { Owner } from '$lib/api/types'
   import BaseDialog from "../BaseDialog.svelte";
   import Field from "$components/ui/Field.svelte";
   import Glyph, { type GlyphName } from "$components/ui/Glyph.svelte";
@@ -7,8 +9,6 @@
   import { uiStore, isSearchDialogOpen, searchSeed } from "$lib/stores/ui.store";
   import { user } from "$lib/stores/auth.store";
   import { ACTIONS, actionBlocks, shortcuts } from "$lib/actions";
-  import { campaignService, characterService, partyService } from "$lib/firestore.service";
-  import type { Owner } from "$lib/firestore.types";
   import { getEvery, RESOURCES, type Resource, type ResourceKind } from "$lib/resources";
   import { getDocument, getDocumentText } from "$lib/blocks";
 
@@ -110,17 +110,17 @@
     };
   }
 
-  async function getPages(uid: string): Promise<Hit[]> {
+  async function getPages(userId: string): Promise<Hit[]> {
     const [campaigns, parties, sheets] = await Promise.all([
-      campaignService.getUserCampaigns().catch(() => []),
-      partyService.getParties().catch(() => []),
-      characterService.getUserCharacters().catch(() => [])
+      getCampaigns().catch(() => []),
+      getParties().catch(() => []),
+      getCharacters().catch(() => [])
     ]);
 
     const shelves: { owner: Owner; under: string; place: string }[] = [
-      { owner: { at: 'users', id: uid }, under: '/main', place: 'Your own' },
+      { owner: { at: 'user', id: userId }, under: '/main', place: 'Your own' },
       ...campaigns.map((one) => ({
-        owner: { at: 'campaigns', id: one.id } as Owner,
+        owner: { at: 'campaign', id: one.id } as Owner,
         under: `/main/campaign/${one.id}`,
         place: one.name
       }))
@@ -206,14 +206,14 @@
   });
 
   $effect(() => {
-    const uid = $user?.uid ?? '';
-    if (!isOpen || !uid) return;
+    const userId = $user?.user_id ?? '';
+    if (!isOpen || !userId) return;
 
     void (async () => {
       loading = true;
       error = null;
       try {
-        pages = await getPages(uid);
+        pages = await getPages(userId);
       } catch (reason) {
         error = reason instanceof Error ? reason.message : String(reason);
       } finally {

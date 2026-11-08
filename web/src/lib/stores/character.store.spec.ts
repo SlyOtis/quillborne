@@ -1,5 +1,5 @@
+import type { Character } from '../api/types'
 import { describe, expect, it } from 'vitest'
-import type { CharacterDocument } from '../firestore.types'
 import { getRecentCharacters, getRecentFirst } from './character.store'
 
 describe('recent characters', () => {
@@ -10,7 +10,7 @@ describe('recent characters', () => {
   })
 
   it('orders the roll by recency and leaves the unopened in their stored order', () => {
-    const roll = ['a', 'b', 'c', 'd'].map((id) => ({ id }) as CharacterDocument)
+    const roll = ['a', 'b', 'c', 'd'].map((id) => ({ id }) as Character)
 
     expect(getRecentFirst(roll, ['c', 'a']).map((one) => one.id)).toEqual(['c', 'a', 'b', 'd'])
     expect(getRecentFirst(roll, []).map((one) => one.id)).toEqual(['a', 'b', 'c', 'd'])

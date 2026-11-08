@@ -23,6 +23,7 @@ version() {
         smig) smig --version | awk '{print $NF}' ;;
         sauth) sauth --version | awk '{print $NF}' ;;
         air) air -v 2>&1 | grep -o 'v[0-9.]*' | head -1 ;;
+        tygo) tygo --version 2>/dev/null | grep -o "v[0-9.]*" | head -1 ;;
         docker) docker --version | sed 's/.*version \([0-9.]*\).*/\1/' ;;
         az) az version | jq -r '."azure-cli"' ;;
         playwright-cli) brew list --versions playwright-cli 2>/dev/null | awk '{print $2}' ;;
@@ -73,12 +74,13 @@ ensure docker "" brew_install --cask orbstack
 ensure az "" brew_install azure-cli
 ensure playwright-cli "" brew_install playwright-cli
 ensure air "" go_install github.com/air-verse/air@latest
+ensure tygo "" go_install github.com/gzuidhof/tygo@latest
 ensure smig "$SMIG_VERSION" sh -c "GOPRIVATE=github.com/nimling/* go install -ldflags '-X github.com/nimling/samna-migrate/pkg/cli.Version=$SMIG_VERSION' github.com/nimling/samna-migrate/cmd@$SMIG_VERSION && mv '$BIN/cmd' '$BIN/smig'"
 ensure sauth "$SAUTH_VERSION" go_install "github.com/nimling/samna-auth/cmd/sauth@$SAUTH_VERSION"
 
 case ":$PATH:" in
     *":$BIN:"*) ;;
-    *) echo "Add $BIN to PATH so smig, sauth and air are found." ;;
+    *) echo "Add $BIN to PATH so smig, sauth, air and tygo are found." ;;
 esac
 
 cd web && pnpm install

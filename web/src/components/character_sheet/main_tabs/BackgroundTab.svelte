@@ -1,8 +1,8 @@
 <script lang="ts">
+  import { getAssets, getAssetTab, postFile } from '$lib/api'
   import {getContext} from "svelte";
   import type {CharacterContext} from "$lib/types";
   import type {MediaAsset, MediaKind, Mention} from "$lib/blocks";
-  import {getAssets, getAssetTab, postFile} from "$lib/storage.service";
   import BlockEditor from "$components/ui/BlockEditor.svelte";
   import BlockReader from "$components/ui/BlockReader.svelte";
   import MediaDialog from "$components/MediaDialog.svelte";

@@ -1,3 +1,6 @@
+import { getUserName, postCampaignChat } from './api'
+import * as api from './api'
+import type { ChatEntry } from './api/types'
 import type {CharacterContext, CharacterStore, RollLog, RollLogItem, RollResult} from "./types";
 import {writable, get, type Unsubscriber, type Writable} from "svelte/store";
 import type {Character, CharacterAbility, CharacterCurrency, CharacterInfo, CharacterSpell, ConditionInfo, DefenceInfo, SpellsInfo} from "./character.types";
@@ -8,8 +11,6 @@ import { getSystemStack } from "./rules/system";
 import type { ResolvedCharacter } from "./rules/spec.types";
 import { user, userProfile } from "./stores/auth.store";
 import { currentCampaignId } from "./stores/campaign.store";
-import { campaignService, characterService } from "./firestore.service";
-import type { CampaignChatEntry } from "./firestore.types";
 
 const rollStore = writable<RollLog>(JSON.parse(localStorage.getItem('roll_log') || '[]'))
 const sidebarStore = writable(JSON.parse(localStorage.getItem('sidebar') || 'true'))
@@ -369,15 +370,15 @@ export function consumeAmmunition(ammoId: string) {
   });
 }
 
-export type ChatEntryFields = Omit<CampaignChatEntry, 'id' | 'created_at' | 'updated_at'>
+export type ChatEntryFields = Omit<ChatEntry, 'id' | 'campaign_id' | 'created_at' | 'updated_at'>
 
 export function getAuthor(): { author_id: string, author_name: string } {
   const account = get(user);
   const profile = get(userProfile);
 
   return {
-    author_id: account?.uid ?? '',
-    author_name: profile?.display_name || account?.display_name || account?.email || 'Someone'
+    author_id: account?.user_id ?? '',
+    author_name: profile?.display_name || (account ? getUserName(account) : '') || 'Someone'
   }
 }
 
@@ -413,7 +414,7 @@ export function writeRollLog(
   const campaignId = get(currentCampaignId);
 
   if (campaignId) {
-    campaignService.postChatEntry(campaignId, asRollEntry(item))
+    postCampaignChat(campaignId, asRollEntry(item))
       .catch(error => console.error('Campaign chat entry did not save:', error));
     return
   }
@@ -592,7 +593,7 @@ function putCharacter() {
   const written = JSON.stringify(character);
   if (written === characterWritten) return;
 
-  characterService.updateCharacter(id, character)
+  api.putCharacter(id, character)
     .then(() => {
       if (characterStoreId !== id) return;
       characterWritten = written;

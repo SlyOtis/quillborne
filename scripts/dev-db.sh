@@ -29,7 +29,6 @@ docker run \
     --name "$DB_NAME" \
     -p "$PGPORT":"$PGPORT" \
     -v "$DB_NAME-data":/var/lib/postgresql/data \
-    -e GH_REPO_TOKEN="$GH_REPO_TOKEN" \
     -e SAUTH_APP_SLUG="$SAUTH_APP_SLUG" \
     -e SAUTH_DEBUG_USER_ID="$SAUTH_DEBUG_USER_ID" \
     "$DB_NAME"

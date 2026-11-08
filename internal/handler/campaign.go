@@ -482,11 +482,10 @@ func GetCampaignCharacters(ctx echo.Context) error {
 		ctx.Logger().Errorf("GetCampaignCharacters: %v", err)
 		return respond.ErrorInternal(ctx)
 	}
-	documents := make([]CharacterDocument, 0, len(characters))
-	for _, character := range characters {
-		documents = append(documents, getCharacterDocument(character))
+	for i := range characters {
+		putCharacterMetadata(&characters[i])
 	}
-	return respond.JSON(ctx, http.StatusOK, documents, len(documents))
+	return respond.JSON(ctx, http.StatusOK, characters, len(characters))
 }
 
 func PostCampaignCharacter(ctx echo.Context) error {

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { postFile } from '$lib/api'
+  import type { Character } from '$lib/api/types'
   import { onMount } from "svelte";
   import { navigate } from "sly-svelte-location-router";
   import { getSystems } from "$lib/rules/system";
@@ -6,7 +8,6 @@
   import type { AttributeSpec, RuleSystem, RuleSystemOverlay } from "$lib/rules/spec.types";
   import { aiService, hasReplicateKey } from "$lib/ai";
   import { getSource, SOURCE_ACCEPT, type Source } from "$lib/sources";
-  import { postFile } from "$lib/storage.service";
   import Button from "$components/ui/Button.svelte";
   import Field from "$components/ui/Field.svelte";
   import Glyph from "$components/ui/Glyph.svelte";

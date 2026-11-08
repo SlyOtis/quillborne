@@ -8,7 +8,7 @@ web
 
 ## Users
 
-One table: the DM and a handful of friends. Each player clones the repo and runs their own copy with `just dev`, on a laptop at the table and between sessions, sometimes on a phone. The DM runs campaigns, encounters and the lore; players build, level and play their characters.
+One table: the DM and a handful of friends. Each player signs in to the hosted service through Samna Auth, on a laptop at the table and between sessions, sometimes on a phone. The DM runs campaigns, encounters and the lore; players build, level and play their characters.
 
 ## Product Purpose
 
@@ -16,7 +16,7 @@ Quillborne is the table's character sheet and campaign book. A player builds a c
 
 ## Positioning
 
-Local-first and table-owned. There is no hosted server: every player runs the dev server, which carries the AI proxy and a media store that keeps full-size originals on the machine that made them, while Firestore holds only what the table shares. Game rules are data, never code, so a new system or homebrew is a JSON document.
+Hosted and table-owned. One Go service over Postgres signs players in through Samna Auth and decides every read and write by claims, keeps file originals in blob storage, and passes AI calls on to Replicate with the calling player's own key. Game rules are data, never code, so a new system or homebrew is a JSON document.
 
 ## Operating Context
 
@@ -24,9 +24,8 @@ Used live during play, where a roll, a hit point change or a spell slot must be 
 
 ## Capabilities and Constraints
 
-- Svelte 5, TypeScript, Firebase (Firestore, Auth; Storage has no billing), vitest, pnpm only.
-- Rules engine under `src/lib/rules/` resolves the character from systems in `public/sources/systems/`.
-- Dev-server features (the `/replicate` proxy, the `/media/` store) are absent from a hosted build.
+- Svelte 5 and TypeScript over a Go service, Postgres migrated by smig, Samna Auth claims, vitest and go test, pnpm only.
+- Rules engine under `web/src/lib/rules/` resolves the character from systems in `web/public/sources/systems/`.
 - Layouts are relative only: fr, %, flex ratios, clamp(); no absolute pixel sizes.
 
 ## Brand Commitments
@@ -35,13 +34,13 @@ The visual world is a faithful homage to the WarCraft III (Reign of Chaos / The 
 
 ## Evidence on Hand
 
-- Catalogue emblems as SVG under `public/sources/art/`.
-- Live test data: character "Aldric Ravenshade", character "Testy", campaign "The Shadow of Blackwood".
+- Catalogue emblems as SVG under `web/public/sources/art/`.
+- Local test data in `test/seed/`: the players Testy and Pip, the characters Brann Coalbeard, Seraphine Vale and Wren Ashdown, and the campaigns The Ember Road and The Sunken Bell.
 - No raster art for frames or textures exists in the repo; none is to be fabricated as a claim.
 
 ## Product Principles
 
 1. Play first: during a session every common action is one step from the sheet.
 2. Rules are data: nothing about a game system is written into a component.
-3. The table owns its data: originals stay local, only what is shared leaves the machine.
+3. The table owns its data: a claim bound to each row decides who reads and writes it, and a hidden roll or page reaches only those it is for.
 4. Readable before ornate: the homage frames the data and never competes with it.

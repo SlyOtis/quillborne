@@ -34,11 +34,14 @@ build-web: env
 build-server:
     sh scripts/build-server.sh
 
+gen-types:
+    tygo generate
+
 build-db:
     sh scripts/build-db.sh
 
 build-docker:
-    docker build --build-arg GH_REPO_TOKEN="$GH_REPO_TOKEN" --build-arg IMAGE_VERSION="$(git rev-parse --short=12 HEAD)" -t "$APP_NAME" .
+    docker build --build-arg IMAGE_VERSION="$(git rev-parse --short=12 HEAD)" -t "$APP_NAME" .
 
 dev: env
     sh scripts/dev.sh

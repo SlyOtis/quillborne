@@ -1,6 +1,6 @@
 <script lang="ts">
+  import type { Character, Vehicle, VehicleCrewman, VehicleFields } from '$lib/api/types'
   import { navigate } from 'sly-svelte-location-router'
-  import type { CharacterDocument, Vehicle, VehicleCrewman, VehicleFields } from '$lib/firestore.types'
   import type { Crewman, CrewPerk, Rulings, VehicleSystem } from '$lib/rules/vehicle.types'
   import Button from '$components/ui/Button.svelte'
   import Card from '$components/ui/Card.svelte'
@@ -30,9 +30,9 @@
     /** The signed in player. */
     me: string
     /** Every sheet the reader can see that could sail: their own and, for a steward, the campaign's. */
-    characters: CharacterDocument[]
+    characters: Character[]
     /** The sheets of the crew the reader can read, by character id. */
-    seats: Record<string, CharacterDocument>
+    seats: Record<string, Character>
     /** The reader's own character as crew, when they chose one. */
     crewman: Crewman | null
     /** Writes the given vessel fields. */

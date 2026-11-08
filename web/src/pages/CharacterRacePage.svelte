@@ -1,10 +1,10 @@
 <script lang="ts">
+  import { postCharacter, putCharacterSources } from '$lib/api'
   import { onMount } from "svelte";
   import { navigate } from "sly-svelte-location-router";
   import { getCatalog, postCatalogReading, type CatalogEntry } from "$lib/catalog";
   import { getSource } from "$lib/sources";
   import CatalogList from "$components/CatalogList.svelte";
-  import { characterService } from "$lib/firestore.service";
   import type { Character } from "$lib/character.types";
   import type { RuleSystemOverlay } from "$lib/rules/spec.types";
   import { getAbilities, getEmptyCharacter, getEmptyCharacterInfo } from "$lib/engine";
@@ -127,12 +127,12 @@
       const system = await getSystemStack(character.systems, character.overlay ?? undefined);
       const entry = (await getCatalog('classes')).find((one) => one.name === character.info.class.name) ?? null;
 
-      const characterId = await characterService.createCharacter(getStartingCharacter(character, system, entry), {
+      const characterId = await postCharacter(getStartingCharacter(character, system, entry), {
         tags: characterData.sources.length > 0 ? ["ai-generated", "sources-uploaded"] : ["manually-created"]
       });
 
       if (characterData.sources?.length) {
-        await characterService.setCharacterSources(characterId, characterData.sources);
+        await putCharacterSources(characterId, characterData.sources);
       }
 
       navigate(`/main/character/${characterId}`);

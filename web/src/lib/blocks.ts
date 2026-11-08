@@ -59,7 +59,7 @@ export interface BlockOptions {
   leading?: BlockLeading
   /** Set when the block carries its own look rather than the page's. */
   own?: boolean
-  /** Who voted for what on a poll block, by uid. */
+  /** Who voted for what on a poll block, by user id. */
   votes?: Record<string, string>
   /** Address a bookmark or embed block points at. */
   url?: string

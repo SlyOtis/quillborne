@@ -1,5 +1,5 @@
+import { getFileUrl, postFile } from './api'
 import type { SoundClip, SoundBoard } from './character.types';
-import { getFileUrl, postFile } from './storage.service';
 
 
 function getDuration(audioFile: File): Promise<number | undefined> {

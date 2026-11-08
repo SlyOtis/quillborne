@@ -1,10 +1,10 @@
 <script lang="ts">
+  import { getFileUrl } from '$lib/api'
+  import type { CampaignMap, MapMarker } from '$lib/api/types'
   import { untrack } from 'svelte'
-  import type { CampaignMap, MapMarker } from '$lib/firestore.types'
   import MapIcon from './MapIcon.svelte'
   import Card from '$components/ui/Card.svelte'
   import StoredImage from '$components/ui/StoredImage.svelte'
-  import { getFileUrl } from '$lib/storage.service'
   import Glyph from '$components/ui/Glyph.svelte'
 
   const {

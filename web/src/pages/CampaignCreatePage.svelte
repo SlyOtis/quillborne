@@ -1,7 +1,7 @@
 <script lang="ts">
+  import { getSession, postCampaign } from '$lib/api'
+  import type { Campaign } from '$lib/api/types'
   import { navigate } from "sly-svelte-location-router";
-  import { campaignService } from "../lib/firestore.service";
-  import { authService } from "../lib/auth.service";
   import Button from "$components/ui/Button.svelte";
   import Field from "$components/ui/Field.svelte";
   import Ornament from "$components/ui/Ornament.svelte";
@@ -134,7 +134,7 @@
     error = null;
     
     try {
-      const currentUser = authService.getCurrentUser();
+      const currentUser = getSession();
       if (!currentUser) {
         throw new Error('User not authenticated');
       }
@@ -142,7 +142,7 @@
       const campaignData = {
         name: generatedConcept.name || "Unnamed Campaign",
         description: generatedConcept.description || "An AI-generated campaign",
-        dm_id: currentUser.uid,
+        dm_id: currentUser.user_id,
         player_ids: [],
         party_ids: [],
         character_ids: [],
@@ -155,7 +155,7 @@
         }
       };
       
-      const campaignId = await campaignService.createCampaign(campaignData);
+      const campaignId = await postCampaign(campaignData);
       
       console.log("Campaign created successfully with ID:", campaignId);
       

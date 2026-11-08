@@ -1,12 +1,11 @@
 <script lang="ts">
+  import { deleteSession, postFile, putProfileDetails, putProfilePreferences } from '$lib/api'
+  import * as api from '$lib/api'
   import { onMount } from 'svelte'
   import { navigate } from 'sly-svelte-location-router'
   import { availableThemes, getDefaultTheme, getTheme, setTheme } from '$lib/dialogs/theme'
-  import { userService } from '$lib/firestore.service'
-  import { authService } from '$lib/auth.service'
   import { userDetails, userProfile } from '$lib/stores/auth.store'
   import { INTEGRATIONS, type Integration } from '$lib/integrations'
-  import { postFile } from '$lib/storage.service'
   import { getAction, putShortcuts, shortcuts } from '$lib/actions'
   import Button from '$components/ui/Button.svelte'
   import Field from '$components/ui/Field.svelte'
@@ -51,7 +50,7 @@
     error = null
     saved = null
     try {
-      await userService.putUserSecrets({ [field]: '' })
+      await putProfileDetails({ [field]: '' })
       userDetails.update((details) => ({ ...(details ?? {}), [field]: false }))
       keys[field] = ''
       saved = 'Key removed.'
@@ -77,7 +76,7 @@
   }
 
   async function signOut() {
-    await authService.signOut()
+    await deleteSession()
   }
 
   async function unpin(action: string) {
@@ -108,12 +107,12 @@
     }
 
     try {
-      await userService.updateProfile({ display_name: displayName.trim() })
-      await userService.updatePreferences({ ...$userProfile?.preferences, theme })
+      await api.putProfile({ display_name: displayName.trim() })
+      await putProfilePreferences({ ...$userProfile?.preferences, theme })
       userProfile.update((profile) => (profile ? { ...profile, preferences: { ...profile.preferences, theme } } : profile))
       setTheme(theme)
       if (Object.keys(secrets).length) {
-        await userService.putUserSecrets(secrets)
+        await putProfileDetails(secrets)
         userDetails.update((details) => ({ ...(details ?? {}), ...Object.fromEntries(Object.keys(secrets).map((field) => [field, true])) }))
         for (const field of Object.keys(secrets)) keys[field] = ''
       }
@@ -130,7 +129,7 @@
     error = null
     saved = null
     try {
-      await userService.updatePreferences({
+      await putProfilePreferences({
         ...$userProfile?.preferences,
         sound_enabled: soundOn === 'on',
         sound_volume: volume,
@@ -164,7 +163,7 @@
     error = null
     try {
       const { url } = await postFile(file, { kind: 'user' })
-      await userService.updateProfile({ photo_url: url })
+      await api.putProfile({ photo_url: url })
 
       saved = 'Picture updated.'
     } catch (reason) {

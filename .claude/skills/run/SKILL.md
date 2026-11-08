@@ -75,7 +75,7 @@ slot from 1 that no other worktree's `.env` holds and nothing listens on. A work
 its slot, until it is removed. Never copy another checkout's `.env`.
 
 The seed belongs to this machine: 64 hex characters that encrypt the keys players save in the local database. When
-it is empty, saving a key answers 500. `SAUTH_APP_SECRET`, `GH_REPO_TOKEN` and `SERVER_VERSION` stay empty.
+it is empty, saving a key answers 500. `SAUTH_APP_SECRET` and `SERVER_VERSION` stay empty.
 `SAUTH_DEBUG_USER_ID` signs every request in as Testy McTestface and skips Samna Auth, and the nimling modules the
 build and the migrations pull are public.
 

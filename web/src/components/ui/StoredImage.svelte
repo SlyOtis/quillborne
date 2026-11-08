@@ -1,6 +1,6 @@
 <script lang="ts">
+  import { getFileUrl, isDeadFile, isStoredFile } from '$lib/api'
   import { onDestroy } from 'svelte'
-  import { getFileUrl, isDeadFile, isStoredFile } from '$lib/storage.service'
 
   const {
     src,

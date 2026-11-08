@@ -1,8 +1,8 @@
 <script lang="ts">
+  import { getParties } from '$lib/api'
+  import type { Party } from '$lib/api/types'
   import Glyph from '$components/ui/Glyph.svelte'
   import { navigate } from 'sly-svelte-location-router'
-  import { partyService } from '$lib/firestore.service'
-  import type { Party } from '$lib/firestore.types'
   import Card from '$components/ui/Card.svelte'
 
   const { search = '' }: {
@@ -23,7 +23,7 @@
 
   $effect(() => {
     void (async () => {
-      parties = await partyService.getParties().catch(() => [])
+      parties = await getParties().catch(() => [])
       loading = false
     })()
   })

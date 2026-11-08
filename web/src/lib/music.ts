@@ -1,7 +1,6 @@
+import { getCampaignSongsStream, getFileUrl, postCampaignSong, postFile } from './api'
+import type { Song } from './api/types'
 import { get, writable } from 'svelte/store'
-import type { Song } from './firestore.types'
-import { campaignService } from './firestore.service'
-import { getFileUrl, postFile } from './storage.service'
 
 const RESTART_AFTER = 3
 
@@ -75,7 +74,7 @@ export function openLibrary(campaignId: string): void {
 
   if (!campaignId) return
 
-  stop = campaignService.postSongsListener(campaignId, (songs) =>
+  stop = getCampaignSongsStream(campaignId, (songs) =>
     library.set([...songs].sort((a, b) => a.title.localeCompare(b.title)))
   )
 }
@@ -169,7 +168,7 @@ export async function postSong(campaignId: string, file: File): Promise<void> {
 
   const [duration, { url: address }] = await Promise.all([getDuration(file), postFile(file, { kind: 'campaignAudio', campaignId })])
 
-  await campaignService.postPart({ at: 'campaigns', id: campaignId }, 'songs', {
+  await postCampaignSong(campaignId, {
     title: file.name.replace(/\.[^.]+$/, ''),
     address,
     duration,

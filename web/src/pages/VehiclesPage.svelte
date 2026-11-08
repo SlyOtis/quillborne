@@ -1,9 +1,9 @@
 <script lang="ts">
+  import { getCampaigns, getCampaignVehiclesStream, getVehicles, postVehicle } from '$lib/api'
+  import type { Campaign, Vehicle } from '$lib/api/types'
   import { onMount, setContext } from 'svelte'
   import { navigate, resolvedRoute } from 'sly-svelte-location-router'
   import { getTheme, setTheme } from '$lib/dialogs/theme'
-  import { campaignService, vehicleService } from '$lib/firestore.service'
-  import type { Campaign, Vehicle } from '$lib/firestore.types'
   import {
     getContext as getVehicleContext,
     getLayout,
@@ -70,7 +70,7 @@
 
   $effect(() => {
     if (!$user) return
-    void Promise.all([getVehicleSystems(), campaignService.getUserCampaigns()])
+    void Promise.all([getVehicleSystems(), getCampaigns()])
       .then(([loadedSystems, loadedCampaigns]) => {
         systems = loadedSystems
         campaigns = loadedCampaigns
@@ -84,14 +84,13 @@
     if (!$user) return
     loading = true
     if (id) {
-      const live = vehicleService.postVehiclesListener(id, (loaded) => {
+      const live = getCampaignVehiclesStream(id, (loaded) => {
         vehicles = loaded
         loading = false
       })
       return () => live()
     }
-    vehicleService
-      .getVehicles()
+    getVehicles()
       .then((loaded) => (vehicles = loaded))
       .catch((reason) => (error = reason instanceof Error ? reason.message : String(reason)))
       .finally(() => (loading = false))
@@ -146,7 +145,7 @@
     busy = true
     error = null
     try {
-      const made = await vehicleService.postVehicle({
+      const made = await postVehicle({
         name: name.trim(),
         campaign_id: harbour || null,
         system: chosen.system.id,
@@ -180,7 +179,7 @@
         error = issues.join(' ')
         return
       }
-      const made = await vehicleService.postVehicle({
+      const made = await postVehicle({
         name: pkg.name,
         campaign_id: campaignId || null,
         system: pkg.system,
@@ -287,7 +286,7 @@
                     : entry.crew.length
                       ? `${entry.crew.length} crew`
                       : undefined}
-                  tone={entry.owner_id === $user?.uid ? 'ember' : 'verdigris'}
+                  tone={entry.owner_id === $user?.user_id ? 'ember' : 'verdigris'}
                   onclick={() => navigate(`/main/vehicles/${entry.id}`)}
                 />
               {/each}

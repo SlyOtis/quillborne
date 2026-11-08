@@ -1,8 +1,8 @@
 <script lang="ts">
+  import { postParty } from '$lib/api'
   import { onMount, setContext } from 'svelte'
   import { navigate } from 'sly-svelte-location-router'
   import { getTheme, setTheme } from '$lib/dialogs/theme'
-  import { partyService } from '$lib/firestore.service'
   import { user } from '$lib/stores/auth.store'
   import { anyDialogOpen, uiStore } from '$lib/stores/ui.store'
   import Button from '$components/ui/Button.svelte'
@@ -33,11 +33,11 @@
     busy = true
     error = null
     try {
-      const id = await partyService.postParty({
+      const id = await postParty({
         name: name.trim(),
         description: description.trim(),
         image_url: '',
-        member_ids: [$user.uid],
+        member_ids: [$user.user_id],
         character_ids: []
       })
       navigate(`/main/party/${id}`)

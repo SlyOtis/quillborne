@@ -22,8 +22,6 @@ properties:
     secrets:
       - name: pgpassword
         value: ${PGPASSWORD}
-      - name: gh-repo-token
-        value: ${GH_REPO_TOKEN}
   template:
     containers:
       - name: migrate
@@ -41,8 +39,6 @@ properties:
             value: ${PGDATABASE}
           - name: PGSSLMODE
             value: ${PGSSLMODE}
-          - name: GH_REPO_TOKEN
-            secretRef: gh-repo-token
           - name: SAUTH_APP_SLUG
             value: ${SAUTH_APP_SLUG}
         resources:

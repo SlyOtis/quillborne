@@ -1,8 +1,8 @@
+import { putProfilePreferences } from './api'
+import type { Shortcut } from './api/types'
 import { derived, get } from 'svelte/store'
 import { navigate } from 'sly-svelte-location-router'
 import type { GlyphName } from '$components/ui/Glyph.svelte'
-import type { Shortcut } from './firestore.types'
-import { userService } from './firestore.service'
 import { userProfile } from './stores/auth.store'
 import { uiStore } from './stores/ui.store'
 import { currentCharacterId } from './stores/character.store'
@@ -63,5 +63,5 @@ export function getShortcutKey(event: KeyboardEvent): string {
 
 export async function putShortcuts(list: Shortcut[]): Promise<void> {
   const held = get(userProfile)?.preferences
-  await userService.updatePreferences({ ...held, shortcuts: list })
+  await putProfilePreferences({ ...held, shortcuts: list })
 }

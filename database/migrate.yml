@@ -10,7 +10,6 @@ steps:
     include:
       - git: https://github.com/nimling/samna-auth-middleware.git
         ref: v2.0.0-alpha0118
-        token: $GH_REPO_TOKEN
         path: disciple/database
 
   - name: Application Tables

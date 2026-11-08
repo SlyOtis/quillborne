@@ -1,16 +1,9 @@
 <script lang="ts">
+  import { deleteCampaignMap, postCampaignMap, postFile, putCampaignMap } from '$lib/api'
+  import type { Campaign, CampaignMap, CampaignRecordKind, MapLayer, MapMarker, MapMarkerKind } from '$lib/api/types'
   import { onDestroy, untrack } from 'svelte'
   import { navigate } from 'sly-svelte-location-router'
-  import { campaignService } from '$lib/firestore.service'
-  import type {
-    CampaignMap,
-    CampaignRecordKind,
-    MapLayer,
-    MapMarker,
-    MapMarkerKind
-  } from '$lib/firestore.types'
   import { RESOURCES, type Character, type Place, type Quest } from '$lib/resources'
-  import { postFile } from '$lib/storage.service'
   import Button from '$components/ui/Button.svelte'
   import Field from '$components/ui/Field.svelte'
   import Fold from '$components/ui/Fold.svelte'
@@ -92,7 +85,7 @@
     if (!mapId) return
     clearTimeout(saving)
     saving = setTimeout(() => {
-      campaignService.putMap(campaignId, mapId, { plan }).catch(report)
+      putCampaignMap(campaignId, mapId, { plan }).catch(report)
     }, 600)
   }
 
@@ -143,7 +136,7 @@
     error = null
     try {
       const { url } = await postFile(file, { kind: 'campaignMap', campaignId })
-      selectedId = await campaignService.postMap(campaignId, {
+      selectedId = await postCampaignMap(campaignId, {
         title: title.trim() || file.name.replace(/\.[^.]+$/, ''),
         image_url: url
       })
@@ -173,7 +166,7 @@
         min_zoom: previous ? Math.min(previous.max_zoom, selected.max_zoom) : Math.round(selected.max_zoom / 2),
         max_zoom: selected.max_zoom
       }
-      await campaignService.putMap(campaignId, selected.id, { layers: [...selected.layers, layer] })
+      await putCampaignMap(campaignId, selected.id, { layers: [...selected.layers, layer] })
     } catch (reason) {
       report(reason)
     } finally {
@@ -185,13 +178,13 @@
   async function putLayer(layerId: string, updates: Partial<MapLayer>) {
     if (!selected) return
     const next = selected.layers.map((entry) => (entry.id === layerId ? { ...entry, ...updates } : entry))
-    await campaignService.putMap(campaignId, selected.id, { layers: next }).catch(report)
+    await putCampaignMap(campaignId, selected.id, { layers: next }).catch(report)
   }
 
   async function deleteLayer(layerId: string) {
     if (!selected) return
     const next = selected.layers.filter((entry) => entry.id !== layerId)
-    await campaignService.putMap(campaignId, selected.id, { layers: next }).catch(report)
+    await putCampaignMap(campaignId, selected.id, { layers: next }).catch(report)
   }
 
   async function place(x: number, y: number) {
@@ -210,26 +203,26 @@
 
     placing = null
     editing = pin.id
-    await campaignService.putMap(campaignId, selected.id, { markers: [...selected.markers, pin] }).catch(report)
+    await putCampaignMap(campaignId, selected.id, { markers: [...selected.markers, pin] }).catch(report)
   }
 
   async function putMarker(markerId: string, updates: Partial<MapMarker>) {
     if (!selected) return
     const next = selected.markers.map((entry) => (entry.id === markerId ? { ...entry, ...updates } : entry))
-    await campaignService.putMap(campaignId, selected.id, { markers: next }).catch(report)
+    await putCampaignMap(campaignId, selected.id, { markers: next }).catch(report)
   }
 
   async function deleteMarker(markerId: string) {
     if (!selected) return
     if (editing === markerId) editing = null
     const next = selected.markers.filter((entry) => entry.id !== markerId)
-    await campaignService.putMap(campaignId, selected.id, { markers: next }).catch(report)
+    await putCampaignMap(campaignId, selected.id, { markers: next }).catch(report)
   }
 
   async function linkMap(markerId: string, childId: string) {
     if (!selected) return
     await putMarker(markerId, { link_map_id: childId || undefined })
-    if (childId) await campaignService.putMap(campaignId, childId, { parent_map_id: selected.id }).catch(report)
+    if (childId) await putCampaignMap(campaignId, childId, { parent_map_id: selected.id }).catch(report)
   }
 
   function lookup(pin: MapMarker) {
@@ -449,11 +442,11 @@
       <div class="dnd-maps-row">
         <Button
           variant={selected.is_visible ? 'secondary' : 'primary'}
-          onclick={() => campaignService.putMap(campaignId, selected.id, { is_visible: !selected.is_visible }).catch(report)}
+          onclick={() => putCampaignMap(campaignId, selected.id, { is_visible: !selected.is_visible }).catch(report)}
         >
           {selected.is_visible ? 'Hide map from players' : 'Reveal map to players'}
         </Button>
-        <Button variant="danger" onclick={() => campaignService.deleteMap(campaignId, selected.id).catch(report)}>
+        <Button variant="danger" onclick={() => deleteCampaignMap(campaignId, selected.id).catch(report)}>
           Delete map
         </Button>
       </div>

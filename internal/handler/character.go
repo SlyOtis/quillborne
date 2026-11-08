@@ -17,21 +17,6 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type CharacterPermissions struct {
-	Viewers    []string `json:"viewers"`
-	Editors    []string `json:"editors"`
-	DmOverride bool     `json:"dm_override"`
-}
-
-type CharacterDocument struct {
-	ID          uuid.UUID            `json:"id"`
-	OwnerID     uuid.UUID            `json:"owner_id"`
-	CampaignID  *uuid.UUID           `json:"campaign_id,omitempty"`
-	Character   json.RawMessage      `json:"character"`
-	Metadata    map[string]any       `json:"metadata"`
-	Permissions CharacterPermissions `json:"permissions"`
-}
-
 type BodyCharacter struct {
 	Character  *json.RawMessage `json:"character"`
 	Metadata   map[string]any   `json:"metadata"`
@@ -42,7 +27,7 @@ type BodySources struct {
 	Sources []string `json:"sources"`
 }
 
-func getCharacterDocument(character db.Character) CharacterDocument {
+func putCharacterMetadata(character *db.Character) {
 	metadata := map[string]any{}
 	_ = json.Unmarshal(character.Metadata, &metadata)
 	metadata["is_public"] = character.IsPublic
@@ -54,17 +39,9 @@ func getCharacterDocument(character db.Character) CharacterDocument {
 	if _, ok := metadata["tags"]; !ok {
 		metadata["tags"] = []string{}
 	}
-	sheet := character.Sheet
-	if len(sheet) == 0 {
-		sheet = json.RawMessage(`{}`)
-	}
-	return CharacterDocument{
-		ID:          character.ID,
-		OwnerID:     character.UserID,
-		CampaignID:  character.CampaignID,
-		Character:   sheet,
-		Metadata:    metadata,
-		Permissions: CharacterPermissions{Viewers: []string{}, Editors: []string{}, DmOverride: true},
+	character.Metadata, _ = json.Marshal(metadata)
+	if len(character.Sheet) == 0 {
+		character.Sheet = json.RawMessage(`{}`)
 	}
 }
 
@@ -115,11 +92,10 @@ func GetCharacters(ctx echo.Context) error {
 		ctx.Logger().Errorf("GetCharacters: %v", err)
 		return respond.ErrorInternal(ctx)
 	}
-	documents := make([]CharacterDocument, 0, len(characters))
-	for _, character := range characters {
-		documents = append(documents, getCharacterDocument(character))
+	for i := range characters {
+		putCharacterMetadata(&characters[i])
 	}
-	return respond.JSON(ctx, http.StatusOK, documents, len(documents))
+	return respond.JSON(ctx, http.StatusOK, characters, len(characters))
 }
 
 func GetCharacter(ctx echo.Context) error {
@@ -146,7 +122,8 @@ func GetCharacter(ctx echo.Context) error {
 		ctx.Logger().Errorf("GetCharacter: %v", err)
 		return respond.ErrorInternal(ctx)
 	}
-	return respond.JSON(ctx, http.StatusOK, getCharacterDocument(character), 1)
+	putCharacterMetadata(&character)
+	return respond.JSON(ctx, http.StatusOK, character, 1)
 }
 
 func PostCharacter(ctx echo.Context) error {
@@ -218,7 +195,8 @@ func PostCharacter(ctx echo.Context) error {
 		ctx.Logger().Errorf("PostCharacter: %v", err)
 		return respond.ErrorInternal(ctx)
 	}
-	return respond.JSON(ctx, http.StatusCreated, getCharacterDocument(character), 1)
+	putCharacterMetadata(&character)
+	return respond.JSON(ctx, http.StatusCreated, character, 1)
 }
 
 func PutCharacter(ctx echo.Context) error {
@@ -297,7 +275,8 @@ func PutCharacter(ctx echo.Context) error {
 	if character.CampaignID != nil {
 		broker.Post(rctx, broker.CampaignTopic(*character.CampaignID), broker.KindCharacter, character.ID.String(), broker.OpUpdate)
 	}
-	return respond.JSON(ctx, http.StatusOK, getCharacterDocument(character), 1)
+	putCharacterMetadata(&character)
+	return respond.JSON(ctx, http.StatusOK, character, 1)
 }
 
 func PutCharacterPlayed(ctx echo.Context) error {

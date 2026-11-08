@@ -1,10 +1,11 @@
 <script lang="ts">
+  import { getCampaign, getCampaignCharacters, getCampaignCharactersStream, getCampaignMaps, getCampaignMapsStream } from '$lib/api'
+  import type { Campaign, CampaignMap, Encounter, MapMarkerKind, Party } from '$lib/api/types'
+  import type * as api from '$lib/api/types'
   import { onDestroy, onMount, setContext } from 'svelte'
   import { unfold } from '$lib/unfold'
   import { navigate, resolvedRoute } from 'sly-svelte-location-router'
   import { getTheme, setTheme } from '$lib/dialogs/theme'
-  import { campaignService } from '$lib/firestore.service'
-  import type { Campaign, CampaignMap, CharacterDocument, MapMarkerKind } from '$lib/firestore.types'
   import { getAll, isResourceKind, type Character, type Place, type Quest, type Session } from '$lib/resources'
   import { user } from '$lib/stores/auth.store'
   import { anyDialogOpen, uiStore } from '$lib/stores/ui.store'
@@ -46,7 +47,7 @@
   const ROLLS = ['characters', 'items', 'places', 'entries'] as const
 
   let campaign = $state<Campaign | null>(null)
-  let characters = $state<CharacterDocument[]>([])
+  let characters = $state<api.Character[]>([])
   let maps = $state<CampaignMap[]>([])
   let sessions = $state<Session[]>([])
   let quests = $state<Quest[]>([])
@@ -67,7 +68,7 @@
   let editing = $state<string | null>(null)
 
   const campaignId = $derived(route?.params?.id ?? '')
-  const isDm = $derived(Boolean(campaign && $user && campaign.dm_id === $user.uid))
+  const isDm = $derived(Boolean(campaign && $user && campaign.dm_id === $user.user_id))
 
   const averageLevel = $derived(
     characters.length === 0
@@ -182,7 +183,7 @@
     }
 
     try {
-      campaign = await campaignService.getCampaign(campaignId)
+      campaign = await getCampaign(campaignId)
       if (!campaign) {
         error = 'That campaign does not exist, or you are not part of it.'
         return
@@ -194,10 +195,10 @@
       loading = false
     }
 
-    stopMaps = campaignService.postMapsListener(campaignId, (loaded) => {
+    stopMaps = getCampaignMapsStream(campaignId, (loaded) => {
       maps = loaded.sort((a, b) => a.title.localeCompare(b.title))
     })
-    stopCharacters = campaignService.postCharactersListener(campaignId, (loaded) => {
+    stopCharacters = getCampaignCharactersStream(campaignId, (loaded) => {
       characters = loaded
     })
   })
@@ -209,12 +210,12 @@
 
   async function reload() {
     const [party, board, log, tasks, cast, world] = await Promise.all([
-      campaignService.getCampaignCharacters(campaignId),
-      campaignService.getMaps(campaignId),
-      getAll({ at: 'campaigns', id: campaignId }, 'sessions') as Promise<Session[]>,
-      getAll({ at: 'campaigns', id: campaignId }, 'quests') as Promise<Quest[]>,
-      getAll({ at: 'campaigns', id: campaignId }, 'characters') as Promise<Character[]>,
-      getAll({ at: 'campaigns', id: campaignId }, 'places') as Promise<Place[]>
+      getCampaignCharacters(campaignId),
+      getCampaignMaps(campaignId),
+      getAll({ at: 'campaign', id: campaignId }, 'sessions') as Promise<Session[]>,
+      getAll({ at: 'campaign', id: campaignId }, 'quests') as Promise<Quest[]>,
+      getAll({ at: 'campaign', id: campaignId }, 'characters') as Promise<Character[]>,
+      getAll({ at: 'campaign', id: campaignId }, 'places') as Promise<Place[]>
     ])
 
     characters = party

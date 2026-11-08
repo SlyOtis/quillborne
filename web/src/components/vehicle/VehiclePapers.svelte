@@ -1,7 +1,7 @@
 <script lang="ts">
+  import { deleteVehicle, postVehicle } from '$lib/api'
+  import type { Vehicle, VehicleFields } from '$lib/api/types'
   import { navigate } from 'sly-svelte-location-router'
-  import { vehicleService } from '$lib/firestore.service'
-  import type { Vehicle, VehicleFields } from '$lib/firestore.types'
   import { getDef, getTemplateDrift, getVehiclePackage } from '$lib/rules/vehicle'
   import type { ComponentDef, Customisation, InstalledComponent, VehicleSystem } from '$lib/rules/vehicle.types'
   import BaseDialog from '$components/BaseDialog.svelte'
@@ -142,7 +142,7 @@
     busy = true
     error = null
     try {
-      const made = await vehicleService.postVehicle({
+      const made = await postVehicle({
         name: `${vehicle.name} (copy)`,
         campaign_id: vehicle.campaign_id,
         system: vehicle.system,
@@ -167,7 +167,7 @@
     busy = true
     error = null
     try {
-      await vehicleService.deleteVehicle(vehicle.id)
+      await deleteVehicle(vehicle.id)
       scuttling = false
       navigate(vehicle.campaign_id ? `/main/campaign/${vehicle.campaign_id}/vehicles` : '/main/vehicles')
     } catch (reason) {

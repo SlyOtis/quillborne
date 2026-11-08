@@ -1,9 +1,9 @@
 <script lang="ts">
+  import { deleteParty, deletePartyCharacter, getCharacter, getCharacters, getParty, getPartyStream, getProfileEmail, getProfiles, postPartyCharacter, putParty } from '$lib/api'
+  import type { Character, Party, Profile } from '$lib/api/types'
   import { onMount, setContext } from 'svelte'
   import { navigate } from 'sly-svelte-location-router'
   import { getTheme, setTheme } from '$lib/dialogs/theme'
-  import { campaignService, characterService, partyService, userService } from '$lib/firestore.service'
-  import type { CharacterDocument, Party, UserProfile } from '$lib/firestore.types'
   import { user } from '$lib/stores/auth.store'
   import { anyDialogOpen, uiStore } from '$lib/stores/ui.store'
   import BaseDialog from '$components/BaseDialog.svelte'
@@ -27,19 +27,19 @@
   const partyId = $derived(route?.params?.id ?? '')
 
   let party = $state<Party | null>(null)
-  let members = $state<UserProfile[]>([])
-  let heroes = $state<CharacterDocument[]>([])
+  let members = $state<Profile[]>([])
+  let heroes = $state<Character[]>([])
   let loading = $state(true)
   let busy = $state(false)
   let error = $state<string | null>(null)
   let invite = $state('')
-  let mine = $state<CharacterDocument[]>([])
+  let mine = $state<Character[]>([])
   let bring = $state('')
   let name = $state('')
   let description = $state('')
   let dropOpen = $state(false)
 
-  const owns = $derived(Boolean(party && $user && party.owner_id === $user.uid))
+  const owns = $derived(Boolean(party && $user && party.owner_id === $user.user_id))
   const free = $derived(mine.filter((entry) => !party?.character_ids.includes(entry.id)))
   const renamed = $derived(
     Boolean(party && name.trim() && (name.trim() !== party.name || description.trim() !== party.description))
@@ -55,7 +55,7 @@
 
     void (async () => {
       try {
-        party = await partyService.getParty(partyId)
+        party = await getParty(partyId)
         name = party?.name ?? ''
         description = party?.description ?? ''
         if (party) await fill()
@@ -69,7 +69,7 @@
 
   $effect(() => {
     if (!partyId) return
-    const live = partyService.subscribeToParty(partyId, (loaded) => {
+    const live = getPartyStream(partyId, (loaded) => {
       party = loaded
       if (party) void fill()
     })
@@ -79,13 +79,13 @@
   async function fill() {
     if (!party) return
     const [profiles, roll, brought] = await Promise.all([
-      userService.getProfiles(party.member_ids),
-      characterService.getUserCharacters(),
-      Promise.all(party.character_ids.map((id) => characterService.getCharacter(id)))
+      getProfiles(party.member_ids),
+      getCharacters(),
+      Promise.all(party.character_ids.map((id) => getCharacter(id)))
     ])
     members = profiles
     mine = roll
-    heroes = brought.filter((entry): entry is CharacterDocument => entry !== null)
+    heroes = brought.filter((entry): entry is Character => entry !== null)
   }
 
   async function write(task: () => Promise<void>) {
@@ -104,7 +104,7 @@
     if (!party || !renamed) return
     const fields = { name: name.trim(), description: description.trim() }
     void write(async () => {
-      await partyService.putParty(party!.id, fields)
+      await putParty(party!.id, fields)
       party = { ...party!, ...fields }
     })
   }
@@ -113,7 +113,7 @@
     if (!party || !bring) return
     const id = bring
     void write(async () => {
-      await partyService.postPartyCharacter(party!.id, id)
+      await postPartyCharacter(party!.id, id)
       party = { ...party!, character_ids: [...party!.character_ids, id] }
       bring = ''
       await fill()
@@ -123,7 +123,7 @@
   function dropHero(id: string) {
     if (!party) return
     void write(async () => {
-      await partyService.deletePartyCharacter(party!.id, id)
+      await deletePartyCharacter(party!.id, id)
       party = { ...party!, character_ids: party!.character_ids.filter((entry) => entry !== id) }
       await fill()
     })
@@ -133,7 +133,7 @@
     if (!party) return
     const id = party.id
     void write(async () => {
-      await partyService.deleteParty(id)
+      await deleteParty(id)
       dropOpen = false
       navigate('/main')
     })
@@ -146,18 +146,18 @@
     busy = true
     error = null
     try {
-      const found = await userService.getProfileEmail(wanted)
+      const found = await getProfileEmail(wanted)
       if (!found) {
         error = 'Nobody signs in with that address.'
         return
       }
-      if (party.member_ids.includes(found.uid)) {
+      if (party.member_ids.includes(found.user_id)) {
         error = 'They are already in the party.'
         return
       }
 
-      const member_ids = [...party.member_ids, found.uid]
-      await partyService.putParty(party.id, { member_ids })
+      const member_ids = [...party.member_ids, found.user_id]
+      await putParty(party.id, { member_ids })
       party = { ...party, member_ids }
       invite = ''
       await fill()
@@ -168,17 +168,17 @@
     }
   }
 
-  async function dropMember(uid: string) {
+  async function dropMember(userId: string) {
     if (!party) return
 
     busy = true
     error = null
     try {
-      const member_ids = party.member_ids.filter((entry) => entry !== uid)
+      const member_ids = party.member_ids.filter((entry) => entry !== userId)
       const character_ids = party.character_ids.filter(
-        (id) => !heroes.some((hero) => hero.id === id && hero.owner_id === uid)
+        (id) => !heroes.some((hero) => hero.id === id && hero.owner_id === userId)
       )
-      await partyService.putParty(party.id, { member_ids, character_ids })
+      await putParty(party.id, { member_ids, character_ids })
       party = { ...party, member_ids, character_ids }
       await fill()
     } catch (reason) {
@@ -225,12 +225,12 @@
         </header>
 
         <div class="band-grid">
-          {#each members as member (member.uid)}
+          {#each members as member (member.user_id)}
             <Card
               title={member.display_name || member.email}
-              sub={member.uid === party.owner_id ? 'Gathered the party' : 'Member'}
+              sub={member.user_id === party.owner_id ? 'Gathered the party' : 'Member'}
               image={member.photo_url}
-              tone={member.uid === party.owner_id ? 'ember' : 'metal'}
+              tone={member.user_id === party.owner_id ? 'ember' : 'metal'}
             />
           {/each}
         </div>
@@ -252,10 +252,10 @@
           </div>
 
           <ul class="band-list">
-            {#each members.filter((entry) => entry.uid !== party?.owner_id) as member (member.uid)}
+            {#each members.filter((entry) => entry.user_id !== party?.owner_id) as member (member.user_id)}
               <li class="band-row">
                 <span class="band-row-name">{member.display_name || member.email}</span>
-                <Button variant="ghost" size="sm" disabled={busy} onclick={() => dropMember(member.uid)}>
+                <Button variant="ghost" size="sm" disabled={busy} onclick={() => dropMember(member.user_id)}>
                   Remove
                 </Button>
               </li>
@@ -288,7 +288,7 @@
           </div>
 
           <ul class="band-list">
-            {#each heroes.filter((entry) => owns || entry.owner_id === $user?.uid) as hero (hero.id)}
+            {#each heroes.filter((entry) => owns || entry.owner_id === $user?.user_id) as hero (hero.id)}
               <li class="band-row">
                 <span class="band-row-name">{hero.metadata.name}</span>
                 <Button variant="ghost" size="sm" disabled={busy} onclick={() => dropHero(hero.id)}>Take out</Button>

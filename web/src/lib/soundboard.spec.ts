@@ -5,7 +5,7 @@ const storage = vi.hoisted(() => ({
   getFileUrl: vi.fn(() => Promise.resolve('/media/users/lars/files/1757-a1.mp3'))
 }))
 
-vi.mock('./storage.service', () => storage)
+vi.mock('./api', () => storage)
 
 import { playSoundClip, postSoundClip } from './soundboard'
 

@@ -1,11 +1,11 @@
 <script lang="ts">
+  import { postCharacter } from '$lib/api'
+  import type { Owner } from '$lib/api/types'
   import { navigate } from 'sly-svelte-location-router'
   import ResourceShell from '$components/campaign/ResourceShell.svelte'
   import Sigil from '$components/ui/Sigil.svelte'
   import Glyph from '$components/ui/Glyph.svelte'
   import { putHero, type Hero } from '$lib/resources'
-  import type { Owner } from '$lib/firestore.types'
-  import { characterService } from '$lib/firestore.service'
   import { getEmptyCharacter } from '$lib/engine'
 
   let forging = $state(false)
@@ -30,10 +30,10 @@
         race: { name: one.species || 'Unknown', type: one.species || 'Unknown' }
       }
 
-      const id = await characterService.createCharacter(
+      const id = await postCharacter(
         character,
         undefined,
-        owner.at === 'campaigns' ? owner.id : undefined
+        owner.at === 'campaign' ? owner.id : undefined
       )
       await putHero(owner, one.id, { ...one, sheet_id: id })
       navigate(`/main/character/${id}`)

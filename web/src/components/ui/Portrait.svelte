@@ -1,6 +1,6 @@
 <script lang="ts">
+  import { isDeadFile } from '$lib/api'
   import StoredImage from './StoredImage.svelte'
-  import { isDeadFile } from '$lib/storage.service'
 
   const {
     src,

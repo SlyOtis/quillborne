@@ -1,7 +1,7 @@
 <script lang="ts">
+  import { deleteCampaign, deleteCampaignCharacter, deleteCampaignPlayer, getCampaign, getCharacters, getProfiles, postCampaignCharacter, postCampaignPlayer, putCampaign } from '$lib/api'
+  import type { Campaign, CampaignSettings, Character, Profile } from '$lib/api/types'
   import { navigate } from 'sly-svelte-location-router'
-  import { campaignService, characterService, partyService, userService } from '$lib/firestore.service'
-  import type { Campaign, CampaignSettings, CharacterDocument, Owner, UserProfile } from '$lib/firestore.types'
   import { deleteResources } from '$lib/resources'
   import { user } from '$lib/stores/auth.store'
   import { userCampaigns } from '$lib/stores/campaign.store'
@@ -19,15 +19,15 @@
     /** The campaign the table is gathered around, rewritten as it is saved. */
     campaign: Campaign
     /** The character sheets brought to the campaign. */
-    characters: CharacterDocument[]
+    characters: Character[]
     /** Runs after the roll of characters changed so the page reads it back. */
     onchange: () => Promise<void>
   } = $props()
 
   const EXPERIENCE: CampaignSettings['experience_mode'][] = ['milestone', 'individual', 'shared']
 
-  let players = $state<UserProfile[]>([])
-  let mine = $state<CharacterDocument[]>([])
+  let players = $state<Profile[]>([])
+  let mine = $state<Character[]>([])
   let invite = $state('')
   let bring = $state('')
   let name = $state('')
@@ -43,7 +43,7 @@
   let dropOpen = $state(false)
   let read = $state('')
 
-  const isDm = $derived(Boolean($user && campaign.dm_id === $user.uid))
+  const isDm = $derived(Boolean($user && campaign.dm_id === $user.user_id))
   const free = $derived(mine.filter((entry) => !entry.campaign_id))
   const changed = $derived(
     name.trim() !== campaign.name ||
@@ -63,8 +63,8 @@
 
   async function fill() {
     const [profiles, roll] = await Promise.all([
-      userService.getProfiles([campaign.dm_id, ...campaign.player_ids]),
-      characterService.getUserCharacters()
+      getProfiles([campaign.dm_id, ...campaign.player_ids]),
+      getCharacters()
     ])
     players = profiles
     mine = roll
@@ -83,7 +83,7 @@
   }
 
   async function reread() {
-    const found = await campaignService.getCampaign(campaign.id)
+    const found = await getCampaign(campaign.id)
     if (found) campaign = found
     userCampaigns.update((all) => all.map((entry) => (entry.id === campaign.id ? campaign : entry)))
   }
@@ -91,7 +91,7 @@
   function save() {
     const fields = { name: name.trim(), description: description.trim(), settings: { ...settings } }
     void write(async () => {
-      await campaignService.putCampaign(campaign.id, fields)
+      await putCampaign(campaign.id, fields)
       await reread()
     })
   }
@@ -99,7 +99,7 @@
   function archive() {
     const is_active = !campaign.is_active
     void write(async () => {
-      await campaignService.putCampaign(campaign.id, { is_active })
+      await putCampaign(campaign.id, { is_active })
       await reread()
     })
   }
@@ -108,15 +108,15 @@
     const wanted = invite.trim()
     if (!wanted) return
     void write(async () => {
-      await campaignService.postCampaignPlayer(campaign.id, wanted)
+      await postCampaignPlayer(campaign.id, wanted)
       invite = ''
       await reread()
     })
   }
 
-  function dropPlayer(uid: string) {
+  function dropPlayer(userId: string) {
     void write(async () => {
-      await campaignService.deleteCampaignPlayer(campaign.id, uid)
+      await deleteCampaignPlayer(campaign.id, userId)
       await reread()
       await onchange()
     })
@@ -126,7 +126,7 @@
     const id = bring
     if (!id) return
     void write(async () => {
-      await campaignService.postCampaignCharacter(campaign.id, id)
+      await postCampaignCharacter(campaign.id, id)
       bring = ''
       await reread()
       await fill()
@@ -136,7 +136,7 @@
 
   function dropCharacter(id: string) {
     void write(async () => {
-      await campaignService.deleteCampaignCharacter(campaign.id, id)
+      await deleteCampaignCharacter(campaign.id, id)
       await reread()
       await fill()
       await onchange()
@@ -144,12 +144,12 @@
   }
 
   function dropCampaign() {
-    const uid = $user?.uid
-    if (!uid) return
+    const userId = $user?.user_id
+    if (!userId) return
     const id = campaign.id
     void write(async () => {
-      await deleteResources({ at: 'campaigns', id }, uid)
-      await campaignService.deleteCampaign(id)
+      await deleteResources({ at: 'campaign', id }, userId)
+      await deleteCampaign(id)
       userCampaigns.update((all) => all.filter((entry) => entry.id !== id))
       dropOpen = false
       navigate('/main')
@@ -165,22 +165,22 @@
   <Panel title="At the table">
     <div class="table-body">
       <div class="table-cards">
-        {#each players as player (player.uid)}
+        {#each players as player (player.user_id)}
           <Card
             title={player.display_name || player.email}
-            sub={player.uid === campaign.dm_id ? 'Dungeon master' : 'Player'}
+            sub={player.user_id === campaign.dm_id ? 'Dungeon master' : 'Player'}
             image={player.photo_url}
-            tone={player.uid === campaign.dm_id ? 'verdigris' : 'metal'}
+            tone={player.user_id === campaign.dm_id ? 'verdigris' : 'metal'}
           />
         {/each}
       </div>
 
       {#if isDm}
         <ul class="table-list">
-          {#each players.filter((entry) => entry.uid !== campaign.dm_id) as player (player.uid)}
+          {#each players.filter((entry) => entry.user_id !== campaign.dm_id) as player (player.user_id)}
             <li class="table-row">
               <span class="table-row-name">{player.display_name || player.email}</span>
-              <Button variant="ghost" size="sm" disabled={busy} onclick={() => dropPlayer(player.uid)}>Remove</Button>
+              <Button variant="ghost" size="sm" disabled={busy} onclick={() => dropPlayer(player.user_id)}>Remove</Button>
             </li>
           {/each}
         </ul>
@@ -210,7 +210,7 @@
           {#each characters as entry (entry.id)}
             <li class="table-row">
               <span class="table-row-name">{entry.metadata.name}, level {entry.metadata.level} {entry.metadata.class}</span>
-              {#if isDm || entry.owner_id === $user?.uid}
+              {#if isDm || entry.owner_id === $user?.user_id}
                 <Button variant="ghost" size="sm" disabled={busy} onclick={() => dropCharacter(entry.id)}>Take out</Button>
               {/if}
             </li>

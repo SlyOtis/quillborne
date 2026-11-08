@@ -1,9 +1,9 @@
 <script lang="ts">
+  import type { Song } from '$lib/api/types'
   import Fold from '$components/ui/Fold.svelte'
   import FrameBtn from '$components/ui/FrameBtn.svelte'
   import Glyph from '$components/ui/Glyph.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
-  import type { Song } from '$lib/firestore.types'
   import {
     cycleRepeat,
     dequeueSong,

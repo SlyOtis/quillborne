@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { MapMarkerKind } from '$lib/firestore.types'
+  import type { MapMarkerKind } from '$lib/api/types'
 
   const {
     kind,

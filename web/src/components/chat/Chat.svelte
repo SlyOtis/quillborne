@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { getCampaign, getCsrfHeaders, getProfiles } from '$lib/api'
+  import type { Profile } from '$lib/api/types'
   import {onDestroy, getContext} from "svelte";
   import {type ChatLog, detectAction, getChatLog} from "$lib/chat";
   import ChatItem from "./ChatItem.svelte";
@@ -8,10 +10,7 @@
   import Fold from "$components/ui/Fold.svelte";
   import FriendsPanel from "$pages/main/FriendsPanel.svelte";
   import { rollMode, rollHidden, type RollMode } from "$lib/engine";
-  import { getCsrfHeaders } from "$lib/api";
   import { currentCampaignId } from "$lib/stores/campaign.store";
-  import { campaignService, userService } from "$lib/firestore.service";
-  import type { UserProfile } from "$lib/firestore.types";
 
   const {unsubscribeChat, chatStore} = getChatLog()
 
@@ -42,24 +41,24 @@
     dmOf = null
     rollHidden.set(false)
     if (!campaignId) return
-    campaignService.getCampaign(campaignId).then((campaign) => {
+    getCampaign(campaignId).then((campaign) => {
       if ($currentCampaignId === campaignId) dmOf = campaign?.dm_id ?? null
     })
   })
 
-  let friends = $state<UserProfile[]>([])
+  let friends = $state<Profile[]>([])
   let friendsLoading = $state(true)
   let friendsOpen = $state(false)
 
   $effect(() => {
     const ids = $userProfile?.friends ?? []
     friendsLoading = true
-    userService.getProfiles(ids)
+    getProfiles(ids)
       .then((known) => friends = known)
       .finally(() => friendsLoading = false)
   })
 
-  const isDm = $derived(Boolean($user?.uid) && dmOf === $user?.uid)
+  const isDm = $derived(Boolean($user?.user_id) && dmOf === $user?.user_id)
   let scroller: HTMLElement
   
   // Audio recording state

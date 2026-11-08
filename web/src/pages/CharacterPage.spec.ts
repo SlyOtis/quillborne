@@ -101,8 +101,7 @@ describe('the sheet holds until the routed character loads', () => {
       page.instance,
       (node) =>
         node.type === 'CallExpression' &&
-        getName(getPart(node.callee, 'object')) === 'characterService' &&
-        getName(getPart(node.callee, 'property')) === 'getCharacter'
+        getName(node.callee) === 'getCharacter'
     )
 
     expect(reads).toHaveLength(1)

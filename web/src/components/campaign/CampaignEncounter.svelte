@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { campaignService } from '$lib/firestore.service'
-  import type { Campaign, CampaignEncounter, CharacterDocument, EncounterCombatant } from '$lib/firestore.types'
+  import { deleteCampaignEncounter, getCampaignEncountersStream, postCampaignEncounter, putCampaignEncounter } from '$lib/api'
+  import type { Campaign, Encounter, EncounterCombatant } from '$lib/api/types'
+  import type * as api from '$lib/api/types'
   import { rollDie } from '$lib/engine'
   import type { Character } from '$lib/resources'
   import { user } from '$lib/stores/auth.store'
@@ -16,12 +17,12 @@
     /** The campaign the encounters are run in. */
     campaign: Campaign
     /** The character sheets brought to the campaign, offered as combatants. */
-    characters: CharacterDocument[]
+    characters: api.Character[]
     /** The characters written into the campaign, offered as combatants. */
     npcs: Character[]
   } = $props()
 
-  let encounters = $state<CampaignEncounter[]>([])
+  let encounters = $state<Encounter[]>([])
   let chosen = $state('')
   let title = $state('')
   let hero = $state('')
@@ -32,7 +33,7 @@
   let busy = $state(false)
   let error = $state<string | null>(null)
 
-  const isDm = $derived(Boolean($user && campaign.dm_id === $user.uid))
+  const isDm = $derived(Boolean($user && campaign.dm_id === $user.user_id))
   const encounter = $derived(
     encounters.find((entry) => entry.id === chosen) ?? encounters.find((entry) => entry.is_active) ?? encounters[0] ?? null
   )
@@ -40,7 +41,7 @@
   const turn = $derived(encounter && combatants.length > 0 ? encounter.turn % combatants.length : -1)
 
   $effect(() => {
-    const stop = campaignService.postEncountersListener(campaign.id, (found) => {
+    const stop = getCampaignEncountersStream(campaign.id, (found) => {
       encounters = found.sort((a, b) => (Date.parse(b.created_at ?? '') || 0) - (Date.parse(a.created_at ?? '') || 0))
     })
     return stop
@@ -62,17 +63,17 @@
     }
   }
 
-  function put(changes: Partial<CampaignEncounter>) {
+  function put(changes: Partial<Encounter>) {
     const held = encounter
     if (!held) return
-    void write(() => campaignService.putEncounter(campaign.id, held.id, changes))
+    void write(() => putCampaignEncounter(campaign.id, held.id, changes))
   }
 
   function create() {
     const named = title.trim()
     if (!named) return
     void write(async () => {
-      const id = await campaignService.postEncounter(campaign.id, {
+      const id = await postCampaignEncounter(campaign.id, {
         title: named,
         is_active: true,
         share_campaigns: [campaign.id]
@@ -130,7 +131,7 @@
     void write(async () => {
       const result = await rollDie(20, held.combatants.length)
       const rolled = held.combatants.map((entry, index) => ({ ...entry, initiative: (result.rolls[index] ?? 0) + entry.modifier }))
-      await campaignService.putEncounter(campaign.id, held.id, { combatants: order(rolled), turn: 0, round: 1, is_active: true })
+      await putCampaignEncounter(campaign.id, held.id, { combatants: order(rolled), turn: 0, round: 1, is_active: true })
     })
   }
 
@@ -161,7 +162,7 @@
     const held = encounter
     if (!held) return
     void write(async () => {
-      await campaignService.deleteEncounter(campaign.id, held.id)
+      await deleteCampaignEncounter(campaign.id, held.id)
       chosen = ''
     })
   }
