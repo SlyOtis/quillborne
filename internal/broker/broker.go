@@ -25,7 +25,6 @@ const (
 	KindProfile   = "profile"
 	KindUpdate    = "update"
 	KindCharacter = "character"
-	KindParty     = "party"
 	KindVehicle   = "vehicle"
 )
 
@@ -63,10 +62,6 @@ func ResourceTopic(id uuid.UUID) string {
 
 func CharacterTopic(id uuid.UUID) string {
 	return "character:" + id.String()
-}
-
-func PartyTopic(id uuid.UUID) string {
-	return "party:" + id.String()
 }
 
 func VehicleTopic(id uuid.UUID) string {

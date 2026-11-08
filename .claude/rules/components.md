@@ -14,6 +14,10 @@ A component that looks wrong is fixed with a prop or in the component. Never a w
 
 A component that does not exist is authored in `web/src/components/ui/` and then consumed. Prove first that it is missing, and second that it cannot be composed from what is there.
 
+## The frame
+
+`web/src/components/Frame.svelte` is mounted once in `App.svelte` around the router and never remounts: the bar, the crest, the lanterns, the drawers and the scroll. A page renders inside `Shell` from `web/src/components/ui/`, which hands its title, back, width, flush, `drawers` and its `nav`, `crown`, `band`, `tools` and `backdrop` snippets to the frame through the `shell` store and renders the body in place. The frame owns the one `MenuPanel` and the one `Chat`, so a page asks for them with `drawers` and never draws its own; the sheet on screen hands its sound board to the menu through the `soundBoard` store. A page change swaps only the body, which fades in, and the scroll returns to the top unless the address names a mark.
+
 ## Authoring
 
 One destructured `$props()` with a TSDoc line on every prop. `$derived` for computed values, `$effect` only for work outside the render. No comments in a component.

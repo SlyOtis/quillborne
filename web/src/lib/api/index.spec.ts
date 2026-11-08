@@ -72,7 +72,6 @@ import {
   UploadError,
   deleteCampaign,
   deleteCampaignPlayer,
-  deletePartyCharacter,
   deleteProfileFriend,
   getCampaignChatStream,
   getCharacter,
@@ -86,7 +85,6 @@ import {
   postCampaignSong,
   postCharacter,
   postCharacterCopy,
-  postPartyCharacter,
   postProfileFriend,
   postResource,
   putProfileDetails,
@@ -529,7 +527,7 @@ describe('characters', () => {
   })
 })
 
-describe('the table and the party', () => {
+describe('the table', () => {
   it('seats a player by address and unseats them by id', async () => {
     await postCampaignPlayer('camp-1', 'dis@example.test')
     await deleteCampaignPlayer('camp-1', 'dis')
@@ -540,16 +538,10 @@ describe('the table and the party', () => {
     ])
   })
 
-  it('brings a character to the table and the party', async () => {
+  it('brings a character to the table', async () => {
     await postCampaignCharacter('camp-1', 'char-1')
-    await postPartyCharacter('party-1', 'char-1')
-    await deletePartyCharacter('party-1', 'char-1')
 
-    expect(wire.calls.map((call) => `${call.method} ${call.path}`)).toEqual([
-      'POST /campaign/camp-1/character/char-1',
-      'POST /party/party-1/character/char-1',
-      'DELETE /party/party-1/character/char-1'
-    ])
+    expect(wire.calls.map((call) => `${call.method} ${call.path}`)).toEqual(['POST /campaign/camp-1/character/char-1'])
   })
 
   it('removes the stored map pictures and the songs it added before the campaign', async () => {

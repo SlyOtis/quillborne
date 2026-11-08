@@ -526,6 +526,13 @@ let characterStoreInstance: CharacterStore | null = null;
 let characterStoreId: string | null = null;
 let characterWriteTimer: ReturnType<typeof setTimeout> | undefined;
 let characterWritten = '';
+let characterReadOnly = false;
+
+/** Holds the sheet on screen back from the vault, for a sheet the reader may read but not change. */
+export function setCharacterReadOnly(on: boolean) {
+  characterReadOnly = on;
+  if (on) clearTimeout(characterWriteTimer);
+}
 
 // Helper function to update character store with change tracking
 export function updateCharacterWithChangeLog<K extends keyof Character>(
@@ -587,7 +594,7 @@ function putCharacter() {
   characterWriteTimer = undefined;
 
   const id = characterStoreId;
-  if (!characterStoreInstance || !id || !characterWritten) return;
+  if (!characterStoreInstance || !id || !characterWritten || characterReadOnly) return;
 
   const character = getCharacterState(characterStoreInstance);
   const written = JSON.stringify(character);
@@ -638,6 +645,7 @@ export function getCharacterStore(id: string = characterStoreId ?? 'local', char
     characterStoreInstance.unsubscribe();
     characterStoreInstance = null;
     characterWritten = '';
+    characterReadOnly = false;
     characterWriteError.set('');
   }
 
@@ -666,7 +674,7 @@ export function getCharacterStore(id: string = characterStoreId ?? 'local', char
     const unsubscribe = propStore.subscribe(state => {
       localStorage.setItem(prefix + curr, JSON.stringify(state))
 
-      if (id === 'local') return
+      if (id === 'local' || characterReadOnly) return
 
       clearTimeout(characterWriteTimer)
       characterWriteTimer = setTimeout(putCharacter, characterWriteDelay)

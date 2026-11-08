@@ -3,7 +3,7 @@
   import type { Campaign, Encounter, EncounterCombatant } from '$lib/api/types'
   import type * as api from '$lib/api/types'
   import { rollDie } from '$lib/engine'
-  import type { Character } from '$lib/resources'
+  import type { Npc } from '$lib/resources'
   import { user } from '$lib/stores/auth.store'
   import Button from '$components/ui/Button.svelte'
   import Field from '$components/ui/Field.svelte'
@@ -19,13 +19,13 @@
     /** The character sheets brought to the campaign, offered as combatants. */
     characters: api.Character[]
     /** The characters written into the campaign, offered as combatants. */
-    npcs: Character[]
+    npcs: Npc[]
   } = $props()
 
   let encounters = $state<Encounter[]>([])
   let chosen = $state('')
   let title = $state('')
-  let hero = $state('')
+  let seat = $state('')
   let npc = $state('')
   let other = $state('')
   let health = $state(10)
@@ -92,8 +92,8 @@
     put({ combatants: next })
   }
 
-  function joinHero() {
-    const found = characters.find((entry) => entry.id === hero)
+  function joinCharacter() {
+    const found = characters.find((entry) => entry.id === seat)
     if (!found) return
     const info = found.character.info
     join({
@@ -105,7 +105,7 @@
       max_hit_points: info.hp?.max ?? 0,
       is_hit_points_known: true
     })
-    hero = ''
+    seat = ''
   }
 
   function joinNpc() {
@@ -262,19 +262,19 @@
       <Panel title="Join the fight">
         <div class="fray-body">
           <div class="fray-line">
-            <Field id="fray-hero" label="A hero of the campaign">
-              <select id="fray-hero" bind:value={hero} disabled={busy}>
-                <option value="">Choose a hero</option>
+            <Field id="fray-seat" label="A character of the party">
+              <select id="fray-seat" bind:value={seat} disabled={busy}>
+                <option value="">Choose a character</option>
                 {#each characters as entry (entry.id)}
                   <option value={entry.id}>{entry.metadata.name}</option>
                 {/each}
               </select>
             </Field>
-            <Button variant="secondary" size="sm" disabled={busy || !hero} onclick={joinHero}>Add</Button>
+            <Button variant="secondary" size="sm" disabled={busy || !seat} onclick={joinCharacter}>Add</Button>
           </div>
 
           <div class="fray-grid">
-            <Field id="fray-npc" label="A character written into the campaign">
+            <Field id="fray-npc" label="An NPC of the campaign">
               <select id="fray-npc" bind:value={npc} disabled={busy}>
                 <option value="">Choose one, or name someone below</option>
                 {#each npcs as entry (entry.id)}

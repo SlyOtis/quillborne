@@ -56,7 +56,8 @@ import {
   putHealing,
   putItem,
   putSlots,
-  putTemporaryHitPoints
+  putTemporaryHitPoints,
+  setCharacterReadOnly
 } from './engine'
 
 const vault = (): Character => {
@@ -148,6 +149,21 @@ describe('a sheet edit reaching the character document', () => {
     getCharacterStore('char-next', vault())
 
     expect(wire.updates.map((entry) => entry.id)).toEqual([id])
+  })
+
+  it('never writes a sheet held read only, and writes again once the next sheet opens', () => {
+    const { store } = opened()
+    setCharacterReadOnly(true)
+
+    store.info.update((info) => ({ ...info, ac: 15 }))
+    vi.advanceTimersByTime(2000)
+    expect(wire.updates).toEqual([])
+
+    const next = opened()
+    next.store.info.update((info) => ({ ...info, ac: 16 }))
+    vi.advanceTimersByTime(600)
+
+    expect(wire.updates.map((entry) => entry.id)).toEqual([next.id])
   })
 
   it('never writes the local sheet, which lives in this browser alone', () => {

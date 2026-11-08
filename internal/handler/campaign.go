@@ -23,7 +23,6 @@ type BodyCampaign struct {
 	Description *string          `json:"description"`
 	IsActive    *bool            `json:"is_active"`
 	Settings    *json.RawMessage `json:"settings"`
-	PartyIDs    *[]uuid.UUID     `json:"party_ids"`
 }
 
 type BodyPlayer struct {
@@ -60,9 +59,6 @@ func getCampaignView(ctx context.Context, campaigns []db.Campaign) error {
 			return err
 		}
 		campaigns[i].PlayerIDs = players
-		if campaigns[i].PartyIDs == nil {
-			campaigns[i].PartyIDs = []uuid.UUID{}
-		}
 	}
 	return nil
 }
@@ -145,7 +141,6 @@ func PostCampaign(ctx echo.Context) error {
 		Name:      strings.TrimSpace(*body.Name),
 		IsActive:  true,
 		Settings:  json.RawMessage(defaultCampaignSettings),
-		PartyIDs:  []uuid.UUID{},
 		OwnerID:   w.OwnerID,
 		CreatedBy: w.Access.UserClaimID,
 	}
@@ -157,9 +152,6 @@ func PostCampaign(ctx echo.Context) error {
 	}
 	if body.Settings != nil {
 		campaign.Settings = *body.Settings
-	}
-	if body.PartyIDs != nil {
-		campaign.PartyIDs = *body.PartyIDs
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		if _, err := tx.NewInsert().Model(&campaign).ExcludeColumn("id", "sa_created_at", "sa_updated_at", "sa_deleted_at").Returning("*").Exec(tctx); err != nil {
@@ -175,7 +167,7 @@ func PostCampaign(ctx echo.Context) error {
 		if err != nil {
 			return err
 		}
-		playerClaimID, err := postClaim(tctx, tx, w, "Players", "Plays at the table of "+campaign.Name, sdb.ACCESS_READ)
+		playerClaimID, err := postClaim(tctx, tx, w, "Players", "Plays at the table of "+campaign.Name, sdb.ACCESS_READ|sdb.ACCESS_WRITE)
 		if err != nil {
 			return err
 		}
@@ -256,10 +248,6 @@ func PutCampaign(ctx echo.Context) error {
 	if body.Settings != nil {
 		campaign.Settings = *body.Settings
 		columns = append(columns, "settings")
-	}
-	if body.PartyIDs != nil {
-		campaign.PartyIDs = *body.PartyIDs
-		columns = append(columns, "party_ids")
 	}
 	campaign.UpdatedAt = time.Now()
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {

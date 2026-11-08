@@ -12,7 +12,7 @@ paths:
 
 ## Casing
 
-The schema and the api are snake_case throughout: `user_id`, `campaign_id`, `party_ids`, `character_ids`, `is_active`, `is_hidden`, `share_users`, `dm_claim_id`. A camelCase reader is a bug, not a variant.
+The schema and the api are snake_case throughout: `user_id`, `campaign_id`, `character_ids`, `is_active`, `is_hidden`, `share_users`, `dm_claim_id`. A camelCase reader is a bug, not a variant.
 
 `Character` nests identity under `info`. `character.info.name`, never `character.name`.
 
@@ -22,28 +22,28 @@ The schema and the api are snake_case throughout: `user_id`, `campaign_id`, `par
 
 - `profile`: a player's name, picture, preferences and friends, and `key_claim_id`, the claim their integration keys are bound to.
 - `character` and its sources: the sheet as stored data.
-- `party`: a party stands on its own, with its `character_ids` and its `member_claim_id`.
-- `campaign`: identity, settings, `party_ids`, and the `dm_claim_id` and `player_claim_id` of its table.
+- `campaign`: identity, settings, and the `dm_claim_id` and `player_claim_id` of its table.
 - Under a campaign by `campaign_id`: `campaign_map`, `encounter`, `chat_entry` and `song`. A `campaign_map` holds its picture, `layers` and `markers`, and an optional drawn `plan`, the nimap document of `maps.md`.
 - `resource`: every kind of lore, by `kind`, with `title`, the rest of the page in `fields`, a `campaign_id` when a campaign keeps it, and sub pages through `sa_parent_id` and `sa_root_id`. `resource_update` holds the Yjs updates of live editing.
 - `asset`: a file, a block document or a folder, in nimployer's model. A folder is `inode/directory` with type `folder`; a block document is `application/vnd.mar.document+json` with its body in `document`; a file's bytes sit in blob storage under `blob_url`. Folders nest through `sa_parent_id` and `sa_root_id`; the roots are a campaign's folder, slug `campaign-<campaign id>`, and a player's Personal folder, slug `user-<user id>`.
 - `object_asset`: attaches an asset to any row by `object_type` and `object_id`; its `properties` override the asset's key by key. `tag` and `tag_object` tag any row the same way.
 - `catalog_entry`: the shared class and race readings.
-- `vehicle`: a vessel the table sails, with a `campaign_id` when a campaign sails it: its vehicle `system`, `template` and `layout` keys, the installed `components`, the `states` of each, `stats`, `rulings`, the homebrew `overlay`, `customisation`, the `crew`, the `revision` and its `history`, the crew's `requests`, and its `crew_claim_id`.
+- `vehicle`: a vessel the table sails, with a `campaign_id` when a campaign sails it: its vehicle `system`, `template` and `layout` keys, the installed `components`, the `states` of each, `stats`, `rulings`, the homebrew `overlay`, the `crew`, the `revision` and its `history`, and its `crew_claim_id`.
 
 Every table holds application data, so nothing is aged and there is no `public.prune`.
 
 ## The campaign is the story
 
-Everything the party lives through is a `resource` row of one of the ten kinds, held by the campaign through `campaign_id`. A player's own lore is the same row without one. The campaign kinds the table reads:
+The campaign is the one grouping at the table. Every player seated in it, every holder of its Players claim, is the party, and there is no party apart from the campaign.
+
+Everything the party lives through is a `resource` row of one of the eight kinds, held by the campaign through `campaign_id`. A player's own lore is the same row without one. The campaign kinds the table reads:
 
 - `sessions` is the log: a number, a title, a play date, a summary, and who was present.
-- `quests` carries a state of active, done or abandoned, the character who gave it and the place it points at.
-- `npcs` is the cast, called **Characters** everywhere a player reads it: a role, a disposition, where they are found, a portrait.
+- `npcs` is the cast, called **NPCs** everywhere a player reads it: a role, a disposition, where they are found, a portrait. The DM adds them, and so does any seated player, because a resource with a `campaign_id` needs only read on the campaign. A page written in a campaign starts shared with that campaign, so it reaches the table; its owner narrows that in Access.
 - `locations` is every **Place** charted, its kind, and the map and marker that fix its position.
 - `items` is every **Item**: a kind, a rarity, whether it needs attunement, its weight and worth, who holds it and where it lies.
 
-The kind names stay as they are; the display names are Characters, Items and Places. `CampaignRecordKind` is the display vocabulary, `'place' | 'character' | 'item' | 'quest' | 'session'`.
+The kind names stay as they are; the display names are NPCs, Items and Places. `CampaignRecordKind`, what a map pin stands for, is `'place' | 'npc' | 'item' | 'session'`.
 
 Prose on a resource is a block document, stored as the JSON that `web/src/lib/blocks.ts` writes, never as loose markdown. `getDocument` reads a stored string whether it is that JSON or older markdown, so a page written before the editor still opens.
 
@@ -54,21 +54,20 @@ A map pin holds `record_kind` and `record_id` rather than its own prose. A place
 There is no rule file and no readers list. Access is a claim bound to the row, granted to the players who hold it, and checked by claimius on every request: a list goes through `sdb.ObjectWhere`, one row through `MutationAccess`, and a create checks EXECUTE on the owner organization, stamps the creator's grant and binds the creator's claim to the new row. A component never filters on access; what the api answers is what the reader may see.
 
 - The creator holds the row through their own grant. Every new row is also bound to the app's Member claim with entry only, so it exists for the organization but grants no read; a public sheet, a profile, the catalog and a tag are bound with read. A player's Personal folder is bound with entry only, so it and every file under it belong to the player alone until they share.
-- A campaign makes two claims. **Dungeon master** holds all, granted to the one who runs it. **Players** holds read, granted when the DM seats a player by their email. Maps and the campaign's folder are bound DM all and Players read; only the DM draws maps.
+- A campaign makes two claims. **Dungeon master** holds all, granted to the one who runs it. **Players** holds read and write, granted when the DM seats a player by their email; every binding names its own mask, so the table reads what is bound read and writes only what is bound write, which is a campaign's vehicles. Maps and the campaign's folder are bound DM all and Players read; only the DM draws maps.
 - No claim inherits, so a binding never cascades down the asset tree. An asset is bound with a copy of its parent folder's bindings when it is created, and moves only within its own root folder.
 - A chat entry is bound DM read, and Players read unless `is_hidden`, so a hidden roll reaches the DM alone. Only the author edits or deletes an entry, and the DM cannot delete a player's.
-- A party makes **Party members**, read, granted to its members.
-- A vehicle makes **Crew**, read and write, granted to the players whose characters are on its `crew`, the user ids read from the character rows and never from the body. A campaign's vehicle is bound DM all and Players read. A steward, who passes the owner check as the builder or the campaign DM, changes every field; the crew changes `states` and `requests`, and `components` and `stats` only while `customisation` is `approved` or `full`. A `components` change carries the `revision` it was drafted on, answers 409 when it is stale, and appends a snapshot to `history`.
-- A sheet that joins a campaign is bound DM read and write and Players read, and loses both when it leaves.
-- Sharing is `share_users`, `share_campaigns` and `share_parties` on a resource, an encounter or a song. A shared campaign binds its DM and Players claims read, a shared party its Party members claim, and the named players get the row's own **Readers** claim, `reader_claim_id`. Every change reconciles the bindings and the grants in the same transaction. Sharing binds the DM too: a page the owner did not share is hidden from the DM.
-- An asset or a folder is shared directly through the claim routes with type `asset`. A page's sharing reaches the assets attached to it: every change to `share_users`, `share_campaigns` or `share_parties` reconciles, in the same transaction, the bindings of each asset the page's owner attached through `object_asset`, and attaching or detaching does the same. A page attaches the media its blocks name when it is saved.
+- A vehicle makes **Crew**, read and write, granted to the players whose characters are on its `crew`, the user ids read from the character rows and never from the body. A campaign's vehicle is bound DM all and Players read and write, so the whole table changes it. Whoever can write a vehicle changes every field; only the builder or the campaign DM scuttles it. A `components` change carries the `revision` it was drafted on, answers 409 when it is stale, and appends a snapshot to `history`.
+- A sheet that joins a campaign is bound DM read and write and Players read, and loses both when it leaves. Every seated player reads every sheet at the table; the sheet page offers its controls to the owner alone and saves nothing for anyone else.
+- Sharing is `share_users` and `share_campaigns` on a resource, an encounter or a song. A shared campaign binds its DM and Players claims read, and the named players get the row's own **Readers** claim, `reader_claim_id`. Every change reconciles the bindings and the grants in the same transaction. Sharing binds the DM too: a page the owner did not share is hidden from the DM.
+- An asset or a folder is shared directly through the claim routes with type `asset`. A page's sharing reaches the assets attached to it: every change to `share_users` or `share_campaigns` reconciles, in the same transaction, the bindings of each asset the page's owner attached through `object_asset`, and attaching or detaching does the same. A page attaches the media its blocks name when it is saved.
 - A player's integration keys are Samna Auth secrets bound to their own **Keys** claim, made the first time they save a key and held by them alone. The api answers only which keys are held; the service opens a key only to call that integration for its owner.
 
 A claim, a binding or a grant is made only through the claim helpers in `internal/handler/share.go` and the claim routes, never by SQL against claimius.
 
 ## The api
 
-`handler.PutRoutes` in `internal/handler/routes.go` mounts every route under `/api`, behind the Samna Auth user middleware `cmd/main.go` hands it: `/profile` with its `details`, `/character`, `/party`, `/campaign` with its `map`, `encounter`, `song` and `chat`, `/resource` with its `update`, `/asset` with its `data` and `object`, `/file` with the folder tree and `move`, `/tag` with its `object`, `/ai`, `/catalog`, `/vehicle`, and `/claim` with `/:type/:id/claim`. Sign in, the callback, sign out and `/api/auth/me` come from the middleware and stay in `cmd/main.go`. The local test data in `test/seed/` runs through the same `PutRoutes` with a middleware of its own that signs each step in as the player it names.
+`handler.PutRoutes` in `internal/handler/routes.go` mounts every route under `/api`, behind the Samna Auth user middleware `cmd/main.go` hands it: `/profile` with its `details`, `/character`, `/campaign` with its `map`, `encounter`, `song` and `chat`, `/resource` with its `update`, `/asset` with its `data` and `object`, `/file` with the folder tree and `move`, `/tag` with its `object`, `/ai`, `/catalog`, `/vehicle`, and `/claim` with `/:type/:id/claim`. Sign in, the callback, sign out and `/api/auth/me` come from the middleware and stay in `cmd/main.go`. The local test data in `test/seed/` runs through the same `PutRoutes` with a middleware of its own that signs each step in as the player it names.
 
 On the web the api layer is `web/src/lib/api/`, the shape nimployer and bookable use. `core.ts` holds `ApiError`, the session, `path`, `request`, `unwrap` and `getStream`. `index.ts` holds every call as a plain exported function, `getCharacter`, `postCampaignMap`, `getCampaignChatStream`, and a new read or write is one more function there, never a helper of its own. `types.ts` re-exports `generated.ts` and `generated_auth.ts`, which `just gen-types` writes with tygo from `internal/db` and the middleware's `shared` models, and narrows a jsonb field with `extends Omit<...>` where the web needs its shape. No type the Go models carry is written by hand: a model change is followed by `just gen-types`.
 
@@ -78,11 +77,11 @@ Function names start with `get`, `post`, `put` or `delete`, in Go and in TypeScr
 
 `internal/broker` is the one event path. A write posts an event after it succeeds: the event goes at once to the streams on the same instance and through `NOTIFY` on `quillborne_event` to the others, and every instance skips the events it sent itself. An event carries a topic, a kind, an id and an op, never a row.
 
-The streams are `/api/campaign/:id/stream`, `/api/profile/stream`, `/api/resource/:id/stream`, `/api/character/:id/stream`, `/api/party/:id/stream` and `/api/vehicle/:id/stream`, and the campaign stream also carries the events of the campaign's vehicles, server-sent events with a heartbeat and a retry. Opening one needs read like the matching REST read, and every event is checked again before it is sent, so a hidden roll never reaches a player's stream and a sheet's changes reach only those who read the sheet.
+The streams are `/api/campaign/:id/stream`, `/api/profile/stream`, `/api/resource/:id/stream`, `/api/character/:id/stream` and `/api/vehicle/:id/stream`, and the campaign stream also carries the events of the campaign's vehicles, server-sent events with a heartbeat and a retry. Opening one needs read like the matching REST read, and every event is checked again before it is sent, so a hidden roll never reaches a player's stream and a sheet's changes reach only those who read the sheet.
 
 A broker counts as started only once its own notify has come back through its listener, because a `LISTEN` the driver has written is not yet active on the server; an instance that answers before then would miss what another instance sends.
 
-On the web a stream function (`getCampaignChatStream`, `getCampaignMapsStream`, `getCampaignEncountersStream`, `getCampaignSongsStream`, `getCampaignCharactersStream`, `getCampaignVehiclesStream`, `getProfileStream`, `getCharacterStream`, `getPartyStream`, `getVehicleStream`, `getResourceUpdatesStream`) shares one EventSource per stream and reloads through its REST getter on connect and on every event of its kind, so what it shows always matches the api.
+On the web a stream function (`getCampaignChatStream`, `getCampaignMapsStream`, `getCampaignEncountersStream`, `getCampaignSongsStream`, `getCampaignCharactersStream`, `getCampaignVehiclesStream`, `getProfileStream`, `getCharacterStream`, `getVehicleStream`, `getResourceUpdatesStream`) shares one EventSource per stream and reloads through its REST getter on connect and on every event of its kind, so what it shows always matches the api.
 
 ## Uploads
 

@@ -10,8 +10,6 @@
   import Shell from '$components/ui/Shell.svelte'
   import Sigil from '$components/ui/Sigil.svelte'
   import Glyph from '$components/ui/Glyph.svelte'
-  import MenuPanel from '$components/MenuPanel.svelte'
-  import Chat from '$chat/Chat.svelte'
   import CampaignsPanel from './main/CampaignsPanel.svelte'
 
   setContext('dialogState', {
@@ -46,15 +44,7 @@
   }
 </script>
 
-<Shell title="Campaigns" width="wide" back={() => navigate('/main')}>
-  {#snippet menu()}
-    <MenuPanel />
-  {/snippet}
-
-  {#snippet chat()}
-    <Chat />
-  {/snippet}
-
+<Shell drawers title="Campaigns" width="wide" back={() => navigate('/main')}>
   <div class="camps">
     {#if error}
       <div class="camps-error" role="alert">

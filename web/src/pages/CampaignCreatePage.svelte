@@ -144,7 +144,6 @@
         description: generatedConcept.description || "An AI-generated campaign",
         dm_id: currentUser.user_id,
         player_ids: [],
-        party_ids: [],
         character_ids: [],
         is_active: true,
         settings: {

@@ -20,6 +20,7 @@ const pages = names.map((name) => [name, component(`src/pages/${name}.svelte`)] 
 const at = (name: (typeof names)[number]) => pages.find(([one]) => one === name)![1]
 
 const shell = component('src/components/ui/Shell.svelte')
+const frame = component('src/components/Frame.svelte')
 const ornament = component('src/components/ui/Ornament.svelte')
 const glyph = component('src/components/ui/Glyph.svelte')
 const portrait = component('src/components/ui/Portrait.svelte')
@@ -187,32 +188,32 @@ describe('no text character stands in for an icon', () => {
   })
 })
 
-describe('the shell holds the sideways backstop', () => {
+describe('the frame holds the sideways backstop', () => {
   it('clips the scroller and refuses the sideways overscroll', () => {
-    const scroll = shell.style('.dnd-shell-scroll')
+    const scroll = frame.style('.dnd-shell-scroll')
     expect(scroll?.['overflow-x']).toBe('hidden')
     expect(scroll?.['overscroll-behavior-x']).toBe('none')
   })
 
   it('floors and caps the hold, so a wide child cannot push the track', () => {
-    const hold = shell.style('.dnd-shell-hold')
+    const hold = frame.style('.dnd-shell-hold')
     expect(hold?.['min-width']).toBe('0')
     expect(hold?.['max-width']).toBe('min(100%, var(--size-page-max))')
   })
 
-  it('floors the content area and clips the shell itself', () => {
-    expect(shell.style('.dnd-shell-content')?.['min-width']).toBe('0')
-    expect(shell.style('.dnd-shell-content')?.overflow).toBe('hidden')
-    expect(shell.style('.dnd-shell')?.overflow).toBe('hidden')
+  it('floors the content area and clips the frame itself', () => {
+    expect(frame.style('.dnd-shell-content')?.['min-width']).toBe('0')
+    expect(frame.style('.dnd-shell-content')?.overflow).toBe('hidden')
+    expect(frame.style('.dnd-shell')?.overflow).toBe('hidden')
   })
 
   it('narrows the hold only for the widths that ask for it, and leaves full on the base cap', () => {
     expect(widths).toEqual(['narrow', 'wide', 'full'])
-    const narrow = shell.style('.dnd-shell-hold-narrow')?.['max-width'] ?? ''
-    const wide = shell.style('.dnd-shell-hold-wide')?.['max-width'] ?? ''
+    const narrow = frame.style('.dnd-shell-hold-narrow')?.['max-width'] ?? ''
+    const wide = frame.style('.dnd-shell-hold-wide')?.['max-width'] ?? ''
     expect(parseInt(narrow, 10)).toBeGreaterThan(0)
     expect(parseInt(wide, 10)).toBeGreaterThan(parseInt(narrow, 10))
-    expect(shell.style('.dnd-shell-hold-full')).toBeNull()
+    expect(frame.style('.dnd-shell-hold-full')).toBeNull()
   })
 })
 

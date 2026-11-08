@@ -46,7 +46,7 @@ describe('deleteOne', () => {
   it('drops the shared document first, then the stored pictures, then the resource, at the stored collection', async () => {
     const held = one({ id: 'npc-1', image: 'file:a', images: ['file:a', 'file:b', 'https://example.test/c.png'] })
 
-    await deleteOne({ at: 'campaign', id: 'camp-1' }, 'characters', held)
+    await deleteOne({ at: 'campaign', id: 'camp-1' }, 'npcs', held)
 
     expect(wire.steps).toEqual([
       'drop campaign/camp-1/npcs/npc-1',
@@ -60,14 +60,14 @@ describe('deleteOne', () => {
 describe('deleteResources', () => {
   it('deletes only what the named owner wrote, on every roll', async () => {
     wire.stored['campaign/camp-1/locations'] = [{ id: 'place-1', owner_id: 'lars' }, { id: 'place-2', owner_id: 'dis' }]
-    wire.stored['campaign/camp-1/quests'] = [{ id: 'quest-1', owner_id: 'lars' }]
+    wire.stored['campaign/camp-1/sessions'] = [{ id: 'session-1', owner_id: 'lars' }]
 
     const count = await deleteResources({ at: 'campaign', id: 'camp-1' }, 'lars')
 
     expect(count).toBe(2)
     expect(wire.steps.filter((step) => step.startsWith('delete'))).toEqual([
       'delete place-1',
-      'delete quest-1'
+      'delete session-1'
     ])
   })
 })

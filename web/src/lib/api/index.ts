@@ -22,7 +22,6 @@ import type {
   ChatEntry,
   Encounter,
   Owner,
-  Party,
   Profile,
   ResourceUpdate,
   SamnaUser,
@@ -230,30 +229,6 @@ export const putCharacterSources = (characterId: string, sources: string[]) =>
 export const getCharacterSources = (characterId: string) =>
   apiGet<string[]>(`character/${characterId}/sources`).catch((error) => getAbsent(error, [] as string[]))
 
-export async function postParty(fields: Omit<Party, 'id' | 'owner_id' | 'created_at' | 'updated_at'>): Promise<string> {
-  const created = await apiPost<Party>('party', fields)
-  return created.id
-}
-
-export const getParty = (partyId: string) => apiGet<Party>(`party/${partyId}`).catch((error) => getAbsent(error, null))
-
-export const getPartyStream = (partyId: string, onChange: (party: Party | null) => void): Unsubscribe =>
-  getStream(`party/${partyId}/stream`, 'party', () => getParty(partyId), onChange, (error) =>
-    console.error('Party did not load:', error)
-  )
-
-export const getParties = () => apiGet<Party[]>('party')
-
-export const putParty = (partyId: string, updates: Partial<Party>) => apiPut(`party/${partyId}`, updates)
-
-export const deleteParty = (partyId: string) => apiDelete(`party/${partyId}`)
-
-export const postPartyCharacter = (partyId: string, characterId: string) =>
-  apiPost(`party/${partyId}/character/${characterId}`)
-
-export const deletePartyCharacter = (partyId: string, characterId: string) =>
-  apiDelete(`party/${partyId}/character/${characterId}`)
-
 export const getVehicles = (campaignId?: string) => apiGet<Vehicle[]>(path('vehicle', { campaign_id: campaignId }))
 
 export const getVehicle = (vehicleId: string) =>
@@ -280,8 +255,7 @@ export async function postCampaign(fields: Omit<Campaign, 'id' | 'created_at' | 
     name: fields.name,
     description: fields.description,
     is_active: fields.is_active,
-    settings: fields.settings,
-    party_ids: fields.party_ids ?? []
+    settings: fields.settings
   })
   return created.id
 }
@@ -372,7 +346,6 @@ export async function postCampaignEncounter(campaignId: string, encounter: Parti
     turn: encounter.turn ?? 0,
     is_active: encounter.is_active ?? false,
     share_campaigns: encounter.share_campaigns ?? [],
-    share_parties: encounter.share_parties ?? [],
     share_users: encounter.share_users ?? []
   })
   return created.id

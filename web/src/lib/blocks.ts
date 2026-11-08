@@ -113,7 +113,7 @@ export interface BlockDocument {
   blocks: Block[]
 }
 
-export type ReferenceKind = 'character' | 'item' | 'place' | 'quest' | 'session' | 'map'
+export type ReferenceKind = 'npc' | 'item' | 'place' | 'session' | 'map'
 
 export interface Reference {
   /** The sigil the reference was written with. */

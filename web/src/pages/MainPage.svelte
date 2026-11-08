@@ -5,8 +5,6 @@
   import { onMount, setContext, onDestroy } from "svelte";
   import { getCharacterStore } from "$lib/engine";
   import type { CharacterContext } from "$lib/types";
-  import MenuPanel from "$components/MenuPanel.svelte";
-  import Chat from "$chat/Chat.svelte";
   import { sidebarStore } from "$lib/navigation";
   import { uiStore, anyDialogOpen } from "$lib/stores/ui.store";
   import { userCharacters } from "$lib/stores/character.store";
@@ -15,7 +13,6 @@
   import { navigate } from "sly-svelte-location-router";
   import CharactersPanel from "./main/CharactersPanel.svelte";
   import CampaignsPanel from "./main/CampaignsPanel.svelte";
-  import PartiesPanel from "./main/PartiesPanel.svelte";
   import LorePanel from "./main/LorePanel.svelte";
   import Button from "$components/ui/Button.svelte";
   import Ornament from "$components/ui/Ornament.svelte";
@@ -40,7 +37,6 @@
   let error = $state<string | null>(null);
   let campaignSearch = $state('');
   let characterSearch = $state('');
-  let partySearch = $state('');
 
   const name = $derived($userDetails?.display_name || $userProfile?.display_name || 'Adventurer');
 
@@ -70,10 +66,6 @@
     navigate('/main/create/character');
   }
 
-  function createParty() {
-    navigate('/main/create/party');
-  }
-
   function createCampaign() {
     navigate('/main/create/campaign');
   }
@@ -83,19 +75,11 @@
   }
 </script>
 
-<Shell title="Hearth" width="full">
+<Shell drawers title="Hearth" width="full">
   {#snippet tools()}
     <Sigil title="Change theme" size="sm" onclick={() => postUIAction('openThemeDialog')}>
       <Glyph name="theme" size="sm" />
     </Sigil>
-  {/snippet}
-
-  {#snippet menu()}
-    <MenuPanel />
-  {/snippet}
-
-  {#snippet chat()}
-    <Chat />
   {/snippet}
 
   {#if error}
@@ -137,23 +121,6 @@
         <Sigil title="Raise a new campaign" tone="verdigris" size="sm" onclick={createCampaign} frame="plate"><Glyph name="campaign" size="sm" /></Sigil>
       </header>
       <CampaignsPanel {loading} search={campaignSearch} />
-    </section>
-
-    <section class="hall-plot hall-plot-bands" aria-label="Parties">
-      <header class="hall-divide">
-        <h2 class="dnd-label hall-divide-name">Parties</h2>
-        <span class="hall-divide-note">who you play with</span>
-        <span class="hall-divide-run"></span>
-        <input
-          type="text"
-          class="dnd-search hall-divide-search"
-          placeholder="Search the parties..."
-          aria-label="Search parties"
-          bind:value={partySearch}
-        />
-        <Sigil title="Gather a new party" tone="ember" size="sm" onclick={createParty} frame="plate"><Glyph name="character" size="sm" /></Sigil>
-      </header>
-      <PartiesPanel search={partySearch} />
     </section>
 
     <section class="hall-plot hall-plot-roll" aria-label="Characters">
@@ -270,7 +237,6 @@
     grid-template-areas:
       'hero'
       'camps'
-      'bands'
       'roll'
       'lore';
     column-gap: var(--space-6);
@@ -287,10 +253,6 @@
 
   .hall-plot-camps {
     grid-area: camps;
-  }
-
-  .hall-plot-bands {
-    grid-area: bands;
   }
 
   .hall-plot-roll {

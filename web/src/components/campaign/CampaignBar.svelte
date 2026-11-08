@@ -8,17 +8,16 @@
       label: 'Story',
       under: [
         { id: 'sessions', label: 'Sessions' },
-        { id: 'quests', label: 'Quests' },
         { id: 'entries', label: 'Entries' }
       ]
     },
     {
       id: 'people',
-      label: 'People',
+      label: 'Party',
       under: [
-        { id: 'heroes', label: 'Heroes' },
-        { id: 'characters', label: 'Characters' },
-        { id: 'party', label: 'Party' }
+        { id: 'party', label: 'Characters' },
+        { id: 'npcs', label: 'NPCs' },
+        { id: 'members', label: 'Players' }
       ]
     },
     {
@@ -42,10 +41,7 @@
     {
       id: 'table',
       label: 'Table',
-      under: [
-        { id: 'encounter', label: 'Encounter' },
-        { id: 'members', label: 'Members' }
-      ]
+      under: [{ id: 'encounter', label: 'Encounter' }]
     }
   ]
 

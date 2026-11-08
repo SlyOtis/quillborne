@@ -32,7 +32,6 @@ type BodyMap struct {
 type BodyShare struct {
 	ShareUsers     *[]uuid.UUID `json:"share_users"`
 	ShareCampaigns *[]uuid.UUID `json:"share_campaigns"`
-	ShareParties   *[]uuid.UUID `json:"share_parties"`
 }
 
 type BodyEncounter struct {
@@ -66,7 +65,7 @@ type BodyChatEntry struct {
 }
 
 func putShareBody(share *db.Share, body BodyShare) []string {
-	columns := make([]string, 0, 3)
+	columns := make([]string, 0, 2)
 	if body.ShareUsers != nil {
 		share.ShareUsers = *body.ShareUsers
 		columns = append(columns, "share_users")
@@ -75,18 +74,11 @@ func putShareBody(share *db.Share, body BodyShare) []string {
 		share.ShareCampaigns = *body.ShareCampaigns
 		columns = append(columns, "share_campaigns")
 	}
-	if body.ShareParties != nil {
-		share.ShareParties = *body.ShareParties
-		columns = append(columns, "share_parties")
-	}
 	if share.ShareUsers == nil {
 		share.ShareUsers = []uuid.UUID{}
 	}
 	if share.ShareCampaigns == nil {
 		share.ShareCampaigns = []uuid.UUID{}
-	}
-	if share.ShareParties == nil {
-		share.ShareParties = []uuid.UUID{}
 	}
 	return columns
 }
@@ -1037,4 +1029,9 @@ func DeleteChatEntry(ctx echo.Context) error {
 	}
 	broker.Post(ctx.Request().Context(), broker.CampaignTopic(campaign.ID), broker.KindChat, entry.ID.String(), broker.OpDelete)
 	return respond.NoContent(ctx, http.StatusOK)
+}
+
+func getUUID(raw string) (uuid.UUID, bool) {
+	id, err := uuid.Parse(raw)
+	return id, err == nil
 }

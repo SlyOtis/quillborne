@@ -27,10 +27,8 @@
   import Ornament from '$components/ui/Ornament.svelte'
   import Shell from '$components/ui/Shell.svelte'
   import Stops from '$components/ui/Stops.svelte'
-  import MenuPanel from '$components/MenuPanel.svelte'
   import CampaignBar, { SECTIONS, getSection } from '$components/campaign/CampaignBar.svelte'
   import { isResourceKind } from '$lib/resources'
-  import Chat from '$chat/Chat.svelte'
   import ComponentBrowser from '$components/vehicle/ComponentBrowser.svelte'
   import VehicleRulings from '$components/vehicle/VehicleRulings.svelte'
 
@@ -153,8 +151,7 @@
         template_version: chosen.template?.version ?? 0,
         layout: chosen.layout,
         components: chosen.template ? getTemplateBuild(chosen.system, chosen.template, () => crypto.randomUUID()) : [],
-        stats: chosen.template?.stats ?? {},
-        customisation: 'locked'
+        stats: chosen.template?.stats ?? {}
       })
       building = false
       navigate(`/main/vehicles/${made.id}`)
@@ -189,8 +186,7 @@
         components: pkg.components.map((row) => ({ ...row, id: crypto.randomUUID() })),
         stats: pkg.stats,
         rulings: pkg.rulings,
-        overlay: pkg.overlay,
-        customisation: 'locked'
+        overlay: pkg.overlay
       })
       navigate(`/main/vehicles/${made.id}`)
     } catch (reason) {
@@ -218,15 +214,7 @@
   }
 </script>
 
-<Shell title={campaign ? `${campaign.name} · Vehicles` : 'The Dock'} width="wide" back={() => navigate(campaignId ? `/main/campaign/${campaignId}` : '/main')}>
-  {#snippet menu()}
-    <MenuPanel />
-  {/snippet}
-
-  {#snippet chat()}
-    <Chat />
-  {/snippet}
-
+<Shell drawers title={campaign ? `${campaign.name} · Vehicles` : 'The Dock'} width="wide" back={() => navigate(campaignId ? `/main/campaign/${campaignId}` : '/main')}>
   {#snippet nav()}
     {#if campaignId}
       <Stops stops={SECTIONS} stop={getSection('vehicles')} onopen={openSection} />
@@ -281,11 +269,7 @@
                 <Card
                   title={entry.name}
                   sub={summary(entry)}
-                  badge={entry.requests.length
-                    ? `${entry.requests.length} request${entry.requests.length === 1 ? '' : 's'}`
-                    : entry.crew.length
-                      ? `${entry.crew.length} crew`
-                      : undefined}
+                  badge={entry.crew.length ? `${entry.crew.length} crew` : undefined}
                   tone={entry.owner_id === $user?.user_id ? 'ember' : 'verdigris'}
                   onclick={() => navigate(`/main/vehicles/${entry.id}`)}
                 />
@@ -344,7 +328,7 @@
           {/each}
         </select>
       </Field>
-      <Field id="build-harbour" label="Sails in" help="A campaign’s vessel is read by its table, and its DM holds the helm as well as you.">
+      <Field id="build-harbour" label="Sails in" help="A campaign’s vessel belongs to its whole table: everyone seated there can change it.">
         <select id="build-harbour" bind:value={harbour} disabled={busy}>
           <option value="">Your own waters</option>
           {#each campaigns as entry (entry.id)}

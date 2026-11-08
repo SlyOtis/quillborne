@@ -110,8 +110,8 @@ const sizes = values('size')
 const fallback = (prop: string) => new RegExp(`${prop}\\s*=\\s*'([^']+)'`).exec(sigil.slice(0, sigil.indexOf('}: {')))?.[1]
 
 const bar: [string, string, number][] = [
-  ['the shell handles', region(read('src/components/ui/Shell.svelte'), '<header class="dnd-shell-bar">', '</header>'), 4],
-  ["the sheet's tools", region(read('src/pages/CharacterPage.svelte'), '{#snippet tools()}', '{/snippet}'), 6],
+  ['the frame handles', region(read('src/components/Frame.svelte'), '<header class="dnd-shell-bar">', '</header>'), 4],
+  ["the sheet's tools", region(read('src/pages/CharacterPage.svelte'), '{#snippet tools()}', '{/snippet}'), 5],
   ["the hearth's tools", region(read('src/pages/MainPage.svelte'), '{#snippet tools()}', '{/snippet}'), 1]
 ]
 
@@ -149,7 +149,7 @@ describe('no bar call site decides the sigil design', () => {
       size: attrs.size
     }))
 
-    expect(drawn.length).toBe(11)
+    expect(drawn.length).toBe(10)
     expect([...new Set(drawn.map((one) => JSON.stringify(one)))]).toEqual([
       JSON.stringify({ frame: 'quatrefoil', tone: 'metal', size: 'sm' })
     ])
@@ -159,7 +159,7 @@ describe('no bar call site decides the sigil design', () => {
     const glyphs = bar.flatMap(([, source]) => [...source.matchAll(/<Glyph name="([^"]+)"/g)].map((match) => match[1]))
     expect(glyphs).toEqual([
       'menu', 'search', 'music', 'chat',
-      'sound', 'export', 'levelup', 'sources', 'theme', 'scroll',
+      'sound', 'export', 'levelup', 'sources', 'theme',
       'theme'
     ])
   })

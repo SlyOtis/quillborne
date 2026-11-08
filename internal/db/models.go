@@ -11,7 +11,6 @@ import (
 const (
 	OBJECT_TYPE_PROFILE       = "public.profile"
 	OBJECT_TYPE_CAMPAIGN      = "public.campaign"
-	OBJECT_TYPE_PARTY         = "public.party"
 	OBJECT_TYPE_CAMPAIGN_MAP  = "public.campaign_map"
 	OBJECT_TYPE_ENCOUNTER     = "public.encounter"
 	OBJECT_TYPE_CHAT_ENTRY    = "public.chat_entry"
@@ -58,7 +57,6 @@ type Campaign struct {
 	Description   string          `bun:"description" json:"description"`
 	IsActive      bool            `bun:"is_active" json:"is_active"`
 	Settings      json.RawMessage `bun:"settings,type:jsonb" json:"settings"`
-	PartyIDs      []uuid.UUID     `bun:"party_ids,array" json:"party_ids"`
 	DmClaimID     *uuid.UUID      `bun:"dm_claim_id" json:"-"`
 	PlayerClaimID *uuid.UUID      `bun:"player_claim_id" json:"-"`
 	PlayerIDs     []uuid.UUID     `bun:"-" json:"player_ids"`
@@ -68,24 +66,6 @@ type Campaign struct {
 	CreatedAt     time.Time       `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
 	UpdatedAt     time.Time       `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
 	DeletedAt     bun.NullTime    `bun:"sa_deleted_at,soft_delete,nullzero" json:"-"`
-}
-
-type Party struct {
-	bun.BaseModel `json:"-" bun:"table:party"`
-
-	ID            uuid.UUID    `bun:"id,pk,default:gen_random_uuid()" json:"id"`
-	UserID        uuid.UUID    `bun:"user_id" json:"owner_id"`
-	Name          string       `bun:"name" json:"name"`
-	Description   string       `bun:"description" json:"description"`
-	ImageURL      string       `bun:"image_url" json:"image_url"`
-	CharacterIDs  []uuid.UUID  `bun:"character_ids,array" json:"character_ids"`
-	MemberClaimID *uuid.UUID   `bun:"member_claim_id" json:"-"`
-	MemberIDs     []uuid.UUID  `bun:"-" json:"member_ids"`
-	OwnerID       uuid.UUID    `bun:"sa_owner_id" json:"-"`
-	CreatedBy     *uuid.UUID   `bun:"sa_created_by" json:"-"`
-	CreatedAt     time.Time    `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
-	UpdatedAt     time.Time    `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
-	DeletedAt     bun.NullTime `bun:"sa_deleted_at,soft_delete,nullzero" json:"-"`
 }
 
 type CampaignMap struct {
@@ -115,7 +95,6 @@ type CampaignMap struct {
 type Share struct {
 	ShareUsers     []uuid.UUID `bun:"share_users,array" json:"share_users"`
 	ShareCampaigns []uuid.UUID `bun:"share_campaigns,array" json:"share_campaigns"`
-	ShareParties   []uuid.UUID `bun:"share_parties,array" json:"share_parties"`
 	ReaderClaimID  *uuid.UUID  `bun:"reader_claim_id" json:"-"`
 }
 
@@ -154,11 +133,9 @@ type Vehicle struct {
 	Stats           json.RawMessage `bun:"stats,type:jsonb" json:"stats"`
 	Rulings         json.RawMessage `bun:"rulings,type:jsonb" json:"rulings"`
 	Overlay         json.RawMessage `bun:"overlay,type:jsonb" json:"overlay"`
-	Customisation   string          `bun:"customisation" json:"customisation"`
 	Crew            json.RawMessage `bun:"crew,type:jsonb" json:"crew"`
 	Revision        int             `bun:"revision" json:"revision"`
 	History         json.RawMessage `bun:"history,type:jsonb" json:"history"`
-	Requests        json.RawMessage `bun:"requests,type:jsonb" json:"requests"`
 	CrewClaimID     *uuid.UUID      `bun:"crew_claim_id" json:"-"`
 	OwnerID         uuid.UUID       `bun:"sa_owner_id" json:"-"`
 	CreatedBy       *uuid.UUID      `bun:"sa_created_by" json:"-"`

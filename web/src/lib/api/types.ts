@@ -3,7 +3,7 @@ export type { SamnaUser } from './generated_auth'
 
 import type * as generated from './generated'
 import type { Character as CharacterSheet } from '../character.types'
-import type { ComponentState, Customisation, InstalledComponent, Rulings, VehicleOverlay } from '../rules/vehicle.types'
+import type { ComponentState, InstalledComponent, Rulings, VehicleOverlay } from '../rules/vehicle.types'
 import type { MapDocument } from '../nimap'
 
 export interface ReturnObject<T> {
@@ -85,7 +85,6 @@ export type MapMarkerKind =
   | 'inn'
   | 'temple'
   | 'npc'
-  | 'quest'
   | 'danger'
   | 'treasure'
   | 'note'
@@ -141,7 +140,7 @@ export interface CampaignMap extends Omit<generated.CampaignMap, 'layers' | 'mar
   plan?: MapDocument | null
 }
 
-export type CampaignRecordKind = 'place' | 'character' | 'item' | 'quest' | 'session'
+export type CampaignRecordKind = 'place' | 'npc' | 'item' | 'session'
 
 export type ChatKind = 'message' | 'roll'
 
@@ -176,7 +175,7 @@ export interface Encounter extends Omit<generated.Encounter, 'combatants'> {
 export interface Vehicle
   extends Omit<
     generated.Vehicle,
-    'campaign_id' | 'components' | 'states' | 'stats' | 'rulings' | 'overlay' | 'customisation' | 'crew' | 'history' | 'requests'
+    'campaign_id' | 'components' | 'states' | 'stats' | 'rulings' | 'overlay' | 'crew' | 'history'
   > {
   campaign_id: string | null
   components: InstalledComponent[]
@@ -184,10 +183,8 @@ export interface Vehicle
   stats: Record<string, unknown>
   rulings: Rulings
   overlay: VehicleOverlay
-  customisation: Customisation
   crew: VehicleCrewman[]
   history: VehicleRevision[]
-  requests: VehicleRequest[]
 }
 
 export interface VehicleCrewman {
@@ -201,15 +198,6 @@ export interface VehicleRevision {
   at: string
   user_id: string
   note: string
-  components: InstalledComponent[]
-}
-
-export interface VehicleRequest {
-  id: string
-  user_id: string
-  at: string
-  note: string
-  base_revision: number
   components: InstalledComponent[]
 }
 

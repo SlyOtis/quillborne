@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { getCampaigns, getParties, getProfileEmail, getProfiles } from '$lib/api'
-  import type { Campaign, Owner, Party } from '$lib/api/types'
+  import { getCampaigns, getProfileEmail, getProfiles } from '$lib/api'
+  import type { Campaign, Owner } from '$lib/api/types'
   import { user, userProfile } from '$lib/stores/auth.store'
   import { getAll, putOne, RESOURCES, type Resource, type ResourceKind } from '$lib/resources'
   import BaseDialog from '$components/BaseDialog.svelte'
@@ -34,7 +34,6 @@
   let error = $state<string | null>(null)
 
   let campaigns = $state<Campaign[]>([])
-  let parties = $state<Party[]>([])
   let people = $state<Pick[]>([])
   let held = $state<{ kind: ResourceKind; one: Resource }[]>([])
 
@@ -45,7 +44,6 @@
 
   const reach = $derived<Pick[]>([
     ...campaigns.map((entry) => ({ id: entry.id, mark: 'campaign', name: entry.name, tone: 'group' as const })),
-    ...parties.map((entry) => ({ id: entry.id, mark: 'party', name: entry.name, tone: 'group' as const })),
     ...people
   ])
 
@@ -54,7 +52,7 @@
       id: entry.one.id,
       mark: entry.kind,
       name: entry.one.title,
-      word: RESOURCES[entry.kind].one.toLowerCase(),
+      word: RESOURCES[entry.kind].word,
       tone: 'thing' as const
     }))
   )
@@ -62,7 +60,6 @@
   const changed = $derived(
     what.some((tag) => tag.id !== one.id) ||
       ids(who, 'campaign').join() !== one.share_campaigns.join() ||
-      ids(who, 'party').join() !== one.share_parties.join() ||
       ids(who, 'person').join() !== one.share_users.join()
   )
 
@@ -78,13 +75,11 @@
       error = null
       try {
         const kinds = Object.keys(RESOURCES) as ResourceKind[]
-        const [foundCampaigns, foundParties, ...rolls] = await Promise.all([
+        const [foundCampaigns, ...rolls] = await Promise.all([
           getCampaigns(),
-          getParties(),
           ...kinds.map((entry) => getAll(owner, entry).catch(() => [] as Resource[]))
         ])
         campaigns = foundCampaigns
-        parties = foundParties
         held = kinds.flatMap((entry, index) =>
           rolls[index].filter((found) => found.owner_id === $user?.user_id).map((found) => ({ kind: entry, one: found }))
         )
@@ -92,8 +87,7 @@
         const uids = new Set<string>([
           ...one.share_users,
           ...($userProfile?.friends ?? []),
-          ...foundCampaigns.flatMap((entry) => [entry.dm_id, ...entry.player_ids]),
-          ...foundParties.flatMap((entry) => entry.member_ids)
+          ...foundCampaigns.flatMap((entry) => [entry.dm_id, ...entry.player_ids])
         ])
         uids.delete($user?.user_id ?? '')
         const profiles = await getProfiles([...uids])
@@ -103,10 +97,9 @@
 
         who = [
           ...one.share_campaigns.map((id) => ({ id, mark: 'campaign', name: foundCampaigns.find((entry) => entry.id === id)?.name ?? 'A campaign', tone: 'group' as const })),
-          ...one.share_parties.map((id) => ({ id, mark: 'party', name: foundParties.find((entry) => entry.id === id)?.name ?? 'A party', tone: 'group' as const })),
           ...one.share_users.map((id) => people.find((entry) => entry.id === id) ?? { id, mark: 'person', name: 'Someone', tone: 'person' as const })
         ]
-        what = [{ id: one.id, mark: kind, name: one.title, word: shape.one.toLowerCase(), tone: 'thing' }]
+        what = [{ id: one.id, mark: kind, name: one.title, word: shape.word, tone: 'thing' }]
       } catch (reason) {
         error = reason instanceof Error ? reason.message : String(reason)
       } finally {
@@ -140,7 +133,6 @@
     try {
       const fields = {
         share_campaigns: ids(who, 'campaign'),
-        share_parties: ids(who, 'party'),
         share_users: ids(who, 'person')
       }
 
@@ -170,13 +162,13 @@
     {#if loading}
       <div class="dnd-loading"><span class="dnd-spinner"></span></div>
     {:else}
-      <p class="grant-lede">You own this {shape.one.toLowerCase()}. Name who reads it, and what they get.</p>
+      <p class="grant-lede">You own this {shape.word}. Name who reads it, and what they get.</p>
 
       <section class="grant-part">
         <Picker
           id="grant-who"
           label="Who reads it"
-          note="A campaign, a party, or a person. An address adds someone you have not met."
+          note="A campaign, which is everyone at its table, or a person. An address adds someone you have not met."
           picked={who}
           options={reach}
           onchange={(next) => (who = next)}
@@ -190,7 +182,7 @@
         <Picker
           id="grant-what"
           label="What they get"
-          note="This {shape.one.toLowerCase()} and anything else of yours."
+          note="This {shape.word} and anything else of yours."
           picked={what}
           options={shelf}
           onchange={(next) => (what = next)}

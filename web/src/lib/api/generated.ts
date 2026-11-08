@@ -5,7 +5,6 @@
 
 export const OBJECT_TYPE_PROFILE = "public.profile";
 export const OBJECT_TYPE_CAMPAIGN = "public.campaign";
-export const OBJECT_TYPE_PARTY = "public.party";
 export const OBJECT_TYPE_CAMPAIGN_MAP = "public.campaign_map";
 export const OBJECT_TYPE_ENCOUNTER = "public.encounter";
 export const OBJECT_TYPE_CHAT_ENTRY = "public.chat_entry";
@@ -37,20 +36,8 @@ export interface Campaign {
   description: string;
   is_active: boolean;
   settings: any;
-  party_ids: string[];
   player_ids: string[];
   character_ids: string[];
-  created_at: string;
-  updated_at: string;
-}
-export interface Party {
-  id: string;
-  owner_id: string;
-  name: string;
-  description: string;
-  image_url: string;
-  character_ids: string[];
-  member_ids: string[];
   created_at: string;
   updated_at: string;
 }
@@ -73,7 +60,6 @@ export interface CampaignMap {
 export interface Share {
   share_users: string[];
   share_campaigns: string[];
-  share_parties: string[];
 }
 export interface Encounter extends Share {
   id: string;
@@ -101,11 +87,9 @@ export interface Vehicle {
   stats: any;
   rulings: any;
   overlay: any;
-  customisation: string;
   crew: any;
   revision: number /* int */;
   history: any;
-  requests: any;
   created_at: string;
   updated_at: string;
 }

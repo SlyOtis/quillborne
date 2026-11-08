@@ -1,10 +1,9 @@
 <script lang="ts">
   import { getCampaign, getCampaignCharacters, getCampaignEncountersStream, getCampaignMaps, getCampaignVehiclesStream, getProfile } from '$lib/api'
-  import type { Campaign, CampaignMap, Encounter, EncounterCombatant, Party, Vehicle } from '$lib/api/types'
-  import type * as api from '$lib/api/types'
+  import type { Campaign, CampaignMap, Character, Encounter, EncounterCombatant, Vehicle } from '$lib/api/types'
   import type { Snippet } from 'svelte'
   import { navigate, currentRoute, resolvedRoute } from 'sly-svelte-location-router'
-  import { getAll, getChildren, getRoots, isResourceKind, RESOURCES, type Character, type Place, type Quest, type Resource, type ResourceKind } from '$lib/resources'
+  import { getAll, getChildren, getRoots, isResourceKind, RESOURCES, type Npc, type Place, type Resource, type ResourceKind } from '$lib/resources'
   import { user } from '$lib/stores/auth.store'
   import { userCampaigns } from '$lib/stores/campaign.store'
   import Card from '$components/ui/Card.svelte'
@@ -17,9 +16,8 @@
 
   let addOpen = $state(false)
   let campaign = $state<Campaign | null>(null)
-  let characters = $state<api.Character[]>([])
-  let quests = $state<Quest[]>([])
-  let npcs = $state<Character[]>([])
+  let characters = $state<Character[]>([])
+  let npcs = $state<Npc[]>([])
   let places = $state<Place[]>([])
   let maps = $state<CampaignMap[]>([])
   let encounters = $state<Encounter[]>([])
@@ -27,10 +25,10 @@
   let players = $state<{ id: string; name: string }[]>([])
   let loading = $state(false)
   let error = $state<string | null>(null)
-  let open = $state(['campaign'])
+  let open = $state(['campaign', 'party'])
   let reached = $state('')
 
-  const steps = $derived($resolvedRoute.path.split('/').filter(Boolean))
+  const steps = $derived($resolvedRoute.path.split('/').filter(Boolean).slice(1))
   const asked = $derived(steps[0] === 'campaign' ? steps[2] ?? '' : steps[0] ?? '')
 
   const here = $derived(
@@ -55,12 +53,14 @@
       : $userCampaigns[0]?.id ?? ''
   )
 
-  const ROLLS: ResourceKind[] = ['quests', 'sessions', 'entries', 'items', 'weapons', 'armor', 'heroes']
+  const ROLLS: ResourceKind[] = ['sessions', 'entries', 'items', 'weapons', 'armor']
 
   let more = $state<Record<string, Resource[]>>({})
 
   const isDm = $derived(Boolean(campaign && $user && campaign.dm_id === $user.user_id))
-  const activeQuests = $derived(quests.filter((quest) => quest.state === 'active'))
+  const party = $derived(
+    [...characters].sort((a, b) => Number(b.owner_id === $user?.user_id) - Number(a.owner_id === $user?.user_id))
+  )
   const lore = $derived(npcs.length + places.length)
   const knownEncounters = $derived(
     [...encounters].sort((a, b) => (Date.parse(b.created_at ?? '') || 0) - (Date.parse(a.created_at ?? '') || 0))
@@ -76,7 +76,6 @@
     if (!id) {
       campaign = null
       characters = []
-      quests = []
       npcs = []
       places = []
       maps = []
@@ -99,18 +98,16 @@
 
     void (async () => {
       try {
-        const [record, party, errands, cast, sites, charts] = await Promise.all([
+        const [record, seated, cast, sites, charts] = await Promise.all([
           getCampaign(id),
           getCampaignCharacters(id),
-          getAll({ at: 'campaign', id }, 'quests') as Promise<Quest[]>,
-          getAll({ at: 'campaign', id }, 'characters') as Promise<Character[]>,
+          getAll({ at: 'campaign', id }, 'npcs') as Promise<Npc[]>,
           getAll({ at: 'campaign', id }, 'places') as Promise<Place[]>,
           getCampaignMaps(id)
         ])
         if (!live) return
         campaign = record
-        characters = party
-        quests = errands
+        characters = seated
         npcs = cast
         places = sites
         maps = charts
@@ -189,9 +186,10 @@
       <p class="dnd-menu-note" role="alert">{error}</p>
     {/if}
 
-    {@render section('campaign', 'Campaign details', activeQuests.length, details)}
+    {@render section('campaign', 'Campaign details', players.length, details)}
+    {@render section('party', 'Party', characters.length, roster)}
     {@render section('players', 'Players', players.length, table)}
-    {@render section('characters', 'Characters', npcs.length, people)}
+    {@render section('npcs', 'NPCs', npcs.length, people)}
     {@render section('places', 'Places', places.length, sites)}
     {@render section('maps', 'Maps', maps.length, charts)}
     {@render section('encounters', 'Encounters', knownEncounters.length, frays)}
@@ -258,8 +256,8 @@
         <dd>{campaign.player_ids.length}</dd>
       </div>
       <div class="dnd-menu-fact">
-        <dt>Quests</dt>
-        <dd>{activeQuests.length}</dd>
+        <dt>Characters</dt>
+        <dd>{characters.length}</dd>
       </div>
       <div class="dnd-menu-fact">
         <dt>Encounters</dt>
@@ -271,32 +269,27 @@
       <p class="dnd-menu-lede">{campaign.description}</p>
     {/if}
 
-    <p class="dnd-menu-title">Party</p>
-    {#if characters.length === 0}
-      <p class="dnd-menu-empty">Nobody has joined the party yet.</p>
-    {:else}
-      <div class="dnd-scroll dnd-menu-cards">
-        {#each characters as entry (entry.id)}
-          <Card
-            title={entry.metadata.name}
-            sub="{entry.metadata.race} {entry.metadata.class}"
-            image={entry.character?.info?.imageUrl}
-            badge="Lv {entry.metadata.level}"
-            tone="ember"
-            onclick={() => openCharacter(entry.id)}
-          />
-        {/each}
-      </div>
-    {/if}
+  {/if}
+{/snippet}
 
-    <p class="dnd-menu-title">Active quests</p>
-    {#if activeQuests.length === 0}
-      <p class="dnd-menu-empty">No quest is open.</p>
-    {:else}
-      <div class="dnd-scroll dnd-menu-tree">
-        <Tree rows={twigs(activeQuests, 'quests')} on={openId} onopen={(id) => openResource('quests', id)} />
-      </div>
-    {/if}
+{#snippet roster()}
+  {#if party.length === 0}
+    <p class="dnd-menu-empty">No character sits at the table yet.</p>
+  {:else}
+    <div class="dnd-scroll dnd-menu-cards">
+      {#each party as entry (entry.id)}
+        {@const mine = entry.owner_id === $user?.user_id}
+        <Card
+          title={entry.metadata.name}
+          sub="{mine ? 'Yours, ' : ''}{entry.metadata.race} {entry.metadata.class}"
+          image={entry.character?.info?.imageUrl}
+          badge="Lv {entry.metadata.level}"
+          tone={mine ? 'ember' : 'metal'}
+          on={steps[0] === 'character' && steps[1] === entry.id}
+          onclick={() => openCharacter(entry.id)}
+        />
+      {/each}
+    </div>
   {/if}
 {/snippet}
 
@@ -311,8 +304,8 @@
           sub={campaign?.dm_id === player.id ? 'Dungeon Master' : 'Player'}
           badge={campaign?.dm_id === player.id
             ? 'DM'
-            : `${characters.filter((entry) => entry.owner_id === player.id).length} heroes`}
-          onclick={() => openCampaign(`/heroes?player=${encodeURIComponent(player.name)}`)}
+            : `${characters.filter((entry) => entry.owner_id === player.id).length} characters`}
+          onclick={() => openCampaign('?tab=party')}
         />
       {/each}
     </div>
@@ -326,7 +319,7 @@
     <div class="dnd-scroll dnd-menu-tree">
       <Tree
         rows={vehicles.map((entry) => ({ id: entry.id, title: entry.name, mark: `${entry.crew.length} crew`, kids: [] }))}
-        on={steps[1] === 'vehicles' ? (steps[2] ?? '') : ''}
+        on={steps[0] === 'vehicles' ? (steps[1] ?? '') : ''}
         onopen={(id) => navigate(`/main/vehicles/${id}`)}
       />
     </div>
@@ -338,10 +331,10 @@
 
 {#snippet people()}
   {#if npcs.length === 0}
-    <p class="dnd-menu-empty">No face has been revealed.</p>
+    <p class="dnd-menu-empty">No NPC has been written down.</p>
   {:else}
     <div class="dnd-scroll dnd-menu-tree">
-      <Tree rows={twigs(npcs, 'characters')} on={openId} onopen={(id) => openResource('characters', id)} />
+      <Tree rows={twigs(npcs, 'npcs')} on={openId} onopen={(id) => openResource('npcs', id)} />
     </div>
   {/if}
 {/snippet}
@@ -557,16 +550,6 @@
     line-height: 1.45;
   }
 
-  .dnd-menu-title {
-    margin: 0;
-    color: var(--menu-line-strong);
-    font-family: var(--font-display);
-    font-size: var(--text-xs);
-    font-weight: 700;
-    letter-spacing: var(--tracking-caps);
-    text-transform: uppercase;
-    text-shadow: 0 1px 0 #000;
-  }
 
   .dnd-menu-cards {
     display: flex;

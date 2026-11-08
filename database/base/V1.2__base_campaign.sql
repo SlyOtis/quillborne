@@ -5,7 +5,6 @@ CREATE TABLE IF NOT EXISTS campaign (
     description      TEXT NOT NULL DEFAULT '',
     is_active        BOOLEAN NOT NULL DEFAULT TRUE,
     settings         JSONB NOT NULL DEFAULT '{}'::jsonb,
-    party_ids        UUID[] NOT NULL DEFAULT '{}',
     dm_claim_id      UUID,
     player_claim_id  UUID,
     sa_owner_id      UUID NOT NULL,
@@ -15,6 +14,16 @@ CREATE TABLE IF NOT EXISTS campaign (
     sa_deleted_at    TIMESTAMPTZ
 );
 
+ALTER TABLE campaign DROP COLUMN IF EXISTS party_ids;
+
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM claimius.table_info WHERE object_type = 'public.party') THEN
+        PERFORM claimius.delete_table_info('public.party');
+    END IF;
+END $$;
+
+DROP TABLE IF EXISTS party;
+
 COMMENT ON TABLE campaign IS 'A table of play: the dungeon master who created it and the players granted its player claim';
 COMMENT ON COLUMN campaign.id IS 'The campaign id';
 COMMENT ON COLUMN campaign.user_id IS 'The dungeon master, samna_user.user_id';
@@ -22,7 +31,6 @@ COMMENT ON COLUMN campaign.name IS 'The campaign name';
 COMMENT ON COLUMN campaign.description IS 'What the campaign is about';
 COMMENT ON COLUMN campaign.is_active IS 'Whether the campaign is being played';
 COMMENT ON COLUMN campaign.settings IS 'Character editing, sheet sharing, private notes and the experience mode';
-COMMENT ON COLUMN campaign.party_ids IS 'The parties gathered at the table';
 COMMENT ON COLUMN campaign.dm_claim_id IS 'The claim the dungeon master holds on the campaign and everything in it';
 COMMENT ON COLUMN campaign.player_claim_id IS 'The claim every player at the table holds, read on what the table shares';
 COMMENT ON COLUMN campaign.sa_owner_id IS 'The owning organization';
@@ -30,35 +38,6 @@ COMMENT ON COLUMN campaign.sa_created_by IS 'The user_claim of the dungeon maste
 COMMENT ON COLUMN campaign.sa_created_at IS 'When the row was created';
 COMMENT ON COLUMN campaign.sa_updated_at IS 'When the row last changed';
 COMMENT ON COLUMN campaign.sa_deleted_at IS 'When the row was soft deleted';
-
-CREATE TABLE IF NOT EXISTS party (
-    id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id          UUID NOT NULL,
-    name             TEXT NOT NULL,
-    description      TEXT NOT NULL DEFAULT '',
-    image_url        TEXT NOT NULL DEFAULT '',
-    character_ids    UUID[] NOT NULL DEFAULT '{}',
-    member_claim_id  UUID,
-    sa_owner_id      UUID NOT NULL,
-    sa_created_by    UUID,
-    sa_created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    sa_updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    sa_deleted_at    TIMESTAMPTZ
-);
-
-COMMENT ON TABLE party IS 'A group of players, its members granted the party claim';
-COMMENT ON COLUMN party.id IS 'The party id';
-COMMENT ON COLUMN party.user_id IS 'The player who formed the party';
-COMMENT ON COLUMN party.name IS 'The party name';
-COMMENT ON COLUMN party.description IS 'What the party is';
-COMMENT ON COLUMN party.image_url IS 'The stored address of the party picture';
-COMMENT ON COLUMN party.character_ids IS 'The characters travelling with the party';
-COMMENT ON COLUMN party.member_claim_id IS 'The claim every member of the party holds';
-COMMENT ON COLUMN party.sa_owner_id IS 'The owning organization';
-COMMENT ON COLUMN party.sa_created_by IS 'The user_claim of the creator';
-COMMENT ON COLUMN party.sa_created_at IS 'When the row was created';
-COMMENT ON COLUMN party.sa_updated_at IS 'When the row last changed';
-COMMENT ON COLUMN party.sa_deleted_at IS 'When the row was soft deleted';
 
 CREATE TABLE IF NOT EXISTS campaign_map (
     id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -116,7 +95,6 @@ CREATE TABLE IF NOT EXISTS encounter (
     is_active         BOOLEAN NOT NULL DEFAULT FALSE,
     share_users       UUID[] NOT NULL DEFAULT '{}',
     share_campaigns   UUID[] NOT NULL DEFAULT '{}',
-    share_parties     UUID[] NOT NULL DEFAULT '{}',
     reader_claim_id   UUID,
     sa_owner_id       UUID NOT NULL,
     sa_created_by     UUID,
@@ -124,6 +102,8 @@ CREATE TABLE IF NOT EXISTS encounter (
     sa_updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     sa_deleted_at     TIMESTAMPTZ
 );
+
+ALTER TABLE encounter DROP COLUMN IF EXISTS share_parties;
 
 CREATE INDEX IF NOT EXISTS idx_encounter_campaign ON encounter (campaign_id);
 
@@ -138,7 +118,6 @@ COMMENT ON COLUMN encounter.turn IS 'The index of the combatant whose turn it is
 COMMENT ON COLUMN encounter.is_active IS 'Whether the encounter is running';
 COMMENT ON COLUMN encounter.share_users IS 'The players it is shared with by name';
 COMMENT ON COLUMN encounter.share_campaigns IS 'The campaigns whose tables read it';
-COMMENT ON COLUMN encounter.share_parties IS 'The parties whose members read it';
 COMMENT ON COLUMN encounter.reader_claim_id IS 'The claim the players it is shared with by name hold';
 COMMENT ON COLUMN encounter.sa_owner_id IS 'The owning organization';
 COMMENT ON COLUMN encounter.sa_created_by IS 'The user_claim of the creator';
@@ -200,7 +179,6 @@ CREATE TABLE IF NOT EXISTS song (
     duration          DOUBLE PRECISION NOT NULL DEFAULT 0,
     share_users       UUID[] NOT NULL DEFAULT '{}',
     share_campaigns   UUID[] NOT NULL DEFAULT '{}',
-    share_parties     UUID[] NOT NULL DEFAULT '{}',
     reader_claim_id   UUID,
     sa_owner_id       UUID NOT NULL,
     sa_created_by     UUID,
@@ -208,6 +186,8 @@ CREATE TABLE IF NOT EXISTS song (
     sa_updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     sa_deleted_at     TIMESTAMPTZ
 );
+
+ALTER TABLE song DROP COLUMN IF EXISTS share_parties;
 
 CREATE INDEX IF NOT EXISTS idx_song_campaign ON song (campaign_id);
 
@@ -220,7 +200,6 @@ COMMENT ON COLUMN song.address IS 'The stored address of the audio file';
 COMMENT ON COLUMN song.duration IS 'The length in seconds';
 COMMENT ON COLUMN song.share_users IS 'The players it is shared with by name';
 COMMENT ON COLUMN song.share_campaigns IS 'The campaigns whose tables hear it';
-COMMENT ON COLUMN song.share_parties IS 'The parties whose members hear it';
 COMMENT ON COLUMN song.reader_claim_id IS 'The claim the players it is shared with by name hold';
 COMMENT ON COLUMN song.sa_owner_id IS 'The owning organization';
 COMMENT ON COLUMN song.sa_created_by IS 'The user_claim of the creator';
@@ -235,7 +214,6 @@ COMMENT ON COLUMN song.sa_deleted_at IS 'When the row was soft deleted';
 
 
 SELECT claimius.upsert_table_info('public.campaign');
-SELECT claimius.upsert_table_info('public.party');
 SELECT claimius.upsert_table_info('public.campaign_map');
 SELECT claimius.upsert_table_info('public.encounter');
 SELECT claimius.upsert_table_info('public.chat_entry');

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getCampaigns, getCharacters, getParties } from '$lib/api'
+  import { getCampaigns, getCharacters } from '$lib/api'
   import type { Owner } from '$lib/api/types'
   import BaseDialog from "../BaseDialog.svelte";
   import Field from "$components/ui/Field.svelte";
@@ -28,15 +28,13 @@
 
   const GLYPHS: Record<ResourceKind, GlyphName> = {
     entries: 'scroll',
-    characters: 'character',
-    heroes: 'character',
+    npcs: 'character',
     items: 'gear',
     weapons: 'gear',
     armor: 'gear',
     places: 'campaign',
     maps: 'picture',
-    sessions: 'scroll',
-    quests: 'scroll'
+    sessions: 'scroll'
   };
 
   let isOpen = $derived($isSearchDialogOpen);
@@ -111,9 +109,8 @@
   }
 
   async function getPages(userId: string): Promise<Hit[]> {
-    const [campaigns, parties, sheets] = await Promise.all([
+    const [campaigns, sheets] = await Promise.all([
       getCampaigns().catch(() => []),
-      getParties().catch(() => []),
       getCharacters().catch(() => [])
     ]);
 
@@ -155,16 +152,6 @@
         key: '',
         hay: getHay([one.name, one.description]),
         run: () => navigate(`/main/campaign/${one.id}`)
-      })),
-      ...parties.map((one) => ({
-        id: `/main/party/${one.id}`,
-        title: one.name,
-        sub: one.description,
-        kind: 'Party',
-        glyph: 'group' as GlyphName,
-        key: '',
-        hay: getHay([one.name, one.description]),
-        run: () => navigate(`/main/party/${one.id}`)
       })),
       ...rolls.flat()
     ];
@@ -247,7 +234,7 @@
         bind:this={searchInput}
         bind:value={searchQuery}
         type="text"
-        placeholder="Actions, sheets, campaigns, parties, and every page you can read..."
+        placeholder="Actions, sheets, campaigns, and every page you can read..."
       />
     </Field>
   </div>

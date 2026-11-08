@@ -327,9 +327,6 @@ func DeleteCharacter(ctx echo.Context) error {
 		if _, err := tx.NewUpdate().Model(&character).Set("sa_deleted_at = NOW()").WherePK().Exec(tctx); err != nil {
 			return err
 		}
-		if _, err := tx.NewUpdate().Table("party").Set("character_ids = array_remove(character_ids, ?::uuid)", characterID).Where("? = ANY(character_ids)", characterID).Exec(tctx); err != nil {
-			return err
-		}
 		return sdb.Write(tctx, tx, "DeleteCharacter", "delete", db.OBJECT_TYPE_CHARACTER, character.ID, character.OwnerID, ac.UserClaimID, "Deleted a character")
 	}); err != nil {
 		ctx.Logger().Errorf("DeleteCharacter: %v", err)

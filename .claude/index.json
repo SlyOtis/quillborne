@@ -58,27 +58,33 @@
         "token",
         "theme",
         "accessibility",
-        "variant"
+        "variant",
+        "frame",
+        "shell",
+        "drawers",
+        "transition"
       ]
     },
     {
       "path": ".claude/rules/data.md",
       "kind": "rule",
-      "answers": "The Postgres casing, the claims bound to every row and who may read and write what, the campaign rows and their reveal flags, the api the web reaches it through, live events and uploads.",
+      "answers": "The Postgres schema, the campaign as the one grouping whose seated players are the party, the resource kinds, the claims that decide who reads and writes what, the api, live events and uploads.",
       "keywords": [
-        "postgres",
-        "schema",
-        "snake_case",
+        "access",
+        "api",
+        "campaign",
         "claim",
         "claimius",
-        "access",
-        "campaign",
-        "npc",
         "location",
-        "upload",
+        "npc",
+        "postgres",
+        "rules",
+        "schema",
+        "session",
+        "snake_case",
         "storage",
         "stream",
-        "api"
+        "upload"
       ]
     },
     {
@@ -267,7 +273,7 @@
     {
       "path": "web/src/pages/CampaignPage.svelte",
       "kind": "page",
-      "answers": "Loads a campaign and its characters by the :id route param and shows overview, party and maps. Grants the DM controls when the signed in user is dm_id.",
+      "answers": "Loads a campaign by the :id route param and shows its overview, party, NPCs, maps, encounter and players. The reader's own characters lead the party and are marked Yours. Grants the DM controls when the signed in user is dm_id.",
       "keywords": [
         "campaign",
         "page",
@@ -275,7 +281,8 @@
         "maps",
         "dm",
         "route",
-        "load"
+        "load",
+        "npc"
       ]
     },
     {
@@ -569,7 +576,7 @@
     {
       "path": "web/src/pages/VehiclePage.svelte",
       "kind": "page",
-      "answers": "One vessel at /main/vehicles/:id with its stops Deck, Design, Crew, History, Rules and Papers. Picks the character the reader sails as and reads its abilities and crew perks from the rules engine.",
+      "answers": "One vessel at /main/vehicles/:id with its stops Deck, Design, Crew, History, Rules and Papers. The deck keeps the sailor's perks on the left, the map in the middle, and on the right the chosen component or, with none, every Ship Phase step a player can take.",
       "keywords": [
         "vehicle",
         "ship",
@@ -616,13 +623,13 @@
     {
       "path": "internal/handler/vehicle.go",
       "kind": "source",
-      "answers": "The /api/vehicle routes: list, build, read, change and scuttle a vessel, the Crew claim, the steward and crew rules, and the revision history.",
+      "answers": "The /api/vehicle routes: list, build, read, change and scuttle a vessel, the Crew claim, write for the whole table of a campaign vessel, and the revision history.",
       "keywords": [
         "vehicle",
         "api",
         "crew",
         "claim",
-        "steward",
+        "players",
         "revision",
         "history"
       ]
@@ -682,16 +689,20 @@
       ]
     },
     {
-      "path": "web/src/components/ui/Shell.svelte",
+      "path": "web/src/components/Frame.svelte",
       "kind": "component",
-      "answers": "The page frame: the bar with the crest, the menu drawer on the start edge, friends and chat on the end edge, and the page raised between them, bending into each open drawer with a gold double line and a stud.",
+      "answers": "The frame mounted once around the router: the bar, the crest, the lanterns, the drawers with the one MenuPanel and Chat, and the scroll. A page's Shell hands it its parts through the shell store, so a page change swaps only the body. The page is raised between the drawers and bends into each open one with a gold double line and a stud.",
       "keywords": [
+        "frame",
         "shell",
-        "drawer",
-        "sidebar",
         "bar",
-        "crest",
-        "layout",
+        "drawer",
+        "menu",
+        "chat",
+        "transition",
+        "page",
+        "scroll",
+        "router",
         "bend"
       ]
     },

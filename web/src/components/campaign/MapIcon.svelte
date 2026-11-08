@@ -20,7 +20,6 @@
     inn: 'M6 3v7a6 6 0 0012 0V3h-2v6a4 4 0 01-8 0V3zM5 19h14v2H5z',
     temple: 'M12 2l8 5H4zM5 9h14v10h-4v-6h-6v6H5z',
     npc: 'M12 12a4 4 0 100-8 4 4 0 000 8zm-8 9a8 8 0 0116 0z',
-    quest: 'M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z',
     danger: 'M12 2l10 19H2zm-1 7v6h2V9zm0 8v2h2v-2z',
     treasure: 'M3 8h18v12H3zm0-4h18v3H3zm8 6h2v5h-2z',
     note: 'M5 3h11l3 3v15H5zm3 5h8v2H8zm0 4h8v2H8zm0 4h5v2H8z',

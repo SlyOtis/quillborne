@@ -24,14 +24,10 @@
   import Shell from '$components/ui/Shell.svelte'
   import Stops from '$components/ui/Stops.svelte'
   import StoredImage from '$components/ui/StoredImage.svelte'
-  import MenuPanel from '$components/MenuPanel.svelte'
-  import Chat from '$chat/Chat.svelte'
 
   const {
     kind,
     row,
-    lead,
-    leadRow,
     tools,
     order,
     keep
@@ -40,10 +36,6 @@
     kind: ResourceKind
     /** How this type draws one of its own on the roll. Handed the resource, the address under it and the peek. */
     row?: Snippet<[Resource, string, (one: Resource) => void]>
-    /** A second kind drawn as the first group, ahead of the roll's own. */
-    lead?: ResourceKind
-    /** How the leading kind draws one of its own. Handed the same three things as the row. */
-    leadRow?: Snippet<[Resource, string, (one: Resource) => void]>
     /** The type's own controls, drawn in the bar before the tags. */
     tools?: Snippet
     /** How this type orders its own. Falls back to the title. */
@@ -59,26 +51,22 @@
     setDialogState: uiStore.setDialogState
   })
 
-  const steps = $derived($resolvedRoute.path.split('/').filter(Boolean))
+  const steps = $derived($resolvedRoute.path.split('/').filter(Boolean).slice(1))
   const campaignId = $derived(steps[0] === 'campaign' ? steps[1] ?? '' : '')
   const shape = $derived(RESOURCES[kind])
   const owner = $derived<Owner>(
     campaignId ? { at: 'campaign', id: campaignId } : { at: 'user', id: $user?.user_id ?? '' }
   )
   const under = $derived(campaignId ? `/main/campaign/${campaignId}/${kind}` : `/main/${kind}`)
-  const leadUnder = $derived(campaignId ? `/main/campaign/${campaignId}/${lead}` : `/main/${lead}`)
 
   let campaign = $state<Campaign | null>(null)
   let rows = $state<Resource[]>([])
-  let leads = $state<Resource[]>([])
   let groups = $state<Resource[]>([])
   let loading = $state(true)
   let error = $state<string | null>(null)
   let hunt = $state('')
-  const player = $derived(new URLSearchParams($resolvedRoute.search).get('player') ?? '')
 
-  const canWrite = $derived(campaignId ? Boolean(campaign && $user && campaign.dm_id === $user.user_id) : true)
-  const canArrange = $derived(Boolean(campaignId) && canWrite)
+  const canArrange = $derived(Boolean(campaign && $user && campaign.dm_id === $user.user_id))
 
   let picked = $state<string[]>([])
   let took = $state('')
@@ -93,8 +81,6 @@
   let busy = $state(false)
 
   let peeked = $state<Resource | null>(null)
-  let peekedLed = $state(false)
-  const peekedKind = $derived(peekedLed && lead ? lead : kind)
 
   $effect(() => {
     const asked = new URLSearchParams($resolvedRoute.search).get('tag') ?? ''
@@ -103,19 +89,17 @@
     picked = asked ? [asked] : []
   })
 
-  const allTags = $derived([...new Set([...leads, ...rows].flatMap((row) => row.tags))].sort())
+  const allTags = $derived([...new Set(rows.flatMap((row) => row.tags))].sort())
 
   function sift(held: Resource[]): Resource[] {
     return held
       .filter((row) => row.title.toLowerCase().includes(hunt.trim().toLowerCase()))
-      .filter((row) => !player || String((row as unknown as Record<string, unknown>).player ?? '') === player)
       .filter((row) => picked.length === 0 || picked.every((tag) => row.tags.includes(tag)))
       .filter((row) => !keep || keep(row))
       .sort(order ?? ((a, b) => a.title.localeCompare(b.title)))
   }
 
   const shown = $derived(sift(rows))
-  const shownLeads = $derived(sift(leads))
 
   const limbs = $derived(
     groups
@@ -158,12 +142,8 @@
     loading = true
     try {
       campaign = campaignId ? await getCampaign(campaignId) : null
-      ;[rows, groups, leads] = await Promise.all([
-        getAll(owner, kind),
-        getAll(owner, kind, true),
-        lead ? getAll(owner, lead) : Promise.resolve([])
-      ])
-      if (peeked) peeked = [...leads, ...rows].find((one) => one.id === peeked?.id) ?? null
+      ;[rows, groups] = await Promise.all([getAll(owner, kind), getAll(owner, kind, true)])
+      if (peeked) peeked = rows.find((one) => one.id === peeked?.id) ?? null
     } catch (reason) {
       error = reason instanceof Error ? reason.message : String(reason)
     } finally {
@@ -171,9 +151,8 @@
     }
   }
 
-  function peek(one: Resource, led = false) {
+  function peek(one: Resource) {
     peeked = peeked?.id === one.id ? null : one
-    peekedLed = led
   }
 
   async function write(task: () => Promise<void>) {
@@ -208,7 +187,6 @@
         group_id: '',
         owner_id: $user?.user_id ?? '',
         share_campaigns: campaignId ? [campaignId] : [],
-        share_parties: [],
         share_users: []
       }
       await postOne(owner, kind, held)
@@ -271,15 +249,7 @@
   </div>
 {/snippet}
 
-<Shell title={shape.many} width="full" back={() => navigate(campaignId ? `/main/campaign/${campaignId}` : "/main")}>
-  {#snippet menu()}
-    <MenuPanel />
-  {/snippet}
-
-  {#snippet chat()}
-    <Chat />
-  {/snippet}
-
+<Shell drawers title={shape.many} width="full" back={() => navigate(campaignId ? `/main/campaign/${campaignId}` : "/main")}>
   {#snippet nav()}
     <Stops
       stops={SECTIONS.find((one) => one.id === getSection(kind))?.under ?? []}
@@ -301,11 +271,9 @@
             <Glyph name="save" size="md" />
           </IconBtn>
         {:else}
-          {#if canWrite}
-            <IconBtn title="Add {shape.one.toLowerCase()}" onclick={() => navigate(`${under}/create`)}>
-              <Glyph name="add" size="md" />
-            </IconBtn>
-          {/if}
+          <IconBtn title="Add {shape.word}" onclick={() => navigate(`${under}/create`)}>
+            <Glyph name="add" size="md" />
+          </IconBtn>
           {#if canArrange}
             <IconBtn title="Arrange into groups" onclick={() => (arranging = true)}>
               <Glyph name="edit" size="md" />
@@ -316,15 +284,15 @@
     </div>
 
     <div class="roll-crown">
-      <h1 class="dnd-heading dnd-heading-hero roll-name">{player || shape.many}</h1>
-      <p class="roll-lede">{shownLeads.length + shown.length} of {leads.length + rows.length}{groups.length > 0 ? `, in ${groups.length} groups` : ''}</p>
+      <h1 class="dnd-heading dnd-heading-hero roll-name">{shape.many}</h1>
+      <p class="roll-lede">{shown.length} of {rows.length}{groups.length > 0 ? `, in ${groups.length} groups` : ''}</p>
     </div>
 
-    <div class="roll-bar" role="group" aria-label="Filter the {shape.many.toLowerCase()}">
+    <div class="roll-bar" role="group" aria-label="Filter the {shape.words}">
       <input
         type="text"
         class="dnd-search roll-hunt"
-        placeholder="Search the {shape.many.toLowerCase()}..."
+        placeholder="Search the {shape.words}..."
         aria-label="Search {shape.many}"
         bind:value={hunt}
       />
@@ -375,65 +343,8 @@
 
       {#if loading}
         <div class="dnd-loading"><span class="dnd-spinner"></span></div>
-      {:else if shown.length === 0 && limbs.length === 0 && shownLeads.length === 0}
+      {:else if shown.length === 0 && limbs.length === 0}
         <p class="roll-note">Nothing here yet.</p>
-      {:else if lead}
-        {@const open = !shut[lead]}
-        <section class="roll-group" role="group">
-          <header class="roll-group-band">
-            <h2 class="dnd-label roll-group-title">{RESOURCES[lead].many}</h2>
-            <span class="roll-group-count">{shownLeads.length}</span>
-            <span class="roll-group-run"></span>
-            <button
-              type="button"
-              class="roll-group-caret"
-              class:roll-group-caret-open={open}
-              aria-expanded={open}
-              aria-label={open ? `Fold ${RESOURCES[lead].many}` : `Unfold ${RESOURCES[lead].many}`}
-              onclick={() => (shut = { ...shut, [lead]: open })}
-            ></button>
-          </header>
-
-          <div class="roll-group-body" class:roll-group-body-open={open} inert={!open}>
-            <div class="roll-list">
-              {#each shownLeads as one (one.id)}
-                <div class="roll-leaf" role="listitem">
-                  {@render leadRow?.(one, leadUnder, (held) => peek(held, true))}
-                </div>
-              {/each}
-              {#if shownLeads.length === 0}
-                <p class="roll-note">Nothing here yet.</p>
-              {/if}
-            </div>
-          </div>
-        </section>
-
-        {@const own = !shut[kind]}
-        <section class="roll-group" role="group">
-          <header class="roll-group-band">
-            <h2 class="dnd-label roll-group-title">{shape.many}</h2>
-            <span class="roll-group-count">{shown.length}</span>
-            <span class="roll-group-run"></span>
-            <button
-              type="button"
-              class="roll-group-caret"
-              class:roll-group-caret-open={own}
-              aria-expanded={own}
-              aria-label={own ? `Fold ${shape.many}` : `Unfold ${shape.many}`}
-              onclick={() => (shut = { ...shut, [kind]: own })}
-            ></button>
-          </header>
-
-          <div class="roll-group-body" class:roll-group-body-open={own} inert={!own}>
-            <div class="roll-tree" class:roll-tree-arranging={arranging}>
-              {#if shown.length === 0 && limbs.length === 0}
-                <p class="roll-note">Nothing here yet.</p>
-              {:else}
-                {@render tree()}
-              {/if}
-            </div>
-          </div>
-        </section>
       {:else}
         {@render tree()}
       {/if}
@@ -442,10 +353,10 @@
     {#if peeked}
       <aside class="roll-peek" aria-label={peeked.title}>
         <header class="roll-peek-divide">
-          <h2 class="dnd-label roll-peek-name">{RESOURCES[peekedKind].one}</h2>
-          <span class="roll-peek-note">{RESOURCES[peekedKind].mark(peeked)}</span>
+          <h2 class="dnd-label roll-peek-name">{shape.one}</h2>
+          <span class="roll-peek-note">{shape.mark(peeked)}</span>
           <span class="roll-peek-run"></span>
-          <IconBtn title="Open" onclick={() => navigate(`${peekedKind === kind ? under : leadUnder}/${peeked?.id}`)}>
+          <IconBtn title="Open" onclick={() => navigate(`${under}/${peeked?.id}`)}>
             <Glyph name="forward" size="sm" />
           </IconBtn>
           <IconBtn title="Close" onclick={() => (peeked = null)}>
@@ -529,7 +440,7 @@
                   {@render leaf(one)}
                 {/each}
                 {#if arranging && limb.kids.length === 0}
-                  <p class="roll-note">Drop {shape.many.toLowerCase()} here.</p>
+                  <p class="roll-note">Drop {shape.words} here.</p>
                 {/if}
               </div>
             </div>

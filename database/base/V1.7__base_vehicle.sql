@@ -12,11 +12,9 @@ CREATE TABLE IF NOT EXISTS vehicle (
     stats             JSONB NOT NULL DEFAULT '{}'::jsonb,
     rulings           JSONB NOT NULL DEFAULT '{}'::jsonb,
     overlay           JSONB NOT NULL DEFAULT '{}'::jsonb,
-    customisation     TEXT NOT NULL DEFAULT 'locked' CHECK (customisation IN ('locked', 'approved', 'full')),
     crew              JSONB NOT NULL DEFAULT '[]'::jsonb,
     revision          INTEGER NOT NULL DEFAULT 1,
     history           JSONB NOT NULL DEFAULT '[]'::jsonb,
-    requests          JSONB NOT NULL DEFAULT '[]'::jsonb,
     crew_claim_id     UUID,
     sa_owner_id       UUID NOT NULL,
     sa_created_by     UUID,
@@ -41,11 +39,9 @@ COMMENT ON COLUMN vehicle.states IS 'The hit points and condition of each compon
 COMMENT ON COLUMN vehicle.stats IS 'The vehicle level statistics';
 COMMENT ON COLUMN vehicle.rulings IS 'The option chosen for each rules ambiguity by its id';
 COMMENT ON COLUMN vehicle.overlay IS 'The homebrew catalogue entries this vehicle alone carries';
-COMMENT ON COLUMN vehicle.customisation IS 'locked, approved or full: how far the crew may change the design';
 COMMENT ON COLUMN vehicle.crew IS 'Every crew member with their character, player and role';
 COMMENT ON COLUMN vehicle.revision IS 'The revision of the design, raised by every change to its components';
 COMMENT ON COLUMN vehicle.history IS 'Every revision of the design with when, by whom, its note and its components';
-COMMENT ON COLUMN vehicle.requests IS 'The change requests the crew made';
 COMMENT ON COLUMN vehicle.crew_claim_id IS 'The claim every player of the crew holds, read and write';
 COMMENT ON COLUMN vehicle.sa_owner_id IS 'The owning organization';
 COMMENT ON COLUMN vehicle.sa_created_by IS 'The user_claim of the builder';

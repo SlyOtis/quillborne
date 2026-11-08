@@ -7,7 +7,6 @@
   const {
     vehicle,
     system,
-    steward = false,
     names,
     onsave
   }: {
@@ -15,8 +14,6 @@
     vehicle: Vehicle
     /** The vehicle system the component names come from. */
     system: VehicleSystem
-    /** The builder or the campaign DM, who may restore a revision. */
-    steward?: boolean
     /** Player names by user id. */
     names: Record<string, string>
     /** Writes the given vessel fields. */
@@ -78,7 +75,7 @@
           <span class="vh-meta">{new Date(revision.at).toLocaleString()} · {names[revision.user_id] ?? 'A player'}</span>
           {#if revision.revision === vehicle.revision}
             <span class="vh-now">Current</span>
-          {:else if steward}
+          {:else}
             <Button variant="ghost" size="sm" loading={busy} onclick={() => restore(revision)}>Restore</Button>
           {/if}
         </div>

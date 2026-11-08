@@ -62,8 +62,8 @@ describe('the walk measures the sideways run', () => {
     )
   })
 
-  it('sweeps under the narrowest breakpoint the shell declares, where an auto track loses its floor', () => {
-    const breakpoints = [...read('src/components/ui/Shell.svelte').matchAll(/@media \(max-width: (\d+)px\)/g)].map(
+  it('sweeps under the narrowest breakpoint the frame declares, where an auto track loses its floor', () => {
+    const breakpoints = [...read('src/components/Frame.svelte').matchAll(/@media \(max-width: (\d+)px\)/g)].map(
       (found) => Number(found[1])
     )
 

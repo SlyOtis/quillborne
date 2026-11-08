@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as api from '$lib/api'
   import { getCharacter, postCharacterCopy, postFile, putCharacterPlayed, putProfileRecentCharacters } from '$lib/api'
-  import type { Character, Owner } from '$lib/api/types'
+  import type { Character } from '$lib/api/types'
   import { getTheme, setTheme } from "$lib/dialogs/theme";
   import Senses from "$character-sheet/Senses.svelte";
   import PlainBox from "$character-sheet/PlainBox.svelte";
@@ -23,15 +23,13 @@
   import SpellsTab from "$character-sheet/main_tabs/SpellsTab.svelte";
   import Special from "$character-sheet/Special.svelte";
   import Background from "$components/Background.svelte";
-  import { applyStateToCharacter, characterWriteError, getCharacterStore } from "$lib/engine";
+  import { applyStateToCharacter, characterWriteError, getCharacterStore, setCharacterReadOnly } from "$lib/engine";
   import { getRulesStore } from "$lib/rules/store";
   import { setContext, onDestroy, onMount, untrack, type Snippet } from "svelte";
   import Fold from "$components/ui/Fold.svelte";
-  import MenuPanel from "$components/MenuPanel.svelte";
-  import Chat from "$chat/Chat.svelte";
   import Overlay from "$components/Overlay.svelte";
   import { sidebarStore } from "$lib/navigation";
-  import { uiStore, anyDialogOpen, menuView } from "$lib/stores/ui.store";
+  import { uiStore, anyDialogOpen, menuView, soundBoard } from "$lib/stores/ui.store";
   import { navigate } from "sly-svelte-location-router";
   import Shell from "$components/ui/Shell.svelte";
   import Portrait, { type PortraitFrame } from "$components/ui/Portrait.svelte";
@@ -42,58 +40,17 @@
   import Button from "$components/ui/Button.svelte";
   import BaseDialog from "$components/BaseDialog.svelte";
   import { postUIAction } from "$lib/chat";
-  import { getAll, getBlank, postOne, type Hero } from "$lib/resources";
   import { user, userProfile } from "$lib/stores/auth.store";
   import { currentCharacterId, getRecentCharacters } from "$lib/stores/character.store";
 
   const { route }: { route?: { params?: Record<string, string> } } = $props();
   const characterId = untrack(() => route?.params?.id) ?? "local";
 
-  let heroId = $state('');
-  let heroOwner = $state<Owner | null>(null);
-  let writingPage = $state(false);
-
-  const heroRoll = $derived(
-    heroOwner?.at === 'campaign' ? `/main/campaign/${heroOwner.id}/heroes` : '/main/heroes'
-  );
-
-  function openPage() {
-    const owner = heroOwner;
-    if (!owner || writingPage) return;
-
-    if (heroId) {
-      navigate(`${heroRoll}/${heroId}`);
-      return;
-    }
-
-    writingPage = true;
-    const className = $info.class?.name && $info.class.name !== 'Unknown' ? $info.class.name : '';
-    const species = $info.race?.name && $info.race.name !== 'Unknown' ? $info.race.name : '';
-
-    postOne(owner, 'heroes', {
-      ...getBlank('heroes', $user?.user_id ?? ''),
-      title: $info.name || 'Unnamed Character',
-      description: $info.description,
-      image: $info.imageUrl,
-      images: $info.imageUrl ? [$info.imageUrl] : [],
-      frame: $info.imageFrame ?? '',
-      class: className,
-      species,
-      level: $info.level || 1,
-      sheet_id: characterId
-    })
-      .then((id) => {
-        heroId = id;
-        navigate(`${heroRoll}/${id}`);
-      })
-      .catch((reason) => characterWriteError.set(reason instanceof Error ? reason.message : String(reason)))
-      .finally(() => (writingPage = false));
-  }
-
   const {unsubscribe, ...chStore} = getCharacterStore(characterId)
   const unsubscribeSidebar = sidebarStore.subscribe(() => {});
 
   setContext<CharacterContext>('character', chStore);
+  soundBoard.set(chStore.soundBoard);
   const rules = getRulesStore(chStore);
   setContext('rules', rules);
   setContext('sidebar', sidebarStore)
@@ -118,6 +75,7 @@
           return;
         }
 
+        setCharacterReadOnly(document.owner_id !== $user?.user_id);
         applyStateToCharacter(document.character, true);
         ownerId = document.owner_id;
         currentCharacterId.set(characterId);
@@ -127,17 +85,6 @@
           putCharacterPlayed(characterId)
             .catch((reason) => characterWriteError.set(reason instanceof Error ? reason.message : String(reason)));
         }
-
-        const owner: Owner = document.campaign_id
-          ? { at: 'campaign', id: document.campaign_id }
-          : { at: 'user', id: document.owner_id };
-        heroOwner = owner;
-
-        getAll(owner, 'heroes')
-          .then((heroes) => {
-            heroId = (heroes as Hero[]).find((one) => one.sheet_id === characterId)?.id ?? '';
-          })
-          .catch(() => (heroId = ''));
       })
       .catch(() => navigate("/main"))
       .finally(() => (loaded = true));
@@ -145,6 +92,7 @@
 
   onDestroy(() => {
     currentCharacterId.set(null);
+    soundBoard.set(null);
     unsubscribe();
     unsubscribeSidebar();
   });
@@ -157,6 +105,43 @@
   let working = $state(false)
 
   const owned = $derived(Boolean(ownerId) && ownerId === $user?.user_id)
+  const reading = $derived(Boolean(ownerId) && !owned)
+
+  const EDITS = 'input, select, textarea, [contenteditable="true"]'
+  const BROWSE = '[role="tab"], [aria-expanded]'
+
+  function still(node: HTMLElement, on: boolean) {
+    const mark = () => {
+      if (!on) return
+      for (const one of node.querySelectorAll<HTMLElement>(EDITS)) {
+        if (one instanceof HTMLSelectElement || (one instanceof HTMLInputElement && ['checkbox', 'radio', 'range', 'file'].includes(one.type))) one.disabled = true
+        else if (one instanceof HTMLInputElement || one instanceof HTMLTextAreaElement) one.readOnly = true
+        else one.contentEditable = 'false'
+      }
+    }
+    const block = (event: Event) => {
+      const target = event.target as HTMLElement
+      if (!on || target.closest(BROWSE)) return
+      if (!target.closest('button, [role="button"], label, input, select, textarea')) return
+      event.preventDefault()
+      event.stopPropagation()
+    }
+    const watch = new MutationObserver(mark)
+    watch.observe(node, { childList: true, subtree: true })
+    node.addEventListener('click', block, true)
+    mark()
+
+    return {
+      update(next: boolean) {
+        on = next
+        mark()
+      },
+      destroy() {
+        watch.disconnect()
+        node.removeEventListener('click', block, true)
+      }
+    }
+  }
 
   $effect(() => {
     if (naming) nameInput?.focus()
@@ -241,14 +226,6 @@
 
 <Overlay />
 
-{#snippet menu()}
-  <MenuPanel />
-{/snippet}
-
-{#snippet chat()}
-  <Chat />
-{/snippet}
-
 {#snippet saves()}<SavingThrows/>{/snippet}
 {#snippet special()}<Special/>{/snippet}
 {#snippet senses()}<Senses/>{/snippet}
@@ -292,27 +269,27 @@
   title={$info.name || 'Character'}
   width="full"
   back={() => navigate('/main')}
-  {menu}
-  {chat}
+  drawers
 >
   {#snippet tools()}
-    <Sigil title="Soundboard" size="sm" active={$menuView === 'soundboard'} onclick={uiStore.openSoundboard}>
-      <Glyph name="sound" size="sm" />
-    </Sigil>
+    {#if owned}
+      <Sigil title="Soundboard" size="sm" active={$menuView === 'soundboard'} onclick={uiStore.openSoundboard}>
+        <Glyph name="sound" size="sm" />
+      </Sigil>
+    {/if}
     <Sigil title="Export this character" size="sm" onclick={() => postUIAction('exportCharacter')}>
       <Glyph name="export" size="sm" />
     </Sigil>
-    <Sigil title="Level up" size="sm" onclick={() => postUIAction('openLevelUpDialog')}>
-      <Glyph name="levelup" size="sm" />
-    </Sigil>
-    <Sigil title="Import sources" size="sm" onclick={() => postUIAction('openSourceImport')}>
-      <Glyph name="sources" size="sm" />
-    </Sigil>
+    {#if owned}
+      <Sigil title="Level up" size="sm" onclick={() => postUIAction('openLevelUpDialog')}>
+        <Glyph name="levelup" size="sm" />
+      </Sigil>
+      <Sigil title="Import sources" size="sm" onclick={() => postUIAction('openSourceImport')}>
+        <Glyph name="sources" size="sm" />
+      </Sigil>
+    {/if}
     <Sigil title="Change theme" size="sm" onclick={() => postUIAction('openThemeDialog')}>
       <Glyph name="theme" size="sm" />
-    </Sigil>
-    <Sigil title={heroId ? 'Open the page' : 'Write the page'} size="sm" onclick={openPage}>
-      <Glyph name="scroll" size="sm" />
     </Sigil>
   {/snippet}
 
@@ -326,7 +303,8 @@
         <button
           type="button"
           class="sheet-face"
-          title="Choose the portrait picture"
+          title={owned ? 'Choose the portrait picture' : $info.name || 'Character'}
+          disabled={!owned}
           onclick={() => portraitInput?.click()}
         >
           <Portrait
@@ -352,9 +330,11 @@
           {:else}
             <span class="sheet-title">
               <h1 class="dnd-heading sheet-name">{$info.name || 'Unnamed Character'}</h1>
-              <IconBtn title="Rename this character" onclick={openName}>
-                <Glyph name="edit" size="sm" />
-              </IconBtn>
+              {#if owned}
+                <IconBtn title="Rename this character" onclick={openName}>
+                  <Glyph name="edit" size="sm" />
+                </IconBtn>
+              {/if}
             </span>
           {/if}
           <span class="sheet-meta">
@@ -364,9 +344,11 @@
         </span>
 
         <span class="sheet-gear">
-          <Sigil title="Choose the portrait frame" frame="ring" size="sm" onclick={() => postUIAction('openFrameDialog')}>
-            <Glyph name="gear" size="sm" />
-          </Sigil>
+          {#if owned}
+            <Sigil title="Choose the portrait frame" frame="ring" size="sm" onclick={() => postUIAction('openFrameDialog')}>
+              <Glyph name="gear" size="sm" />
+            </Sigil>
+          {/if}
           <IconBtn title="Copy this character" disabled={working} onclick={postCopy}>
             <Glyph name="copy" size="sm" />
           </IconBtn>
@@ -387,12 +369,20 @@
         />
       </header>
 
-      <HitPoints/>
+      <div class="sheet-still" class:sheet-still-on={reading} use:still={reading}>
+        <HitPoints/>
+      </div>
     </div>
+
+    {#if reading}
+      <p class="sheet-reading" role="status">Another player's character. You can read the sheet, but only they can change it.</p>
+    {/if}
 
     {#if $characterWriteError}
       <p class="sheet-alarm" role="alert">{$characterWriteError}</p>
     {/if}
+
+    <div class="sheet-still" class:sheet-still-on={reading} use:still={reading}>
 
     <div class="sheet-slots">
       <PlainBox value={$rules.resolved?.proficiency ?? $info.proficiencyBonus}
@@ -433,7 +423,7 @@
         {@render group('actions', 'Actions and inventory', tabs)}
       </div>
     </div>
-
+    </div>
   {/if}
 </Shell>
 
@@ -450,6 +440,24 @@
 </BaseDialog>
 
 <style>
+  .sheet-still {
+    display: contents;
+  }
+
+  .sheet-still-on :global(:is(button, [role='button'], label, input, select, textarea):not([role='tab'], [aria-expanded])) {
+    cursor: default;
+  }
+
+  .sheet-reading {
+    margin: 0;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-sm);
+    background: var(--texture-noise), var(--ground-deep);
+    box-shadow: var(--bevel-down);
+    font-size: var(--text-sm);
+    color: var(--ink-dim);
+  }
+
   .sheet-alarm {
     margin: 0;
     padding: var(--space-3) var(--space-4);

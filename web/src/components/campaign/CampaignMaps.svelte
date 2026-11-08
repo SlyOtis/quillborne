@@ -3,7 +3,7 @@
   import type { Campaign, CampaignMap, CampaignRecordKind, MapLayer, MapMarker, MapMarkerKind } from '$lib/api/types'
   import { onDestroy, untrack } from 'svelte'
   import { navigate } from 'sly-svelte-location-router'
-  import { RESOURCES, type Character, type Place, type Quest } from '$lib/resources'
+  import { RESOURCES, type Npc, type Place } from '$lib/resources'
   import Button from '$components/ui/Button.svelte'
   import Field from '$components/ui/Field.svelte'
   import Fold from '$components/ui/Fold.svelte'
@@ -22,7 +22,6 @@
     isDm = false,
     locations = [],
     npcs = [],
-    quests = [],
     maps = [],
     selectedId = $bindable(null),
     placing = $bindable(null),
@@ -36,9 +35,7 @@
     /** Places a pin can stand for. */
     locations?: Place[]
     /** People a pin can stand for. */
-    npcs?: Character[]
-    /** Quests a pin can stand for. */
-    quests?: Quest[]
+    npcs?: Npc[]
     /** Every map the campaign holds, newest listener state. */
     maps?: CampaignMap[]
     /** The map on the canvas, bound to whatever drives the table of contents. */
@@ -56,7 +53,7 @@
     { name: 'Strongholds', kinds: ['keep', 'tower', 'temple', 'shrine', 'inn', 'forge'] },
     { name: 'Depths', kinds: ['dungeon', 'cave', 'ruin', 'grave', 'portal', 'bridge'] },
     { name: 'Wilds', kinds: ['forest', 'mountain', 'swamp', 'lake', 'harbour', 'road'] },
-    { name: 'Marks', kinds: ['npc', 'quest', 'battle', 'danger', 'treasure', 'note'] }
+    { name: 'Marks', kinds: ['npc', 'battle', 'danger', 'treasure', 'note'] }
   ]
 
   const KINDS: MapMarkerKind[] = FAMILIES.flatMap((family) => family.kinds)
@@ -233,13 +230,9 @@
       const place = locations.find((one) => one.id === pin.record_id)
       if (place) return { name: place.title, note: RESOURCES.places.mark(place), body: place.description, image: place.image, href: `/main/campaign/${campaignId}/places/${place.id}` }
     }
-    if (pin.record_kind === 'character' && pin.record_id) {
+    if (pin.record_kind === 'npc' && pin.record_id) {
       const who = npcs.find((one) => one.id === pin.record_id)
-      if (who) return { name: who.title, note: RESOURCES.characters.mark(who), body: who.description, image: who.image, href: `/main/campaign/${campaignId}/characters/${who.id}` }
-    }
-    if (pin.record_kind === 'quest' && pin.record_id) {
-      const errand = quests.find((one) => one.id === pin.record_id)
-      if (errand) return { name: errand.title, note: RESOURCES.quests.mark(errand), body: errand.description, image: errand.image, href: `/main/campaign/${campaignId}/quests/${errand.id}` }
+      if (who) return { name: who.title, note: RESOURCES.npcs.mark(who), body: who.description, image: who.image, href: `/main/campaign/${campaignId}/npcs/${who.id}` }
     }
 
     return { name: pin.title, note: pin.kind, body: pin.description ?? '', image: '' }
@@ -389,7 +382,7 @@
             {#each maps.filter((entry) => entry.id !== selected.id) as entry}<option value={entry.id}>{entry.title}</option>{/each}
           </select>
         </Field>
-        <Field label="Stands for" id="pin-record" help="Points the pin at a place, a person or a quest so the text lives in one record.">
+        <Field label="Stands for" id="pin-record" help="Points the pin at a place or an NPC so the text lives in one record.">
           <select
             id="pin-record"
             value={marker.record_kind && marker.record_id ? `${marker.record_kind}:${marker.record_id}` : ''}
@@ -402,9 +395,8 @@
             }}
           >
             <option value="">Nothing</option>
-            {#each locations as place}<option value="location:{place.id}">Place — {place.title}</option>{/each}
-            {#each npcs as npc}<option value="npc:{npc.id}">Person — {npc.title}</option>{/each}
-            {#each quests as quest}<option value="quest:{quest.id}">Quest — {quest.title}</option>{/each}
+            {#each locations as place}<option value="place:{place.id}">Place — {place.title}</option>{/each}
+            {#each npcs as npc}<option value="npc:{npc.id}">NPC — {npc.title}</option>{/each}
           </select>
         </Field>
         <div class="dnd-maps-row">

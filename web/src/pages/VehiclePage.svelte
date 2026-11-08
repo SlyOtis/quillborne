@@ -27,9 +27,8 @@
   import Shell from '$components/ui/Shell.svelte'
   import Stat from '$components/ui/Stat.svelte'
   import Stops from '$components/ui/Stops.svelte'
-  import MenuPanel from '$components/MenuPanel.svelte'
-  import Chat from '$chat/Chat.svelte'
   import ComponentPanel from '$components/vehicle/ComponentPanel.svelte'
+  import DeckActions from '$components/vehicle/DeckActions.svelte'
   import DeckSheet from '$components/vehicle/DeckSheet.svelte'
   import VehicleCrew from '$components/vehicle/VehicleCrew.svelte'
   import VehicleDesign from '$components/vehicle/VehicleDesign.svelte'
@@ -158,7 +157,7 @@
     })
   })
 
-  const peopleKey = $derived(JSON.stringify([...new Set([...(vehicle?.history.map((entry) => entry.user_id) ?? []), ...(vehicle?.requests.map((entry) => entry.user_id) ?? [])])]))
+  const peopleKey = $derived(JSON.stringify([...new Set(vehicle?.history.map((entry) => entry.user_id) ?? [])]))
 
   $effect(() => {
     const ids = JSON.parse(peopleKey) as string[]
@@ -170,8 +169,6 @@
 
   const me = $derived($user?.user_id ?? '')
   const steward = $derived(Boolean(vehicle && me && (vehicle.owner_id === me || campaign?.dm_id === me)))
-  const crew = $derived(Boolean(vehicle?.crew.some((entry) => entry.user_id === me)))
-  const keeps = $derived(steward || crew)
   const system = $derived(base && vehicle ? getMergedVehicleSystem(base, vehicle.overlay) : null)
   const layout = $derived(system && vehicle ? (getLayout(system, vehicle.layout) ?? null) : null)
   const ctx = $derived(
@@ -264,15 +261,7 @@
   const back = $derived(vehicle?.campaign_id ? `/main/campaign/${vehicle.campaign_id}/vehicles` : '/main/vehicles')
 </script>
 
-<Shell title={vehicle?.name ?? 'Vehicle'} width="full" back={() => navigate(back)}>
-  {#snippet menu()}
-    <MenuPanel />
-  {/snippet}
-
-  {#snippet chat()}
-    <Chat />
-  {/snippet}
-
+<Shell drawers title={vehicle?.name ?? 'Vehicle'} width="full" back={() => navigate(back)}>
   {#snippet nav()}
     <Stops stops={STOPS} {stop} onopen={open} />
   {/snippet}
@@ -345,7 +334,7 @@
                 </select>
               </Field>
             </div>
-            <DeckSheet {ctx} {crewman} {selected} onselect={(id) => (selected = id)} onperks={() => open('crew')} />
+            <DeckSheet {ctx} {crewman} onperks={() => open('crew')} />
           </aside>
           <div class="ves-map">
             <VehicleMap {ctx} {selected} {overlays} onselect={(id) => (selected = id)} {movement} />
@@ -364,29 +353,24 @@
               </Fold>
             </div>
             {#if chosen}
-              <ComponentPanel {ctx} component={chosen} {crewman} editable={keeps} onstate={putState}>
+              <ComponentPanel {ctx} component={chosen} {crewman} editable onstate={putState}>
                 {#snippet actions()}
-                  {#if keeps}
-                    <Button variant="ghost" size="sm" onclick={() => open('design')}>Design</Button>
-                  {/if}
+                  <Button variant="ghost" size="sm" onclick={() => open('design')}>Design</Button>
                 {/snippet}
               </ComponentPanel>
             {:else}
-              <div class="dnd-empty">
-                <p class="dnd-heading">Choose a component</p>
-                <p>Press one on the deck to read its statistics, change its hit points and condition, and see where a weapon reaches.</p>
-              </div>
+              <DeckActions {ctx} {crewman} onselect={(id) => (selected = id)} />
             {/if}
           </aside>
         </div>
       {:else if stop === 'design'}
-        <VehicleDesign {vehicle} {system} {layout} {steward} {crew} {me} onsave={save} />
+        <VehicleDesign {vehicle} {system} {layout} onsave={save} />
       {:else if stop === 'crew'}
-        <VehicleCrew {vehicle} {system} rulings={vehicle.rulings} {steward} {me} characters={sailors} {seats} {crewman} onsave={save} onperks={putPerks} />
+        <VehicleCrew {vehicle} {system} rulings={vehicle.rulings} {me} characters={sailors} {seats} {crewman} onsave={save} onperks={putPerks} />
       {:else if stop === 'history'}
-        <VehicleHistory {vehicle} {system} {steward} {names} onsave={save} />
+        <VehicleHistory {vehicle} {system} {names} onsave={save} />
       {:else if stop === 'rules'}
-        <VehicleRulings {system} rulings={vehicle.rulings} editable={steward} onrule={rule} />
+        <VehicleRulings {system} rulings={vehicle.rulings} editable onrule={rule} />
       {:else if stop === 'papers'}
         <VehiclePapers {vehicle} {system} {steward} onsave={save} />
       {/if}
@@ -461,7 +445,6 @@
     gap: var(--space-2);
   }
 
-
   .ves-aboard {
     display: grid;
     gap: var(--space-2);
@@ -475,7 +458,6 @@
     gap: var(--space-2);
     padding-block: var(--space-2);
   }
-
 
   .ves-toggle {
     display: flex;

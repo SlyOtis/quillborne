@@ -11,7 +11,6 @@
     vehicle,
     system,
     rulings,
-    steward = false,
     me,
     characters,
     seats,
@@ -25,11 +24,9 @@
     system: VehicleSystem
     /** The table's rulings, which move some perk limits. */
     rulings: Rulings
-    /** The builder or the campaign DM, who may seat anyone and set every role. */
-    steward?: boolean
     /** The signed in player. */
     me: string
-    /** Every sheet the reader can see that could sail: their own and, for a steward, the campaign's. */
+    /** Every sheet the reader can see that could sail: their own and the campaign's. */
     characters: Character[]
     /** The sheets of the crew the reader can read, by character id. */
     seats: Record<string, Character>
@@ -108,8 +105,7 @@
               tone={entry.user_id === me ? 'ember' : 'metal'}
               onclick={sheet ? () => navigate(`/main/character/${sheet.id}`) : undefined}
             />
-            {#if steward}
-              <div class="vcrew-acts">
+            <div class="vcrew-acts">
                 <Field id="role-{entry.character_id}" label="Role">
                     <select id="role-{entry.character_id}" value={entry.role} disabled={busy} onchange={(event) => setRole(entry.character_id, event.currentTarget.value)}>
                       {#each roles as option (option)}
@@ -119,13 +115,12 @@
                 </Field>
                 <Button variant="ghost" size="sm" disabled={busy} onclick={() => unseat(entry.character_id)}>Put ashore</Button>
               </div>
-            {/if}
           </li>
         {/each}
       </ul>
     {/if}
 
-    {#if steward && free.length > 0}
+    {#if free.length > 0}
       <div class="vcrew-bring">
         <Field id="crew-bring" label="Sign on a character">
           <select id="crew-bring" bind:value={bring} disabled={busy}>

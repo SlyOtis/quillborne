@@ -23,8 +23,6 @@ var (
 	errStaleDesign = errors.New("the design changed since you opened it")
 )
 
-var vehicleCustomisations = map[string]bool{"locked": true, "approved": true, "full": true}
-
 type BodyVehicle struct {
 	Name            *string          `json:"name"`
 	CampaignID      *uuid.UUID       `json:"campaign_id"`
@@ -37,9 +35,7 @@ type BodyVehicle struct {
 	Stats           *json.RawMessage `json:"stats"`
 	Rulings         *json.RawMessage `json:"rulings"`
 	Overlay         *json.RawMessage `json:"overlay"`
-	Customisation   *string          `json:"customisation"`
 	Crew            *json.RawMessage `json:"crew"`
-	Requests        *json.RawMessage `json:"requests"`
 	Revision        *int             `json:"revision"`
 	Note            *string          `json:"note"`
 }
@@ -89,14 +85,6 @@ func putVehicleBody(item *db.Vehicle, body BodyVehicle) []string {
 	if body.Overlay != nil {
 		item.Overlay = *body.Overlay
 		columns = append(columns, "overlay")
-	}
-	if body.Customisation != nil {
-		item.Customisation = *body.Customisation
-		columns = append(columns, "customisation")
-	}
-	if body.Requests != nil {
-		item.Requests = *body.Requests
-		columns = append(columns, "requests")
 	}
 	return columns
 }
@@ -215,9 +203,6 @@ func PostVehicle(ctx echo.Context) error {
 	if body.System == nil || *body.System == "" || body.Layout == nil || *body.Layout == "" {
 		return respond.Error(ctx, http.StatusBadRequest, "A vehicle names its system and its layout")
 	}
-	if body.Customisation != nil && !vehicleCustomisations[*body.Customisation] {
-		return respond.Error(ctx, http.StatusBadRequest, "customisation must be locked, approved or full")
-	}
 	rctx := ctx.Request().Context()
 	var campaign *db.Campaign
 	if body.CampaignID != nil {
@@ -241,20 +226,18 @@ func PostVehicle(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
 	item := db.Vehicle{
-		UserID:        actorID,
-		CampaignID:    body.CampaignID,
-		Name:          "Unnamed vessel",
-		Components:    json.RawMessage(`[]`),
-		States:        json.RawMessage(`{}`),
-		Stats:         json.RawMessage(`{}`),
-		Rulings:       json.RawMessage(`{}`),
-		Overlay:       json.RawMessage(`{}`),
-		Customisation: "locked",
-		Crew:          json.RawMessage(`[]`),
-		Revision:      1,
-		Requests:      json.RawMessage(`[]`),
-		OwnerID:       w.OwnerID,
-		CreatedBy:     w.Access.UserClaimID,
+		UserID:     actorID,
+		CampaignID: body.CampaignID,
+		Name:       "Unnamed vessel",
+		Components: json.RawMessage(`[]`),
+		States:     json.RawMessage(`{}`),
+		Stats:      json.RawMessage(`{}`),
+		Rulings:    json.RawMessage(`{}`),
+		Overlay:    json.RawMessage(`{}`),
+		Crew:       json.RawMessage(`[]`),
+		Revision:   1,
+		OwnerID:    w.OwnerID,
+		CreatedBy:  w.Access.UserClaimID,
 	}
 	putVehicleBody(&item, body)
 	if body.Components != nil {
@@ -305,7 +288,7 @@ func PostVehicle(ctx echo.Context) error {
 				want[*campaign.DmClaimID] = sdb.ACCESS_ALL
 			}
 			if campaign.PlayerClaimID != nil {
-				want[*campaign.PlayerClaimID] = sdb.ACCESS_READ
+				want[*campaign.PlayerClaimID] = sdb.ACCESS_READ | sdb.ACCESS_WRITE
 			}
 		}
 		if err := putBindings(tctx, tx, w, db.OBJECT_TYPE_VEHICLE, item.ID, want, nil); err != nil {
@@ -344,18 +327,6 @@ func PutVehicle(ctx echo.Context) error {
 	item := db.Vehicle{ID: vehicleID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Scan(rctx); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
-	}
-	if _, err := sdb.Instance().MutationAccess(rctx, actorID, vehicleID, db.OBJECT_TYPE_VEHICLE, sdb.ACCESS_OWNER); err != nil {
-		open := item.Customisation == "approved" || item.Customisation == "full"
-		reserved := body.Name != nil || body.CampaignID != nil || body.System != nil || body.Template != nil ||
-			body.TemplateVersion != nil || body.Layout != nil || body.Rulings != nil || body.Overlay != nil ||
-			body.Customisation != nil || body.Crew != nil
-		if reserved || (!open && (body.Components != nil || body.Stats != nil)) {
-			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
-		}
-	}
-	if body.Customisation != nil && !vehicleCustomisations[*body.Customisation] {
-		return respond.Error(ctx, http.StatusBadRequest, "customisation must be locked, approved or full")
 	}
 	columns := append([]string{"sa_updated_at"}, putVehicleBody(&item, body)...)
 	base := item.Revision
@@ -465,4 +436,17 @@ func DeleteVehicle(ctx echo.Context) error {
 	}
 	postVehicleEvents(rctx, &item, broker.OpDelete)
 	return respond.NoContent(ctx, http.StatusOK)
+}
+
+func getUnique(ids []uuid.UUID) []uuid.UUID {
+	seen := map[uuid.UUID]bool{}
+	unique := make([]uuid.UUID, 0, len(ids))
+	for _, id := range ids {
+		if id == uuid.Nil || seen[id] {
+			continue
+		}
+		seen[id] = true
+		unique = append(unique, id)
+	}
+	return unique
 }
