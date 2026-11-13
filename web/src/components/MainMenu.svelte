@@ -168,6 +168,9 @@
         {one.title}
       </button>
     {/each}
+    <IconBtn title="Home" active={$currentRoute.path === '/main'} onclick={() => navigate('/main')}>
+      <Glyph name="home" size="sm" />
+    </IconBtn>
     <IconBtn title="Open scribe" active={$currentRoute.path === '/main/scribe'} onclick={() => navigate('/main/scribe')}>
       <Glyph name="edit" size="sm" />
     </IconBtn>
@@ -392,10 +395,13 @@
 
   .dnd-menu-rail > :global(.dnd-iconbtn) {
     align-self: center;
-    margin-inline-start: auto;
     inline-size: calc(var(--menu-row) - var(--space-2));
     block-size: calc(var(--menu-row) - var(--space-2));
     color: var(--menu-text-muted);
+  }
+
+  .dnd-menu-rail > :global(.dnd-menu-tab + .dnd-iconbtn) {
+    margin-inline-start: auto;
   }
 
   .dnd-menu-rail > :global(.dnd-iconbtn:hover:not(:disabled)) {
