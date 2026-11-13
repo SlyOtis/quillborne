@@ -11,12 +11,139 @@
   },
   {
     "as": "testy",
+    "call": "POST /api/campaign/${ember}/map",
+    "save": "ember_map",
+    "body": {
+      "title": "The Drowned Lantern",
+      "is_visible": true,
+      "plan": {
+        "format": "nimap",
+        "version": 2,
+        "id": "ember-drowned-lantern",
+        "name": "The Drowned Lantern",
+        "levels": [
+          {
+            "id": "taproom",
+            "name": "Taproom",
+            "ordinal": 0,
+            "elevation": 0,
+            "walls": [
+              {
+                "id": "w1",
+                "points": [
+                  [
+                    0,
+                    0
+                  ],
+                  [
+                    12,
+                    0
+                  ]
+                ],
+                "width": 0.3
+              },
+              {
+                "id": "w2",
+                "points": [
+                  [
+                    12,
+                    0
+                  ],
+                  [
+                    12,
+                    -8
+                  ]
+                ],
+                "width": 0.3
+              },
+              {
+                "id": "w3",
+                "points": [
+                  [
+                    12,
+                    -8
+                  ],
+                  [
+                    0,
+                    -8
+                  ]
+                ],
+                "width": 0.3
+              },
+              {
+                "id": "w4",
+                "points": [
+                  [
+                    0,
+                    -8
+                  ],
+                  [
+                    0,
+                    0
+                  ]
+                ],
+                "width": 0.3
+              },
+              {
+                "id": "w5",
+                "points": [
+                  [
+                    8,
+                    0
+                  ],
+                  [
+                    8,
+                    -5
+                  ]
+                ],
+                "width": 0.16
+              },
+              {
+                "id": "w6",
+                "points": [
+                  [
+                    8,
+                    -6.5
+                  ],
+                  [
+                    8,
+                    -8
+                  ]
+                ],
+                "width": 0.16
+              }
+            ],
+            "units": [],
+            "fixtureLines": [],
+            "fixtures": [],
+            "openings": []
+          }
+        ]
+      }
+    }
+  },
+  {
+    "as": "testy",
     "call": "POST /api/campaign/${ember}/player",
-    "body": { "email": "pip@quillborne.local" }
+    "body": {
+      "email": "pip@quillborne.local"
+    }
   },
   {
     "as": "pip",
     "call": "POST /api/campaign/${ember}/character/${wren}"
+  },
+  {
+    "as": "testy",
+    "call": "POST /api/campaign/${ember}/character/${seraphine}"
+  },
+  {
+    "as": "testy",
+    "call": "POST /api/campaign/${ember}/character/${tobrin}"
+  },
+  {
+    "as": "pip",
+    "call": "POST /api/campaign/${ember}/character/${maela}"
   },
   {
     "as": "testy",
@@ -27,11 +154,15 @@
       "campaign_id": "${ember}",
       "title": "The Toll at Cinder Bridge",
       "description": "The company meets, and pays a toll nobody should have asked for.",
-      "tags": ["arc one"],
+      "tags": [
+        "arc one"
+      ],
       "number": 1,
       "played_at": "2026-10-17",
       "body": "{\"blocks\":[{\"id\":\"es1a\",\"kind\":\"heading\",\"text\":\"Recap\",\"options\":{\"level\":2}},{\"id\":\"es1b\",\"kind\":\"paragraph\",\"text\":\"Reeve Halda Morrow hired the company at the Drowned Lantern. On the road north, bandits in ash-grey cloaks held Cinder Bridge and demanded a toll in lamp oil.\",\"options\":{}},{\"id\":\"es1c\",\"kind\":\"bullet\",\"text\":\"Wren picked the toll-keeper's pocket and found a map of every lamp post in Hollowmere.\",\"options\":{}},{\"id\":\"es1d\",\"kind\":\"bullet\",\"text\":\"The bandits fled into the fog rather than fight.\",\"options\":{}}]}",
-      "share_campaigns": ["${ember}"]
+      "share_campaigns": [
+        "${ember}"
+      ]
     }
   },
   {
@@ -43,11 +174,15 @@
       "campaign_id": "${ember}",
       "title": "Smoke over Hollowmere",
       "description": "The fog reaches the town, and one more lamp goes dark.",
-      "tags": ["arc one"],
+      "tags": [
+        "arc one"
+      ],
       "number": 2,
       "played_at": "2026-10-31",
       "body": "{\"blocks\":[{\"id\":\"es2a\",\"kind\":\"heading\",\"text\":\"Recap\",\"options\":{\"level\":2}},{\"id\":\"es2b\",\"kind\":\"paragraph\",\"text\":\"Old Tamsin, the last lamplighter, swore she saw a figure with a burning hand walk out of the fog. By morning her lamp was cold and she was gone.\",\"options\":{}},{\"id\":\"es2c\",\"kind\":\"todo\",\"text\":\"Follow the soot trail east of the bridge\",\"options\":{\"done\":false}}]}",
-      "share_campaigns": ["${ember}"]
+      "share_campaigns": [
+        "${ember}"
+      ]
     }
   },
   {
@@ -58,9 +193,13 @@
       "campaign_id": "${ember}",
       "title": "The Missing Lamplighters",
       "description": "Five lamplighters have vanished from Hollowmere in a month, and nobody knows what took them.",
-      "tags": ["main"],
+      "tags": [
+        "main"
+      ],
       "body": "{\"blocks\":[{\"id\":\"eq2a\",\"kind\":\"paragraph\",\"text\":\"Every disappearance happened on a night the fog came in from the east.\",\"options\":{}},{\"id\":\"eq2b\",\"kind\":\"callout\",\"text\":\"Reward: 200 gp and free lodging at the Drowned Lantern.\",\"options\":{}}]}",
-      "share_campaigns": ["${ember}"]
+      "share_campaigns": [
+        "${ember}"
+      ]
     }
   },
   {
@@ -75,7 +214,9 @@
       "disposition": "friendly",
       "species": "Human",
       "image_url": "/sources/art/races/human.svg",
-      "share_campaigns": ["${ember}"]
+      "share_campaigns": [
+        "${ember}"
+      ]
     }
   },
   {
@@ -86,7 +227,9 @@
       "campaign_id": "${ember}",
       "title": "The Ashen Hand",
       "description": "The cult leader behind the fog. Kept from the players until they earn the name.",
-      "tags": ["secret"],
+      "tags": [
+        "secret"
+      ],
       "role": "Cult leader",
       "disposition": "hostile",
       "species": "Tiefling",
@@ -106,7 +249,9 @@
       "disposition": "friendly",
       "species": "Halfling",
       "image_url": "/sources/art/races/halfling.svg",
-      "share_campaigns": ["${ember}"]
+      "share_campaigns": [
+        "${ember}"
+      ]
     }
   },
   {
@@ -119,7 +264,9 @@
       "description": "A lakeside town of crooked roofs and a hundred lamp posts, fewer lit each week.",
       "category": "town",
       "map_id": "",
-      "share_campaigns": ["${ember}"]
+      "share_campaigns": [
+        "${ember}"
+      ]
     }
   },
   {
@@ -132,7 +279,9 @@
       "description": "Hollowmere's inn, half sunk into the lake shore. The ale is warm and the gossip is warmer.",
       "category": "inn",
       "map_id": "",
-      "share_campaigns": ["${ember}"]
+      "share_campaigns": [
+        "${ember}"
+      ]
     }
   },
   {
@@ -148,7 +297,81 @@
       "attunement": true,
       "weight": 2,
       "value": 250,
-      "share_campaigns": ["${ember}"]
+      "share_campaigns": [
+        "${ember}"
+      ]
+    }
+  },
+  {
+    "as": "testy",
+    "call": "POST /api/resource",
+    "body": {
+      "kind": "items",
+      "campaign_id": "${ember}",
+      "title": "Cinder Key",
+      "description": "A brass key still warm to the touch. It opens the toll house on Cinder Bridge, and one door nobody has found.",
+      "category": "key",
+      "rarity": "common",
+      "attunement": false,
+      "weight": 0.1,
+      "value": 5,
+      "share_campaigns": [
+        "${ember}"
+      ]
+    }
+  },
+  {
+    "as": "testy",
+    "call": "POST /api/resource",
+    "body": {
+      "kind": "items",
+      "campaign_id": "${ember}",
+      "title": "Ashen Cloak",
+      "description": "Grey wool that sheds soot instead of taking it. The wearer leaves no footprints in ash.",
+      "category": "wondrous item",
+      "rarity": "uncommon",
+      "attunement": false,
+      "weight": 3,
+      "value": 180,
+      "share_campaigns": [
+        "${ember}"
+      ]
+    }
+  },
+  {
+    "as": "testy",
+    "call": "POST /api/resource",
+    "body": {
+      "kind": "items",
+      "campaign_id": "${ember}",
+      "title": "Morrow's Ledger",
+      "description": "The reeve's book of lamp oil deliveries. The last nine entries are in a hand that is not hers.",
+      "category": "book",
+      "rarity": "common",
+      "attunement": false,
+      "weight": 2,
+      "value": 1,
+      "share_campaigns": [
+        "${ember}"
+      ]
+    }
+  },
+  {
+    "as": "pip",
+    "call": "POST /api/resource",
+    "body": {
+      "kind": "items",
+      "campaign_id": "${ember}",
+      "title": "Wick Cutter",
+      "description": "A lamplighter's hooked knife. Wren keeps it sharper than any lamplighter needs.",
+      "category": "dagger",
+      "rarity": "common",
+      "attunement": false,
+      "weight": 1,
+      "value": 2,
+      "share_campaigns": [
+        "${ember}"
+      ]
     }
   },
   {
@@ -160,12 +383,57 @@
       "turn": 1,
       "is_active": true,
       "combatants": [
-        { "id": "ember-wren", "name": "Wren Ashdown", "kind": "character", "character_id": "${wren}", "modifier": 3, "initiative": 19, "hit_points": 15, "max_hit_points": 21, "conditions": [], "is_hit_points_known": true },
-        { "id": "ember-captain", "name": "Ash-cloaked Captain", "kind": "npc", "modifier": 2, "initiative": 16, "hit_points": 52, "max_hit_points": 65, "conditions": [], "is_hit_points_known": false },
-        { "id": "ember-bandit-1", "name": "Ash-cloaked Bandit", "kind": "npc", "modifier": 1, "initiative": 12, "hit_points": 4, "max_hit_points": 11, "conditions": ["prone"], "is_hit_points_known": false },
-        { "id": "ember-bandit-2", "name": "Ash-cloaked Bandit", "kind": "npc", "modifier": 1, "initiative": 7, "hit_points": 11, "max_hit_points": 11, "conditions": [], "is_hit_points_known": false }
+        {
+          "id": "ember-wren",
+          "name": "Wren Ashdown",
+          "kind": "character",
+          "character_id": "${wren}",
+          "modifier": 3,
+          "initiative": 19,
+          "hit_points": 15,
+          "max_hit_points": 21,
+          "conditions": [],
+          "is_hit_points_known": true
+        },
+        {
+          "id": "ember-captain",
+          "name": "Ash-cloaked Captain",
+          "kind": "npc",
+          "modifier": 2,
+          "initiative": 16,
+          "hit_points": 52,
+          "max_hit_points": 65,
+          "conditions": [],
+          "is_hit_points_known": false
+        },
+        {
+          "id": "ember-bandit-1",
+          "name": "Ash-cloaked Bandit",
+          "kind": "npc",
+          "modifier": 1,
+          "initiative": 12,
+          "hit_points": 4,
+          "max_hit_points": 11,
+          "conditions": [
+            "prone"
+          ],
+          "is_hit_points_known": false
+        },
+        {
+          "id": "ember-bandit-2",
+          "name": "Ash-cloaked Bandit",
+          "kind": "npc",
+          "modifier": 1,
+          "initiative": 7,
+          "hit_points": 11,
+          "max_hit_points": 11,
+          "conditions": [],
+          "is_hit_points_known": false
+        }
       ],
-      "share_campaigns": ["${ember}"]
+      "share_campaigns": [
+        "${ember}"
+      ]
     }
   },
   {
@@ -186,7 +454,9 @@
       "body": "Stealth",
       "roll_kind": "skill",
       "formula": "1d20+7",
-      "dice": [14],
+      "dice": [
+        14
+      ],
       "roll": 14,
       "total": 21
     }
@@ -200,7 +470,9 @@
       "body": "Ash-cloaked Captain: Perception",
       "roll_kind": "skill",
       "formula": "1d20+4",
-      "dice": [17],
+      "dice": [
+        17
+      ],
       "roll": 17,
       "total": 21,
       "is_hidden": true
