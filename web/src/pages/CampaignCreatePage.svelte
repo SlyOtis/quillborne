@@ -1,16 +1,20 @@
 <script lang="ts">
-  import { getSession, postCampaign, postFile } from '$lib/api'
+  import { getAssets, getSession, postCampaign, postFile, postObjectAsset } from '$lib/api'
+  import type { MediaAsset } from '$lib/blocks'
   import { navigate } from "sly-svelte-location-router";
   import Button from "$components/ui/Button.svelte";
   import Field from "$components/ui/Field.svelte";
   import Ornament from "$components/ui/Ornament.svelte";
   import Panel from "$components/ui/Panel.svelte";
   import Shell from "$components/ui/Shell.svelte";
+  import Portrait from "$components/ui/Portrait.svelte";
+  import MediaDialog from "$components/MediaDialog.svelte";
 
   let name = $state("");
   let description = $state("");
-  let picture = $state<File | null>(null);
+  let picture = $state<MediaAsset | null>(null);
   let pictureDragActive = $state(false);
+  let pictureOpen = $state(false);
   let error: string | null = $state(null);
   let isCreating = $state(false);
   let campaignId = $state<string | null>(null);
@@ -22,24 +26,24 @@
     return active;
   }
 
-  function putPicture(files: File[]) {
+  async function postPicture(files: File[]) {
     const file = files.find((entry) => entry.type.startsWith('image/'));
     if (!file) return;
 
     error = null;
-    picture = file;
+
+    try {
+      picture = await postFile(file, { kind: 'user' });
+    } catch (reason) {
+      error = reason instanceof Error ? reason.message : String(reason);
+    }
   }
 
-  function handlePictureDrop(event: DragEvent) {
+  async function handlePictureDrop(event: DragEvent) {
     event.preventDefault();
     pictureDragActive = false;
     const files = event.dataTransfer?.files;
-    if (files) putPicture(Array.from(files));
-  }
-
-  function handlePictureInput(event: Event) {
-    const input = event.currentTarget as HTMLInputElement;
-    if (input.files) putPicture(Array.from(input.files));
+    if (files) await postPicture(Array.from(files));
   }
 
   async function createCampaign() {
@@ -69,7 +73,7 @@
         }
       });
 
-      if (picture) await postFile(picture, { kind: 'campaignFile', campaignId });
+      if (picture) await postObjectAsset(picture.id, 'campaign', campaignId);
 
       navigate(`/main/campaign/${campaignId}`);
     } catch (err) {
@@ -83,30 +87,30 @@
 
 <Shell title="New Campaign" width="narrow" back={() => navigate('/main')}>
   <header class="raise-crown">
-    <span class="raise-crest">
-      <span class="raise-plate dnd-shield"></span>
-      <Ornament name="banner" size="lg" tone="metal" />
-    </span>
+    <span class="raise-crest"><Ornament name="banner" size="lg" tone="metal" /></span>
     <h1 class="dnd-heading dnd-heading-hero raise-name">Raise a Campaign</h1>
-    <span class="raise-rule"><Ornament name="divider" tone="metal" /></span>
-    <p class="raise-lede">Name the campaign, say what it is about, and give it a picture if you have one.</p>
   </header>
 
   <Panel title="The campaign">
     <div class="raise-top">
-      <div
+      <button
+        type="button"
         class="raise-drop raise-face"
         class:raise-drop-live={pictureDragActive}
-        role="region"
-        aria-label="Campaign image drop zone"
+        aria-label="Campaign image"
+        disabled={isCreating}
         ondragover={(event) => (pictureDragActive = drag(event, true))}
         ondragleave={() => (pictureDragActive = false)}
         ondrop={handlePictureDrop}
+        onclick={() => (pictureOpen = true)}
       >
-        <span class="dnd-empty-mark"><Ornament name="portrait" size="sm" tone="metal" /></span>
-        <p class="raise-drop-note">{picture ? picture.name : 'Drop a picture, or pick one'}</p>
-        <input class="raise-drop-input" type="file" accept="image/*" aria-label="Campaign image" disabled={isCreating} onchange={handlePictureInput} />
-      </div>
+        {#if picture}
+          <span class="raise-face-glass"><Portrait src={picture.url} alt="Campaign" size="fill" /></span>
+        {:else}
+          <span class="dnd-empty-mark"><Ornament name="portrait" size="sm" tone="metal" /></span>
+          <span class="raise-drop-note">Drop a picture, or pick one</span>
+        {/if}
+      </button>
 
       <div class="raise-lines">
         <Field label="Campaign title" id="campaign-title" required>
@@ -136,10 +140,21 @@
   </div>
 </Shell>
 
+{#if pictureOpen}
+  <MediaDialog
+    kind="image"
+    current={picture?.url}
+    getAssets={(query, kind) => getAssets(query, kind, { kind: 'user' })}
+    uploadFile={(file) => postFile(file, { kind: 'user' })}
+    onclose={(asset) => {
+      if (asset) picture = asset;
+      pictureOpen = false;
+    }}
+  />
+{/if}
+
 <style>
   .raise-crown {
-    --raise-rule-run: calc(var(--space-8) * 6);
-    --raise-rule-share: 70%;
     --raise-crest-lift: drop-shadow(0 var(--space-1) var(--space-3) var(--shade-hard));
     display: flex;
     flex-direction: column;
@@ -159,34 +174,10 @@
     filter: var(--raise-crest-lift);
   }
 
-  .raise-plate {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: var(--radius-lg);
-    background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent), color-mix(in srgb, var(--ground-deep) 45%, transparent) 60%, color-mix(in srgb, var(--ground-deep) 65%, transparent)),
-      var(--texture-noise),
-      var(--stone);
-    box-shadow: var(--rim), var(--bevel-up), 0 0 1.125rem var(--ember-glow);
-  }
-
   .raise-name {
     font-size: var(--text-2xl);
     text-shadow: 0 0.0625rem 0 var(--ground-deep), 0 0 0.75rem var(--ember-glow), 0 0 1.75rem var(--ember-glow);
     overflow-wrap: anywhere;
-  }
-
-  .raise-rule {
-    display: block;
-    width: min(var(--raise-rule-run), var(--raise-rule-share));
-  }
-
-  .raise-lede {
-    max-width: 60ch;
-    margin: 0;
-    font-size: var(--text-sm);
-    color: var(--ink-dim);
   }
 
   .raise-top {
@@ -194,7 +185,7 @@
     display: grid;
     grid-template-columns: minmax(0, var(--raise-picture-col)) minmax(0, 1fr);
     gap: var(--space-4);
-    align-items: start;
+    align-items: stretch;
   }
 
   .raise-lines {
@@ -240,7 +231,26 @@
 
   .raise-face {
     width: 100%;
-    aspect-ratio: 1;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .raise-face:disabled {
+    cursor: progress;
+  }
+
+  .raise-face-glass {
+    position: absolute;
+    inset: 0;
+    display: block;
+  }
+
+  .raise-face-glass :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .raise-drop-note {
@@ -251,19 +261,6 @@
     letter-spacing: var(--tracking-wide);
     text-shadow: 0 0.0625rem 0 var(--ground-deep);
     overflow-wrap: anywhere;
-  }
-
-  .raise-drop-input {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-  }
-
-  .raise-drop-input:disabled {
-    cursor: progress;
   }
 
   .raise-alarm {

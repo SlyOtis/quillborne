@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getCampaigns, getCharacters, getProfiles } from '$lib/api'
-  import type { Campaign, Profile } from '$lib/api/types'
+  import type { Profile } from '$lib/api/types'
   import { getTheme, setTheme } from "$lib/dialogs/theme";
   import { onMount, setContext, onDestroy } from "svelte";
   import { getCharacterStore } from "$lib/engine";
@@ -14,9 +14,7 @@
   import CharactersPanel from "./main/CharactersPanel.svelte";
   import CampaignsPanel from "./main/CampaignsPanel.svelte";
   import Portrait from "$components/ui/Portrait.svelte";
-  import Card from "$components/ui/Card.svelte";
   import Sigil from "$components/ui/Sigil.svelte";
-  import { getAll, type Resource } from "$lib/resources";
   import Shell from "$components/ui/Shell.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
   import IconBtn from "$components/ui/IconBtn.svelte";
@@ -39,7 +37,6 @@
   let campaignsOpen = $state(false);
   let charactersOpen = $state(false);
   let profiles = $state<Record<string, Profile>>({});
-  let lore = $state<{ entry: Resource; campaign: Campaign | null }[]>([]);
 
   const name = $derived($userDetails?.display_name || $userProfile?.display_name || 'Adventurer');
   const newestCharacter = $derived(getRecentFirst($userCharacters, $userProfile?.preferences?.recent_characters ?? [])[0] ?? null);
@@ -57,8 +54,6 @@
       userCampaigns.set(campaigns);
       const holders = await getProfiles(characters.filter((one) => one.campaign_id).map((one) => one.owner_id));
       profiles = Object.fromEntries(holders.map((one) => [one.user_id, one]));
-      const shelves = await Promise.all(campaigns.map(async (campaign) => (await getAll({ at: 'campaign', id: campaign.id }, 'entries')).map((entry) => ({ entry, campaign }))));
-      lore = shelves.flat().sort((a, b) => String(b.entry.created_at ?? '').localeCompare(String(a.entry.created_at ?? ''))).slice(0, 6);
     } catch (err) {
       postNotice(err instanceof Error ? err.message : 'The archive did not answer');
     } finally {
@@ -135,28 +130,6 @@
         <IconBtn title="Forge a new character" onclick={createCharacter}><Glyph name="character" size="sm" /></IconBtn>
       </header>
       <CharactersPanel {loading} bind:open={charactersOpen} {profiles} />
-    </section>
-
-    <section class="hall-plot hall-plot-lore" aria-label="Lore">
-      <header class="hall-divide">
-        <h2 class="dnd-label hall-divide-name">Lore</h2>
-        <span class="hall-divide-note">{lore.length === 0 ? 'Nothing written yet' : 'The latest entries'}</span>
-        <span class="hall-divide-run"></span>
-        <IconBtn title="Write lore" onclick={() => navigate('/main/scribe')}><Glyph name="edit" size="sm" /></IconBtn>
-      </header>
-      {#if lore.length > 0}
-        <div class="hall-lore">
-          {#each lore as { entry, campaign } (entry.id)}
-            <Card
-              title={entry.title}
-              sub={entry.description}
-              badge={campaign?.name}
-              tone="metal"
-              onclick={() => navigate(`/main/campaign/${campaign?.id}/entries/${entry.id}`)}
-            />
-          {/each}
-        </div>
-      {/if}
     </section>
   </div>
 </Shell>
@@ -330,12 +303,11 @@
   .hall-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
     grid-template-areas:
       'hero'
       'camps'
-      'roll'
-      'lore';
+      'roll';
     column-gap: var(--space-6);
     row-gap: var(--space-6);
     min-width: 0;
@@ -354,17 +326,6 @@
 
   .hall-plot-roll {
     grid-area: roll;
-  }
-
-  .hall-plot-lore {
-    grid-area: lore;
-  }
-
-  .hall-lore {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
-    gap: var(--space-4);
-    min-width: 0;
   }
 
   .hall-divide {

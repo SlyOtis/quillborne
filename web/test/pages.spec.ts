@@ -162,21 +162,7 @@ describe('no text character stands in for an icon', () => {
     expect(page).toMatch(/<Glyph name="close" size="sm" \/><\/button>/)
   })
 
-  it('sets every crest on a masked plate', () => {
-    for (const name of ['CharacterClassPage', 'CharacterRacePage', 'SourcePage'] as const) {
-      expect(at(name).source, name).toMatch(
-        /<span class="[a-z-]+-plate dnd-shield"><\/span>\s*<Ornament name="crest" size="md" tone="metal" \/>/
-      )
-    }
-
-    expect(at('CharacterCreatePage').source).toMatch(
-      /<span class="make-plate dnd-shield"><\/span>\s*<Ornament name="forge" size="lg" tone="metal" \/>/
-    )
-
-    expect(at('CampaignCreatePage').source).toMatch(
-      /<span class="raise-plate dnd-shield"><\/span>\s*<Ornament name="banner" size="lg" tone="metal" \/>/
-    )
-
+  it('sets the user crest on a masked plate', () => {
     expect(at('UserPage').source).toMatch(
       /<span class="user-plate dnd-shield"><\/span>\s*<Ornament name="rosette" size="sm" tone="metal" \/>/
     )

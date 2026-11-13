@@ -4,6 +4,7 @@
   import { userCampaigns } from "$lib/stores/campaign.store";
   import { user } from "$lib/stores/auth.store";
   import Card from "$components/ui/Card.svelte";
+  import { getCampaignPicture } from '$lib/api';
 
   let { loading = false, search = '', open = $bindable(false) }: { loading?: boolean; search?: string; open?: boolean } = $props();
 
@@ -13,6 +14,15 @@
   ));
 
   const folded = $derived(shown.length > 6);
+
+  let pictures = $state<Record<string, string>>({});
+
+  $effect(() => {
+    const held = $userCampaigns;
+    Promise.all(held.map(async (entry) => [entry.id, await getCampaignPicture(entry.id)] as const)).then((pairs) => {
+      pictures = Object.fromEntries(pairs);
+    });
+  });
 
   function openCampaign(campaignId: string) {
     navigate(`/main/campaign/${campaignId}`);
@@ -32,6 +42,7 @@
     {#each shown as entry (entry.id)}
       <Card
         title={entry.name}
+        image={pictures[entry.id]}
         sub="Campaign started {new Date(entry.created_at).toLocaleDateString()}"
         tone="verdigris"
         layout="face"

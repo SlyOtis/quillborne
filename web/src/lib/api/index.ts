@@ -22,6 +22,7 @@ import type {
   CharacterStatus,
   ChatEntry,
   Encounter,
+  ObjectAsset,
   Owner,
   Profile,
   ResourceUpdate,
@@ -275,6 +276,12 @@ export const getCampaign = (campaignId: string) =>
   apiGet<Campaign>(`campaign/${campaignId}`).catch((error) => getAbsent(error, null))
 
 export const getCampaigns = () => apiGet<Campaign[]>('campaign')
+
+export async function getCampaignPicture(campaignId: string): Promise<string> {
+  const held = (await getObjectAssets('campaign', campaignId)) ?? []
+  const picture = held.find((link) => link.asset?.mime_type.startsWith('image/'))
+  return picture ? getMediaUrl(picture.asset_id) : ''
+}
 
 export const putCampaign = (campaignId: string, updates: Partial<Campaign>) => apiPut(`campaign/${campaignId}`, updates)
 
@@ -582,15 +589,20 @@ function getBlockAssets(blocks: Block[]): string[] {
   })
 }
 
+export const getObjectAssets = (objectType: string, objectId: string) =>
+  apiGet<ObjectAsset[]>(path('asset/object', { object_type: objectType, object_id: objectId }))
+
+export const postObjectAsset = (assetId: string, objectType: string, objectId: string) =>
+  apiPost<ObjectAsset>(`asset/${assetId}/object`, { object_type: objectType, object_id: objectId })
+
 export async function putAttachments(resourceId: string, content: string): Promise<void> {
   const wanted = new Set(getBlockAssets(getDocument(content).blocks))
-  const held =
-    (await apiGet<{ id: string; asset_id: string }[]>(path('asset/object', { object_type: 'resource', object_id: resourceId }))) ?? []
+  const held = (await getObjectAssets('resource', resourceId)) ?? []
 
   await Promise.all([
     ...[...wanted]
       .filter((assetId) => !held.some((link) => link.asset_id === assetId))
-      .map((assetId) => apiPost(`asset/${assetId}/object`, { object_type: 'resource', object_id: resourceId })),
+      .map((assetId) => postObjectAsset(assetId, 'resource', resourceId)),
     ...held.filter((link) => !wanted.has(link.asset_id)).map((link) => apiDelete(`asset/${link.asset_id}/object/${link.id}`))
   ])
 }
