@@ -8,6 +8,7 @@ import { currentCharacterId, userCharacters } from '$lib/stores/character.store'
   import { anyDialogOpen, uiStore, menuOpen, menuView, chatOpen, shell } from '$lib/stores/ui.store'
   import { getClock, playNext, playPrev, playing, progress, seekSong, toggleSong, track } from '$lib/music'
   import Aura from '$components/ui/Aura.svelte'
+  import Crest from '$components/ui/Crest.svelte'
     import Flame from '$components/ui/Flame.svelte'
   import Glass from '$components/ui/Glass.svelte'
   import Sigil from '$components/ui/Sigil.svelte'
@@ -118,42 +119,17 @@ import Toast from '$components/ui/Toast.svelte'
   class:dnd-shell-chat-open={$shell.drawers && $chatOpen}
 >
   <header class="dnd-shell-bar">
-    {#snippet crest()}
-      <svg class="dnd-shell-crest" viewBox="84 0 72 112" aria-hidden="true" focusable="false">
-        <defs>
-          <linearGradient id="dnd-shell-gild" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" class="dnd-shell-gild-bright" />
-            <stop offset="0.55" class="dnd-shell-gild-metal" />
-            <stop offset="1" class="dnd-shell-gild-dim" />
-          </linearGradient>
-          <linearGradient id="dnd-shell-field" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" class="dnd-shell-field-top" />
-            <stop offset="1" class="dnd-shell-field-foot" />
-          </linearGradient>
-          <radialGradient id="dnd-shell-glow">
-            <stop offset="0" class="dnd-shell-glow-core" />
-            <stop offset="1" class="dnd-shell-glow-edge" />
-          </radialGradient>
-          <clipPath id="dnd-shell-shield">
-            <path d="M95 17C106 12 114 15 120 19 126 15 134 12 145 17V50C145 68 130 79 120 89 110 79 95 68 95 50Z" />
-          </clipPath>
-        </defs>
-        <ellipse class="dnd-shell-crest-glow" cx="120" cy="52" rx="40" ry="40" />
-        <path class="dnd-shell-crest-bead" d="M120 4l3 8h-6z" />
-        <path class="dnd-shell-crest-shield" d="M90 12C90 12 106 6 120 14 134 6 150 12 150 12V50C150 72 132 84 120 96 108 84 90 72 90 50Z" />
-        <image class="dnd-shell-crest-mark" href="/favicon.svg" x="78" y="9" width="84" height="84" clip-path="url(#dnd-shell-shield)" />
-        <path class="dnd-shell-crest-keyline" d="M95 17C106 12 114 15 120 19 126 15 134 12 145 17V50C145 68 130 79 120 89 110 79 95 68 95 50Z" />
-        <path class="dnd-shell-crest-point" d="M120 96V103M116 99.5l4 8 4-8" />
-      </svg>
-    {/snippet}
-
     {#if $shell.drawers}
-      <button type="button" class="dnd-shell-handle" title="Toggle the menu" aria-pressed={$menuOpen} onclick={uiStore.toggleMenu}>
-        {@render crest()}
-      </button>
-    {:else}
-      <span class="dnd-shell-handle">{@render crest()}</span>
+      <span class="dnd-shell-handle">
+        <Sigil title="Toggle the menu" size="sm" active={$menuOpen} onclick={uiStore.toggleMenu}>
+          <Glyph name="menu" size="sm" />
+        </Sigil>
+      </span>
     {/if}
+
+    <button type="button" class="dnd-shell-handle" title="Home" onclick={() => navigate('/main')}>
+      <Crest lit={$resolvedRoute.path === '/main'} />
+    </button>
 
     {#if $shell.back}
       <Sigil title="Back" size="sm" onclick={$shell.back}>
@@ -260,13 +236,15 @@ import Toast from '$components/ui/Toast.svelte'
     {/if}
 
     <div class="dnd-scroll dnd-shell-scroll" class:dnd-shell-scroll-flush={$shell.flush} bind:this={scroller}>
-      <span class="dnd-shell-veil" aria-hidden="true">
-        <span class="dnd-shell-window"><Glass size="xl" /></span>
-        <span class="dnd-shell-lantern dnd-shell-lantern-start"><Flame size="sm" intensity="steady" sconce hung /></span>
-        <span class="dnd-shell-lantern dnd-shell-lantern-end"><Flame size="sm" intensity="calm" sconce hung /></span>
-        <Aura variant="veil" tone="ember" />
-        <Aura variant="motes" tone="ember" density="normal" />
-      </span>
+      {#if !$shell.backdrop}
+        <span class="dnd-shell-veil" aria-hidden="true">
+          <span class="dnd-shell-window"><Glass size="xl" /></span>
+          <span class="dnd-shell-lantern dnd-shell-lantern-start"><Flame size="sm" intensity="steady" sconce hung /></span>
+          <span class="dnd-shell-lantern dnd-shell-lantern-end"><Flame size="sm" intensity="calm" sconce hung /></span>
+          <Aura variant="veil" tone="ember" />
+          <Aura variant="motes" tone="ember" density="normal" />
+        </span>
+      {/if}
 
       {#if $shell.crown}
         <div class="dnd-shell-crown">{@render $shell.crown()}</div>
@@ -342,71 +320,8 @@ import Toast from '$components/ui/Toast.svelte'
       linear-gradient(90deg, var(--metal-dim), var(--metal) 8% 92%, var(--metal-dim)) 0 100% / 100% var(--border-hair) no-repeat;
   }
 
-  .dnd-shell-crest {
-    inline-size: calc(var(--size-bar) * 0.92 * 72 / 112);
+  .dnd-shell-handle > :global(.dnd-crest) {
     block-size: calc(var(--size-bar) * 0.92);
-    overflow: visible;
-    pointer-events: none;
-  }
-
-  .dnd-shell-gild-bright {
-    stop-color: var(--metal-bright);
-  }
-
-  .dnd-shell-gild-metal {
-    stop-color: var(--metal);
-  }
-
-  .dnd-shell-gild-dim {
-    stop-color: var(--metal-dim);
-  }
-
-  .dnd-shell-field-top {
-    stop-color: var(--ground-lift);
-  }
-
-  .dnd-shell-field-foot {
-    stop-color: var(--ground-deep);
-  }
-
-  .dnd-shell-glow-core {
-    stop-color: var(--ember);
-    stop-opacity: 0.2;
-  }
-
-  .dnd-shell-glow-edge {
-    stop-color: var(--ember);
-    stop-opacity: 0;
-  }
-
-  .dnd-shell-crest-glow {
-    fill: url(#dnd-shell-glow);
-  }
-
-  .dnd-shell-crest-keyline,
-  .dnd-shell-crest-point {
-    fill: none;
-    stroke-width: var(--border-hair);
-    vector-effect: non-scaling-stroke;
-  }
-
-  .dnd-shell-crest-point {
-    stroke: var(--metal);
-  }
-
-  .dnd-shell-crest-keyline {
-    stroke: var(--metal-dim);
-  }
-
-  .dnd-shell-crest-bead {
-    fill: var(--metal);
-  }
-
-  .dnd-shell-crest-shield {
-    fill: url(#dnd-shell-field);
-    stroke: url(#dnd-shell-gild);
-    stroke-width: 1.4;
-    filter: drop-shadow(0 0.15rem 0.3rem var(--shade));
   }
 
   .dnd-shell-player {
@@ -551,10 +466,6 @@ import Toast from '$components/ui/Toast.svelte'
   button.dnd-shell-handle:focus-visible {
     outline: none;
     box-shadow: var(--focus-ring);
-  }
-
-  .dnd-shell-handle[aria-pressed='true'] .dnd-shell-glow-core {
-    stop-opacity: 0.6;
   }
 
   .dnd-shell-nav {
