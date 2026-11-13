@@ -29,6 +29,7 @@
     | 'close'
     | 'character'
     | 'campaign'
+    | 'home'
     | 'gear'
     | 'fold'
     | 'unfold'
@@ -201,6 +202,11 @@
     <path d="M4 20V9l4-3 4 3 4-3 4 3v11Z" />
     <path d="M8 20v-5h3v5M13 20v-5h3v5" opacity="0.75" />
     <path d="M12 3v3" />
+
+  {:else if name === 'home'}
+    <path d="M3 11l9-7 9 7" />
+    <path d="M5 10v10h14V10" />
+    <path d="M10 20v-6h4v6" opacity="0.7" />
 
   {:else if name === 'picture'}
     <rect x="4" y="5" width="16" height="14" rx="2" />
