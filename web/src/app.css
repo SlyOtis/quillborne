@@ -110,6 +110,13 @@
   --state-warn: #ffcc00;
   --state-bad: #e0351f;
 
+  --rarity-common: #cfc4ad;
+  --rarity-uncommon: #4fd46a;
+  --rarity-rare: #5a9cf2;
+  --rarity-very-rare: #b56cf2;
+  --rarity-legendary: #ffa53a;
+  --rarity-artifact: #e07a5a;
+
   --backdrop:
     radial-gradient(ellipse 60% 45% at 0% 0%, rgba(70, 120, 230, 0.26) 0%, transparent 70%),
     radial-gradient(ellipse 60% 45% at 100% 0%, rgba(70, 120, 230, 0.26) 0%, transparent 70%),
@@ -210,6 +217,12 @@
   --ink: #f3e7cb;
   --ink-dim: #d1c1a3;
   --ink-faint: #b7a88d;
+  --rarity-common: #cfc4ad;
+  --rarity-uncommon: #4fd46a;
+  --rarity-rare: #5a9cf2;
+  --rarity-very-rare: #b56cf2;
+  --rarity-legendary: #ffa53a;
+  --rarity-artifact: #e07a5a;
   --backdrop:
     radial-gradient(ellipse 60% 45% at 0% 0%, rgba(70, 120, 230, 0.26) 0%, transparent 70%),
     radial-gradient(ellipse 60% 45% at 100% 0%, rgba(70, 120, 230, 0.26) 0%, transparent 70%),
@@ -242,6 +255,12 @@
   --ink: #ece6f7;
   --ink-dim: #c3bad4;
   --ink-faint: #a7a0b9;
+  --rarity-common: #d0c8de;
+  --rarity-uncommon: #5edc84;
+  --rarity-rare: #62a4ff;
+  --rarity-very-rare: #d070ff;
+  --rarity-legendary: #ffb04a;
+  --rarity-artifact: #f08466;
   --backdrop:
     radial-gradient(ellipse 60% 45% at 0% 0%, rgba(127, 230, 212, 0.14) 0%, transparent 70%),
     radial-gradient(ellipse 60% 45% at 100% 0%, rgba(127, 230, 212, 0.14) 0%, transparent 70%),
@@ -274,6 +293,12 @@
   --ink: #f4e0cf;
   --ink-dim: #cfb19c;
   --ink-faint: #b29987;
+  --rarity-common: #d8c4b4;
+  --rarity-uncommon: #6ad870;
+  --rarity-rare: #6eacff;
+  --rarity-very-rare: #c47cff;
+  --rarity-legendary: #ffc048;
+  --rarity-artifact: #f2906e;
   --backdrop:
     radial-gradient(ellipse 60% 45% at 0% 0%, rgba(255, 74, 28, 0.22) 0%, transparent 70%),
     radial-gradient(ellipse 60% 45% at 100% 0%, rgba(255, 74, 28, 0.22) 0%, transparent 70%),
@@ -306,6 +331,12 @@
   --ink: #e8ecdd;
   --ink-dim: #bcc1ae;
   --ink-faint: #a1a694;
+  --rarity-common: #cfd2c2;
+  --rarity-uncommon: #56e0a0;
+  --rarity-rare: #64a6ff;
+  --rarity-very-rare: #c07af4;
+  --rarity-legendary: #ffaa3c;
+  --rarity-artifact: #e88462;
   --backdrop:
     radial-gradient(ellipse 60% 45% at 0% 0%, rgba(143, 224, 74, 0.14) 0%, transparent 70%),
     radial-gradient(ellipse 60% 45% at 100% 0%, rgba(143, 224, 74, 0.14) 0%, transparent 70%),
@@ -338,6 +369,12 @@
   --ink: #e4f0f6;
   --ink-dim: #b3c5d0;
   --ink-faint: #9aabb5;
+  --rarity-common: #c6d2da;
+  --rarity-uncommon: #58da7a;
+  --rarity-rare: #4f8cff;
+  --rarity-very-rare: #bf78ff;
+  --rarity-legendary: #ffaa40;
+  --rarity-artifact: #ec8a6a;
   --backdrop:
     radial-gradient(ellipse 60% 45% at 0% 0%, rgba(111, 220, 255, 0.16) 0%, transparent 70%),
     radial-gradient(ellipse 60% 45% at 100% 0%, rgba(111, 220, 255, 0.16) 0%, transparent 70%),
