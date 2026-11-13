@@ -147,12 +147,13 @@ describe('no text character stands in for an icon', () => {
     )
   })
 
-  it('draws both empty portrait marks as a quatrefoil and not a star', () => {
-    for (const name of ['CharacterCreatePage', 'UserPage'] as const) {
-      expect(at(name).source, name).toMatch(
-        /<span class="dnd-empty-mark"><Ornament name="quatrefoil" size="sm" tone="metal" \/><\/span>/
-      )
-    }
+  it('draws both empty portrait marks as an ornament and not a star', () => {
+    expect(at('CharacterCreatePage').source).toMatch(
+      /<span class="dnd-empty-mark"><Ornament name="portrait" size="sm" tone="metal" \/><\/span>/
+    )
+    expect(at('UserPage').source).toMatch(
+      /<span class="dnd-empty-mark"><Ornament name="quatrefoil" size="sm" tone="metal" \/><\/span>/
+    )
   })
 
   it('draws the score drop as a glyph and not a multiplication sign', () => {
@@ -162,17 +163,15 @@ describe('no text character stands in for an icon', () => {
   })
 
   it('sets every crest on a masked plate', () => {
-    for (const name of [
-      'CharacterCreatePage',
-      'CharacterClassPage',
-      'CharacterRacePage',
-      'CampaignCreatePage',
-      'SourcePage'
-    ] as const) {
+    for (const name of ['CharacterClassPage', 'CharacterRacePage', 'CampaignCreatePage', 'SourcePage'] as const) {
       expect(at(name).source, name).toMatch(
         /<span class="[a-z-]+-plate dnd-shield"><\/span>\s*<Ornament name="crest" size="md" tone="metal" \/>/
       )
     }
+
+    expect(at('CharacterCreatePage').source).toMatch(
+      /<span class="make-plate dnd-shield"><\/span>\s*<Ornament name="forge" size="md" tone="metal" \/>/
+    )
 
     expect(at('UserPage').source).toMatch(
       /<span class="user-plate dnd-shield"><\/span>\s*<Ornament name="rosette" size="sm" tone="metal" \/>/
