@@ -2,10 +2,9 @@
   import { getCampaign, getCampaignCharacters, getCampaignCharactersStream, getCampaignMaps, getCampaignMapsStream } from '$lib/api'
   import type { Campaign, CampaignMap, Character, Encounter, MapMarkerKind } from '$lib/api/types'
   import { onDestroy, onMount, setContext } from 'svelte'
-  import { unfold } from '$lib/unfold'
   import { navigate, resolvedRoute } from 'sly-svelte-location-router'
   import { getTheme, setTheme } from '$lib/dialogs/theme'
-  import { getAll, isResourceKind, type Npc, type Place, type Session } from '$lib/resources'
+  import { getAll, isResourceKind, type Npc, type Place } from '$lib/resources'
   import { user } from '$lib/stores/auth.store'
   import { anyDialogOpen, uiStore } from '$lib/stores/ui.store'
   import Button from '$components/ui/Button.svelte'
@@ -43,7 +42,6 @@
   let campaign = $state<Campaign | null>(null)
   let characters = $state<Character[]>([])
   let maps = $state<CampaignMap[]>([])
-  let sessions = $state<Session[]>([])
   let npcs = $state<Npc[]>([])
   let places = $state<Place[]>([])
   let loading = $state(true)
@@ -70,7 +68,6 @@
   )
   const pins = $derived(maps.reduce((sum, entry) => sum + entry.markers.length, 0))
   const revealed = $derived(maps.filter((entry) => entry.is_visible).length)
-  const latest = $derived(sessions[0] ?? null)
   const party = $derived(
     [...characters].sort((a, b) => Number(b.owner_id === $user?.user_id) - Number(a.owner_id === $user?.user_id))
   )
@@ -78,7 +75,6 @@
 
   const CAP = 5
 
-  let introOpen = $state(true)
   let more = $state<Record<string, boolean>>({ npcs: false, places: false })
 
   function cut<T>(rows: T[], id: string): T[] {
@@ -155,17 +151,15 @@
   })
 
   async function reload() {
-    const [seated, board, log, cast, world] = await Promise.all([
+    const [seated, board, cast, world] = await Promise.all([
       getCampaignCharacters(campaignId),
       getCampaignMaps(campaignId),
-      getAll({ at: 'campaign', id: campaignId }, 'sessions') as Promise<Session[]>,
       getAll({ at: 'campaign', id: campaignId }, 'npcs') as Promise<Npc[]>,
       getAll({ at: 'campaign', id: campaignId }, 'places') as Promise<Place[]>
     ])
 
     characters = seated
     maps = board
-    sessions = log
     npcs = cast
     places = world
   }
@@ -268,31 +262,6 @@
               {#each party as entry (entry.id)}
                 {@render seat(entry)}
               {/each}
-            </div>
-          {/if}
-        </section>
-
-        <section class="camp-plot camp-plot-intro" aria-label="Introduction">
-          <header class="camp-divide">
-            <h2 class="dnd-label camp-divide-name">Introduction</h2>
-            <span class="camp-divide-note">{latest ? `${sessions.length} sessions played` : 'not begun'}</span>
-            <span class="camp-divide-run"></span>
-            <button
-              type="button"
-              class="camp-fold"
-              aria-expanded={introOpen}
-              aria-label={introOpen ? 'Fold the introduction' : 'Unfold the introduction'}
-              title={introOpen ? 'Fold the introduction' : 'Unfold the introduction'}
-              onclick={() => (introOpen = !introOpen)}
-            >
-              <Glyph name={introOpen ? 'fold' : 'unfold'} size="sm" />
-            </button>
-          </header>
-          <p class="camp-lede" class:camp-lede-folded={!introOpen}>{campaign.description}</p>
-          {#if latest}
-            <div class="camp-latest" use:unfold={introOpen}>
-              <p class="camp-lead">{latest.number}. {latest.title}</p>
-              <p class="camp-summary">{latest.description || 'Nothing was written down.'}</p>
             </div>
           {/if}
         </section>
@@ -402,26 +371,11 @@
 </Shell>
 
 <style>
-  .camp-lede {
-    max-width: 70ch;
-    margin: 0;
-    color: var(--ink);
-  }
-
-  .camp-lede-folded {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
   .camp-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       'roll'
-      'intro'
       'npcs'
       'places';
     align-content: start;
@@ -439,10 +393,6 @@
 
   .camp-plot-roll {
     grid-area: roll;
-  }
-
-  .camp-plot-intro {
-    grid-area: intro;
   }
 
   .camp-plot-npcs {
@@ -485,35 +435,6 @@
     height: var(--border-hair);
     background: linear-gradient(90deg, var(--metal), var(--metal-dim) 40%, transparent);
     box-shadow: 0 0.0625rem 0 var(--ground-deep);
-  }
-
-  .camp-fold {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: none;
-    width: var(--space-6);
-    height: var(--space-6);
-    padding: 0;
-    border: none;
-    background: none;
-    color: var(--metal);
-    cursor: pointer;
-    transition: color 0.15s ease, filter 0.15s ease;
-  }
-
-  .camp-fold:hover {
-    color: var(--metal-bright);
-    filter: drop-shadow(0 0 0.375rem var(--ember-glow));
-  }
-
-  .camp-fold:active {
-    filter: brightness(0.85);
-  }
-
-  .camp-fold:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
   }
 
   .camp-list {
@@ -606,30 +527,6 @@
     font-family: var(--font-figures);
     font-size: var(--text-xs);
     color: var(--ink-faint);
-  }
-
-  .camp-lead {
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: var(--text-sm);
-    color: var(--metal);
-    text-shadow: 0 0.0625rem 0 var(--ground-deep);
-  }
-
-  .camp-latest {
-    display: grid;
-    gap: var(--space-2);
-  }
-
-  .camp-summary {
-    margin: 0;
-    font-size: var(--text-sm);
-    color: var(--ink);
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
   }
 
   .camp-party {
