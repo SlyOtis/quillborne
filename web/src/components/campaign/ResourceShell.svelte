@@ -490,11 +490,16 @@
   {@render bar?.(one, owner)}
 {/snippet}
 
+{#snippet ground()}
+  <span class="page-ground"></span>
+{/snippet}
+
 <Shell
   drawers
   title={fresh ? `New ${shape.one}` : one.title || shape.one}
   width="full"
   back={() => navigate(under)}
+  backdrop={ground}
   tools={bar && !fresh ? acts : undefined}
 >
   {#if loading}
@@ -787,6 +792,12 @@
 </Shell>
 
 <style>
+  .page-ground {
+    position: absolute;
+    inset: 0;
+    background: var(--ground);
+  }
+
   .page-band-grid {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
