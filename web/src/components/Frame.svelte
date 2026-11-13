@@ -1,7 +1,10 @@
 <script lang="ts">
   import { setContext, tick, type Snippet } from 'svelte'
   import { navigate, resolvedRoute } from 'sly-svelte-location-router'
-  import { user, userProfile, userDetails } from '$lib/stores/auth.store'
+  import { getCampaigns, getCharacters } from '$lib/api'
+import { user, userProfile } from '$lib/stores/auth.store'
+import { currentCampaignId, userCampaigns } from '$lib/stores/campaign.store'
+import { currentCharacterId, userCharacters } from '$lib/stores/character.store'
   import { anyDialogOpen, uiStore, menuOpen, menuView, chatOpen, shell } from '$lib/stores/ui.store'
   import { getClock, playNext, playPrev, playing, progress, seekSong, toggleSong, track } from '$lib/music'
   import Aura from '$components/ui/Aura.svelte'
@@ -26,9 +29,17 @@ import Toast from '$components/ui/Toast.svelte'
     setDialogState: uiStore.setDialogState
   })
 
-  const name = $derived($userDetails?.display_name || $userProfile?.display_name || 'Adventurer')
-  const initial = $derived(name.charAt(0).toUpperCase())
-  const searchKey = navigator.userAgent.includes('Mac') ? 'Cmd K' : 'Ctrl K'
+  const character = $derived($userCharacters.find((one) => one.id === ($currentCharacterId ?? $userProfile?.preferences?.recent_characters?.[0])) ?? null)
+  const campaign = $derived($userCampaigns.find((one) => one.id === ($currentCampaignId ?? character?.campaign_id)) ?? null)
+  let loadedFor = ''
+
+  $effect(() => {
+    const userId = $user?.user_id ?? ''
+    if (!userId || userId === loadedFor) return
+    loadedFor = userId
+    if ($userCampaigns.length === 0) void getCampaigns().then((held) => userCampaigns.set(held)).catch(() => {})
+    if ($userCharacters.length === 0) void getCharacters().then((held) => userCharacters.set(held)).catch(() => {})
+  })
 
   let scroller = $state<HTMLDivElement | null>(null)
   let path = ''
@@ -40,10 +51,6 @@ import Toast from '$components/ui/Toast.svelte'
     if (location.hash) return
     void tick().then(() => scroller?.scrollTo({ top: 0 }))
   })
-
-  function openProfile() {
-    navigate('/main/user')
-  }
 
   function reach() {
     const mark = location.hash.slice(1)
@@ -81,12 +88,41 @@ import Toast from '$components/ui/Toast.svelte'
   class:dnd-shell-chat-open={$shell.drawers && $chatOpen}
 >
   <header class="dnd-shell-bar">
+    {#snippet crest()}
+      <svg class="dnd-shell-crest" viewBox="84 0 72 112" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="dnd-shell-gild" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" class="dnd-shell-gild-bright" />
+            <stop offset="0.55" class="dnd-shell-gild-metal" />
+            <stop offset="1" class="dnd-shell-gild-dim" />
+          </linearGradient>
+          <linearGradient id="dnd-shell-field" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" class="dnd-shell-field-top" />
+            <stop offset="1" class="dnd-shell-field-foot" />
+          </linearGradient>
+          <radialGradient id="dnd-shell-glow">
+            <stop offset="0" class="dnd-shell-glow-core" />
+            <stop offset="1" class="dnd-shell-glow-edge" />
+          </radialGradient>
+          <clipPath id="dnd-shell-shield">
+            <path d="M95 17C106 12 114 15 120 19 126 15 134 12 145 17V50C145 68 130 79 120 89 110 79 95 68 95 50Z" />
+          </clipPath>
+        </defs>
+        <ellipse class="dnd-shell-crest-glow" cx="120" cy="52" rx="40" ry="40" />
+        <path class="dnd-shell-crest-bead" d="M120 4l3 8h-6z" />
+        <path class="dnd-shell-crest-shield" d="M90 12C90 12 106 6 120 14 134 6 150 12 150 12V50C150 72 132 84 120 96 108 84 90 72 90 50Z" />
+        <image class="dnd-shell-crest-mark" href="/favicon.svg" x="78" y="9" width="84" height="84" clip-path="url(#dnd-shell-shield)" />
+        <path class="dnd-shell-crest-keyline" d="M95 17C106 12 114 15 120 19 126 15 134 12 145 17V50C145 68 130 79 120 89 110 79 95 68 95 50Z" />
+        <path class="dnd-shell-crest-point" d="M120 96V103M116 99.5l4 8 4-8" />
+      </svg>
+    {/snippet}
+
     {#if $shell.drawers}
-      <span class="dnd-shell-handle">
-        <Sigil title="Toggle the menu" size="sm" active={$menuOpen} onclick={uiStore.toggleMenu}>
-          <Glyph name="menu" size="sm" />
-        </Sigil>
-      </span>
+      <button type="button" class="dnd-shell-handle" title="Toggle the menu" aria-pressed={$menuOpen} onclick={uiStore.toggleMenu}>
+        {@render crest()}
+      </button>
+    {:else}
+      <span class="dnd-shell-handle">{@render crest()}</span>
     {/if}
 
     {#if $shell.back}
@@ -101,66 +137,40 @@ import Toast from '$components/ui/Toast.svelte'
 
     <span class="dnd-shell-run" aria-hidden="true"></span>
 
-    <svg class="dnd-shell-crest" viewBox="0 0 240 112" aria-hidden="true" focusable="false">
-      <defs>
-        <linearGradient id="dnd-shell-gild" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" class="dnd-shell-gild-bright" />
-          <stop offset="0.55" class="dnd-shell-gild-metal" />
-          <stop offset="1" class="dnd-shell-gild-dim" />
-        </linearGradient>
-        <linearGradient id="dnd-shell-field" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" class="dnd-shell-field-top" />
-          <stop offset="1" class="dnd-shell-field-foot" />
-        </linearGradient>
-        <radialGradient id="dnd-shell-glow">
-          <stop offset="0" class="dnd-shell-glow-core" />
-          <stop offset="1" class="dnd-shell-glow-edge" />
-        </radialGradient>
-        <clipPath id="dnd-shell-shield">
-          <path d="M95 17C106 12 114 15 120 19 126 15 134 12 145 17V50C145 68 130 79 120 89 110 79 95 68 95 50Z" />
-        </clipPath>
-      </defs>
-      <ellipse class="dnd-shell-crest-glow" cx="120" cy="52" rx="64" ry="40" />
-      <path class="dnd-shell-crest-swag" d="M4 61.5Q23 75 42 61.5 61 75 80 61.5ZM160 61.5Q179 75 198 61.5 217 75 236 61.5Z" />
-      <path class="dnd-shell-crest-line" d="M0 61.5H4Q23 75 42 61.5 61 75 80 61.5H90M240 61.5H236Q217 75 198 61.5 179 75 160 61.5H150" />
-      <path class="dnd-shell-crest-bead" d="M23 67.6l2.2 3.6-2.2 3.6-2.2-3.6zM61 67.6l2.2 3.6-2.2 3.6-2.2-3.6zM179 67.6l2.2 3.6-2.2 3.6-2.2-3.6zM217 67.6l2.2 3.6-2.2 3.6-2.2-3.6zM40.4 61.5a1.6 1.6 0 1 0 3.2 0 1.6 1.6 0 1 0-3.2 0zM196.4 61.5a1.6 1.6 0 1 0 3.2 0 1.6 1.6 0 1 0-3.2 0zM120 4l3 8h-6z" />
-      <path class="dnd-shell-crest-shield" d="M90 12C90 12 106 6 120 14 134 6 150 12 150 12V50C150 72 132 84 120 96 108 84 90 72 90 50Z" />
-      <image class="dnd-shell-crest-mark" href="/favicon.svg" x="78" y="9" width="84" height="84" clip-path="url(#dnd-shell-shield)" />
-      <path class="dnd-shell-crest-keyline" d="M95 17C106 12 114 15 120 19 126 15 134 12 145 17V50C145 68 130 79 120 89 110 79 95 68 95 50Z" />
-      <path class="dnd-shell-crest-point" d="M120 96V103M116 99.5l4 8 4-8" />
-    </svg>
-
     {#if $shell.tools}
       <span class="dnd-shell-tools">{@render $shell.tools()}</span>
     {/if}
 
-    <span class="dnd-shell-handle">
-      <Sigil title="Search {searchKey}" size="sm" onclick={uiStore.toggleSearchDialog}>
-        <Glyph name="search" size="sm" />
-      </Sigil>
+    <span class="dnd-shell-stack">
+      <button type="button" class="dnd-shell-chip dnd-shell-chip-round" title={character ? 'Open the sheet' : 'Forge a character'} onclick={() => navigate(character ? `/main/character/${character.id}` : '/main/create/character')}>
+        <span class="dnd-shell-chip-face">
+          {#if character?.character?.info?.imageUrl}
+            <StoredImage src={character.character.info.imageUrl} alt="" />
+          {:else if character}
+            <span class="dnd-shell-chip-initial">{character.metadata.name.charAt(0).toUpperCase()}</span>
+          {:else}
+            <span class="dnd-shell-chip-initial"><Glyph name="character" size="sm" /></span>
+          {/if}
+        </span>
+        <span class="dnd-shell-chip-lines">
+          <span class="dnd-shell-chip-name">{character?.metadata.name ?? 'No character chosen'}</span>
+          <span class="dnd-shell-chip-mail">{character ? `Level ${character.metadata.level} ${character.metadata.race} ${character.metadata.class}` : 'Character'}</span>
+        </span>
+      </button>
+      <button type="button" class="dnd-shell-chip" title={campaign ? 'Open the campaign' : 'Raise a campaign'} onclick={() => navigate(campaign ? `/main/campaign/${campaign.id}` : '/main/create/campaign')}>
+        <span class="dnd-shell-chip-face">
+          {#if campaign}
+            <span class="dnd-shell-chip-initial">{campaign.name.charAt(0).toUpperCase()}</span>
+          {:else}
+            <span class="dnd-shell-chip-initial"><Glyph name="campaign" size="sm" /></span>
+          {/if}
+        </span>
+        <span class="dnd-shell-chip-lines">
+          <span class="dnd-shell-chip-name">{campaign?.name ?? 'No campaign'}</span>
+          <span class="dnd-shell-chip-mail">Campaign</span>
+        </span>
+      </button>
     </span>
-
-    {#if $shell.drawers}
-      <span class="dnd-shell-handle">
-        <Sigil title="Music" size="sm" active={$menuOpen && $menuView === 'music'} onclick={uiStore.openMusic}>
-          <Glyph name="music" size="sm" />
-        </Sigil>
-      </span>
-    {/if}
-
-    <button type="button" class="dnd-shell-chip" onclick={openProfile} title="Your profile">
-      <span class="dnd-shell-chip-face">
-        {#if $userProfile?.photo_url}
-          <StoredImage src={$userProfile.photo_url} alt="" />
-        {:else}
-          <span class="dnd-shell-chip-initial">{initial}</span>
-        {/if}
-      </span>
-      <span class="dnd-shell-chip-lines">
-        <span class="dnd-shell-chip-name">{name}</span>
-        <span class="dnd-shell-chip-mail">{$user?.email ?? ''}</span>
-      </span>
-    </button>
 
     {#if $shell.drawers}
       <span class="dnd-shell-handle">
@@ -265,7 +275,6 @@ import Toast from '$components/ui/Toast.svelte'
     --shell-chat: 0px;
     --size-menu-max: 400px;
     --size-chat-max: 400px;
-    --crest-inline: calc(var(--size-bar) * 240 / 62);
   }
 
   .dnd-shell-menu-open {
@@ -288,36 +297,21 @@ import Toast from '$components/ui/Toast.svelte'
     z-index: 20;
   }
 
-  .dnd-shell-bar::before,
-  .dnd-shell-bar::after {
+  .dnd-shell-bar::before {
     content: '';
     position: absolute;
     inset-block-end: 0;
+    inset-inline: 0;
     block-size: calc(var(--size-bar) * 0.09);
     pointer-events: none;
-  }
-
-  .dnd-shell-bar::before {
-    inset-inline: 0 calc(50% + var(--crest-inline) / 2);
     background:
-      linear-gradient(90deg, transparent 4%, var(--metal-dim) 4% 92%, transparent 92%) 0 0 / 100% var(--border-hair) no-repeat,
-      linear-gradient(90deg, var(--metal-dim), var(--metal) 10%) 0 100% / 100% var(--border-hair) no-repeat;
-  }
-
-  .dnd-shell-bar::after {
-    inset-inline: calc(50% + var(--crest-inline) / 2) 0;
-    background:
-      linear-gradient(270deg, transparent 4%, var(--metal-dim) 4% 92%, transparent 92%) 0 0 / 100% var(--border-hair) no-repeat,
-      linear-gradient(270deg, var(--metal-dim), var(--metal) 10%) 0 100% / 100% var(--border-hair) no-repeat;
+      linear-gradient(90deg, transparent 2%, var(--metal-dim) 2% 98%, transparent 98%) 0 0 / 100% var(--border-hair) no-repeat,
+      linear-gradient(90deg, var(--metal-dim), var(--metal) 8% 92%, var(--metal-dim)) 0 100% / 100% var(--border-hair) no-repeat;
   }
 
   .dnd-shell-crest {
-    position: absolute;
-    inset-block-start: 0;
-    inset-inline-start: calc(50% - var(--crest-inline) / 2);
-    z-index: -1;
-    inline-size: var(--crest-inline);
-    block-size: calc(var(--crest-inline) * 112 / 240);
+    inline-size: calc(var(--size-bar) * 0.92 * 72 / 112);
+    block-size: calc(var(--size-bar) * 0.92);
     overflow: visible;
     pointer-events: none;
   }
@@ -356,11 +350,6 @@ import Toast from '$components/ui/Toast.svelte'
     fill: url(#dnd-shell-glow);
   }
 
-  .dnd-shell-crest-swag {
-    fill: var(--ground-raised);
-  }
-
-  .dnd-shell-crest-line,
   .dnd-shell-crest-keyline,
   .dnd-shell-crest-point {
     fill: none;
@@ -368,7 +357,6 @@ import Toast from '$components/ui/Toast.svelte'
     vector-effect: non-scaling-stroke;
   }
 
-  .dnd-shell-crest-line,
   .dnd-shell-crest-point {
     stroke: var(--metal);
   }
@@ -471,6 +459,25 @@ import Toast from '$components/ui/Toast.svelte'
   .dnd-shell-handle {
     display: flex;
     flex: none;
+    align-items: center;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: inherit;
+  }
+
+  button.dnd-shell-handle {
+    cursor: pointer;
+  }
+
+  button.dnd-shell-handle:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  .dnd-shell-handle[aria-pressed='true'] .dnd-shell-glow-core {
+    stop-opacity: 0.6;
   }
 
   .dnd-shell-mark {
@@ -505,6 +512,35 @@ import Toast from '$components/ui/Toast.svelte'
   .dnd-shell-run {
     flex: 1 1 0;
     min-width: var(--space-4);
+  }
+
+  .dnd-shell-stack {
+    display: flex;
+    flex: none;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .dnd-shell-stack > .dnd-shell-chip {
+    position: relative;
+  }
+
+  .dnd-shell-stack > .dnd-shell-chip-round {
+    z-index: 0;
+    margin-inline-end: calc((var(--chip-tail) + var(--space-4)) * -1);
+    padding-inline-end: calc(var(--chip-tail) + var(--space-6));
+    scale: 0.95;
+    transform-origin: center right;
+  }
+
+  .dnd-shell-stack > .dnd-shell-chip:last-child {
+    z-index: 1;
+    filter: drop-shadow(calc(var(--space-1) * -1) 0 var(--space-2) var(--shade-hard));
+  }
+
+  .dnd-shell-stack > .dnd-shell-chip-round::before,
+  .dnd-shell-stack > .dnd-shell-chip-round::after {
+    clip-path: inset(0 round var(--radius-md) 0 0 var(--radius-md));
   }
 
   .dnd-shell-chip {
@@ -848,16 +884,6 @@ import Toast from '$components/ui/Toast.svelte'
     bottom: auto;
   }
 
-  @media (max-width: 1439px) {
-    .dnd-shell-bar:has(.dnd-shell-tools > :global(:nth-child(3))) {
-      --crest-inline: 0rem;
-    }
-
-    .dnd-shell-bar:has(.dnd-shell-tools > :global(:nth-child(3))) .dnd-shell-crest {
-      display: none;
-    }
-  }
-
   @media (max-width: 1100px) {
     .dnd-shell-chip-lines,
     .dnd-shell-chip::before,
@@ -877,13 +903,8 @@ import Toast from '$components/ui/Toast.svelte'
   }
 
   @media (max-width: 860px) {
-    .dnd-shell {
-      --crest-inline: 0rem;
-    }
-
     .dnd-shell-mark,
-    .dnd-shell-player-lines,
-    .dnd-shell-crest {
+    .dnd-shell-player-lines {
       display: none;
     }
 

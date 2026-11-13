@@ -881,15 +881,18 @@ a:hover {
 }
 
 .dnd-sigil[title],
+.dnd-shell-handle[title],
 .dnd-iconbtn[title],
 .dnd-button[title] {
   position: relative;
 }
 
 .dnd-sigil[title]:hover::after,
+.dnd-shell-handle[title]:hover::after,
 .dnd-iconbtn[title]:hover::after,
 .dnd-button[title]:hover::after,
 .dnd-sigil[title]:focus-visible::after,
+.dnd-shell-handle[title]:focus-visible::after,
 .dnd-iconbtn[title]:focus-visible::after,
 .dnd-button[title]:focus-visible::after {
   content: attr(title);
@@ -935,8 +938,8 @@ a:hover {
   transform: none;
 }
 
-.dnd-shell-handle:first-child .dnd-sigil[title]:hover::after,
-.dnd-shell-handle:first-child .dnd-sigil[title]:focus-visible::after,
+.dnd-shell-handle[title]:hover::after,
+.dnd-shell-handle[title]:focus-visible::after,
 .dnd-menupanel-head .dnd-button[title]:hover::after,
 .dnd-menupanel-head .dnd-button[title]:focus-visible::after {
   left: 0;
