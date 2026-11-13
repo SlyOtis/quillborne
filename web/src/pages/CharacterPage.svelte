@@ -38,7 +38,6 @@
   import VehiclePage from "./VehiclePage.svelte";
   import Portrait, { type PortraitFrame } from "$components/ui/Portrait.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
-  import IconBtn from "$components/ui/IconBtn.svelte";
   import Field from "$components/ui/Field.svelte";
   import Button from "$components/ui/Button.svelte";
   import BaseDialog from "$components/BaseDialog.svelte";
@@ -541,18 +540,18 @@
           <span class="sheet-level-word">Level</span>
           <span class="sheet-level-figure">{$info.level || 1}</span>
         </span>
-        <span class="sheet-spark"><Inspiration /></span>
-        <span class="sheet-still" class:sheet-still-on={reading} use:still={reading}>
-          <span class="sheet-rests">
-            <span class="sheet-rest">
-              <IconBtn title="Short rest" disabled={!$rules.resolved} onclick={() => (shortResting = true)}><Glyph name="bonfire" /></IconBtn>
+        <span class="sheet-rests">
+          <span class="sheet-still" class:sheet-still-on={reading} use:still={reading}>
+            <button type="button" class="sheet-rest" title="Short rest" disabled={!$rules.resolved} onclick={() => (shortResting = true)}>
+              <span class="sheet-rest-shield"><Glyph name="bonfire" size="lg" /></span>
               <span class="sheet-rest-word">Short rest</span>
-            </span>
-            <span class="sheet-rest sheet-rest-long">
-              <IconBtn title="Long rest" disabled={!$rules.resolved} onclick={longRest}><Glyph name="tent" /></IconBtn>
+            </button>
+            <button type="button" class="sheet-rest" title="Long rest" disabled={!$rules.resolved} onclick={longRest}>
+              <span class="sheet-rest-shield"><Glyph name="tent" size="lg" /></span>
               <span class="sheet-rest-word">Long rest</span>
-            </span>
+            </button>
           </span>
+          <Inspiration />
         </span>
 
       </header>
@@ -788,12 +787,12 @@
 
   .sheet-crown {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
     grid-template-rows: auto auto auto;
     grid-template-areas:
-      'face name level spark rest'
-      'face meta level spark rest'
-      'rule rule level spark rest';
+      'face name level rest'
+      'face meta level rest'
+      'rule rule level rest';
     align-items: center;
     align-content: center;
     column-gap: var(--space-4);
@@ -968,38 +967,79 @@
     text-shadow: 0 1px 0 #000;
   }
 
-  .sheet-spark {
-    grid-area: spark;
-    display: flex;
-    align-items: center;
-    align-self: stretch;
-  }
-
   .sheet-rests {
     grid-area: rest;
     display: flex;
     align-items: center;
     align-self: stretch;
-    gap: var(--space-2);
     padding-inline-end: var(--space-3);
   }
 
   .sheet-rest {
+    --rest-size: var(--space-7);
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: var(--space-0);
+    padding: var(--space-1) var(--space-3) 0;
+    border: none;
+    background: none;
     color: var(--metal);
+    cursor: pointer;
   }
 
-  .sheet-rest > :global(.dnd-iconbtn) {
-    inline-size: var(--space-6);
-    block-size: var(--space-6);
+  .sheet-rest-shield {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--rest-size);
+    aspect-ratio: 100 / 120;
+    background:
+      var(--texture-noise),
+      radial-gradient(circle at 50% 30%, var(--ground-lift) 0%, var(--ground-deep) 85%);
+    -webkit-mask: var(--mask-shield) center / 100% 100% no-repeat;
+    mask: var(--mask-shield) center / 100% 100% no-repeat;
+    transition: filter 300ms ease;
   }
 
-  .sheet-rest-long > :global(.dnd-iconbtn) {
-    inline-size: var(--space-7);
-    block-size: var(--space-7);
+  .sheet-rest-shield::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, var(--metal-bright) 0%, var(--metal) 50%, var(--metal-dim) 100%);
+    -webkit-mask:
+      var(--mask-shield) center / 100% 100% no-repeat,
+      var(--mask-shield) center / calc(100% - 2 * var(--space-0)) calc(100% - 2 * var(--space-0)) no-repeat;
+    mask:
+      var(--mask-shield) center / 100% 100% no-repeat,
+      var(--mask-shield) center / calc(100% - 2 * var(--space-0)) calc(100% - 2 * var(--space-0)) no-repeat;
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+
+  .sheet-rest-shield > :global(.dnd-glyph) {
+    position: relative;
+  }
+
+  .sheet-rest:hover:not(:disabled) .sheet-rest-shield {
+    filter: drop-shadow(0 0 0.4rem var(--ember-glow)) brightness(1.1);
+  }
+
+  .sheet-rest:active:not(:disabled) .sheet-rest-shield {
+    filter: brightness(0.85);
+  }
+
+  .sheet-rest:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+    filter: grayscale(0.85);
+  }
+
+  .sheet-rest:focus-visible {
+    outline: none;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--focus-ring);
   }
 
   .sheet-rest-word {
@@ -1119,12 +1159,12 @@
     }
 
     .sheet-crown {
-      grid-template-columns: auto minmax(0, 1fr) auto auto;
+      grid-template-columns: auto minmax(0, 1fr) auto;
       grid-template-areas:
-        'face name name name'
-        'face meta meta meta'
-        'rule rule rule rule'
-        'level level spark rest';
+        'face name name'
+        'face meta meta'
+        'rule rule rule'
+        'level level rest';
     }
 
     .sheet-level {
