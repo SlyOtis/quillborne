@@ -286,7 +286,7 @@
   }
 </script>
 
-<Shell title="New Character" width="narrow" back={() => navigate(creationData.campaignId ? `/main/campaign/${creationData.campaignId}` : '/main')}>
+<Shell drawers title="New Character" width="narrow" back={() => navigate(creationData.campaignId ? `/main/campaign/${creationData.campaignId}` : '/main')}>
   <header class="make-crown">
     <span class="make-crest">
       <span class="make-plate dnd-shield"></span>
