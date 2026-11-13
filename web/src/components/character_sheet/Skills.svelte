@@ -59,7 +59,7 @@
         position: relative;
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        justify-content: flex-start;
         align-items: stretch;
         gap: var(--space-3);
         padding: var(--space-3);
@@ -75,7 +75,11 @@
         gap: var(--space-0) var(--space-2);
         font-size: var(--text-xs);
         width: 100%;
-        height: 100%;
+        align-content: start;
+    }
+
+    .root > :global(.dnd-caption) {
+        margin-block-start: auto;
     }
 
     span {
