@@ -246,6 +246,8 @@ Hybrid and heavy. Depth is carved rather than floated: stacked inset rings, beve
 
 **The Carved Not Floated Rule.** Depth comes from rings and bevels first. A drop-shadow only separates the carved object from the ground.
 
+**The No One Sided Border Rule.** A surface never carries a thick rounded border on one side alone: no inset bar, no accent spine, no edge stripe on a tile, a card or a row. A current row lights with its wash, its keyline and its glow, all four sides alike.
+
 ## Shapes
 
 No surface has a hard square corner. The radius scale is stored in rem: `--radius-sm` 0.5rem, `--radius-md` 0.75rem, `--radius-lg` 1.125rem, `--radius-xl` 1.625rem, `--chamfer` 0.75rem. Buttons clip to `inset(0 round …)` on the scale (sm, md, lg by button size). Stat plates and their faces are arched: an elliptical top (50% across, `--radius-xl` down) over `--radius-lg` lower corners, the gate window's arch. Wells, inputs, value boxes and the 3D map scene take `--radius-md` with a carved inner keyline or a tarnished hairline; cards `--radius-md`; panels `--radius-xl` with a `--radius-lg` keyline and a cusp flourish in all four corners; dialogs `--radius-xl`; anything ringed by the heavy `--rim` takes at least `--radius-lg`. The page's bend into an open drawer is the largest curve in the system (`--shell-bend`, 1.5 times `--radius-xl`), and its inner rule follows it 4px smaller. Frames still cut their top corners into cusped notches (`--cusp` 30px, `--dip` 18px) on the xl radius. Round is for bosses, chips and badges: sigils, orbs, spinners and card badges.

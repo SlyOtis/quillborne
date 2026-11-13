@@ -39,17 +39,14 @@
           aria-label={open ? `Fold ${row.title}` : `Unfold ${row.title}`}
           onclick={() => (shut = { ...shut, [row.id]: open })}
         ></button>
-      {:else}
-        <span class="dnd-tree-stem" aria-hidden="true"></span>
       {/if}
 
       <button type="button" class="dnd-tree-name" onclick={() => onopen(row.id)}>
-        {row.title}
+        <span class="dnd-tree-title">{row.title}</span>
+        {#if row.mark}
+          <span class="dnd-tree-mark">{row.mark}</span>
+        {/if}
       </button>
-
-      {#if row.mark}
-        <span class="dnd-tree-mark">{row.mark}</span>
-      {/if}
     </div>
 
     <div class="dnd-tree-fold" class:dnd-tree-fold-open={open} inert={!open}>
@@ -90,7 +87,6 @@
     align-items: center;
     gap: var(--space-1);
     min-height: var(--tree-row);
-    padding-inline-end: var(--space-2);
     border-radius: var(--radius-sm);
   }
 
@@ -103,7 +99,7 @@
       linear-gradient(90deg, color-mix(in srgb, var(--ember) 22%, transparent) 0%, color-mix(in srgb, var(--ember) 6%, transparent) 70%, transparent 100%),
       var(--texture-noise),
       var(--ground-deep);
-    box-shadow: inset 2px 0 0 var(--metal-bright), inset 0 0 0 1px color-mix(in srgb, var(--metal-dim) 70%, transparent), inset 0 0 0.75rem var(--ember-glow);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--metal-dim) 70%, transparent), inset 0 0 0.75rem var(--ember-glow);
   }
 
   .dnd-tree-caret {
@@ -135,28 +131,39 @@
     box-shadow: var(--focus-ring);
   }
 
-  .dnd-tree-stem {
-    justify-self: center;
-    width: 0.2rem;
-    height: 0.2rem;
-    transform: rotate(45deg);
-    background: var(--metal-dim);
-  }
-
   .dnd-tree-name {
+    grid-column: 2 / -1;
+    display: grid;
+    grid-template-columns: subgrid;
+    align-items: center;
     min-width: 0;
+    min-height: var(--tree-row);
     padding: 0;
+    padding-inline-end: var(--space-2);
     border: none;
+    border-radius: var(--radius-sm);
     background: none;
     font-family: var(--font-body);
     font-size: var(--text-sm);
     text-align: start;
     color: var(--ink-dim);
+    cursor: pointer;
+    transition: color 0.15s ease, text-shadow 0.15s ease;
+  }
+
+  .dnd-tree-name:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .dnd-tree-name:first-child .dnd-tree-title {
+    grid-column: 2;
+  }
+
+  .dnd-tree-title {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    cursor: pointer;
-    transition: color 0.15s ease, text-shadow 0.15s ease;
   }
 
   .dnd-tree-row:hover .dnd-tree-name {
@@ -178,6 +185,7 @@
     font-family: var(--font-figures);
     font-size: var(--text-xs);
     color: var(--ink-faint);
+    text-shadow: none;
   }
 
   .dnd-tree-fold {
