@@ -1,7 +1,0 @@
-[
-  {
-    "as": "testy",
-    "call": "POST /api/profile",
-    "body": { "email": "testy@quillborne.local", "display_name": "Testy" }
-  }
-]
