@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
+  import { getRarityInk, type Rarity } from '$lib/resources'
   import Glyph from './Glyph.svelte'
   import IconBtn from './IconBtn.svelte'
   import StoredImage from './StoredImage.svelte'
@@ -10,6 +11,7 @@
     mark,
     image,
     tone = 'metal',
+    rarity,
     on = false,
     onclick,
     onopen,
@@ -25,6 +27,8 @@
     image?: string
     /** Colours the keyline against the active theme. */
     tone?: 'metal' | 'ember' | 'verdigris'
+    /** Writes the name in the tone of its rarity. */
+    rarity?: Rarity
     /** Marks the row as the one being read. */
     on?: boolean
     /** Runs when the row is pressed. */
@@ -36,7 +40,12 @@
   } = $props()
 </script>
 
-<div class="dnd-row dnd-row-{tone}" class:dnd-row-on={on} aria-current={on ? 'page' : undefined}>
+<div
+  class="dnd-row dnd-row-{tone}"
+  class:dnd-row-on={on}
+  aria-current={on ? 'page' : undefined}
+  style:--row-ink={rarity ? getRarityInk(rarity) : undefined}
+>
   <button type="button" class="dnd-row-press" {onclick}>
     <span class="dnd-row-keyline" aria-hidden="true"></span>
 
@@ -188,7 +197,7 @@
     max-width: 100%;
     font-family: var(--font-display);
     font-size: var(--text-md);
-    color: var(--metal-bright);
+    color: var(--row-ink, var(--metal-bright));
     text-shadow: 0 1px 0 #000;
     transition: text-shadow 0.15s ease;
     overflow: hidden;

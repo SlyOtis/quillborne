@@ -31,7 +31,7 @@ vi.mock('./collab', () => ({
   }
 }))
 
-import { deleteOne, deleteResources, getBlank, type Resource } from './resources'
+import { deleteOne, deleteResources, getBlank, getItemLine, type Resource } from './resources'
 
 
 const one = (fields: Partial<Resource> = {}): Resource => ({ ...getBlank('entries', 'lars'), id: 'res-1', ...fields })
@@ -69,5 +69,15 @@ describe('deleteResources', () => {
       'delete place-1',
       'delete session-1'
     ])
+  })
+})
+
+describe('getItemLine', () => {
+  it('writes the type, the subtype, the rarity and who may attune, the way D&D Beyond does', () => {
+    const lantern = { category: 'wondrous item', subtype: 'lantern', rarity: 'uncommon', attunement: true, attuned_by: 'by a wizard' } as const
+
+    expect(getItemLine(lantern)).toBe('Wondrous item (lantern), uncommon (requires attunement by a wizard)')
+    expect(getItemLine({ ...lantern, attuned_by: '' })).toBe('Wondrous item (lantern), uncommon (requires attunement)')
+    expect(getItemLine({ ...lantern, subtype: '', attunement: false })).toBe('Wondrous item, uncommon')
   })
 })
