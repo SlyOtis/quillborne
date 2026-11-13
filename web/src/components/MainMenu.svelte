@@ -22,6 +22,43 @@
   let open = $state(['party'])
   let reached = $state('')
 
+  type Tab = 'campaign' | 'character' | 'scribe'
+  const TABS: { id: Tab; title: string }[] = [
+    { id: 'campaign', title: 'Campaign' },
+    { id: 'character', title: 'Character' },
+    { id: 'scribe', title: 'Scribe' }
+  ]
+  const TAB_KEY = 'quillborne.menu.tab'
+  const isTab = (held: string | null): held is Tab => TABS.some((one) => one.id === held)
+
+  function readTab(): Tab {
+    try {
+      const held = sessionStorage.getItem(TAB_KEY)
+      return isTab(held) ? held : 'campaign'
+    } catch {
+      return 'campaign'
+    }
+  }
+
+  let tab = $state<Tab>(readTab())
+
+  function pickTab(next: Tab) {
+    tab = next
+    try {
+      sessionStorage.setItem(TAB_KEY, next)
+    } catch {}
+  }
+
+  function stepTab(event: KeyboardEvent) {
+    const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0
+    if (!step) return
+    event.preventDefault()
+    const at = TABS.findIndex((one) => one.id === tab)
+    const next = TABS[(at + step + TABS.length) % TABS.length].id
+    pickTab(next)
+    document.getElementById(`menu-tab-${next}`)?.focus()
+  }
+
   const steps = $derived($resolvedRoute.path.split('/').filter(Boolean).slice(1))
   const asked = $derived(steps[0] === 'campaign' ? steps[2] ?? '' : steps[0] ?? '')
 
@@ -41,7 +78,6 @@
       : $userCampaigns[0]?.id ?? ''
   )
 
-  const ROLLS: ResourceKind[] = ['entries', 'items']
   const GEAR: ResourceKind[] = ['items', 'weapons', 'armor']
   let kinds = $state<Record<string, ResourceKind>>({})
 
@@ -136,41 +172,46 @@
 </script>
 
 <nav class="dnd-menu" aria-label="Campaign navigator">
-  <div class="dnd-scroll dnd-menu-body">
+  <div class="dnd-menu-rail" role="tablist" aria-label="Navigator">
+    {#each TABS as one (one.id)}
+      <button
+        type="button"
+        class="dnd-menu-tab"
+        class:dnd-menu-tab-on={tab === one.id}
+        role="tab"
+        id="menu-tab-{one.id}"
+        aria-selected={tab === one.id}
+        aria-controls="menu-panel-{one.id}"
+        tabindex={tab === one.id ? 0 : -1}
+        onclick={() => pickTab(one.id)}
+        onkeydown={stepTab}
+      >
+        {one.title}
+      </button>
+    {/each}
+    <IconBtn title="Open scribe" active={$currentRoute.path === '/main/scribe'} onclick={() => navigate('/main/scribe')}>
+      <Glyph name="edit" size="sm" />
+    </IconBtn>
+  </div>
+
+  <div class="dnd-scroll dnd-menu-body" role="tabpanel" id="menu-panel-{tab}" aria-labelledby="menu-tab-{tab}">
     {#if error}
       <p class="dnd-menu-note" role="alert">{error}</p>
     {/if}
 
-    {@render section('party', 'Party', seated.length, roster)}
-    {@render section('npcs', 'NPCs', npcs.length, people)}
-    {@render section('places', 'Places', places.length, sites)}
-    {@render section('vehicles', 'Vehicles', vehicles.length, fleet)}
-    {#each ROLLS as roll (roll)}
-      <Fold
-        title={RESOURCES[roll].many}
-        count={(more[roll] ?? []).length}
-        variant="row"
-        open={open.includes(roll)}
-        ontoggle={() => toggle(roll)}
-      >
-        {#if (more[roll] ?? []).length === 0}
-          <p class="dnd-menu-empty">Nothing on this roll.</p>
-        {:else}
-          <div class="dnd-scroll dnd-menu-tree">
-            <Tree rows={twigs(more[roll], roll)} on={openId} onopen={(id) => openResource(roll, id)} />
-          </div>
-        {/if}
-      </Fold>
-    {/each}
+    {#if tab === 'campaign'}
+      {@render section('places', 'Places', places.length, sites)}
+      {@render section('vehicles', 'Vehicles', vehicles.length, fleet)}
+      {@render roll('items')}
+    {:else if tab === 'character'}
+      {@render section('party', 'Party', seated.length, roster)}
+      {@render section('npcs', 'NPCs', npcs.length, people)}
+    {:else}
+      {@render roll('entries')}
+    {/if}
   </div>
 
   <footer class="dnd-menu-foot" aria-label="Actions">
-    <span class="dnd-menu-foot-cell">
-      <IconBtn title="Scribe" active={$currentRoute.path === '/main/scribe'} onclick={() => navigate('/main/scribe')}>
-        <Glyph name="edit" size="sm" />
-      </IconBtn>
-      <span class="dnd-menu-foot-word">Scribe</span>
-    </span>
     {#each $shortcuts as pin (pin.action)}
       {@const action = getAction(pin.action)}
       {#if action}
@@ -213,6 +254,24 @@
 {#snippet section(id: string, title: string, count: number, body: Snippet)}
   <Fold {title} {count} variant="row" open={open.includes(id)} ontoggle={() => toggle(id)}>
     {@render body()}
+  </Fold>
+{/snippet}
+
+{#snippet roll(kind: ResourceKind)}
+  <Fold
+    title={RESOURCES[kind].many}
+    count={(more[kind] ?? []).length}
+    variant="row"
+    open={open.includes(kind)}
+    ontoggle={() => toggle(kind)}
+  >
+    {#if (more[kind] ?? []).length === 0}
+      <p class="dnd-menu-empty">Nothing on this roll.</p>
+    {:else}
+      <div class="dnd-scroll dnd-menu-tree">
+        <Tree rows={twigs(more[kind], kind)} on={openId} onopen={(id) => openResource(kind, id)} />
+      </div>
+    {/if}
   </Fold>
 {/snippet}
 
@@ -297,12 +356,105 @@
       var(--stone);
 
     display: grid;
-    grid-template-rows: minmax(0, 1fr) auto auto;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
     height: 100%;
     gap: var(--menu-gap);
     padding: var(--menu-pad);
     overflow: hidden;
     color: var(--menu-text);
+  }
+
+  .dnd-menu-rail {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-1);
+    padding: var(--space-1) 0 0;
+  }
+
+  .dnd-menu-tab {
+    position: relative;
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: var(--space-2) var(--space-3);
+    border: none;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--ember-core) 10%, transparent) 0%, color-mix(in srgb, #000 30%, transparent) 55%, color-mix(in srgb, #000 55%, transparent) 100%),
+      var(--texture-grain),
+      var(--wood);
+    box-shadow:
+      inset 0 0 0 1px var(--keyline),
+      inset 0 0 0 2px var(--metal-dim),
+      inset 0 3px 0 0 var(--sheen),
+      inset 0 -0.5rem 0.6rem -0.3rem var(--shade-hard);
+    font-family: var(--font-display);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--metal);
+    text-shadow: 0 1px 0 #000, 0 0 2px #000;
+    cursor: pointer;
+    transition: color 0.18s ease, text-shadow 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .dnd-menu-tab:hover:not(.dnd-menu-tab-on) {
+    color: var(--metal-bright);
+    text-shadow: var(--glow-text);
+    box-shadow:
+      inset 0 0 0 1px var(--keyline),
+      inset 0 0 0 2px var(--metal),
+      inset 0 3px 0 0 var(--sheen),
+      inset 0 -0.5rem 0.6rem -0.3rem var(--shade-hard);
+  }
+
+  .dnd-menu-tab:active:not(.dnd-menu-tab-on) {
+    filter: brightness(0.7);
+  }
+
+  .dnd-menu-tab-on {
+    z-index: 1;
+    padding-block: var(--space-3) var(--space-2);
+    background:
+      radial-gradient(ellipse 80% 90% at 50% 110%, var(--ember-glow) 0%, transparent 70%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 26%, transparent) 0%, color-mix(in srgb, #000 30%, transparent) 55%, var(--ground-raised) 100%),
+      var(--texture-noise),
+      var(--stone);
+    box-shadow:
+      inset 0 1px 0 var(--keyline),
+      inset 1px 0 0 var(--keyline),
+      inset -1px 0 0 var(--keyline),
+      inset 0 2px 0 var(--metal-bright),
+      inset 2px 0 0 var(--metal),
+      inset -2px 0 0 var(--metal),
+      inset 0 3px 0 var(--metal-dim),
+      0 0 0.9rem var(--ember-glow);
+    color: var(--metal-bright);
+    text-shadow: var(--glow-text);
+    filter: none;
+  }
+
+  .dnd-menu-tab:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  .dnd-menu-rail > :global(.dnd-iconbtn) {
+    align-self: center;
+    margin-inline-start: auto;
+    inline-size: calc(var(--menu-row) - var(--space-2));
+    block-size: calc(var(--menu-row) - var(--space-2));
+    color: var(--menu-text-muted);
+  }
+
+  .dnd-menu-rail > :global(.dnd-iconbtn:hover:not(:disabled)) {
+    color: var(--menu-accent);
+    background: color-mix(in srgb, var(--menu-accent) 14%, transparent);
   }
 
   .dnd-menu-body {
