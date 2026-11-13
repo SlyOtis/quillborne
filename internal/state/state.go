@@ -32,7 +32,7 @@ const (
 	envAuthorizationServer = "SAUTH_ENDPOINT"
 	envDebugUser           = "SAUTH_DEBUG_USER_ID"
 	actorHeader            = "State-Actor-ID"
-	instructions           = "The qubo tools operate Quillborne: the table's profiles, campaigns with their maps, encounters, songs and chat, characters, vehicles, lore pages, files, tags and the catalog. Reach for them to read or change what Quillborne manages. Every tool runs as the signed in player and reaches only what their claims bind; a tool that changes data needs the user's confirmation first."
+	instructions           = "The qubo tools operate Quillborne: the table's profiles, campaigns with their maps, encounters, songs and chat, characters, vehicles, monsters, lore pages, files, tags and the catalog. Reach for them to read or change what Quillborne manages. Every tool runs as the signed in player and reaches only what their claims bind; a tool that changes data needs the user's confirmation first."
 )
 
 type StateKey struct {
@@ -49,6 +49,7 @@ var keyTables = map[string]string{
 	GroupCampaign:     "campaign",
 	GroupCharacter:    "character",
 	GroupVehicle:      "vehicle",
+	GroupMonster:      "monster",
 	GroupCampaignMap:  "campaign_map",
 	GroupEncounter:    "encounter",
 	GroupSong:         "song",
@@ -74,6 +75,7 @@ var objectGroups = map[string]string{
 	db.OBJECT_TYPE_TAG_OBJECT:    GroupTagObject,
 	db.OBJECT_TYPE_CATALOG_ENTRY: GroupCatalogEntry,
 	db.OBJECT_TYPE_VEHICLE:       GroupVehicle,
+	db.OBJECT_TYPE_MONSTER:       GroupMonster,
 }
 
 type resolver struct{}
@@ -426,6 +428,7 @@ func GetGroups() []nstate.Definition {
 		getCampaignGroup(),
 		getCharacterGroup(),
 		getVehicleGroup(),
+		getMonsterGroup(),
 		getCampaignMapGroup(),
 		getEncounterGroup(),
 		getSongGroup(),

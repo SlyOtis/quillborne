@@ -53,3 +53,11 @@ A vehicle system is a JSON document under `web/public/sources/systems/vehicles/`
 A character's crew standing is `character.crew[<vehicle system id>]`, its level and perks. `getCrewman` takes the abilities and the proficiency from the resolved character, so every to hit and DC on a deck is the character the reader sails as.
 
 A new vehicle system is a JSON file plus a case in `web/src/lib/rules/vehicle.spec.ts`.
+
+## Monsters
+
+A monster system is a JSON document under `web/public/sources/systems/monsters/`, listed in its `index.json`. It declares the `abilities`, the `sizes` in order with the hit die of each, the creature `types` with the glyph each draws (a type without one draws `typeGlyph`), the `alignments`, `damageTypes`, `conditions`, `senses`, `movements`, `languages` and `habitats`, the `skills` with their ability, the `challenges` with their experience and proficiency bonus, the proficiency `tiers`, the `flags` a monster may carry (legendary, mythic, a lair), the `features` sections of a stat block (traits, actions, bonus actions, reactions, legendary actions), the `defaults` a new monster starts from, the `distance` unit, and the `formulas`. `web/src/lib/rules/monster.types.ts` is the shape.
+
+`web/src/lib/rules/monster.ts` interprets it. `getMonsterStats` reads a stored `stats` into its full shape, filling what is missing from `defaults`. `getMonsterBlock` works out every figure on the block with `expression.ts`: `modifier` against `score`, `save` and `skill` against `mod`, `prof` and `tier`, then `passivePerception`, `initiative`, `initiativeScore`, `hitPoints` and `hitBonus` against a scope of `prof`, `attr.<id>`, `mod.<id>`, `skill.<id>`, `dice` and `die`. `isMonsterShown` is every filter of the Monsters page. A list, a name or a number on the Monsters page, the Monster page or their filters comes from the system, never from the component.
+
+A new monster system is a JSON file plus a case in `web/src/lib/rules/monster.spec.ts`.

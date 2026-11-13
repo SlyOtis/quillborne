@@ -137,6 +137,16 @@ func Resources() []cli.Resource {
 			},
 		},
 		{
+			Name:  "monster",
+			Short: "Monsters: the public bestiary and each player's own homebrew",
+			Verbs: []cli.Verb{
+				getOp("List the monsters you reach, or read one", apiPrefix+"/monster", apiPrefix+"/monster/{id}"),
+				createOp("Make a monster, body {name, system, size, type, alignment, challenge, is_public, stats, description, image}", apiPrefix+"/monster"),
+				replaceOp("Change a monster you made", "", apiPrefix+"/monster/{id}"),
+				deleteOp("Delete a monster you made", "", apiPrefix+"/monster/{id}"),
+			},
+		},
+		{
 			Name:  "campaign",
 			Short: "Campaigns, the tables of play",
 			Verbs: []cli.Verb{

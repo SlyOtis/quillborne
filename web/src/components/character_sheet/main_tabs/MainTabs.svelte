@@ -12,6 +12,7 @@
     spellsTab: Snippet,
     featsTab: Snippet,
     backgroundTab: Snippet,
+    bestiaryTab: Snippet,
     initialTab: string,
   } = $props();
 
@@ -30,7 +31,8 @@
     {id: 'spellsTab', title: 'Spells'},
     {id: 'inventoryTab', title: 'Inventory'},
     {id: 'featsTab', title: 'Features'},
-    {id: 'backgroundTab', title: 'Background'}
+    {id: 'backgroundTab', title: 'Background'},
+    {id: 'bestiaryTab', title: 'Bestiary'}
   ]
 
   function selectTab(e: Event, tab: Tabs) {
@@ -107,9 +109,9 @@
 
     .tab {
         position: relative;
-        flex: 1 1 0;
+        flex: 1 1 auto;
         min-width: 0;
-        padding: var(--space-2) var(--space-3);
+        padding: var(--space-2);
         border: none;
         border-radius: var(--radius-sm) var(--radius-sm) 0 0;
         background:

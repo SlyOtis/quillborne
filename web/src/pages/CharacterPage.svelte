@@ -19,6 +19,7 @@
   import InventoryTab from "$character-sheet/main_tabs/InventoryTab.svelte";
   import FeaturesTab from "$character-sheet/main_tabs/FeaturesTab.svelte";
   import BackgroundTab from "$character-sheet/main_tabs/BackgroundTab.svelte";
+  import BestiaryTab from "$character-sheet/main_tabs/BestiaryTab.svelte";
   import MainTabs from "$character-sheet/main_tabs/MainTabs.svelte";
   import ActionsTab from "$character-sheet/main_tabs/ActionsTab.svelte";
   import SpellsTab from "$character-sheet/main_tabs/SpellsTab.svelte";
@@ -382,6 +383,9 @@
     {/snippet}
     {#snippet backgroundTab()}
       <BackgroundTab />
+    {/snippet}
+    {#snippet bestiaryTab()}
+      <BestiaryTab />
     {/snippet}
   </MainTabs>
 {/snippet}

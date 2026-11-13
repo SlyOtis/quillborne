@@ -17,6 +17,7 @@ export const OBJECT_TYPE_TAG = "public.tag";
 export const OBJECT_TYPE_TAG_OBJECT = "public.tag_object";
 export const OBJECT_TYPE_CATALOG_ENTRY = "public.catalog_entry";
 export const OBJECT_TYPE_VEHICLE = "public.vehicle";
+export const OBJECT_TYPE_MONSTER = "public.monster";
 export const MIME_TYPE_FOLDER = "inode/directory";
 export const MIME_TYPE_DOCUMENT = "application/vnd.mar.document+json";
 export interface Profile {
@@ -90,6 +91,22 @@ export interface Vehicle {
   crew: any;
   revision: number /* int */;
   history: any;
+  created_at: string;
+  updated_at: string;
+}
+export interface Monster {
+  id: string;
+  owner_id: string;
+  is_public: boolean;
+  system: string;
+  name: string;
+  size: string;
+  type: string;
+  alignment: string;
+  challenge: number /* float64 */;
+  stats: any;
+  description: string;
+  image: string;
   created_at: string;
   updated_at: string;
 }

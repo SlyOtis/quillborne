@@ -84,7 +84,7 @@ func getTagObjectGroup() nstate.Group[TagObjectData] {
 			"object_type": getProperty("string", "The table of the tagged row, public.<table>."),
 			"object_id":   getOwner("The tagged row, by the id it had where the export was made."),
 		}, "tag_id", "object_type", "object_id"),
-		DependsOn: []string{GroupTag, GroupCampaign, GroupCharacter, GroupVehicle, GroupResource, GroupAsset},
+		DependsOn: []string{GroupTag, GroupCampaign, GroupCharacter, GroupVehicle, GroupMonster, GroupResource, GroupAsset},
 		Refs:      map[string]string{"tag_id": GroupTag},
 		Export:    exportTagObjects,
 		Import:    importTagObject,

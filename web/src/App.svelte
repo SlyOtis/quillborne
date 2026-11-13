@@ -114,6 +114,17 @@
       name: "vehicle-view",
       component: page("VehiclePage", () => import("./pages/VehiclePage.svelte")),
       guard: requireSignIn
+    },
+    "/main/monster": "/main/monsters",
+    "/main/monsters": {
+      name: "monsters-list",
+      component: page("MonstersPage", () => import("./pages/MonstersPage.svelte")),
+      guard: requireSignIn
+    },
+    "/main/monsters/:id": {
+      name: "monster-view",
+      component: page("MonsterPage", () => import("./pages/MonsterPage.svelte")),
+      guard: requireSignIn
     }
   }
 

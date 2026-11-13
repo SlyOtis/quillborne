@@ -4,6 +4,7 @@ export type { SamnaUser } from './generated_auth'
 import type * as generated from './generated'
 import type { Character as CharacterSheet } from '../character.types'
 import type { ComponentState, InstalledComponent, Rulings, VehicleOverlay } from '../rules/vehicle.types'
+import type { MonsterStats } from '../rules/monster.types'
 import type { MapDocument } from '../nimap'
 
 export interface ReturnObject<T> {
@@ -205,3 +206,9 @@ export interface VehicleRevision {
 export type VehicleFields = Partial<Omit<Vehicle, 'id' | 'owner_id' | 'history' | 'created_at' | 'updated_at'>> & {
   note?: string
 }
+
+export interface Monster extends Omit<generated.Monster, 'stats'> {
+  stats: MonsterStats
+}
+
+export type MonsterFields = Partial<Omit<Monster, 'id' | 'owner_id' | 'created_at' | 'updated_at'>>

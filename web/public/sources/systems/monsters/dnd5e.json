@@ -1,0 +1,834 @@
+{
+  "id": "dnd5e",
+  "title": "Fifth edition monsters",
+  "version": "1",
+  "description": "The vocabulary of a fifth edition stat block: sizes, creature types, alignments, damage types, conditions, senses, movement, languages, habitats, skills, challenge ratings with their experience and proficiency bonus, and the formulas every figure on the block is worked out with.",
+  "distance": "ft.",
+  "typeGlyph": "dice",
+  "defaults": {
+    "size": "medium",
+    "type": "humanoid",
+    "alignment": "unaligned",
+    "challenge": 0,
+    "score": 10,
+    "ac": 10,
+    "hitDice": 1,
+    "speeds": {
+      "walk": 30
+    }
+  },
+  "abilities": [
+    {
+      "id": "str",
+      "name": "Strength",
+      "short": "STR"
+    },
+    {
+      "id": "dex",
+      "name": "Dexterity",
+      "short": "DEX"
+    },
+    {
+      "id": "con",
+      "name": "Constitution",
+      "short": "CON"
+    },
+    {
+      "id": "int",
+      "name": "Intelligence",
+      "short": "INT"
+    },
+    {
+      "id": "wis",
+      "name": "Wisdom",
+      "short": "WIS"
+    },
+    {
+      "id": "cha",
+      "name": "Charisma",
+      "short": "CHA"
+    }
+  ],
+  "sizes": [
+    {
+      "id": "tiny",
+      "name": "Tiny",
+      "hitDie": 4
+    },
+    {
+      "id": "small",
+      "name": "Small",
+      "hitDie": 6
+    },
+    {
+      "id": "medium",
+      "name": "Medium",
+      "hitDie": 8
+    },
+    {
+      "id": "large",
+      "name": "Large",
+      "hitDie": 10
+    },
+    {
+      "id": "huge",
+      "name": "Huge",
+      "hitDie": 12
+    },
+    {
+      "id": "gargantuan",
+      "name": "Gargantuan",
+      "hitDie": 20
+    }
+  ],
+  "types": [
+    {
+      "id": "aberration",
+      "name": "Aberration",
+      "glyph": "reveal"
+    },
+    {
+      "id": "beast",
+      "name": "Beast"
+    },
+    {
+      "id": "celestial",
+      "name": "Celestial",
+      "glyph": "theme"
+    },
+    {
+      "id": "construct",
+      "name": "Construct",
+      "glyph": "gear"
+    },
+    {
+      "id": "dragon",
+      "name": "Dragon"
+    },
+    {
+      "id": "elemental",
+      "name": "Elemental",
+      "glyph": "bonfire"
+    },
+    {
+      "id": "fey",
+      "name": "Fey",
+      "glyph": "gem"
+    },
+    {
+      "id": "fiend",
+      "name": "Fiend"
+    },
+    {
+      "id": "giant",
+      "name": "Giant"
+    },
+    {
+      "id": "humanoid",
+      "name": "Humanoid",
+      "glyph": "character"
+    },
+    {
+      "id": "monstrosity",
+      "name": "Monstrosity"
+    },
+    {
+      "id": "ooze",
+      "name": "Ooze",
+      "glyph": "potion"
+    },
+    {
+      "id": "plant",
+      "name": "Plant"
+    },
+    {
+      "id": "undead",
+      "name": "Undead"
+    }
+  ],
+  "alignments": [
+    {
+      "id": "lawful-good",
+      "name": "Lawful Good"
+    },
+    {
+      "id": "neutral-good",
+      "name": "Neutral Good"
+    },
+    {
+      "id": "chaotic-good",
+      "name": "Chaotic Good"
+    },
+    {
+      "id": "lawful-neutral",
+      "name": "Lawful Neutral"
+    },
+    {
+      "id": "neutral",
+      "name": "Neutral"
+    },
+    {
+      "id": "chaotic-neutral",
+      "name": "Chaotic Neutral"
+    },
+    {
+      "id": "lawful-evil",
+      "name": "Lawful Evil"
+    },
+    {
+      "id": "neutral-evil",
+      "name": "Neutral Evil"
+    },
+    {
+      "id": "chaotic-evil",
+      "name": "Chaotic Evil"
+    },
+    {
+      "id": "unaligned",
+      "name": "Unaligned"
+    },
+    {
+      "id": "any",
+      "name": "Any Alignment"
+    }
+  ],
+  "damageTypes": [
+    {
+      "id": "acid",
+      "name": "Acid"
+    },
+    {
+      "id": "bludgeoning",
+      "name": "Bludgeoning"
+    },
+    {
+      "id": "cold",
+      "name": "Cold"
+    },
+    {
+      "id": "fire",
+      "name": "Fire"
+    },
+    {
+      "id": "force",
+      "name": "Force"
+    },
+    {
+      "id": "lightning",
+      "name": "Lightning"
+    },
+    {
+      "id": "necrotic",
+      "name": "Necrotic"
+    },
+    {
+      "id": "piercing",
+      "name": "Piercing"
+    },
+    {
+      "id": "poison",
+      "name": "Poison"
+    },
+    {
+      "id": "psychic",
+      "name": "Psychic"
+    },
+    {
+      "id": "radiant",
+      "name": "Radiant"
+    },
+    {
+      "id": "slashing",
+      "name": "Slashing"
+    },
+    {
+      "id": "thunder",
+      "name": "Thunder"
+    }
+  ],
+  "conditions": [
+    {
+      "id": "blinded",
+      "name": "Blinded"
+    },
+    {
+      "id": "charmed",
+      "name": "Charmed"
+    },
+    {
+      "id": "deafened",
+      "name": "Deafened"
+    },
+    {
+      "id": "exhaustion",
+      "name": "Exhaustion"
+    },
+    {
+      "id": "frightened",
+      "name": "Frightened"
+    },
+    {
+      "id": "grappled",
+      "name": "Grappled"
+    },
+    {
+      "id": "incapacitated",
+      "name": "Incapacitated"
+    },
+    {
+      "id": "invisible",
+      "name": "Invisible"
+    },
+    {
+      "id": "paralyzed",
+      "name": "Paralyzed"
+    },
+    {
+      "id": "petrified",
+      "name": "Petrified"
+    },
+    {
+      "id": "poisoned",
+      "name": "Poisoned"
+    },
+    {
+      "id": "prone",
+      "name": "Prone"
+    },
+    {
+      "id": "restrained",
+      "name": "Restrained"
+    },
+    {
+      "id": "stunned",
+      "name": "Stunned"
+    },
+    {
+      "id": "unconscious",
+      "name": "Unconscious"
+    }
+  ],
+  "senses": [
+    {
+      "id": "blindsight",
+      "name": "Blindsight"
+    },
+    {
+      "id": "darkvision",
+      "name": "Darkvision"
+    },
+    {
+      "id": "tremorsense",
+      "name": "Tremorsense"
+    },
+    {
+      "id": "truesight",
+      "name": "Truesight"
+    }
+  ],
+  "movements": [
+    {
+      "id": "walk",
+      "name": "Walk"
+    },
+    {
+      "id": "burrow",
+      "name": "Burrow"
+    },
+    {
+      "id": "climb",
+      "name": "Climb"
+    },
+    {
+      "id": "fly",
+      "name": "Fly"
+    },
+    {
+      "id": "swim",
+      "name": "Swim"
+    }
+  ],
+  "languages": [
+    {
+      "id": "common",
+      "name": "Common"
+    },
+    {
+      "id": "dwarvish",
+      "name": "Dwarvish"
+    },
+    {
+      "id": "elvish",
+      "name": "Elvish"
+    },
+    {
+      "id": "giant",
+      "name": "Giant"
+    },
+    {
+      "id": "gnomish",
+      "name": "Gnomish"
+    },
+    {
+      "id": "goblin",
+      "name": "Goblin"
+    },
+    {
+      "id": "halfling",
+      "name": "Halfling"
+    },
+    {
+      "id": "orc",
+      "name": "Orc"
+    },
+    {
+      "id": "abyssal",
+      "name": "Abyssal"
+    },
+    {
+      "id": "celestial",
+      "name": "Celestial"
+    },
+    {
+      "id": "deep-speech",
+      "name": "Deep Speech"
+    },
+    {
+      "id": "draconic",
+      "name": "Draconic"
+    },
+    {
+      "id": "infernal",
+      "name": "Infernal"
+    },
+    {
+      "id": "primordial",
+      "name": "Primordial"
+    },
+    {
+      "id": "sylvan",
+      "name": "Sylvan"
+    },
+    {
+      "id": "undercommon",
+      "name": "Undercommon"
+    },
+    {
+      "id": "telepathy",
+      "name": "Telepathy"
+    }
+  ],
+  "habitats": [
+    {
+      "id": "arctic",
+      "name": "Arctic"
+    },
+    {
+      "id": "coastal",
+      "name": "Coastal"
+    },
+    {
+      "id": "desert",
+      "name": "Desert"
+    },
+    {
+      "id": "forest",
+      "name": "Forest"
+    },
+    {
+      "id": "grassland",
+      "name": "Grassland"
+    },
+    {
+      "id": "hill",
+      "name": "Hill"
+    },
+    {
+      "id": "mountain",
+      "name": "Mountain"
+    },
+    {
+      "id": "planar",
+      "name": "Planar"
+    },
+    {
+      "id": "swamp",
+      "name": "Swamp"
+    },
+    {
+      "id": "underdark",
+      "name": "Underdark"
+    },
+    {
+      "id": "underwater",
+      "name": "Underwater"
+    },
+    {
+      "id": "urban",
+      "name": "Urban"
+    }
+  ],
+  "skills": [
+    {
+      "id": "acrobatics",
+      "name": "Acrobatics",
+      "ability": "dex"
+    },
+    {
+      "id": "animalHandling",
+      "name": "Animal Handling",
+      "ability": "wis"
+    },
+    {
+      "id": "arcana",
+      "name": "Arcana",
+      "ability": "int"
+    },
+    {
+      "id": "athletics",
+      "name": "Athletics",
+      "ability": "str"
+    },
+    {
+      "id": "deception",
+      "name": "Deception",
+      "ability": "cha"
+    },
+    {
+      "id": "history",
+      "name": "History",
+      "ability": "int"
+    },
+    {
+      "id": "insight",
+      "name": "Insight",
+      "ability": "wis"
+    },
+    {
+      "id": "intimidation",
+      "name": "Intimidation",
+      "ability": "cha"
+    },
+    {
+      "id": "investigation",
+      "name": "Investigation",
+      "ability": "int"
+    },
+    {
+      "id": "medicine",
+      "name": "Medicine",
+      "ability": "wis"
+    },
+    {
+      "id": "nature",
+      "name": "Nature",
+      "ability": "int"
+    },
+    {
+      "id": "perception",
+      "name": "Perception",
+      "ability": "wis"
+    },
+    {
+      "id": "performance",
+      "name": "Performance",
+      "ability": "cha"
+    },
+    {
+      "id": "persuasion",
+      "name": "Persuasion",
+      "ability": "cha"
+    },
+    {
+      "id": "religion",
+      "name": "Religion",
+      "ability": "int"
+    },
+    {
+      "id": "sleightOfHand",
+      "name": "Sleight of Hand",
+      "ability": "dex"
+    },
+    {
+      "id": "stealth",
+      "name": "Stealth",
+      "ability": "dex"
+    },
+    {
+      "id": "survival",
+      "name": "Survival",
+      "ability": "wis"
+    }
+  ],
+  "challenges": [
+    {
+      "value": 0,
+      "name": "0",
+      "xp": 10,
+      "proficiency": 2
+    },
+    {
+      "value": 0.125,
+      "name": "1/8",
+      "xp": 25,
+      "proficiency": 2
+    },
+    {
+      "value": 0.25,
+      "name": "1/4",
+      "xp": 50,
+      "proficiency": 2
+    },
+    {
+      "value": 0.5,
+      "name": "1/2",
+      "xp": 100,
+      "proficiency": 2
+    },
+    {
+      "value": 1,
+      "name": "1",
+      "xp": 200,
+      "proficiency": 2
+    },
+    {
+      "value": 2,
+      "name": "2",
+      "xp": 450,
+      "proficiency": 2
+    },
+    {
+      "value": 3,
+      "name": "3",
+      "xp": 700,
+      "proficiency": 2
+    },
+    {
+      "value": 4,
+      "name": "4",
+      "xp": 1100,
+      "proficiency": 2
+    },
+    {
+      "value": 5,
+      "name": "5",
+      "xp": 1800,
+      "proficiency": 3
+    },
+    {
+      "value": 6,
+      "name": "6",
+      "xp": 2300,
+      "proficiency": 3
+    },
+    {
+      "value": 7,
+      "name": "7",
+      "xp": 2900,
+      "proficiency": 3
+    },
+    {
+      "value": 8,
+      "name": "8",
+      "xp": 3900,
+      "proficiency": 3
+    },
+    {
+      "value": 9,
+      "name": "9",
+      "xp": 5000,
+      "proficiency": 4
+    },
+    {
+      "value": 10,
+      "name": "10",
+      "xp": 5900,
+      "proficiency": 4
+    },
+    {
+      "value": 11,
+      "name": "11",
+      "xp": 7200,
+      "proficiency": 4
+    },
+    {
+      "value": 12,
+      "name": "12",
+      "xp": 8400,
+      "proficiency": 4
+    },
+    {
+      "value": 13,
+      "name": "13",
+      "xp": 10000,
+      "proficiency": 5
+    },
+    {
+      "value": 14,
+      "name": "14",
+      "xp": 11500,
+      "proficiency": 5
+    },
+    {
+      "value": 15,
+      "name": "15",
+      "xp": 13000,
+      "proficiency": 5
+    },
+    {
+      "value": 16,
+      "name": "16",
+      "xp": 15000,
+      "proficiency": 5
+    },
+    {
+      "value": 17,
+      "name": "17",
+      "xp": 18000,
+      "proficiency": 6
+    },
+    {
+      "value": 18,
+      "name": "18",
+      "xp": 20000,
+      "proficiency": 6
+    },
+    {
+      "value": 19,
+      "name": "19",
+      "xp": 22000,
+      "proficiency": 6
+    },
+    {
+      "value": 20,
+      "name": "20",
+      "xp": 25000,
+      "proficiency": 6
+    },
+    {
+      "value": 21,
+      "name": "21",
+      "xp": 33000,
+      "proficiency": 7
+    },
+    {
+      "value": 22,
+      "name": "22",
+      "xp": 41000,
+      "proficiency": 7
+    },
+    {
+      "value": 23,
+      "name": "23",
+      "xp": 50000,
+      "proficiency": 7
+    },
+    {
+      "value": 24,
+      "name": "24",
+      "xp": 62000,
+      "proficiency": 7
+    },
+    {
+      "value": 25,
+      "name": "25",
+      "xp": 75000,
+      "proficiency": 8
+    },
+    {
+      "value": 26,
+      "name": "26",
+      "xp": 90000,
+      "proficiency": 8
+    },
+    {
+      "value": 27,
+      "name": "27",
+      "xp": 105000,
+      "proficiency": 8
+    },
+    {
+      "value": 28,
+      "name": "28",
+      "xp": 120000,
+      "proficiency": 8
+    },
+    {
+      "value": 29,
+      "name": "29",
+      "xp": 135000,
+      "proficiency": 9
+    },
+    {
+      "value": 30,
+      "name": "30",
+      "xp": 155000,
+      "proficiency": 9
+    }
+  ],
+  "tiers": [
+    {
+      "value": 0,
+      "name": "None"
+    },
+    {
+      "value": 1,
+      "name": "Proficient"
+    },
+    {
+      "value": 2,
+      "name": "Expertise"
+    }
+  ],
+  "flags": [
+    {
+      "id": "legendary",
+      "name": "Legendary"
+    },
+    {
+      "id": "mythic",
+      "name": "Mythic"
+    },
+    {
+      "id": "lair",
+      "name": "Has lair"
+    }
+  ],
+  "features": [
+    {
+      "id": "traits",
+      "name": "Traits",
+      "one": "Trait"
+    },
+    {
+      "id": "actions",
+      "name": "Actions",
+      "one": "Action"
+    },
+    {
+      "id": "bonus_actions",
+      "name": "Bonus Actions",
+      "one": "Bonus action"
+    },
+    {
+      "id": "reactions",
+      "name": "Reactions",
+      "one": "Reaction"
+    },
+    {
+      "id": "legendary_actions",
+      "name": "Legendary Actions",
+      "one": "Legendary action"
+    }
+  ],
+  "formulas": {
+    "modifier": "floor((score - 10) / 2)",
+    "save": "mod + prof * tier",
+    "skill": "mod + prof * tier",
+    "passivePerception": "10 + skill.perception",
+    "initiative": "mod.dex + prof * tier",
+    "initiativeScore": "10 + initiative",
+    "hitPoints": "max(1, floor(dice * (die + 1) / 2) + dice * mod.con)",
+    "hitBonus": "dice * mod.con"
+  }
+}
