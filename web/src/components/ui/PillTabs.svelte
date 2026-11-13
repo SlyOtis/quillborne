@@ -9,7 +9,6 @@
 </script>
 
 <script lang="ts">
-  import { onMount, untrack } from 'svelte'
   import Glyph from './Glyph.svelte'
 
   let {
@@ -32,23 +31,6 @@
   } = $props()
 
   let root = $state<HTMLElement>()
-  let template = $state('')
-  let lit = $state(false)
-
-  function measure() {
-    if (!root) return
-    const tabs = Array.from(root.querySelectorAll<HTMLElement>(':scope > .dnd-pilltabs-tab'))
-    const on = tabs[options.findIndex((one) => one.value === value)]
-    if (!on) {
-      lit = false
-      return
-    }
-    const start = on.offsetLeft
-    const end = start + on.offsetWidth
-    const total = root.scrollWidth
-    template = [start, end - start, Math.max(0, total - end)].map((size) => `${Math.round(size * 100) / 100}fr`).join(' ')
-    lit = true
-  }
 
   function pick(next: string) {
     value = next
@@ -64,26 +46,10 @@
     pick(next)
     root?.querySelector<HTMLElement>(`[data-value="${next}"]`)?.focus()
   }
-
-  $effect(() => {
-    void value
-    void even
-    void options
-    untrack(measure)
-  })
-
-  onMount(() => {
-    if (!root) return
-    const observer = new ResizeObserver(() => untrack(measure))
-    observer.observe(root)
-    return () => observer.disconnect()
-  })
 </script>
 
 <div bind:this={root} class="dnd-pilltabs" class:dnd-pilltabs-even={even} role="tablist">
-  <div class="dnd-pilltabs-track" style:grid-template-columns={template} aria-hidden="true">
-    <span class="dnd-pilltabs-indicator" class:dnd-pilltabs-indicator-on={lit}></span>
-  </div>
+  <span class="dnd-pilltabs-indicator" aria-hidden="true"></span>
   {#each options as one (one.value)}
     <button
       type="button"
@@ -107,6 +73,12 @@
 <style>
   .dnd-pilltabs {
     --pilltabs-radius: var(--radius-sm);
+    --pilltabs-face:
+      radial-gradient(ellipse 80% 90% at 50% 110%, var(--ember-glow) 0%, transparent 70%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 26%, transparent) 0%, color-mix(in srgb, #000 30%, transparent) 100%),
+      var(--texture-noise),
+      var(--stone);
+    --pilltabs-ring: inset 0 0 0 1px var(--keyline), inset 0 0 0 2px var(--metal), inset 0 3px 0 2px var(--sheen);
     position: relative;
     isolation: isolate;
     display: inline-grid;
@@ -119,33 +91,32 @@
     box-shadow: var(--rim-thin), var(--bevel-down);
   }
 
-  .dnd-pilltabs-track {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    display: grid;
-    grid-template-rows: 100%;
-    pointer-events: none;
-    transition: grid-template-columns 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  .dnd-pilltabs-tab-on {
+    anchor-name: --pilltabs-on;
   }
 
   .dnd-pilltabs-indicator {
-    grid-row: 1;
-    grid-column: 2;
-    min-inline-size: 0;
+    position: absolute;
+    position-anchor: --pilltabs-on;
+    inset-block: anchor(top) anchor(bottom);
+    inset-inline: anchor(left) anchor(right);
+    z-index: 0;
     border-radius: calc(var(--pilltabs-radius) - var(--border-hair));
-    background:
-      radial-gradient(ellipse 80% 90% at 50% 110%, var(--ember-glow) 0%, transparent 70%),
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 26%, transparent) 0%, color-mix(in srgb, #000 30%, transparent) 100%),
-      var(--texture-noise),
-      var(--stone);
-    box-shadow: inset 0 0 0 1px var(--keyline), inset 0 0 0 2px var(--metal), inset 0 3px 0 2px var(--sheen);
-    opacity: 0;
-    transition: opacity 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+    background: var(--pilltabs-face);
+    box-shadow: var(--pilltabs-ring);
+    pointer-events: none;
+    transition: inset 0.28s cubic-bezier(0.32, 0.72, 0, 1);
   }
 
-  .dnd-pilltabs-indicator-on {
-    opacity: 1;
+  @supports not (anchor-name: --pilltabs-on) {
+    .dnd-pilltabs-indicator {
+      display: none;
+    }
+
+    .dnd-pilltabs-tab-on {
+      background: var(--pilltabs-face);
+      box-shadow: var(--pilltabs-ring);
+    }
   }
 
   .dnd-pilltabs-tab {
@@ -158,7 +129,7 @@
     min-width: 0;
     padding: var(--space-1) var(--space-3);
     border: none;
-    border-radius: inherit;
+    border-radius: calc(var(--pilltabs-radius) - var(--border-hair));
     background: transparent;
     font-family: var(--font-display);
     font-size: var(--text-xs);
@@ -197,7 +168,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .dnd-pilltabs-track,
     .dnd-pilltabs-indicator,
     .dnd-pilltabs-tab {
       transition: none;

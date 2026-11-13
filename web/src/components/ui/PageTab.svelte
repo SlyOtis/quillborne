@@ -9,7 +9,6 @@
 </script>
 
 <script lang="ts">
-  import { onMount, tick } from 'svelte'
   import Glyph from './Glyph.svelte'
   import IconBtn from './IconBtn.svelte'
 
@@ -36,67 +35,46 @@
   } = $props()
 
   let listEl = $state<HTMLElement>()
-  let overflowing = $state(false)
-  let atStart = $state(true)
-  let atEnd = $state(false)
 
   const active = $derived(value ?? tabs[0]?.id ?? null)
-
-  function measure() {
-    const list = listEl
-    if (!list) return
-    overflowing = list.scrollWidth > list.clientWidth + 1
-    atStart = list.scrollLeft <= 1
-    atEnd = list.scrollLeft + list.clientWidth >= list.scrollWidth - 1
-  }
 
   function scrollBy(direction: number) {
     const list = listEl
     if (!list) return
     list.scrollBy({ left: direction * list.clientWidth * 0.7, behavior: 'smooth' })
   }
-
-  $effect(() => {
-    void tabs.length
-    void tick().then(measure)
-  })
-
-  onMount(() => {
-    if (!listEl) return
-    const observer = new ResizeObserver(() => measure())
-    observer.observe(listEl)
-    return () => observer.disconnect()
-  })
 </script>
 
 <div class="dnd-pagetab">
-  {#if overflowing}
-    <IconBtn title="Earlier pages" disabled={atStart} onclick={() => scrollBy(-1)}>
-      <Glyph name="prev" size="sm" />
-    </IconBtn>
-  {/if}
+  <div bind:this={listEl} class="dnd-pagetab-list">
+    <span class="dnd-pagetab-arrow dnd-pagetab-arrow-start">
+      <IconBtn title="Earlier pages" onclick={() => scrollBy(-1)}>
+        <Glyph name="prev" size="sm" />
+      </IconBtn>
+    </span>
 
-  <div bind:this={listEl} class="dnd-pagetab-list" role="tablist" onscroll={measure}>
-    {#each tabs as tab (tab.id)}
-      <button
-        type="button"
-        role="tab"
-        aria-selected={tab.id === active}
-        class="dnd-pagetab-item"
-        class:dnd-pagetab-item-on={tab.id === active}
-        onclick={() => onchange?.(tab.id)}
-      >
-        <span class="dnd-pagetab-glyph"><Glyph name={tab.glyph ?? glyph} size="sm" /></span>
-        <span class="dnd-pagetab-label">{tab.label}</span>
-      </button>
-    {/each}
+    <div class="dnd-pagetab-tabs" role="tablist">
+      {#each tabs as tab (tab.id)}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab.id === active}
+          class="dnd-pagetab-item"
+          class:dnd-pagetab-item-on={tab.id === active}
+          onclick={() => onchange?.(tab.id)}
+        >
+          <span class="dnd-pagetab-glyph"><Glyph name={tab.glyph ?? glyph} size="sm" /></span>
+          <span class="dnd-pagetab-label">{tab.label}</span>
+        </button>
+      {/each}
+    </div>
+
+    <span class="dnd-pagetab-arrow dnd-pagetab-arrow-end">
+      <IconBtn title="Later pages" onclick={() => scrollBy(1)}>
+        <Glyph name="next" size="sm" />
+      </IconBtn>
+    </span>
   </div>
-
-  {#if overflowing}
-    <IconBtn title="Later pages" disabled={atEnd} onclick={() => scrollBy(1)}>
-      <Glyph name="next" size="sm" />
-    </IconBtn>
-  {/if}
 
   {#if addLabel}
     <IconBtn title={addLabel} onclick={onadd}>
@@ -116,9 +94,9 @@
   }
 
   .dnd-pagetab-list {
+    container-type: scroll-state;
     display: flex;
     align-items: stretch;
-    gap: var(--space-1);
     flex: 1 1 auto;
     min-width: 0;
     overflow-x: auto;
@@ -127,6 +105,42 @@
 
   .dnd-pagetab-list::-webkit-scrollbar {
     display: none;
+  }
+
+  .dnd-pagetab-tabs {
+    display: flex;
+    align-items: stretch;
+    gap: var(--space-1);
+    flex: 1 0 auto;
+  }
+
+  .dnd-pagetab-arrow {
+    position: sticky;
+    z-index: 1;
+    display: none;
+    flex: none;
+    align-items: center;
+    background: var(--ground);
+  }
+
+  .dnd-pagetab-arrow-start {
+    inset-inline-start: 0;
+  }
+
+  .dnd-pagetab-arrow-end {
+    inset-inline-end: 0;
+  }
+
+  @container scroll-state(scrollable: inline-start) {
+    .dnd-pagetab-arrow-start {
+      display: flex;
+    }
+  }
+
+  @container scroll-state(scrollable: inline-end) {
+    .dnd-pagetab-arrow-end {
+      display: flex;
+    }
   }
 
   .dnd-pagetab-item {
