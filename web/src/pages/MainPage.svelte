@@ -117,7 +117,10 @@
         </div>
       {/if}
       <div class="hall-hero-latest">
-        <p class="dnd-label hall-hero-last-label">Latest</p>
+        <header class="hall-divide">
+          <h2 class="dnd-label hall-divide-name">Latest</h2>
+          <span class="hall-divide-run"></span>
+        </header>
         <div class="hall-hero-last">
           {#if newestCampaign}
             <Card title={newestCampaign.name} sub={newestCampaign.description} tone="verdigris" badge={newestCampaign.is_active ? 'live' : undefined} onclick={() => navigate(`/main/campaign/${newestCampaign.id}`)}>
@@ -238,8 +241,8 @@
     min-width: 0;
     min-block-size: calc(var(--space-8) * 2);
     justify-content: center;
-    margin-inline-end: calc(var(--space-7) * -1);
-    padding: var(--space-4) calc(var(--space-8) + var(--space-3)) var(--space-4) calc(var(--flag-tail) + var(--space-4));
+    margin-inline-end: calc(var(--space-8) * -1);
+    padding: var(--space-4) calc(var(--space-8) + var(--space-5)) var(--space-4) calc(var(--flag-tail) + var(--space-4));
     color: var(--ink);
     text-decoration: none;
     text-align: end;
@@ -304,11 +307,6 @@
     grid-template-columns: repeat(auto-fit, minmax(min(calc(var(--space-8) * 3), 100%), 1fr));
     gap: var(--space-3);
     min-width: 0;
-  }
-
-  .hall-hero-last-label {
-    margin: 0;
-    color: var(--metal);
   }
 
   .hall-hero-word {
