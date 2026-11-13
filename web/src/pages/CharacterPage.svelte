@@ -561,7 +561,7 @@
       <ShortRestDialog bind:isOpen={shortResting} />
 
       <div class="sheet-still" class:sheet-still-on={reading} use:still={reading}>
-        <HitPoints/>
+        <HitPoints onrest={() => (shortResting = true)} />
       </div>
     </div>
 

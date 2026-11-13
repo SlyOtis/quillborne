@@ -10,16 +10,20 @@
     putTemporaryHitPoints,
     rollDeathSave,
     updateCharacterWithChangeLog
-  , rollDie, writeRollLog} from "$lib/engine";
+  } from "$lib/engine";
   import IconBtn from "$components/ui/IconBtn.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
   import Ornament from "$components/ui/Ornament.svelte";
+
+  const {onrest}: {
+    /** Runs when the player asks to roll hit dice, and opens the short rest. */
+    onrest?: () => void
+  } = $props()
 
   const {info} = getContext<CharacterContext>('character')
   const rules = getContext<Readable<RulesState>>('rules')
 
   let amount = $state(1)
-  let dice = $state(1)
 
   const hp = $derived($info.hp)
   const percent = $derived(hp.max > 0 ? Math.max(0, Math.min(100, (hp.current / hp.max) * 100)) : 0)
@@ -34,7 +38,6 @@
     {at: 93, size: 0.44, wait: 1.8, time: 8.1, sway: -1}
   ]
   const scope = $derived($rules.resolved?.scope)
-  const hitDice = $derived($rules.resolved?.pools.find(pool => pool.id === 'hitDice'))
   const saves = $derived(hp.deathSaves ?? {successes: 0, failures: 0})
   const successes = $derived(scope?.['derived.deathSaveSuccesses'] ?? 0)
   const failures = $derived(scope?.['derived.deathSaveFailures'] ?? 0)
@@ -73,13 +76,6 @@
     window.dispatchEvent(new CustomEvent('playHealSpell'))
   }
 
-  async function rollHitDice() {
-    const die = $info.class?.hitDice?.die || 8
-    const count = Math.max(1, Math.floor(dice))
-    const res = await rollDie(die, count)
-    writeRollLog('roll', `Rolled ${count} hit dice`, `${count}d${die}`, res.sum, res.sum, res.rolls.join(','))
-  }
-
   async function deathSave() {
     if (!scope) return
     await rollDeathSave(scope)
@@ -88,6 +84,7 @@
 
 <div class="vitals" style="--vitals-fill: {percent}%">
   <span class="dnd-label vitals-title">Hit Points</span>
+  <IconBtn title="Roll hit dice" disabled={!$rules.resolved} onclick={onrest}><Glyph name="dice" size="md" /></IconBtn>
   <span class="vitals-potion" aria-hidden="true">
     <span class="vitals-wave vitals-wave-back"></span>
     <span class="vitals-wave vitals-wave-mid"></span>
@@ -121,12 +118,6 @@
         </span>
         <IconBtn title="Heal {amount}, up to the maximum" tone="verdigris" onclick={heal}><Glyph name="add" size="sm" /></IconBtn>
         <IconBtn title="Take {amount} damage, temporary hit points first" tone="ember" onclick={damage}><Glyph name="minus" size="sm" /></IconBtn>
-      </span>
-      <span class="vitals-step" role="group" aria-label="Hit dice">
-        <span class="vitals-cell" title="How many hit dice to roll">
-          <input class="dnd-num vitals-amount" type="number" min="0" max={hitDice?.remaining ?? 0} bind:value={dice} aria-label="Hit dice to roll" />
-        </span>
-        <IconBtn title="Roll {dice} hit dice" disabled={!$rules.resolved} onclick={rollHitDice}><Glyph name="dice" size="sm" /></IconBtn>
       </span>
     </div>
 
@@ -297,6 +288,13 @@
     border-radius: var(--radius-sm);
     background: var(--texture-noise), var(--ground-deep);
     box-shadow: 0 var(--space-0) var(--space-1) var(--shade-hard);
+  }
+
+  .vitals > :global(.dnd-iconbtn) {
+    position: absolute;
+    inset-block-start: var(--space-1);
+    inset-inline-end: var(--space-1);
+    z-index: 2;
   }
 
   .vitals-body {
