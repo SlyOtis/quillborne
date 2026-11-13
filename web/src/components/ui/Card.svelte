@@ -11,8 +11,6 @@
     tone = 'metal',
     layout = 'row',
     frame = 'thin',
-    rim,
-    holder,
     on = false,
     onclick,
     children
@@ -31,10 +29,6 @@
     layout?: 'row' | 'tile' | 'face'
     /** Heavy rings the card in the full gilt rim and lights its keyline, the mark of the reader's own. */
     frame?: 'thin' | 'heavy'
-    /** Colours the tile's border with the player's own colour at a campaign table. */
-    rim?: 'ember' | 'verdigris' | 'metal' | 'good'
-    /** The player who holds the character, drawn as a small shield on the tile's top left corner. */
-    holder?: { name: string; image?: string }
     /** Marks the card as the one being read. */
     on?: boolean
     /** Runs when the card is pressed. */
@@ -50,12 +44,6 @@
   type="button"
   class="dnd-card dnd-card-{tone} dnd-card-{layout} dnd-card-{frame}"
   class:dnd-card-on={on}
-  class:dnd-card-rimmed={layout === 'tile' && Boolean(rim)}
-  class:dnd-card-rim-ember={layout === 'tile' && rim === 'ember'}
-  class:dnd-card-rim-verdigris={layout === 'tile' && rim === 'verdigris'}
-  class:dnd-card-rim-metal={layout === 'tile' && rim === 'metal'}
-  class:dnd-card-rim-good={layout === 'tile' && rim === 'good'}
-  class:dnd-card-held={layout === 'tile' && Boolean(holder)}
   aria-current={on ? 'page' : undefined}
   {onclick}
 >
@@ -82,16 +70,6 @@
 
   {#if badge}
     <span class="dnd-card-badge">{badge}</span>
-  {/if}
-
-  {#if layout === 'tile' && holder}
-    <span class="dnd-card-holder" title={holder.name}>
-      {#if holder.image}
-        <StoredImage src={holder.image} alt="" />
-      {:else}
-        <span class="dnd-card-holder-initial">{holder.name.charAt(0).toUpperCase()}</span>
-      {/if}
-    </span>
   {/if}
 </button>
 
@@ -162,77 +140,6 @@
     gap: var(--space-3);
     width: 11.4rem;
     padding: var(--space-3);
-    --card-rim: var(--metal-dim);
-  }
-
-  .dnd-card-rim-ember {
-    --card-rim: var(--ember);
-  }
-
-  .dnd-card-rim-verdigris {
-    --card-rim: var(--verdigris);
-  }
-
-  .dnd-card-rim-metal {
-    --card-rim: var(--metal);
-  }
-
-  .dnd-card-rim-good {
-    --card-rim: var(--state-good);
-  }
-
-  .dnd-card-rimmed {
-    box-shadow: 0 0 0 var(--border-hair) var(--keyline), 0 0 0 calc(var(--border-hair) * 3) var(--card-rim), inset 0 0 18px 2px var(--shade-hard), var(--shadow-sm), 0 0 12px color-mix(in srgb, var(--card-rim) 35%, transparent);
-  }
-
-  .dnd-card-rimmed::after {
-    border-color: color-mix(in srgb, var(--card-rim) 70%, transparent);
-    opacity: 0.9;
-  }
-
-  .dnd-card-holder {
-    --holder-rim: calc(var(--border-hair) * 2);
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 3;
-    transform: translate(-50%, -50%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    inline-size: calc(var(--space-6) + var(--space-1));
-    aspect-ratio: 100 / 120;
-    padding: var(--holder-rim);
-    background: linear-gradient(180deg, color-mix(in srgb, var(--card-rim) 80%, var(--metal-bright)) 0%, var(--card-rim) 60%, color-mix(in srgb, var(--card-rim) 70%, var(--keyline)) 100%);
-    -webkit-mask: var(--mask-shield) center / 100% 100% no-repeat;
-    mask: var(--mask-shield) center / 100% 100% no-repeat;
-    filter: drop-shadow(0 var(--space-0) var(--space-1) var(--shade-hard));
-    color: var(--card-rim);
-    font-family: var(--font-display);
-    font-size: var(--text-sm);
-    font-weight: 700;
-  }
-
-  .dnd-card-holder::before {
-    content: '';
-    position: absolute;
-    inset: var(--holder-rim);
-    background: radial-gradient(circle at 50% 35%, var(--ground-lift) 0%, var(--ground-deep) 85%);
-    -webkit-mask: var(--mask-shield) center / 100% 100% no-repeat;
-    mask: var(--mask-shield) center / 100% 100% no-repeat;
-  }
-
-  .dnd-card-holder :global(img) {
-    position: relative;
-    inline-size: 100%;
-    block-size: 100%;
-    object-fit: cover;
-    -webkit-mask: var(--mask-shield) center / 100% 100% no-repeat;
-    mask: var(--mask-shield) center / 100% 100% no-repeat;
-  }
-
-  .dnd-card-holder-initial {
-    position: relative;
   }
 
   .dnd-card-face {

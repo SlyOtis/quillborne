@@ -2,24 +2,18 @@
   import Glyph from "$components/ui/Glyph.svelte";
   import { navigate } from "sly-svelte-location-router";
   import { getRecentFirst, userCharacters } from "$lib/stores/character.store";
-  import { userCampaigns } from "$lib/stores/campaign.store";
   import { userProfile } from "$lib/stores/auth.store";
-  import type { Profile } from "$lib/api/types";
   import Card from "$components/ui/Card.svelte";
 
   let {
     loading = false,
     search = '',
-    open = $bindable(false),
-    profiles = {} as Record<string, Profile>
+    open = $bindable(false)
   }: {
     loading?: boolean
     search?: string
     open?: boolean
-    profiles?: Record<string, Profile>
   } = $props();
-
-  const RIMS = ['ember', 'verdigris', 'metal', 'good'] as const;
 
   let shown = $derived(getRecentFirst($userCharacters, $userProfile?.preferences?.recent_characters ?? []).filter((entry) =>
     entry.metadata.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -28,20 +22,6 @@
   ));
 
   const folded = $derived(shown.length > 6);
-
-  function getRim(campaignId: string | undefined, ownerId: string) {
-    const campaign = $userCampaigns.find((one) => one.id === campaignId);
-    if (!campaign) return undefined;
-    const seats = [campaign.dm_id, ...campaign.player_ids.filter((id) => id !== campaign.dm_id)];
-    const at = seats.indexOf(ownerId);
-    return at === -1 ? undefined : RIMS[at % RIMS.length];
-  }
-
-  function getHolder(campaignId: string | undefined, ownerId: string) {
-    if (!campaignId) return undefined;
-    const profile = profiles[ownerId];
-    return { name: profile?.display_name || profile?.email || 'A player', image: profile?.photo_url || undefined };
-  }
 
   function openCharacter(characterId: string) {
     navigate(`/main/character/${characterId}`);
@@ -66,8 +46,6 @@
         image={entry.character.info?.imageUrl}
         badge={entry.metadata.status === 'draft' ? 'Draft' : `Lv ${entry.metadata.level}`}
         tone="ember"
-        rim={getRim(entry.campaign_id, entry.owner_id)}
-        holder={getHolder(entry.campaign_id, entry.owner_id)}
         onclick={() => openCharacter(entry.id)}
       >
         <span class="roll-kin">{entry.metadata.race}</span>

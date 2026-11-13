@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { getCampaigns, getCharacters, getProfiles } from '$lib/api'
-  import type { Campaign, Profile } from '$lib/api/types'
+  import { getCampaigns, getCharacters } from '$lib/api'
+  import type { Campaign } from '$lib/api/types'
   import { getTheme, setTheme } from "$lib/dialogs/theme";
   import { onMount, setContext, onDestroy } from "svelte";
   import { getCharacterStore } from "$lib/engine";
@@ -38,7 +38,6 @@
   let characterSearch = $state('');
   let campaignsOpen = $state(false);
   let charactersOpen = $state(false);
-  let profiles = $state<Record<string, Profile>>({});
   let lore = $state<{ entry: Resource; campaign: Campaign | null }[]>([]);
 
   const name = $derived($userDetails?.display_name || $userProfile?.display_name || 'Adventurer');
@@ -55,8 +54,6 @@
       ]);
       userCharacters.set(characters);
       userCampaigns.set(campaigns);
-      const holders = await getProfiles(characters.filter((one) => one.campaign_id).map((one) => one.owner_id));
-      profiles = Object.fromEntries(holders.map((one) => [one.user_id, one]));
       const shelves = await Promise.all(campaigns.map(async (campaign) => (await getAll({ at: 'campaign', id: campaign.id }, 'entries')).map((entry) => ({ entry, campaign }))));
       lore = shelves.flat().sort((a, b) => String(b.entry.created_at ?? '').localeCompare(String(a.entry.created_at ?? ''))).slice(0, 6);
     } catch (err) {
@@ -134,7 +131,7 @@
         <IconBtn title={charactersOpen ? 'Collapse the characters' : 'Expand all characters'} onclick={() => (charactersOpen = !charactersOpen)}><Glyph name={charactersOpen ? 'fold' : 'unfold'} size="sm" /></IconBtn>
         <IconBtn title="Forge a new character" onclick={createCharacter}><Glyph name="character" size="sm" /></IconBtn>
       </header>
-      <CharactersPanel {loading} bind:open={charactersOpen} {profiles} />
+      <CharactersPanel {loading} bind:open={charactersOpen} />
     </section>
 
     <section class="hall-plot hall-plot-lore" aria-label="Lore">
