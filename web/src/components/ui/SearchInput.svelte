@@ -63,7 +63,9 @@
   }
 
   onMount(() => {
-    if (autofocus) inputEl?.focus()
+    if (!autofocus || !inputEl) return
+    inputEl.focus()
+    inputEl.setSelectionRange(value.length, value.length)
   })
 </script>
 

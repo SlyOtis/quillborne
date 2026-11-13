@@ -11,6 +11,7 @@
   import Tree, { type TreeRow } from '$components/ui/Tree.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
   import Glyph, { type GlyphName } from '$components/ui/Glyph.svelte'
+  import Crest from '$components/ui/Crest.svelte'
   import PillTabs, { type PillTab } from '$components/ui/PillTabs.svelte'
   import SearchInput from '$components/ui/SearchInput.svelte'
   import { actionBlocks, getAction, shortcuts } from '$lib/actions'
@@ -19,29 +20,41 @@
   let campaign = $state<Campaign | null>(null)
   let loading = $state(false)
   let error = $state<string | null>(null)
-  let open = $state(['characters', 'campaigns'])
+  const arrived = new URLSearchParams(location.search)
+  let open = $state(arrived.get('folds')?.split(',').filter(Boolean) ?? ['characters', 'campaigns'])
   let reached = $state('')
   let hunt = $state('')
 
-  type Tab = 'campaign' | 'character' | 'scribe'
+  type Tab = 'table' | 'scribe'
   const TABS: PillTab[] = [
-    { value: 'campaign', label: 'Campaign' },
-    { value: 'character', label: 'Character' },
+    { value: 'table', label: 'Table' },
     { value: 'scribe', label: 'Scribe' }
   ]
   const TAB_KEY = 'quillborne.menu.tab'
   const isTab = (held: string | null): held is Tab => TABS.some((one) => one.value === held)
 
   function readTab(): Tab {
+    const named = arrived.get('menu')
+    if (isTab(named)) return named
     try {
       const held = sessionStorage.getItem(TAB_KEY)
-      return isTab(held) ? held : 'campaign'
+      return isTab(held) ? held : 'table'
     } catch {
-      return 'campaign'
+      return 'table'
     }
   }
 
   let tab = $state<Tab>(readTab())
+
+  function putQuery(changes: Record<string, string | null>) {
+    const next = new URLSearchParams($resolvedRoute.search ?? '')
+    for (const [key, value] of Object.entries(changes)) {
+      if (value) next.set(key, value)
+      else next.delete(key)
+    }
+    const search = next.toString()
+    navigate(`${$resolvedRoute.path}${search ? `?${search}` : ''}`)
+  }
 
   function pickTab(next: string) {
     if (!isTab(next)) return
@@ -49,6 +62,7 @@
     try {
       sessionStorage.setItem(TAB_KEY, next)
     } catch {}
+    putQuery({ menu: next })
   }
 
   const steps = $derived($resolvedRoute.path.split('/').filter(Boolean).slice(1))
@@ -85,7 +99,7 @@
   const mine = $derived($userCharacters.filter((entry) => entry.owner_id === $user?.user_id && !isNpc(entry) && entry.campaign_id === campaignId))
   const activeId = $derived($userProfile?.preferences?.active_characters?.[campaignId])
   const current = $derived(
-    $userCharacters.find((one) => one.id === ($currentCharacterId ?? activeId ?? $userProfile?.preferences?.recent_characters?.[0])) ?? mine[0] ?? null
+    $userCharacters.find((one) => one.id === ($currentCharacterId ?? activeId ?? $userProfile?.preferences?.recent_characters?.[0])) ?? null
   )
   const searchKey = navigator.userAgent.includes('Mac') ? 'Cmd K' : 'Ctrl K'
   const name = $derived($userDetails?.display_name || $userProfile?.display_name || 'Adventurer')
@@ -132,6 +146,7 @@
 
   function toggle(id: string) {
     open = open.includes(id) ? open.filter((held) => held !== id) : [...open, id]
+    putQuery({ folds: open.join(',') || null })
   }
 
   function openCampaign(where = '') {
@@ -193,7 +208,7 @@
     <PillTabs value={tab} options={TABS} name="menu" onchange={pickTab} />
     <span class="dnd-menu-rail-acts">
       <IconBtn title="Home" active={$currentRoute.path === '/main'} onclick={() => navigate('/main')}>
-        <Glyph name="home" size="sm" />
+        <Crest />
       </IconBtn>
       <IconBtn title="Open scribe" active={$currentRoute.path === '/main/scribe'} onclick={() => navigate('/main/scribe')}>
         <Glyph name="edit" size="sm" />
@@ -206,10 +221,7 @@
       <p class="dnd-menu-note" role="alert">{error}</p>
     {/if}
 
-    {#if tab === 'campaign'}
-      {@render section('campaigns', 'Campaigns', $userCampaigns.length, tables)}
-      {@render roll('items')}
-    {:else if tab === 'character'}
+    {#if tab === 'table'}
       {#if current}
         <div class="dnd-menu-tree dnd-menu-current">
           <Tree rows={[sheetOf(current)]} on={steps[0] === 'character' ? (steps[1] ?? '') : ''} onopen={openCharacter} />
@@ -217,9 +229,11 @@
       {:else}
         <p class="dnd-menu-empty dnd-menu-current">You have no character yet.</p>
       {/if}
+      {@render section('campaigns', 'Campaigns', $userCampaigns.length, tables)}
       {#if mine.length > 1}
         {@render section('characters', 'Characters', mine.length, roster)}
       {/if}
+      {@render roll('items')}
     {:else}
       <div class="dnd-menu-pages">
         <SearchInput bind:value={hunt} placeholder="Search the pages..." />

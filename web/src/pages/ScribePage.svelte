@@ -35,21 +35,43 @@
     !ready ? null : campaign ? { at: 'campaign' as const, id: campaign.id } : $user ? { at: 'user' as const, id: $user.user_id } : null
   )
 
+  const query = $derived(new URLSearchParams($resolvedRoute.search ?? ''))
+  const openId = $derived(query.get('page') ?? '')
+  const view = $derived<View>(query.get('view') === 'tree' || query.get('view') === 'list' ? (query.get('view') as View) : 'grid')
+  const order = $derived<Order>(query.get('order') === 'written' ? 'written' : 'title')
+  const descending = $derived(query.get('desc') === '1')
+  const byTag = $derived(query.get('by') === 'tag')
+  const picked = $derived((query.get('tags') ?? '').split(',').filter(Boolean))
+  const mode = $derived<Mode>(query.get('mode') === 'edit' ? 'edit' : 'read')
+
   let pages = $state<Resource[]>([])
-  let hunt = $state('')
-  let picked = $state<string[]>([])
-  let view = $state<View>('grid')
-  let order = $state<Order>('title')
-  let descending = $state(false)
-  let byTag = $state(false)
-  let mode = $state<Mode>('read')
+  let hunt = $state(new URLSearchParams($resolvedRoute.search ?? '').get('q') ?? '')
   let loading = $state(true)
   let saving = $state(false)
   let media = $state<{ kind: MediaKind; current?: string; resolve: (asset: MediaAsset | null) => void } | null>(null)
   let timer: ReturnType<typeof setTimeout> | undefined
+  let huntTimer: ReturnType<typeof setTimeout> | undefined
+  let pending: Resource | null = null
   let loadedFor = ''
 
-  const openId = $derived(new URLSearchParams($resolvedRoute.search ?? '').get('page') ?? '')
+  function put(changes: Record<string, string | null>) {
+    const next = new URLSearchParams($resolvedRoute.search ?? '')
+    for (const [key, value] of Object.entries(changes)) {
+      if (value) next.set(key, value)
+      else next.delete(key)
+    }
+    const search = next.toString()
+    navigate(`/main/scribe${search ? `?${search}` : ''}`)
+  }
+
+  function seekPages(text: string) {
+    hunt = text
+    clearTimeout(huntTimer)
+    huntTimer = setTimeout(() => {
+      if (text !== (query.get('q') ?? '')) put({ q: text || null })
+    }, SAVE_DELAY)
+  }
+
   const open = $derived(pages.find((one) => one.id === openId) ?? null)
   const trail = $derived(open ? getTrail(pages, open.id) : [])
   const wanted = $derived(hunt.trim().toLowerCase())
@@ -109,13 +131,13 @@
   }
 
   function toggleTag(tag: string) {
-    picked = picked.includes(tag) ? picked.filter((one) => one !== tag) : [...picked, tag]
+    const next = picked.includes(tag) ? picked.filter((one) => one !== tag) : [...picked, tag]
+    put({ tags: next.join(',') || null })
   }
 
-  function show(id: string) {
-    mode = 'read'
-    if (id === openId) return
-    navigate(id ? `/main/scribe?page=${id}` : '/main/scribe')
+  function show(id: string, next: Mode = 'read') {
+    if (id === openId && next === mode) return
+    put({ page: id || null, mode: next === 'edit' ? 'edit' : null })
   }
 
   async function getTable() {
@@ -152,11 +174,13 @@
     if (!open || open.content === content) return
     const held = { ...open, content }
     pages = pages.map((one) => (one.id === held.id ? held : one))
+    pending = held
     clearTimeout(timer)
     timer = setTimeout(() => void save(held), SAVE_DELAY)
   }
 
   async function save(held: Resource) {
+    if (pending === held) pending = null
     saving = true
     try {
       await putResource(held.id, { content: held.content })
@@ -173,8 +197,7 @@
       const id = await postResource(owner, 'entries', { title: 'Untitled', content: '', parent_id: parentId })
       loadedFor = ''
       await getPages()
-      show(id)
-      mode = 'edit'
+      show(id, 'edit')
     } catch (reason) {
       postNotice(reason instanceof Error ? reason.message : String(reason))
     }
@@ -198,8 +221,7 @@
 
   function follow(reference: Reference) {
     if (reference.mark === '#') {
-      picked = [reference.label]
-      show('')
+      put({ page: null, mode: null, tags: reference.label })
       return
     }
     if (reference.id) {
@@ -227,7 +249,11 @@
 
   onMount(() => {
     void getTable()
-    return () => clearTimeout(timer)
+    return () => {
+      clearTimeout(timer)
+      clearTimeout(huntTimer)
+      if (pending) void save(pending)
+    }
   })
 </script>
 
@@ -282,10 +308,10 @@
           {#if saving}<span class="dnd-spinner scribe-saving"></span>{/if}
           {#if open}
             <ToggleGroup label="Mode">
-              <IconBtn title="Edit" active={mode === 'edit'} onclick={() => (mode = 'edit')}>
+              <IconBtn title="Edit" active={mode === 'edit'} onclick={() => show(open.id, 'edit')}>
                 <Glyph name="edit" size="md" />
               </IconBtn>
-              <IconBtn title="Read" active={mode === 'read'} onclick={() => (mode = 'read')}>
+              <IconBtn title="Read" active={mode === 'read'} onclick={() => show(open.id, 'read')}>
                 <Glyph name="reveal" size="md" />
               </IconBtn>
             </ToggleGroup>
@@ -305,7 +331,7 @@
         <PageTab {tabs} value={open.id} addLabel="New page under {strip.main.title}" onchange={show} onadd={() => postPage(strip?.main.id ?? null)} />
       {:else if !open}
         <div class="scribe-bar" role="group" aria-label="Filter the pages">
-          <SearchInput bind:value={hunt} placeholder="Search the pages..." />
+          <SearchInput value={hunt} placeholder="Search the pages..." autofocus={Boolean(hunt)} onsearch={seekPages} />
 
           {#if allTags.length > 0}
             <span class="scribe-bar-tags">
@@ -316,28 +342,28 @@
           {/if}
 
           {#if picked.length > 0}
-            <Button variant="ghost" size="sm" onclick={() => (picked = [])}>Clear</Button>
+            <Button variant="ghost" size="sm" onclick={() => put({ tags: null })}>Clear</Button>
           {/if}
 
           <span class="scribe-views">
             <ToggleGroup label="View" side="end">
               {#snippet actions()}
-                <Chip on={order === 'title'} onclick={() => (order = 'title')}>Title</Chip>
-                <Chip on={order === 'written'} onclick={() => (order = 'written')}>Written</Chip>
-                <IconBtn title={descending ? 'Descending' : 'Ascending'} onclick={() => (descending = !descending)}>
+                <Chip on={order === 'title'} onclick={() => put({ order: null })}>Title</Chip>
+                <Chip on={order === 'written'} onclick={() => put({ order: 'written' })}>Written</Chip>
+                <IconBtn title={descending ? 'Descending' : 'Ascending'} onclick={() => put({ desc: descending ? null : '1' })}>
                   <Glyph name={descending ? 'fold' : 'unfold'} size="sm" />
                 </IconBtn>
                 {#if allTags.length > 0}
-                  <Chip on={byTag} onclick={() => (byTag = !byTag)}>By tag</Chip>
+                  <Chip on={byTag} onclick={() => put({ by: byTag ? null : 'tag' })}>By tag</Chip>
                 {/if}
               {/snippet}
-              <IconBtn title="Grid" active={view === 'grid'} onclick={() => (view = 'grid')}>
+              <IconBtn title="Grid" active={view === 'grid'} onclick={() => put({ view: null })}>
                 <Glyph name="blocks" size="md" />
               </IconBtn>
-              <IconBtn title="Tree" active={view === 'tree'} onclick={() => (view = 'tree')}>
+              <IconBtn title="Tree" active={view === 'tree'} onclick={() => put({ view: 'tree' })}>
                 <Glyph name="lines" size="md" />
               </IconBtn>
-              <IconBtn title="List" active={view === 'list'} onclick={() => (view = 'list')}>
+              <IconBtn title="List" active={view === 'list'} onclick={() => put({ view: 'list' })}>
                 <Glyph name="menu" size="md" />
               </IconBtn>
             </ToggleGroup>
