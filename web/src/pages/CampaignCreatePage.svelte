@@ -178,7 +178,7 @@
   }
 </script>
 
-<Shell title="New Campaign" width="narrow" back={() => navigate('/main')}>
+<Shell title="New Campaign" width="narrow">
   <header class="raise-crown">
     <span class="raise-crest">
       <span class="raise-plate dnd-shield"></span>

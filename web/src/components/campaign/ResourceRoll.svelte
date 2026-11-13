@@ -250,7 +250,7 @@
   </div>
 {/snippet}
 
-<Shell drawers title={shape.many} width="full" back={() => navigate(campaignId ? `/main/campaign/${campaignId}` : "/main")}>
+<Shell drawers title={shape.many} width="full">
   {#snippet nav()}
     <Stops
       stops={SECTIONS.find((one) => one.id === getSection(kind))?.under ?? []}

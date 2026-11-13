@@ -4,7 +4,6 @@
 
   const {
     title,
-    back,
     width = 'wide',
     flush = false,
     drawers = false,
@@ -17,8 +16,6 @@
   }: {
     /** The name written on the bar beside the crest. */
     title: string
-    /** Runs when the back arrow is pressed. The arrow is drawn only when it is given. */
-    back?: () => void
     /** Sets how far the content is allowed to run before it is held in the middle. */
     width?: 'narrow' | 'wide' | 'full'
     /** Drops the padding and the hold so the body fills the content edge to edge. */
@@ -40,7 +37,7 @@
   } = $props()
 
   $effect.pre(() => {
-    const mine = { title, back, width, flush, drawers, backdrop, nav, crown, band, tools }
+    const mine = { title, width, flush, drawers, backdrop, nav, crown, band, tools }
     shell.set(mine)
     return () =>
       shell.update((now) =>

@@ -140,7 +140,7 @@
   }
 </script>
 
-<Shell title="Choose a Class" back={() => navigate('/main/create/character')}>
+<Shell title="Choose a Class">
   <header class="pick-crown">
     <span class="pick-crest">
       <span class="pick-plate dnd-shield"></span>

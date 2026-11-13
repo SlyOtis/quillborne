@@ -494,7 +494,6 @@
   drawers
   title={fresh ? `New ${shape.one}` : one.title || shape.one}
   width="full"
-  back={() => navigate(under)}
   tools={bar && !fresh ? acts : undefined}
 >
   {#if loading}

@@ -235,7 +235,6 @@
 <Shell
   drawers
   title={campaign?.name ?? 'Campaign'}
-  back={() => navigate('/main')}
   width={tab === 'maps' ? 'full' : 'wide'}
   flush={tab === 'maps'}
 >

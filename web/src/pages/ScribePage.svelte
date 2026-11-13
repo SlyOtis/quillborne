@@ -275,7 +275,7 @@
   {#each one.tags as tag (tag)}<Chip still>#{tag}</Chip>{/each}
 {/snippet}
 
-<Shell drawers title="Scribe" width="full" back={() => navigate('/main')} {backdrop}>
+<Shell drawers title="Scribe" width="full" {backdrop}>
   <div class="scribe">
     <header class="scribe-band">
       <div class="scribe-line">
