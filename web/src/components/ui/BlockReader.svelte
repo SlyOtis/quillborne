@@ -4,12 +4,14 @@
     getColumns,
     getDocument,
     getHeadingNumbers,
+    getInline,
     getMeeting,
     getSafeHtml,
     getSlug,
     isAddress,
     type Block,
     type BlockDocument,
+    type Inline,
     type Mention,
     type MentionSearch,
     type Reference
@@ -53,24 +55,15 @@
     document.blocks.flatMap((block) => (block.kind === 'toc' && block.options.placement && block.options.placement !== 'inline' ? [block.options.placement] : []))
   )
 
-  type Run = { text: string; mark?: '@' | '#' }
-
   let cards = $state<Record<string, Mention | null>>({})
   let shown = $state<string | null>(null)
 
-  function runs(text: string): Run[] {
-    const out: Run[] = []
-    let at = 0
+  function runs(text: string): Inline {
+    return getInline(text)
+  }
 
-    for (const hit of text.matchAll(/(^|\s)([@#])([\p{L}\p{N}_-]+)/gu)) {
-      const start = (hit.index ?? 0) + hit[1].length
-      if (start > at) out.push({ text: text.slice(at, start) })
-      out.push({ text: hit[3], mark: hit[2] as '@' | '#' })
-      at = start + hit[2].length + hit[3].length
-    }
-
-    if (at < text.length) out.push({ text: text.slice(at) })
-    return out
+  function paragraphs(text: string): string[] {
+    return text.split('\n\n')
   }
 
   async function hover(mark: '@' | '#', label: string) {
@@ -83,8 +76,16 @@
   }
 
   function leading(block: Block): string | null {
-    const held = block.options.leading
+    const held = block.options.own ? block.options.leading : undefined
     return held ? { tight: '1.25', normal: '1.6', relaxed: '1.8', loose: '2' }[held] : null
+  }
+
+  function face(block: Block): string | null {
+    return block.options.own && block.options.font ? `var(${block.options.font})` : null
+  }
+
+  function sizing(block: Block): string | null {
+    return block.options.own && block.options.size ? `var(--text-${block.options.size})` : null
   }
 
   function wrapping(block: Block): string | null {
@@ -164,8 +165,8 @@
         <div class="dnd-read-html">{@html getSafeHtml(block.text)}</div>
       {:else if block.kind === 'toc' && block.options.placement && block.options.placement !== 'inline'}
         <div class="dnd-read-legend dnd-read-legend-{block.options.placement}">
-          <nav class="dnd-read-toc dnd-read-legend-list" aria-label="Contents">
-            <span class="dnd-label dnd-read-toc-name dnd-read-legend-text">Contents</span>
+          <nav class="dnd-read-toc dnd-read-legend-list" class:dnd-read-toc-bare={block.options.bare} aria-label="Contents">
+            {#if block.options.showTitle !== false}<span class="dnd-label dnd-read-toc-name dnd-read-legend-text">Contents</span>{/if}
             {#each headings as head (head.id)}
               <a class="dnd-read-toc-link dnd-read-legend-link dnd-read-toc-link-{Math.min(head.options.level ?? 1, 4)}" href="#{getSlug(head.text)}">
                 <span class="dnd-read-legend-mark dnd-read-legend-mark-{Math.min(head.options.level ?? 1, 4)}" aria-hidden="true"></span>
@@ -178,8 +179,8 @@
           </nav>
         </div>
       {:else if block.kind === 'toc'}
-        <nav class="dnd-read-toc" aria-label="Contents">
-          <span class="dnd-label dnd-read-toc-name">Contents</span>
+        <nav class="dnd-read-toc" class:dnd-read-toc-bare={block.options.bare} aria-label="Contents">
+          {#if block.options.showTitle !== false}<span class="dnd-label dnd-read-toc-name">Contents</span>{/if}
           {#each headings as head (head.id)}
             <a class="dnd-read-toc-link dnd-read-toc-link-{Math.min(head.options.level ?? 1, 4)}" href="#{getSlug(head.text)}">
               {#if headingNumbering}<span class="dnd-read-number">{numbers[head.id]}</span>{/if}
@@ -200,16 +201,27 @@
           id={getSlug(block.text)}
           class="dnd-heading dnd-read-head dnd-read-head-{block.options.level ?? 1}"
           style:text-align={block.options.align ?? null}
+          style:font-family={face(block)}
+          style:font-size={sizing(block)}
+          style:line-height={leading(block)}
         >
           {#if headingNumbering}<span class="dnd-read-number">{numbers[block.id]}</span>{/if}
           {@render line(block.text)}
         </p>
       {:else if block.kind === 'quote'}
-        <blockquote class="dnd-read-quote" style:text-align={block.options.align ?? null}>{@render line(block.text)}</blockquote>
+        <blockquote class="dnd-read-quote" style:text-align={block.options.align ?? null} style:font-family={face(block)} style:font-size={sizing(block)} style:line-height={leading(block)}>
+          {#each paragraphs(block.text) as paragraph, place (place)}
+            <p class="dnd-read-quote-line">{@render line(paragraph)}</p>
+          {/each}
+        </blockquote>
       {:else if block.kind === 'callout'}
-        <aside class="dnd-read-callout">
-          <span class="dnd-read-sign dnd-read-sign-callout" aria-hidden="true"></span>
-          <span class="dnd-read-callout-body">{@render line(block.text)}</span>
+        <aside class="dnd-read-callout" style:text-align={block.options.align ?? null} style:font-family={face(block)} style:font-size={sizing(block)} style:line-height={leading(block)}>
+          <span class="dnd-read-callout-sign" aria-hidden="true">!</span>
+          <span class="dnd-read-callout-body">
+            {#each paragraphs(block.text) as paragraph, place (place)}
+              <span class="dnd-read-callout-line">{@render line(paragraph)}</span>
+            {/each}
+          </span>
         </aside>
       {:else if block.kind === 'meeting'}
         {@const meeting = getMeeting(block.text)}
@@ -222,17 +234,19 @@
           </span>
         </aside>
       {:else if block.kind === 'todo'}
-        <p class="dnd-read-task dnd-read-item-{depth}" class:dnd-read-task-done={block.options.done} style:--dnd-depth={depth}>
+        <p class="dnd-read-task dnd-read-item-{depth}" class:dnd-read-task-done={block.options.done} style:--dnd-depth={depth} style:font-family={face(block)} style:font-size={sizing(block)} style:line-height={leading(block)}>
           <span class="dnd-read-tick" aria-hidden="true"></span>
           <span class="dnd-read-task-text">{@render line(block.text)}</span>
         </p>
       {:else if block.kind === 'toggle'}
-        <details class="dnd-read-toggle" open={block.options.open}>
+        <details class="dnd-read-toggle" open={block.options.open} style:font-family={face(block)} style:font-size={sizing(block)} style:line-height={leading(block)}>
           <summary class="dnd-read-toggle-band">
             <span class="dnd-read-sign dnd-read-sign-toggle" aria-hidden="true"></span>
-            {block.text.split('\n')[0]}
+            {@render line(block.text.split('\n')[0])}
           </summary>
-          <div class="dnd-read-toggle-body">{@render line(block.text.split('\n').slice(1).join('\n'))}</div>
+          <div class="dnd-read-toggle-body">
+            <BlockReader value={block.text.split('\n').slice(1).join('\n')} {onopen} {onsearch} {onasset} {openAsset} {headingNumbering} {mine} />
+          </div>
         </details>
       {:else if block.kind === 'table'}
         <table
@@ -360,9 +374,9 @@
           </span>
         </a>
       {:else if block.kind === 'bullet'}
-        <p class="dnd-read-item dnd-read-item-bullet dnd-read-item-{depth}" style:--dnd-depth={depth}>{@render line(block.text)}</p>
+        <p class="dnd-read-item dnd-read-item-bullet dnd-read-item-{depth}" style:--dnd-depth={depth} style:font-family={face(block)} style:font-size={sizing(block)} style:line-height={leading(block)}>{@render line(block.text)}</p>
       {:else if block.kind === 'number'}
-        <p class="dnd-read-item dnd-read-item-number dnd-read-item-{depth}" style:--dnd-depth={depth}>{@render line(block.text)}</p>
+        <p class="dnd-read-item dnd-read-item-number dnd-read-item-{depth}" style:--dnd-depth={depth} style:font-family={face(block)} style:font-size={sizing(block)} style:line-height={leading(block)}>{@render line(block.text)}</p>
       {:else}
         <p
           class="dnd-read-line"
@@ -371,7 +385,8 @@
           style:line-height={leading(block)}
           style:white-space={wrapping(block)}
           style:text-wrap={balancing(block)}
-          style:font-size={block.options.size ? `var(--text-${block.options.size})` : null}
+          style:font-family={face(block)}
+          style:font-size={sizing(block)}
         >
           {@render line(block.text)}
         </p>
@@ -380,21 +395,37 @@
   {/each}
 </div>
 
+{#snippet marked(text: string, marks: { bold?: boolean; italic?: boolean; code?: boolean; strike?: boolean; link?: string } | undefined)}
+  {#if marks?.link}
+    <a class="dnd-read-link" href={marks.link} target="_blank" rel="noreferrer noopener">{@render marked(text, { ...marks, link: undefined })}</a>
+  {:else if marks?.strike}
+    <s>{@render marked(text, { ...marks, strike: false })}</s>
+  {:else if marks?.italic}
+    <em>{@render marked(text, { ...marks, italic: false })}</em>
+  {:else if marks?.bold}
+    <strong>{@render marked(text, { ...marks, bold: false })}</strong>
+  {:else if marks?.code}
+    <code class="dnd-read-code-span">{text}</code>
+  {:else}{text}{/if}
+{/snippet}
+
 {#snippet line(text: string)}
   {#each runs(text) as run, index (index)}
-    {#if run.mark}
-      {@const key = `${run.mark}${run.text.toLowerCase()}`}
+    {#if 'ref' in run && run.ref === 'break'}
+      <br />
+    {:else if 'ref' in run}
+      {@const key = `${run.mark}${run.label.toLowerCase()}`}
       <span class="dnd-read-hold">
         <button
           type="button"
           class="dnd-read-ref dnd-read-ref-{run.mark === '@' ? 'who' : 'tag'}"
-          onclick={() => onopen?.({ mark: run.mark!, label: run.text, id: cards[key]?.id })}
-          onpointerenter={() => hover(run.mark!, run.text)}
+          onclick={() => onopen?.({ mark: run.mark, label: run.label, id: run.id ?? cards[key]?.id })}
+          onpointerenter={() => hover(run.mark, run.label)}
           onpointerleave={() => (shown = null)}
-          onfocus={() => hover(run.mark!, run.text)}
+          onfocus={() => hover(run.mark, run.label)}
           onblur={() => (shown = null)}
         >
-          {run.mark}{run.text}
+          {run.mark}{run.label}
         </button>
         {#if shown === key && onsearch}
           {@const card = cards[key]}
@@ -402,12 +433,14 @@
             {#if card?.icon}
               <span class="dnd-read-card-icon"><StoredImage src={card.icon} alt="" /></span>
             {/if}
-            <span class="dnd-read-card-name">{card?.label ?? run.text}</span>
+            <span class="dnd-read-card-name">{card?.label ?? run.label}</span>
             {#if card === null}<span class="dnd-read-card-note">Looking</span>{/if}
           </span>
         {/if}
       </span>
-    {:else}{run.text}{/if}
+    {:else}
+      {@render marked(run.text, run.marks)}
+    {/if}
   {/each}
 {/snippet}
 
@@ -438,7 +471,7 @@
   .dnd-read-head {
     margin: var(--space-3) 0 0;
     color: var(--metal-bright);
-    text-shadow: 0 1px 0 #000, 0 0 10px color-mix(in srgb, var(--ember-glow) 50%, transparent);
+    text-shadow: 0 1px 0 var(--keyline), 0 0 10px color-mix(in srgb, var(--ember-glow) 50%, transparent);
   }
 
   .dnd-read-head-1 {
@@ -547,17 +580,13 @@
     border-radius: var(--radius-pill);
     background: radial-gradient(circle at 38% 30%, var(--stone-light) 0%, var(--stone) 45%, var(--stone-dark) 100%);
     box-shadow: 0 0 0 1px var(--keyline), inset 0 1px 0 var(--sheen), inset 0 -1px 2px var(--shade-hard);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--keyline);
     font-family: var(--font-display);
     font-size: var(--text-xs);
     font-style: normal;
     font-weight: 600;
     line-height: 1;
     color: var(--metal);
-  }
-
-  .dnd-read-sign-callout::before {
-    content: '!';
   }
 
   .dnd-read-sign-meeting::before {
@@ -595,11 +624,35 @@
   }
 
   .dnd-read-quote {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-0);
     margin: 0;
-    padding: var(--space-0) var(--space-2) var(--space-0) var(--space-3);
-    border: var(--border-hair) solid var(--metal);
-    font-style: italic;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--metal) 10%, transparent);
     color: var(--ink-dim);
+  }
+
+  .dnd-read-quote-line {
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  .dnd-read-code-span {
+    padding: 0 var(--space-1);
+    border-radius: var(--radius-sm);
+    background: var(--ground-deep);
+    box-shadow: 0 0 0 1px var(--keyline);
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+
+  .dnd-read-toc-bare {
+    padding: 0;
+    border: none;
+    background: none;
+    box-shadow: none;
   }
 
   .dnd-read-task {
@@ -688,13 +741,13 @@
   .dnd-read-table th {
     border-bottom: var(--border-width) solid var(--metal);
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, var(--keyline) 45%, transparent) 60%, color-mix(in srgb, var(--keyline) 65%, transparent) 100%),
       var(--texture-noise),
       var(--stone);
     box-shadow: var(--bevel-up);
     font-family: var(--font-display);
     color: var(--metal-bright);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--keyline);
   }
 
   .dnd-read-table tr:nth-child(odd) > td {
@@ -881,19 +934,34 @@
   .dnd-read-callout {
     display: flex;
     align-items: flex-start;
-    gap: var(--space-3);
-    padding: var(--space-3) var(--space-4);
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
     border: none;
     border-radius: var(--radius-sm);
-    background:
-      radial-gradient(ellipse 90% 80% at 50% 0%, color-mix(in srgb, var(--ember) 8%, transparent) 0%, transparent 70%),
-      var(--texture-leather),
-      linear-gradient(180deg, var(--ground-lift) 0%, var(--ground-raised) 100%);
-    box-shadow: var(--rim-thin), inset 0 0 18px 2px var(--shade-hard);
+    background: color-mix(in srgb, var(--ember) 10%, transparent);
+  }
+
+  .dnd-read-callout-sign {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--space-4);
+    line-height: 1.6;
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--ember);
+  }
+
+  .dnd-read-callout-line {
+    display: block;
   }
 
   .dnd-read-callout-body {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-0);
     min-width: 0;
     line-height: 1.6;
   }
@@ -919,7 +987,7 @@
     overflow: hidden;
     border: none;
     border-radius: var(--radius-sm);
-    background: var(--texture-noise), linear-gradient(180deg, var(--ground-deep) 0%, #000 100%);
+    background: var(--texture-noise), linear-gradient(180deg, var(--ground-deep) 0%, var(--keyline) 100%);
     box-shadow: var(--rim-thin), var(--bevel-down), inset 0 0 18px 2px var(--shade-hard);
   }
 
@@ -952,12 +1020,12 @@
     margin: 0.1875rem 0.1875rem 0;
     border-bottom: none;
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, var(--keyline) 45%, transparent) 60%, color-mix(in srgb, var(--keyline) 65%, transparent) 100%),
       var(--texture-noise),
       var(--stone);
     box-shadow: var(--bevel-up), 0 1px 0 var(--metal-dim), 0 2px 0 var(--keyline);
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--keyline);
   }
 
   .dnd-read-code pre {
@@ -982,7 +1050,7 @@
 
   .dnd-read-toc-name {
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--keyline);
   }
 
   .dnd-read-toc-link {
