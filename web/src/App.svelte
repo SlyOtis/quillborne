@@ -126,11 +126,6 @@
       roll: () => import("./pages/resource/EntryListPage.svelte"),
       one: () => import("./pages/resource/EntryPage.svelte")
     },
-    npcs: {
-      name: "Npc",
-      roll: () => import("./pages/resource/NpcListPage.svelte"),
-      one: () => import("./pages/resource/NpcPage.svelte")
-    },
     items: {
       name: "Item",
       roll: () => import("./pages/resource/ItemListPage.svelte"),

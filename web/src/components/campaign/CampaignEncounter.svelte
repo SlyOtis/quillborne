@@ -3,7 +3,6 @@
   import type { Campaign, Encounter, EncounterCombatant } from '$lib/api/types'
   import type * as api from '$lib/api/types'
   import { rollDie } from '$lib/engine'
-  import type { Npc } from '$lib/resources'
   import { user } from '$lib/stores/auth.store'
   import Button from '$components/ui/Button.svelte'
   import Field from '$components/ui/Field.svelte'
@@ -18,8 +17,8 @@
     campaign: Campaign
     /** The character sheets brought to the campaign, offered as combatants. */
     characters: api.Character[]
-    /** The characters written into the campaign, offered as combatants. */
-    npcs: Npc[]
+    /** The campaign's characters tagged as NPCs, offered as combatants. */
+    npcs: api.Character[]
   } = $props()
 
   let encounters = $state<Encounter[]>([])
@@ -110,12 +109,12 @@
 
   function joinNpc() {
     const found = npcs.find((entry) => entry.id === npc)
-    const name = found?.title ?? other.trim()
+    const name = found?.metadata.name ?? other.trim()
     if (!name) return
     join({
       name,
       kind: 'npc',
-      ...(found ? { npc_id: found.id } : {}),
+      ...(found ? { character_id: found.id } : {}),
       modifier: bonus,
       hit_points: health,
       max_hit_points: health,
@@ -278,7 +277,7 @@
               <select id="fray-npc" bind:value={npc} disabled={busy}>
                 <option value="">Choose one, or name someone below</option>
                 {#each npcs as entry (entry.id)}
-                  <option value={entry.id}>{entry.title}</option>
+                  <option value={entry.id}>{entry.metadata.name}</option>
                 {/each}
               </select>
             </Field>

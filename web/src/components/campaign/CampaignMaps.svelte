@@ -1,9 +1,9 @@
 <script lang="ts">
   import { deleteCampaignMap, postCampaignMap, postFile, putCampaignMap } from '$lib/api'
-  import type { Campaign, CampaignMap, CampaignRecordKind, MapLayer, MapMarker, MapMarkerKind } from '$lib/api/types'
+  import type { Campaign, CampaignMap, CampaignRecordKind, Character, MapLayer, MapMarker, MapMarkerKind } from '$lib/api/types'
   import { onDestroy, untrack } from 'svelte'
   import { navigate } from 'sly-svelte-location-router'
-  import { RESOURCES, type Npc, type Place } from '$lib/resources'
+  import { RESOURCES, type Place } from '$lib/resources'
   import Button from '$components/ui/Button.svelte'
   import Field from '$components/ui/Field.svelte'
   import Fold from '$components/ui/Fold.svelte'
@@ -34,8 +34,8 @@
     isDm?: boolean
     /** Places a pin can stand for. */
     locations?: Place[]
-    /** People a pin can stand for. */
-    npcs?: Npc[]
+    /** The NPC characters a pin can stand for. */
+    npcs?: Character[]
     /** Every map the campaign holds, newest listener state. */
     maps?: CampaignMap[]
     /** The map on the canvas, bound to whatever drives the table of contents. */
@@ -230,9 +230,9 @@
       const place = locations.find((one) => one.id === pin.record_id)
       if (place) return { name: place.title, note: RESOURCES.places.mark(place), body: place.description, image: place.image, href: `/main/campaign/${campaignId}/places/${place.id}` }
     }
-    if (pin.record_kind === 'npc' && pin.record_id) {
+    if (pin.record_kind === 'character' && pin.record_id) {
       const who = npcs.find((one) => one.id === pin.record_id)
-      if (who) return { name: who.title, note: RESOURCES.npcs.mark(who), body: who.description, image: who.image, href: `/main/campaign/${campaignId}/npcs/${who.id}` }
+      if (who) return { name: who.metadata.name, note: `${who.metadata.race} ${who.metadata.class}`, body: who.character.info.description, image: who.character.info.imageUrl, href: `/main/character/${who.id}` }
     }
 
     return { name: pin.title, note: pin.kind, body: pin.description ?? '', image: '' }
@@ -396,7 +396,7 @@
           >
             <option value="">Nothing</option>
             {#each locations as place}<option value="place:{place.id}">Place — {place.title}</option>{/each}
-            {#each npcs as npc}<option value="npc:{npc.id}">NPC — {npc.title}</option>{/each}
+            {#each npcs as npc}<option value="character:{npc.id}">NPC — {npc.metadata.name}</option>{/each}
           </select>
         </Field>
         <div class="dnd-maps-row">

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getAssets, getAssetTab, getCampaign, postFile, putAttachments, type UploadScope } from '$lib/api'
+  import { getAssets, getAssetTab, getCampaign, getCampaignCharacters, getCharacters, postFile, putAttachments, type UploadScope } from '$lib/api'
   import type { Campaign, Owner } from '$lib/api/types'
   import { onMount, setContext, type Snippet } from 'svelte'
   import { navigate, resolvedRoute } from 'sly-svelte-location-router'
@@ -180,6 +180,13 @@
         navigate(`${base}/${roll}/${found.id}`)
         return
       }
+    }
+
+    const sheets = await (campaignId ? getCampaignCharacters(campaignId) : getCharacters()).catch(() => [])
+    const sheet = sheets.find((entry) => entry.metadata.name.replace(/\s+/g, '').toLowerCase() === wanted)
+    if (sheet) {
+      navigate(`/main/character/${sheet.id}`)
+      return
     }
 
     word = `Nothing on any roll is called ${reference.label}.`
