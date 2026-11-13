@@ -289,6 +289,7 @@
             <h2 class="dnd-label camp-divide-name">Party</h2>
             <span class="camp-divide-note">{seated.length} at the table, {yours} yours, average level {averageLevel}</span>
             <span class="camp-divide-run"></span>
+            <Button variant="secondary" size="sm" onclick={() => navigate(`/main/create/character?campaign=${campaignId}`)}>New</Button>
           </header>
           {#if party.length === 0}
             <p class="camp-note">No character sits at the table yet.</p>
@@ -299,7 +300,6 @@
               {/each}
             </div>
           {/if}
-          {@render create()}
         </section>
 
         <section class="camp-plot camp-plot-npcs" aria-label="NPCs">
@@ -307,10 +307,8 @@
             <h2 class="dnd-label camp-divide-name">NPCs</h2>
             <span class="camp-divide-note">{npcs.length} met</span>
             <span class="camp-divide-run"></span>
-            <IconBtn title="Add an NPC" onclick={addNpc}>
-              <Glyph name="add" size="sm" />
-            </IconBtn>
             {@render fold('npcs', npcs.length)}
+            <Button variant="secondary" size="sm" onclick={addNpc}>New</Button>
           </header>
           {#if npcs.length === 0}
             <p class="camp-note">Nobody has been met yet.</p>
