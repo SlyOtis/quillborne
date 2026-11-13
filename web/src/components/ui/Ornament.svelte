@@ -23,6 +23,8 @@
       | 'quatrefoil'
       | 'finial'
       | 'cusp'
+      | 'forge'
+      | 'portrait'
     /** Scales the vector against the type scale. */
     size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
     /** Colours the vector against the active theme. */
@@ -48,7 +50,9 @@
     tracery: '0 0 96 96',
     quatrefoil: '0 0 64 64',
     finial: '0 0 32 72',
-    cusp: '0 0 72 72'
+    cusp: '0 0 72 72',
+    forge: '0 0 160 96',
+    portrait: '0 0 64 64'
   }
 
   const box = $derived(boxes[name])
@@ -359,6 +363,73 @@
       opacity="0.85"
     />
     <path d="M26 4c0 10-8 18-18 20" stroke="currentColor" stroke-width="1.4" opacity="0.6" stroke-linecap="round" />
+
+  {:else if name === 'forge'}
+    <path
+      d="M34 70C22 64 12 66 4 76c10 4 20 2 30-6Z"
+      class="dnd-ornament-accent"
+      opacity="0.85"
+    />
+    <path
+      d="M126 70c12-6 22-4 30 6-10 4-20 2-30-6Z"
+      class="dnd-ornament-accent"
+      opacity="0.85"
+    />
+    <path d="M58 20 82 50" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" />
+    <path
+      d="M61 7l7 8-17 14-6-8Z"
+      fill="url(#dnd-grad-metal)"
+      stroke="currentColor"
+      stroke-width="1.6"
+      stroke-linejoin="round"
+    />
+    <path d="M120 6C110 14 98 30 84 50" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    <path
+      d="M120 6c-13-3-24 3-30 16 11 3 22-3 30-16Z"
+      class="dnd-ornament-accent"
+    />
+    <path
+      d="M106 20c-8 0-14 6-16 14 8-1 13-6 16-14Z"
+      class="dnd-ornament-accent"
+      opacity="0.7"
+    />
+    <path
+      d="M38 52h82c7 0 13 3 17 8l-7 6h-28v6H58v-6H46c-5 0-8-3-8-7Z"
+      fill="url(#dnd-grad-metal)"
+      stroke="currentColor"
+      stroke-width="1.6"
+      stroke-linejoin="round"
+    />
+    <path d="M70 58h10" stroke="var(--ground-deep)" stroke-width="2" stroke-linecap="round" />
+    <path d="M64 72l-6 8h44l-6-8" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+    <path
+      d="M50 80h60v6H50Z"
+      fill="url(#dnd-grad-metal)"
+      stroke="currentColor"
+      stroke-width="1.6"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M96 44v-7M89 46l-4-5M103 46l4-5"
+      stroke-width="1.6"
+      stroke-linecap="round"
+      class="dnd-ornament-accent-stroke"
+    />
+    <circle cx="80" cy="92" r="3.5" fill="currentColor" />
+    <path d="M70 92H56M90 92h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+
+  {:else if name === 'portrait'}
+    <path
+      d="M10 60V28C10 15 20 6 32 6s22 9 22 22v32"
+      stroke="currentColor"
+      stroke-width="2.2"
+      stroke-linejoin="round"
+    />
+    <path d="M16 60V30c0-10 7-18 16-18s16 8 16 18v30" stroke="currentColor" stroke-width="1" opacity="0.5" />
+    <circle cx="32" cy="29" r="7" stroke="currentColor" stroke-width="1.8" />
+    <path d="M18 57c0-9 6-15 14-15s14 6 14 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+    <circle cx="32" cy="6" r="2.2" class="dnd-ornament-accent-fill" />
+    <path d="M6 60h52" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
 
   {/if}
 </svg>

@@ -290,7 +290,7 @@
   <header class="make-crown">
     <span class="make-crest">
       <span class="make-plate dnd-shield"></span>
-      <Ornament name="crest" size="md" tone="metal" />
+      <Ornament name="forge" size="md" tone="metal" />
     </span>
     <h1 class="dnd-heading dnd-heading-hero make-name">Forge a Character</h1>
     <span class="make-rule"><Ornament name="divider" tone="metal" /></span>
@@ -311,7 +311,7 @@
         {#if creationData.imageUrl}
           <span class="make-face-glass"><Portrait src={creationData.imageUrl} alt="Character" size="fill" /></span>
         {:else}
-          <span class="dnd-empty-mark"><Ornament name="quatrefoil" size="sm" tone="metal" /></span>
+          <span class="dnd-empty-mark"><Ornament name="portrait" size="sm" tone="metal" /></span>
           <p class="make-drop-note">Drop a portrait, or pick one</p>
         {/if}
         <input class="make-drop-input" type="file" accept="image/*" aria-label="Character image" onchange={handlePortraitInput} />
