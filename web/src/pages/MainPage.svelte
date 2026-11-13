@@ -9,14 +9,11 @@
   import { uiStore, anyDialogOpen, postNotice } from "$lib/stores/ui.store";
   import { getRecentFirst, userCharacters } from "$lib/stores/character.store";
   import { userCampaigns } from "$lib/stores/campaign.store";
-  import { user, userProfile, userDetails } from "$lib/stores/auth.store";
-  import { getAll, type Resource } from "$lib/resources";
+  import { userProfile, userDetails } from "$lib/stores/auth.store";
   import { navigate } from "sly-svelte-location-router";
   import CharactersPanel from "./main/CharactersPanel.svelte";
   import CampaignsPanel from "./main/CampaignsPanel.svelte";
-  import LorePanel, { KINDS, TONES } from "./main/LorePanel.svelte";
   import Card from "$components/ui/Card.svelte";
-  import ResourceCard from "$components/campaign/ResourceCard.svelte";
   import Button from "$components/ui/Button.svelte";
   import Shell from "$components/ui/Shell.svelte";
   import Sigil from "$components/ui/Sigil.svelte";
@@ -38,17 +35,10 @@
   let loading = $state(true);
   let campaignSearch = $state('');
   let characterSearch = $state('');
-  let lore = $state<Record<string, Resource[]>>({});
-  let loreLoading = $state(true);
 
   const name = $derived($userDetails?.display_name || $userProfile?.display_name || 'Adventurer');
-  const written = $derived(KINDS.reduce((sum, kind) => sum + (lore[kind]?.length ?? 0), 0));
   const newestCampaign = $derived($userCampaigns[0] ?? null);
   const newestCharacter = $derived(getRecentFirst($userCharacters, $userProfile?.preferences?.recent_characters ?? [])[0] ?? null);
-  const newestLore = $derived(
-    KINDS.flatMap((kind) => (lore[kind] ?? []).map((one) => ({ kind, one })))
-      .sort((a, b) => (b.one.created_at ?? '').localeCompare(a.one.created_at ?? ''))[0] ?? null
-  );
 
   onMount(async () => {
     setTheme(getTheme());
@@ -64,16 +54,6 @@
       postNotice(err instanceof Error ? err.message : 'The archive did not answer');
     } finally {
       loading = false;
-    }
-
-    const userId = $user?.user_id ?? '';
-    try {
-      const rolls = await Promise.all(KINDS.map((kind) => getAll({ at: 'user', id: userId }, kind)));
-      lore = Object.fromEntries(KINDS.map((kind, index) => [kind, rolls[index]]));
-    } catch (err) {
-      postNotice(err instanceof Error ? err.message : 'The archive did not answer');
-    } finally {
-      loreLoading = false;
     }
   });
 
@@ -104,7 +84,7 @@
         <p class="dnd-label hall-hero-eyebrow">The hearth is lit</p>
         <h1 class="dnd-heading hall-hero-name">{name}</h1>
         <p class="hall-hero-note">
-          {$userCharacters.length} characters, {$userCampaigns.length} campaigns, {written} pages.
+          {$userCharacters.length} characters, {$userCampaigns.length} campaigns.
         </p>
       </div>
       <div class="hall-hero-latest">
@@ -121,9 +101,6 @@
               <span>HP {newestCharacter.character.info?.hp?.current ?? 0}/{newestCharacter.character.info?.hp?.max ?? 0}</span>
               <span>AC {newestCharacter.character.info?.ac ?? 10}</span>
             </Card>
-          {/if}
-          {#if newestLore}
-            <ResourceCard under="/main/{newestLore.kind}" kind={newestLore.kind} one={newestLore.one} tone={TONES[newestLore.kind]} />
           {/if}
         </div>
       </div>
@@ -165,15 +142,6 @@
         <Sigil title="Forge a new character" tone="ember" size="sm" onclick={createCharacter} frame="star"><Glyph name="character" size="sm" /></Sigil>
       </header>
       <CharactersPanel {loading} search={characterSearch} />
-    </section>
-
-    <section class="hall-plot hall-plot-lore" aria-label="Lore">
-      <header class="hall-divide">
-        <h2 class="dnd-label hall-divide-name">Lore</h2>
-        <span class="hall-divide-note">what you have written</span>
-        <span class="hall-divide-run"></span>
-      </header>
-      <LorePanel held={lore} loading={loreLoading} />
     </section>
   </div>
 </Shell>
@@ -280,12 +248,11 @@
     --hall-search: calc(var(--space-8) * 3);
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
     grid-template-areas:
       'hero'
       'camps'
-      'roll'
-      'lore';
+      'roll';
     column-gap: var(--space-6);
     row-gap: var(--space-6);
     min-width: 0;
@@ -304,10 +271,6 @@
 
   .hall-plot-roll {
     grid-area: roll;
-  }
-
-  .hall-plot-lore {
-    grid-area: lore;
   }
 
   .hall-divide {
