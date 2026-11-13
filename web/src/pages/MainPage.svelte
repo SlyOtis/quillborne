@@ -209,6 +209,8 @@
   }
 
   .hall-hero-portrait {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex: none;
     block-size: 100%;
@@ -234,8 +236,10 @@
     gap: var(--space-1);
     max-width: calc(var(--space-8) * 5);
     min-width: 0;
-    margin-inline-end: calc(var(--space-4) * -1);
-    padding: var(--space-3) calc(var(--space-6) + var(--space-3)) var(--space-3) calc(var(--flag-tail) + var(--space-4));
+    min-block-size: calc(var(--space-8) * 2);
+    justify-content: center;
+    margin-inline-end: calc(var(--space-7) * -1);
+    padding: var(--space-4) calc(var(--space-8) + var(--space-3)) var(--space-4) calc(var(--flag-tail) + var(--space-4));
     color: var(--ink);
     text-decoration: none;
     text-align: end;
@@ -249,13 +253,17 @@
 
   .hall-hero-flag-word {
     margin: 0;
-    color: var(--metal);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-caps);
+    color: var(--metal-dim);
   }
 
   .hall-hero-flag-name {
     font-family: var(--font-display);
-    font-size: var(--text-md);
+    font-size: var(--text-lg);
     font-weight: 700;
+    letter-spacing: var(--tracking-wide);
+    text-shadow: 0 0.0625rem 0 var(--ground-deep), 0 0 0.5rem var(--ember-glow);
     color: var(--metal-bright);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -265,9 +273,10 @@
   .hall-hero-flag-note {
     font-family: var(--font-display);
     font-size: var(--text-xs);
+    font-weight: 700;
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
-    color: var(--ink-dim);
+    color: var(--ink);
   }
 
   .hall-hero-flag-lede {

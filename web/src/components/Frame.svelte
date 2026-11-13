@@ -82,6 +82,13 @@ import Toast from '$components/ui/Toast.svelte'
     reach()
   })
 
+  function closeTools(event: PointerEvent) {
+    if (!toolsOpen) return
+    const target = event.target as Element | null
+    if (target?.closest('.dnd-shell-drop') || target?.closest('.dnd-shell-chip-round')) return
+    toolsOpen = false
+  }
+
   function stepDrawers(event: KeyboardEvent) {
     if (!event.shiftKey || !(event.metaKey || event.ctrlKey) || !$shell.drawers) return
 
@@ -98,7 +105,7 @@ import Toast from '$components/ui/Toast.svelte'
   }
 </script>
 
-<svelte:window onkeydown={stepDrawers} onhashchange={reach} />
+<svelte:window onkeydown={stepDrawers} onhashchange={reach} onpointerdown={closeTools} />
 
 <main
   class="dnd-shell"
@@ -462,20 +469,30 @@ import Toast from '$components/ui/Toast.svelte'
   }
 
   .dnd-shell-drop {
+    --drop-tail: var(--space-5);
     position: absolute;
     inset-block-start: 100%;
     inset-inline-end: calc(var(--space-8) + var(--space-5));
     z-index: 30;
     display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-1);
+    min-inline-size: calc(var(--space-8) * 3);
+    padding: var(--space-3) var(--space-4) calc(var(--drop-tail) + var(--space-3));
+    background:
+      linear-gradient(var(--metal), var(--metal)) 0 100% / 100% var(--border-hair) no-repeat,
+      var(--texture-noise),
+      linear-gradient(180deg, var(--ground) 0%, var(--ground-deep) 100%);
+    border-inline: var(--border-hair) solid var(--metal-dim);
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--drop-tail)), 50% 100%, 0 calc(100% - var(--drop-tail)));
+    filter: drop-shadow(0 var(--space-2) var(--space-3) var(--shade-hard));
+  }
+
+  .dnd-shell-drop > :global(*) {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    gap: var(--space-4);
-    min-inline-size: calc(var(--space-8) * 4);
-    padding: var(--space-4) var(--space-6);
-    background: var(--texture-noise), linear-gradient(180deg, var(--ground) 0%, var(--ground-deep) 100%);
-    border: var(--border-hair) solid var(--metal-dim);
-    border-block-start: none;
-    box-shadow: var(--shadow-lg);
+    gap: var(--space-3);
   }
 
   .dnd-shell-tools {

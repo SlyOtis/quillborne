@@ -108,9 +108,18 @@
   }
 
   .dnd-card-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: 'medallion body';
     align-items: center;
-    gap: var(--space-4);
-    padding: var(--space-3);
+    column-gap: var(--space-4);
+    padding: var(--space-4);
+    background:
+      var(--rivets),
+      radial-gradient(ellipse 50% 100% at 0% 50%, color-mix(in srgb, var(--card-light) 10%, transparent) 0%, transparent 70%),
+      radial-gradient(ellipse 80% 60% at 50% 0%, color-mix(in srgb, var(--card-light) 6%, transparent) 0%, transparent 70%),
+      var(--texture-noise),
+      linear-gradient(180deg, var(--ground-raised) 0%, var(--ground-deep) 100%);
   }
 
   .dnd-card-tile {
@@ -153,9 +162,12 @@
   }
 
   .dnd-card-row .dnd-card-medallion {
-    width: 3.3rem;
-    height: 3.3rem;
+    grid-area: medallion;
+    align-self: center;
+    width: 3.6rem;
+    height: 3.6rem;
     border-radius: var(--radius-pill);
+    box-shadow: 0 0 0 var(--space-0) var(--keyline), 0 0 18px color-mix(in srgb, var(--card-light) 32%, transparent), var(--shadow-sm);
   }
 
   .dnd-card-tile .dnd-card-medallion {
@@ -190,7 +202,7 @@
   }
 
   .dnd-card-row .dnd-card-initial {
-    font-size: var(--text-xl);
+    font-size: var(--text-2xl);
   }
 
   .dnd-card-tile .dnd-card-initial {
@@ -238,6 +250,11 @@
     flex: 1;
   }
 
+  .dnd-card-row .dnd-card-body {
+    grid-area: body;
+    gap: var(--space-1);
+  }
+
   .dnd-card-title {
     font-family: var(--font-display);
     font-size: var(--text-md);
@@ -248,12 +265,40 @@
     white-space: nowrap;
   }
 
+  .dnd-card-row .dnd-card-title {
+    display: block;
+    max-block-size: calc(2 * 1.2em);
+    font-size: var(--text-md);
+    font-weight: 700;
+    line-height: 1.2;
+    text-shadow: 0 1px 0 var(--keyline), 0 0 0.5rem color-mix(in srgb, var(--card-light) 35%, transparent);
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .dnd-card-row:has(.dnd-card-badge) .dnd-card-title::before {
+    content: '';
+    float: inline-end;
+    inline-size: calc(var(--space-7) + var(--space-3));
+    block-size: 1lh;
+  }
+
   .dnd-card-sub {
     font-size: var(--text-xs);
     color: var(--ink-dim);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .dnd-card-row .dnd-card-sub {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    font-size: var(--text-sm);
+    line-height: 1.35;
+    white-space: normal;
   }
 
   .dnd-card-stats {
@@ -264,6 +309,38 @@
     font-family: var(--font-figures);
     font-size: var(--text-xs);
     color: var(--ink-dim);
+  }
+
+  .dnd-card-row .dnd-card-stats {
+    position: relative;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-0);
+    margin-top: var(--space-2);
+    padding-top: var(--space-2);
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    color: var(--metal);
+    text-shadow: 0 1px 0 var(--keyline);
+    background: linear-gradient(90deg, var(--metal) 0%, color-mix(in srgb, var(--metal-dim) 85%, transparent) 55%, transparent 100%) 0 0 / 100% var(--border-hair) no-repeat;
+  }
+
+  .dnd-card-row .dnd-card-stats::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    inline-size: var(--space-2);
+    block-size: var(--space-2);
+    transform: translate(-50%, -50%) rotate(45deg);
+    background:
+      linear-gradient(135deg, var(--metal-bright), var(--metal) 50%, var(--metal-dim)) center / 45% 45% no-repeat,
+      var(--ground-deep);
+    border: var(--border-hair) solid var(--metal);
+    box-shadow: var(--glow-metal);
+    pointer-events: none;
   }
 
   .dnd-card-badge {
@@ -280,15 +357,17 @@
     color: var(--metal);
   }
 
-  @media (max-width: 40rem) {
-    .dnd-card-row .dnd-card-badge {
-      position: static;
-      flex: 0 1 auto;
-      align-self: flex-start;
-      max-width: 40%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+  .dnd-card-row .dnd-card-badge {
+    top: var(--space-3);
+    right: var(--space-3);
+    padding: var(--space-0) var(--space-2);
+    font-weight: 700;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--card-light);
+    border-color: color-mix(in srgb, var(--card-light) 55%, var(--metal-dim));
+    box-shadow: inset 0 0 0 var(--border-hair) var(--keyline), 0 0 10px color-mix(in srgb, var(--card-light) 28%, transparent);
+    text-shadow: 0 0 6px color-mix(in srgb, var(--card-light) 60%, transparent);
   }
 </style>

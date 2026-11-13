@@ -98,8 +98,6 @@
         padding: var(--space-1) var(--space-2) 0;
         margin-bottom: calc(var(--border-heavy) * -1);
         background: none;
-        border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-        box-shadow: inset 0 1px 0 var(--sheen), inset 0 0 0 1px var(--keyline);
     }
 
     .tab {
@@ -195,7 +193,7 @@
         min-height: 0;
         padding: var(--space-4) var(--space-3);
         background: var(--texture-noise), linear-gradient(180deg, var(--ground-raised), var(--ground-deep));
-        border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+        border-radius: var(--radius-lg);
         box-shadow: var(--rim-thin), inset 0 0 16px 2px var(--shade-hard), var(--shadow-md);
         overflow-y: auto;
         overflow-x: hidden;
