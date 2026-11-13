@@ -144,7 +144,7 @@
   }
 
   .dnd-card-on {
-    box-shadow: var(--rim), inset 0 0 18px 2px var(--shade-hard), var(--shadow-sm), 0 0 14px var(--ember-glow);
+    box-shadow: var(--rim-thin), inset 0 0 18px 2px var(--shade-hard), var(--shadow-sm), 0 0 14px var(--ember-glow);
   }
 
   .dnd-card::after {
@@ -384,7 +384,7 @@
   }
 
   .dnd-card:hover {
-    box-shadow: var(--rim), inset 0 0 18px 2px var(--shade-hard), var(--shadow-md), 0 0 16px color-mix(in srgb, var(--card-light) 40%, transparent);
+    box-shadow: var(--rim-thin), inset 0 0 18px 2px var(--shade-hard), var(--shadow-md), 0 0 16px color-mix(in srgb, var(--card-light) 40%, transparent);
     filter: brightness(1.06);
   }
 
@@ -476,13 +476,7 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    box-shadow:
-      inset 0 0 0 1px var(--keyline),
-      inset 0 0 0 2px var(--metal-dim),
-      inset 0 0 0 3px var(--metal),
-      inset 0 0 0 4px var(--metal-bright),
-      inset 0 0 0 5px var(--keyline),
-      inset 0 0 14px var(--shade-hard);
+    box-shadow: var(--rim-thin), inset 0 0 14px var(--shade-hard);
     pointer-events: none;
   }
 

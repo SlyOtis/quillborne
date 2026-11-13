@@ -26,6 +26,7 @@ export interface UserPreferences {
   sound_volume: number
   animations_enabled: boolean
   recent_characters: string[]
+  active_characters?: Record<string, string>
   shortcuts?: Shortcut[]
 }
 
