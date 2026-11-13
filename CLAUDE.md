@@ -39,23 +39,27 @@ Quillborne is the table's character sheets, campaigns, maps and vessels as a hos
 
 ## Local test data
 
-15. `database/state/local.ndjson` is the table every local run starts with: a `/api/state` document, one record per line with its key, its data and its refs by key, that `just dev` imports through `qubo state import` once the service is up, so every row and every claim is made by the handlers. A change that adds or alters something a player sees adds or updates its records in the same branch, so the next local run shows it. It is small, enough to show each feature once from the DM's side and a player's. `database/state/tst.ndjson` is the tst table, exported with `qubo state export`. `setup.md` carries how.
+15. `database/state/local.ndjson` is the table every local run starts with, imported through the handlers by `just dev`. A change that adds or alters something a player sees adds or updates its records in the same branch, so the next local run shows it. `setup.md` Local test data carries the document, the debug players and the import.
 
 ## Commands
 
-- `just install`: every tool at its pin, nimon included, then the web and Go dependencies, the `qubo` cli and the `qubo` and `nimon` skills under `.claude/skills/`.
+Never hand roll a step the justfile owns.
+
+- `just install`: every tool at its pin, nimon included, then the web and Go dependencies, the `qubo` cli and the `qubo` and `nimon` skills under `.claude/skills/`. sauth is a private nimling module and installs only with read access to it.
+- `just env`: fails when `.env` is missing a key `.env.example` names; `just dev`, `just build` and `just build-web` depend on it.
 - `just dev`: the database, the blob store, the service and the web together, then the local table imported. `just dev-db`, `just dev-blob`, `just dev-server` and `just dev-web` run one each; `just seed` imports `database/state/local.ndjson`, `just seed-state <name>` any file under `database/state/`.
 - `just build-cli`, `just install-cli`, `just install-cli-completion`, `just install-cli-skill`: the `qubo` cli, its completion and its skill. `just qubo <args>` runs it from source.
-- `just build-db`: the local database image. `just migrate <args>`: smig on the local database only.
-- `just check`, `just test`, `just build`: the parts of `just gate`. `just vet`: `go vet`. `just walk`: the browser walk in `web/test/walk.sh`; a page that has to be seen is driven with the `nimon` skill.
+- `just build-db`: the local database image. `just migrate <args>`: smig on the local database only; no recipe reaches a deployed database.
+- `just gen-types`: tygo writes `web/src/lib/api/generated.ts` and `generated_auth.ts` from the Go models.
+- `just check`, `just test`, `just build`, `just vet`: the parts of `just gate`. `just walk`: the browser walk in `web/test/walk.sh`; a page that has to be seen is driven with the `nimon` skill.
 - `just build-docker`: the image. `just clean`: the local containers and builds.
 - `just setup <env>`, `just apps <env>`, `just domains <env>`: the Samna Auth app and the host, on the owner's word.
-- `just reference <kind>`: the reference readings under `reference/`.
+- `just reference <kind>`: the reference readings under `reference/`, which is ignored.
 
 ## Conventions
 
 - A map is a picture with pins and, beside it, a drawn plan shown in 3D. The plan is nimling/nimap, copied into the repo with its editor rewritten in Svelte: `maps.md`.
-- The look is a dark fantasy game UI: a midnight ground, thin gold double rules, diamond studs, and the page raised between its drawers and bending into them. Tokens only, five themes: `components.md` and `DESIGN.md`.
+- The look is a dark fantasy game UI: a midnight ground, thin gold double rules, diamond studs, and the page raised between its drawers and bending into them. Tokens only, five themes: `components.md` is the rule, `buttons.md` the button primitives, `DESIGN.md` the design system as built.
 - Work reaches `main` through one pull request per feature branch, cut from its worktree and merged the moment the feature works, the next starting from a freshly pulled `main`: `workflow.md` 11 and the `features` skill.
 
 ## Index
@@ -66,15 +70,15 @@ Rules in `.claude/rules/`, each read when its paths are touched:
 - `components.md`: `web/src/components/**`, `web/src/pages/**`, `web/src/app.css`.
 - `buttons.md`: `web/src/components/**`, `web/src/pages/**`.
 - `maps.md`: `web/src/lib/nimap/**`, `web/src/lib/nimap-editor/**`, `web/src/components/nimap/**`, `web/test/nimap/**`, `web/src/components/campaign/CampaignMaps.svelte`.
-- `data.md`: `database/**`, `internal/**`, `cmd/**`, and the web's api, service, types, upload, live editing and AI modules.
+- `data.md`: `database/**`, `internal/**`, `cmd/**`, `web/src/lib/api/**`, `tygo.yaml`, `web/src/lib/collab.ts`, `web/src/lib/ai.ts`.
 - `cli.md`: `internal/qubo/**`, `internal/state/**`, `cmd/qubo/**`, `test/go/state_test.go`.
 - `registration.md`: `deploy/sauth/**`, the login and redirect pages the deploy uploads to the prophet.
 - `setup.md` and `workflow.md`: everywhere.
 
 Skills in `.claude/skills/`:
 
-- `run`: start Quillborne locally on this worktree's own slot, signed in as the debug user; `scripts/latest.sh` keeps the main checkout on the newest `main` at http://localhost:5175.
-- `features`: take features in as they arrive, one local task under `.claude/tasks/features/`, one worktree and one agent each, verify on the main checkout and merge each the moment it works. No GitHub issue is made for a task.
+- `run`: start Quillborne locally on this worktree's own slot, signed in as the debug user; `.claude/skills/run/scripts/latest.sh` keeps the main checkout on the newest `main` at http://localhost:5175.
+- `features`: take features in as they arrive, one local task under `.claude/tasks/features/`, one worktree and one agent per surface, verify on the main checkout and merge the moment it works. No GitHub issue is made for a task.
 - `qubo`: the cli, its state export and import and its mcp tools; installed by `just install-cli-skill`.
 - `nimon` and `nimon-pr`: drive the browser through a page or a pull request and record it; installed by `just install`.
 - `git` and `github`: the git cli and everything that talks to GitHub.
