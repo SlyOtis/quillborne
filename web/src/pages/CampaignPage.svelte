@@ -12,7 +12,7 @@
   import Button from '$components/ui/Button.svelte'
   import Card from '$components/ui/Card.svelte'
   import Fold from '$components/ui/Fold.svelte'
-  import CampaignBar, { SECTIONS, getSection } from '$components/campaign/CampaignBar.svelte'
+  import CampaignBar from '$components/campaign/CampaignBar.svelte'
   import CampaignEncounter from '$components/campaign/CampaignEncounter.svelte'
   import CampaignMaps from '$components/campaign/CampaignMaps.svelte'
   import CampaignMembers from '$components/campaign/CampaignMembers.svelte'
@@ -21,7 +21,6 @@
   import Panel from '$components/ui/Panel.svelte'
   import BaseDialog from '$components/BaseDialog.svelte'
   import Shell from '$components/ui/Shell.svelte'
-  import Stops from '$components/ui/Stops.svelte'
 
   const { route }: { route?: { params?: Record<string, string> } } = $props()
 
@@ -92,11 +91,6 @@
   const tocRoots = $derived(
     visibleMaps.filter((entry) => !entry.parent_map_id || !visibleMaps.some((one) => one.id === entry.parent_map_id))
   )
-
-  function openSection(id: string) {
-    const section = SECTIONS.find((entry) => entry.id === id)
-    openRoll(section?.under[0]?.id ?? id)
-  }
 
   function openRoll(where: string) {
     if (where === 'vehicles') {
@@ -270,10 +264,6 @@
   width={tab === 'maps' ? 'full' : 'wide'}
   flush={tab === 'maps'}
 >
-  {#snippet nav()}
-    <Stops stops={SECTIONS} stop={getSection(tab)} onopen={openSection} />
-  {/snippet}
-
   {#snippet band()}
     <CampaignBar stop={tab} onopen={openRoll}>
       {#snippet tail()}
