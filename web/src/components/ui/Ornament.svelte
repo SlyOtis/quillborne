@@ -24,6 +24,7 @@
       | 'finial'
       | 'cusp'
       | 'forge'
+      | 'banner'
       | 'portrait'
     /** Scales the vector against the type scale. */
     size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
@@ -52,6 +53,7 @@
     finial: '0 0 32 72',
     cusp: '0 0 72 72',
     forge: '0 0 128 96',
+    banner: '0 0 128 96',
     portrait: '0 0 64 64'
   }
 
@@ -396,6 +398,26 @@
     />
     <circle cx="78" cy="24" r="1.6" class="dnd-ornament-accent-fill" />
     <circle cx="64" cy="92" r="3.5" fill="currentColor" />
+
+  {:else if name === 'banner'}
+    <path d="M40 12v78" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+    <path d="M40 2 47 13H33L40 2Z" fill="currentColor" />
+    <path
+      d="M44 16c20-4 38 2 60-2l-10 22 10 22c-22-4-40 2-60-2Z"
+      fill="url(#dnd-grad-metal)"
+      stroke="currentColor"
+      stroke-width="1.6"
+      stroke-linejoin="round"
+    />
+    <path d="M62 15v42M80 15v42" stroke="var(--ground-deep)" stroke-width="1.4" opacity="0.6" />
+    <path d="M71 26 79 36 71 46 63 36 71 26Z" class="dnd-ornament-accent" opacity="0.9" />
+    <circle cx="71" cy="36" r="2.4" class="dnd-ornament-accent-fill" />
+    <path d="M36 14c-8 6-12 14-10 24" stroke="currentColor" stroke-width="1.4" opacity="0.6" stroke-linecap="round" />
+    <path d="M26 38c-3 4-3 8 0 12 3-4 3-8 0-12Z" fill="currentColor" opacity="0.8" />
+    <path d="M27 88c-8-1-13-6-14-14 8 1 13 6 14 14Z" class="dnd-ornament-accent" opacity="0.9" />
+    <path d="M53 88c8-1 13-6 14-14-8 1-13 6-14 14Z" class="dnd-ornament-accent" opacity="0.9" />
+    <path d="M24 90h32" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    <circle cx="40" cy="92" r="3.5" fill="currentColor" />
 
   {:else if name === 'portrait'}
     <path

@@ -1,147 +1,62 @@
 <script lang="ts">
-  import { getSession, postCampaign } from '$lib/api'
-  import type { Campaign } from '$lib/api/types'
+  import { getSession, postCampaign, postFile } from '$lib/api'
   import { navigate } from "sly-svelte-location-router";
   import Button from "$components/ui/Button.svelte";
   import Field from "$components/ui/Field.svelte";
   import Ornament from "$components/ui/Ornament.svelte";
   import Panel from "$components/ui/Panel.svelte";
   import Shell from "$components/ui/Shell.svelte";
-  
-  interface CampaignConcept {
-    name?: string;
-    description?: string;
-    setting?: string;
-    genre?: string;
-    tone?: string;
-    theme?: string;
-    startLevel?: number;
-    mainQuest?: {
-      title?: string;
-      description?: string;
-    };
-    locations?: Array<{
-      name: string;
-      type: string;
-      description: string;
-    }>;
-    npcs?: Array<{
-      name: string;
-      role: string;
-      description: string;
-    }>;
-    hooks?: string[];
-  }
 
-  let prompt = $state("");
-  let isGenerating = $state(false);
-  let generatedConcept: CampaignConcept | null = $state(null);
+  let name = $state("");
+  let description = $state("");
+  let picture = $state<File | null>(null);
+  let pictureDragActive = $state(false);
   let error: string | null = $state(null);
   let isCreating = $state(false);
+  let campaignId = $state<string | null>(null);
 
-  const examplePrompts = [
-    "A dark fantasy campaign where heroes investigate mysterious disappearances in a haunted forest kingdom",
-    "A high-seas adventure campaign featuring pirates, sea monsters, and lost treasure islands",
-    "An urban fantasy campaign set in a modern city where magic has recently returned to the world", 
-    "A post-apocalyptic campaign where survivors explore the ruins of an ancient magical civilization",
-    "A court intrigue campaign where noble houses compete for the throne in a medieval kingdom"
-  ];
+  let canCreate = $derived(name.trim().length > 0);
 
-  function useExamplePrompt(example: string) {
-    prompt = example;
+  function drag(event: DragEvent, active: boolean): boolean {
+    event.preventDefault();
+    return active;
   }
 
-  async function generateCampaign() {
-    if (!prompt.trim()) {
-      error = "Please enter a campaign concept";
-      return;
-    }
+  function putPicture(files: File[]) {
+    const file = files.find((entry) => entry.type.startsWith('image/'));
+    if (!file) return;
 
-    isGenerating = true;
     error = null;
+    picture = file;
+  }
 
-    try {
-      // Simulate AI generation for now
-      // In a real implementation, this would call an AI service
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // Mock generated campaign concept
-      generatedConcept = {
-        name: "The Shadow of Blackwood",
-        description: "A dark fantasy campaign set in the mysterious Blackwood region, where ancient evils stir and heroes must uncover long-buried secrets.",
-        setting: "Blackwood Kingdom",
-        genre: "Dark Fantasy",
-        tone: "Mysterious and Foreboding",
-        theme: "Ancient Secrets and Redemption",
-        startLevel: 1,
-        mainQuest: {
-          title: "The Curse of Blackwood",
-          description: "Investigate the mysterious disappearances plaguing the kingdom and uncover the ancient curse that threatens to consume the land."
-        },
-        locations: [
-          {
-            name: "Ravenshollow Village",
-            type: "Village",
-            description: "A small village on the edge of Blackwood Forest where the disappearances began."
-          },
-          {
-            name: "Blackwood Forest",
-            type: "Wilderness",
-            description: "An ancient forest filled with twisted trees and dark magic."
-          },
-          {
-            name: "Thornwick Castle",
-            type: "Castle",
-            description: "The seat of power in the region, ruled by the mysterious Lord Thornwick."
-          }
-        ],
-        npcs: [
-          {
-            name: "Lord Aldric Thornwick",
-            role: "Ruler",
-            description: "The enigmatic lord of Thornwick Castle who seems to know more than he reveals."
-          },
-          {
-            name: "Marta the Herbalist",
-            role: "Quest Giver",
-            description: "An elderly herbalist in Ravenshollow who first noticed the disappearances."
-          },
-          {
-            name: "Captain Gareth",
-            role: "Ally",
-            description: "Captain of the guard who seeks help investigating the mysterious events."
-          }
-        ],
-        hooks: [
-          "Strange lights have been seen in Blackwood Forest at night",
-          "Ancient runes have appeared on trees throughout the region",
-          "Wildlife has begun fleeing the forest in unprecedented numbers",
-          "Local crops are failing despite perfect growing conditions"
-        ]
-      };
-    } catch (err) {
-      error = "Failed to generate campaign. Please try again.";
-      generatedConcept = null;
-    } finally {
-      isGenerating = false;
-    }
+  function handlePictureDrop(event: DragEvent) {
+    event.preventDefault();
+    pictureDragActive = false;
+    const files = event.dataTransfer?.files;
+    if (files) putPicture(Array.from(files));
+  }
+
+  function handlePictureInput(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    if (input.files) putPicture(Array.from(input.files));
   }
 
   async function createCampaign() {
-    if (!generatedConcept) return;
-    
+    if (!canCreate) return;
+
     isCreating = true;
     error = null;
-    
+
     try {
       const currentUser = getSession();
       if (!currentUser) {
         throw new Error('User not authenticated');
       }
-      
-      const campaignData = {
-        name: generatedConcept.name || "Unnamed Campaign",
-        description: generatedConcept.description || "An AI-generated campaign",
+
+      campaignId ??= await postCampaign({
+        name: name.trim(),
+        description: description.trim(),
         dm_id: currentUser.user_id,
         player_ids: [],
         character_ids: [],
@@ -152,29 +67,17 @@
           private_notes: true,
           experience_mode: 'milestone' as const
         }
-      };
-      
-      const campaignId = await postCampaign(campaignData);
-      
-      console.log("Campaign created successfully with ID:", campaignId);
-      
-      // Navigate to campaign view with the new campaign ID
+      });
+
+      if (picture) await postFile(picture, { kind: 'campaignFile', campaignId });
+
       navigate(`/main/campaign/${campaignId}`);
     } catch (err) {
       console.error("Failed to create campaign:", err);
-      error = "Failed to create campaign. Please try again.";
+      error = err instanceof Error ? err.message : "Failed to create campaign. Please try again.";
     } finally {
       isCreating = false;
     }
-  }
-
-  function regenerateCampaign() {
-    generateCampaign();
-  }
-
-  function editPrompt() {
-    generatedConcept = null;
-    error = null;
   }
 </script>
 
@@ -182,133 +85,55 @@
   <header class="raise-crown">
     <span class="raise-crest">
       <span class="raise-plate dnd-shield"></span>
-      <Ornament name="crest" size="md" tone="metal" />
+      <Ornament name="banner" size="lg" tone="metal" />
     </span>
     <h1 class="dnd-heading dnd-heading-hero raise-name">Raise a Campaign</h1>
     <span class="raise-rule"><Ornament name="divider" tone="metal" /></span>
-    <p class="raise-lede">Describe the world you mean to run and the forge writes the first draft.</p>
+    <p class="raise-lede">Name the campaign, say what it is about, and give it a picture if you have one.</p>
   </header>
 
-  {#if !generatedConcept}
-    <Panel title="The concept">
-      <Field label="Campaign concept" id="campaign-prompt" help="Setting, tone, and what the party is pulled into.">
-        <textarea
-          id="campaign-prompt"
-          rows="5"
-          bind:value={prompt}
-          disabled={isGenerating}
-          placeholder="A dark fantasy campaign about disappearances in a haunted forest kingdom…"
-        ></textarea>
-      </Field>
-
-      <p class="dnd-label raise-label">Need a spark</p>
-      <div class="raise-sparks">
-        {#each examplePrompts as example (example)}
-          <button type="button" class="raise-spark" disabled={isGenerating} onclick={() => useExamplePrompt(example)}>
-            {example}
-          </button>
-        {/each}
+  <Panel title="The campaign">
+    <div class="raise-top">
+      <div
+        class="raise-drop raise-face"
+        class:raise-drop-live={pictureDragActive}
+        role="region"
+        aria-label="Campaign image drop zone"
+        ondragover={(event) => (pictureDragActive = drag(event, true))}
+        ondragleave={() => (pictureDragActive = false)}
+        ondrop={handlePictureDrop}
+      >
+        <span class="dnd-empty-mark"><Ornament name="portrait" size="sm" tone="metal" /></span>
+        <p class="raise-drop-note">{picture ? picture.name : 'Drop a picture, or pick one'}</p>
+        <input class="raise-drop-input" type="file" accept="image/*" aria-label="Campaign image" disabled={isCreating} onchange={handlePictureInput} />
       </div>
 
-      {#if error}
-        <p class="raise-alarm" role="alert">{error}</p>
-      {/if}
+      <div class="raise-lines">
+        <Field label="Campaign title" id="campaign-title" required>
+          <input id="campaign-title" type="text" bind:value={name} disabled={isCreating} placeholder="Enter campaign title" />
+        </Field>
 
-      {#snippet actions()}
-        <Button size="sm" loading={isGenerating} disabled={!prompt.trim()} onclick={generateCampaign}>Generate</Button>
-      {/snippet}
-    </Panel>
-
-    <div class="raise-acts">
-      <Button variant="secondary" onclick={() => navigate('/main')}>Cancel</Button>
+        <Field label="Description" id="campaign-description" help="Setting, tone, and what the party is pulled into.">
+          <textarea
+            id="campaign-description"
+            rows="4"
+            bind:value={description}
+            disabled={isCreating}
+            placeholder="A dark fantasy campaign about disappearances in a haunted forest kingdom…"
+          ></textarea>
+        </Field>
+      </div>
     </div>
-  {:else}
-    <Panel title={generatedConcept.name ?? 'Generated campaign'}>
-      <p class="raise-blurb">{generatedConcept.description}</p>
+  </Panel>
 
-      <dl class="raise-facts">
-        <dt>Setting</dt>
-        <dd>{generatedConcept.setting || 'Not specified'}</dd>
-        <dt>Genre</dt>
-        <dd>{generatedConcept.genre || 'Not specified'}</dd>
-        <dt>Tone</dt>
-        <dd>{generatedConcept.tone || 'Not specified'}</dd>
-        <dt>Theme</dt>
-        <dd>{generatedConcept.theme || 'Not specified'}</dd>
-        <dt>Starting level</dt>
-        <dd>{generatedConcept.startLevel || 1}</dd>
-      </dl>
-
-      {#snippet actions()}
-        <Button variant="ghost" size="sm" onclick={editPrompt}>Edit prompt</Button>
-        <Button variant="ghost" size="sm" loading={isGenerating} onclick={regenerateCampaign}>Regenerate</Button>
-      {/snippet}
-    </Panel>
-
-    <div class="raise-outline">
-      {#if generatedConcept.mainQuest}
-        <Panel title="Main quest">
-          <p class="raise-entry-name">{generatedConcept.mainQuest.title}</p>
-          <p class="raise-entry-note">{generatedConcept.mainQuest.description}</p>
-        </Panel>
-      {/if}
-
-      {#if generatedConcept.locations && generatedConcept.locations.length > 0}
-        <Panel title="Key locations">
-          <ul class="raise-list">
-            {#each generatedConcept.locations as location (location.name)}
-              <li class="raise-entry">
-                <span class="raise-entry-head">
-                  <span class="raise-entry-name">{location.name}</span>
-                  <span class="raise-entry-kind">{location.type}</span>
-                </span>
-                <span class="raise-entry-note">{location.description}</span>
-              </li>
-            {/each}
-          </ul>
-        </Panel>
-      {/if}
-
-      {#if generatedConcept.npcs && generatedConcept.npcs.length > 0}
-        <Panel title="Important NPCs">
-          <ul class="raise-list">
-            {#each generatedConcept.npcs as npc (npc.name)}
-              <li class="raise-entry">
-                <span class="raise-entry-head">
-                  <span class="raise-entry-name">{npc.name}</span>
-                  <span class="raise-entry-kind">{npc.role}</span>
-                </span>
-                <span class="raise-entry-note">{npc.description}</span>
-              </li>
-            {/each}
-          </ul>
-        </Panel>
-      {/if}
-
-      {#if generatedConcept.hooks && generatedConcept.hooks.length > 0}
-        <Panel title="Adventure hooks">
-          <ul class="raise-list">
-            {#each generatedConcept.hooks as hook (hook)}
-              <li class="raise-entry"><span class="raise-entry-note">{hook}</span></li>
-            {/each}
-          </ul>
-        </Panel>
-      {/if}
-    </div>
-
-    <Panel title="The prompt">
-      <p class="raise-entry-note">{prompt}</p>
-    </Panel>
-
-    {#if error}
-      <p class="raise-alarm" role="alert">{error}</p>
-    {/if}
-
-    <div class="raise-acts">
-      <Button variant="secondary" disabled={isCreating} onclick={editPrompt}>Start over</Button>
-      <Button variant="primary" loading={isCreating} onclick={createCampaign}>Create this campaign</Button>
-    </div>
+  {#if error}
+    <p class="raise-alarm" role="alert">{error}</p>
   {/if}
+
+  <div class="raise-acts">
+    <Button variant="secondary" disabled={isCreating} onclick={() => navigate('/main')}>Cancel</Button>
+    <Button variant="primary" loading={isCreating} disabled={!canCreate} onclick={createCampaign}>Create this campaign</Button>
+  </div>
 </Shell>
 
 <style>
@@ -364,143 +189,81 @@
     color: var(--ink-dim);
   }
 
-  .raise-label {
-    margin: var(--space-2) 0 0;
-    color: var(--ink-faint);
+  .raise-top {
+    --raise-picture-col: calc(var(--space-8) * 3);
+    display: grid;
+    grid-template-columns: minmax(0, var(--raise-picture-col)) minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: start;
   }
 
-  .raise-sparks {
+  .raise-lines {
     display: flex;
     flex-direction: column;
+    gap: var(--space-3);
+    align-self: stretch;
+  }
+
+  .raise-drop {
+    --raise-drop-sink: inset 0 var(--border-width) var(--space-3) var(--shade-hard);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     gap: var(--space-2);
-  }
-
-  .raise-spark {
-    padding: var(--space-3) var(--space-4);
-    border: none;
+    padding: var(--space-4);
+    min-width: 0;
+    overflow: hidden;
+    border: var(--border-width) dashed var(--metal-dim);
     border-radius: var(--radius-sm);
-    background: var(--texture-noise), linear-gradient(180deg, var(--ground-raised) 0%, var(--ground-deep) 100%);
-    box-shadow: var(--rim-thin), inset 0 0 1rem 0.125rem var(--shade-hard), var(--shadow-sm);
-    color: var(--ink-dim);
-    font-family: var(--font-body);
-    font-size: var(--text-sm);
-    text-align: start;
-    cursor: pointer;
-    transition: color 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    background: var(--texture-noise), linear-gradient(180deg, var(--ground-deep) 0%, var(--ground) 100%);
+    box-shadow: var(--raise-drop-sink);
+    text-align: center;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
 
-  .raise-spark:hover:not(:disabled) {
-    color: var(--ink);
-    filter: brightness(1.06);
-    box-shadow: var(--rim), inset 0 0 1rem 0.125rem var(--shade-hard), var(--shadow-md), 0 0 0.875rem var(--ember-glow);
+  .raise-drop-live {
+    border-color: var(--metal);
+    box-shadow: var(--raise-drop-sink), var(--glow-metal), inset 0 0 2rem -0.5rem var(--ember-glow);
   }
 
-  .raise-spark:active:not(:disabled) {
-    filter: brightness(0.88);
+  .raise-drop-live .raise-drop-note {
+    color: var(--metal-bright);
+    text-shadow: var(--glow-text);
   }
 
-  .raise-spark:focus-visible {
-    outline: none;
+  .raise-drop:focus-within {
+    border-color: var(--metal);
     box-shadow: var(--focus-ring);
   }
 
-  .raise-spark:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  .raise-face {
+    width: 100%;
+    aspect-ratio: 1;
   }
 
-  .raise-blurb {
-    margin: 0;
-    color: var(--ink);
-  }
-
-  .raise-facts {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: var(--space-2) var(--space-4);
-    overflow-wrap: anywhere;
-    margin: 0;
-    font-size: var(--text-sm);
-    color: var(--ink);
-  }
-
-  .raise-facts dt {
-    font-family: var(--font-display);
-    letter-spacing: var(--tracking-caps);
-    text-transform: uppercase;
-    font-size: var(--text-xs);
-    color: var(--metal);
-    text-shadow: 0 0.0625rem 0 var(--ground-deep);
-  }
-
-  .raise-facts dd {
-    margin: 0;
-  }
-
-  .raise-outline {
-    --raise-column: calc(var(--space-8) * 4);
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(var(--raise-column), 100%), 1fr));
-    align-items: start;
-    gap: var(--space-4);
-    min-width: 0;
-  }
-
-  .raise-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .raise-entry {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    padding-bottom: var(--space-3);
-    border-bottom: var(--border-hair) solid var(--metal-dim);
-    box-shadow: 0 0.0625rem 0 var(--ground-deep);
-  }
-
-  .raise-entry:last-child {
-    padding-bottom: 0;
-    border-bottom: none;
-  }
-
-  .raise-entry-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: var(--space-3);
-  }
-
-  .raise-entry-name {
+  .raise-drop-note {
     margin: 0;
     font-family: var(--font-display);
-    font-size: var(--text-md);
-    color: var(--metal-bright);
-    text-shadow: 0 0.0625rem 0 var(--ground-deep);
-  }
-
-  .raise-entry-kind {
-    padding: 0 var(--space-2);
-    border-radius: var(--radius-sm);
-    background: var(--texture-noise), linear-gradient(180deg, var(--ground-lift), var(--ground-deep));
-    box-shadow: var(--rim-thin);
-    font-family: var(--font-display);
-    font-size: var(--text-xs);
-    letter-spacing: var(--tracking-wide);
-    color: var(--metal);
-    text-shadow: 0 0.0625rem 0 var(--ground-deep);
-  }
-
-  .raise-entry-note {
-    margin: 0;
     font-size: var(--text-sm);
     color: var(--ink-dim);
+    letter-spacing: var(--tracking-wide);
+    text-shadow: 0 0.0625rem 0 var(--ground-deep);
     overflow-wrap: anywhere;
+  }
+
+  .raise-drop-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .raise-drop-input:disabled {
+    cursor: progress;
   }
 
   .raise-alarm {
@@ -519,5 +282,11 @@
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: var(--space-3);
+  }
+
+  @media (max-width: 720px) {
+    .raise-top {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
