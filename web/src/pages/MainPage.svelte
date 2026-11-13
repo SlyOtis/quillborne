@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getCampaigns, getCharacters, getProfiles } from '$lib/api'
-  import type { Campaign, Profile } from '$lib/api/types'
+  import type { Profile } from '$lib/api/types'
   import { getTheme, setTheme } from "$lib/dialogs/theme";
   import { onMount, setContext, onDestroy } from "svelte";
   import { getCharacterStore } from "$lib/engine";
@@ -14,11 +14,8 @@
   import CharactersPanel from "./main/CharactersPanel.svelte";
   import CampaignsPanel from "./main/CampaignsPanel.svelte";
   import Portrait from "$components/ui/Portrait.svelte";
-  import Card from "$components/ui/Card.svelte";
   import Section from "$components/ui/Section.svelte";
   import Sigil from "$components/ui/Sigil.svelte";
-  import { getAll, type Resource } from "$lib/resources";
-  import { getDocument, getDocumentText } from "$lib/blocks";
   import Shell from "$components/ui/Shell.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
   import IconBtn from "$components/ui/IconBtn.svelte";
@@ -38,9 +35,7 @@
   let loading = $state(true);
   let campaignSearch = $state('');
   let characterSearch = $state('');
-  let charactersOpen = $state(false);
   let profiles = $state<Record<string, Profile>>({});
-  let lore = $state<{ entry: Resource; campaign: Campaign | null }[]>([]);
 
   const name = $derived($userDetails?.display_name || $userProfile?.display_name || 'Adventurer');
   const newestCharacter = $derived(getRecentFirst($userCharacters, $userProfile?.preferences?.recent_characters ?? [])[0] ?? null);
@@ -56,13 +51,8 @@
       ]);
       userCharacters.set(characters);
       userCampaigns.set(campaigns);
-      const holders = await getProfiles([
-        ...characters.filter((one) => one.campaign_id).map((one) => one.owner_id),
-        ...campaigns.flatMap((one) => [one.dm_id, ...one.player_ids])
-      ]);
+      const holders = await getProfiles(campaigns.flatMap((one) => [one.dm_id, ...one.player_ids]));
       profiles = Object.fromEntries(holders.map((one) => [one.user_id, one]));
-      const shelves = await Promise.all(campaigns.map(async (campaign) => (await getAll({ at: 'campaign', id: campaign.id }, 'entries')).map((entry) => ({ entry, campaign }))));
-      lore = shelves.flat().sort((a, b) => String(b.entry.created_at ?? '').localeCompare(String(a.entry.created_at ?? ''))).slice(0, 6);
     } catch (err) {
       postNotice(err instanceof Error ? err.message : 'The archive did not answer');
     } finally {
@@ -115,7 +105,6 @@
       <div class="hall-hero-acts">
         <Sigil title="Forge a character" size="sm" onclick={createCharacter}><Glyph name="character" size="sm" /></Sigil>
         <Sigil title="Raise a campaign" size="sm" onclick={createCampaign}><Glyph name="campaign" size="sm" /></Sigil>
-        <Sigil title="Write lore" size="sm" onclick={() => navigate('/main/scribe')}><Glyph name="edit" size="sm" /></Sigil>
       </div>
     </section>
 
@@ -126,33 +115,11 @@
       <CampaignsPanel {loading} search={campaignSearch} {profiles} />
     </Section>
 
-    <Section title="Characters" note="{$userCharacters.length} on the roll">
+    <Section title="Characters" note="{$userCharacters.length} on the roll" count={$userCharacters.length}>
       {#snippet actions()}
-        <IconBtn title={charactersOpen ? 'Collapse the characters' : 'Expand all characters'} onclick={() => (charactersOpen = !charactersOpen)}><Glyph name={charactersOpen ? 'fold' : 'unfold'} size="sm" /></IconBtn>
         <IconBtn title="Forge a new character" onclick={createCharacter}><Glyph name="character" size="sm" /></IconBtn>
       {/snippet}
-      <CharactersPanel {loading} search={characterSearch} bind:open={charactersOpen} {profiles} />
-    </Section>
-
-    <Section title="Lore" note={lore.length === 0 ? 'Nothing written yet' : 'The latest entries'} count={lore.length}>
-      {#snippet actions()}
-        <IconBtn title="Write lore" onclick={() => navigate('/main/scribe')}><Glyph name="edit" size="sm" /></IconBtn>
-      {/snippet}
-      {#if lore.length > 0}
-        <div class="hall-lore">
-          {#each lore as { entry, campaign } (entry.id)}
-            <Card
-              layout="square"
-              title={entry.title}
-              sub={getDocumentText(getDocument(entry.content))}
-              tags={entry.tags}
-              image={entry.image}
-              tone="metal"
-              onclick={() => navigate(`/main/campaign/${campaign?.id}/entries/${entry.id}`)}
-            />
-          {/each}
-        </div>
-      {/if}
+      <CharactersPanel {loading} search={characterSearch} />
     </Section>
   </div>
 </Shell>
@@ -327,13 +294,6 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     row-gap: var(--space-6);
-    min-width: 0;
-  }
-
-  .hall-lore {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
-    gap: var(--space-4);
     min-width: 0;
   }
 </style>
