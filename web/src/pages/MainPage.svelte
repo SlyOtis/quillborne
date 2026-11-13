@@ -42,7 +42,6 @@
   let lore = $state<{ entry: Resource; campaign: Campaign | null }[]>([]);
 
   const name = $derived($userDetails?.display_name || $userProfile?.display_name || 'Adventurer');
-  const newestCampaign = $derived($userCampaigns[0] ?? null);
   const newestCharacter = $derived(getRecentFirst($userCharacters, $userProfile?.preferences?.recent_characters ?? [])[0] ?? null);
   const heroCampaign = $derived($userCampaigns.find((one) => one.id === newestCharacter?.campaign_id) ?? null);
 
@@ -109,26 +108,6 @@
           </button>
         </div>
       {/if}
-      <div class="hall-hero-latest">
-        <header class="hall-divide">
-          <h2 class="dnd-label hall-divide-name">Latest</h2>
-          <span class="hall-divide-run"></span>
-        </header>
-        <div class="hall-hero-last">
-          {#if newestCampaign}
-            <Card title={newestCampaign.name} sub={newestCampaign.description} tone="verdigris" badge={newestCampaign.is_active ? 'live' : undefined} onclick={() => navigate(`/main/campaign/${newestCampaign.id}`)}>
-              <span>Players {newestCampaign.player_ids.length}</span>
-              <span>Characters {newestCampaign.character_ids.length}</span>
-            </Card>
-          {/if}
-          {#if newestCharacter}
-            <Card title={newestCharacter.metadata.name} sub="Level {newestCharacter.metadata.level} {newestCharacter.metadata.race} {newestCharacter.metadata.class}" image={newestCharacter.character.info?.imageUrl} tone="ember" onclick={() => navigate(`/main/character/${newestCharacter.id}`)}>
-              <span>HP {newestCharacter.character.info?.hp?.current ?? 0}/{newestCharacter.character.info?.hp?.max ?? 0}</span>
-              <span>AC {newestCharacter.character.info?.ac ?? 10}</span>
-            </Card>
-          {/if}
-        </div>
-      </div>
       <div class="hall-hero-acts">
         <Sigil title="Forge a character" size="sm" onclick={createCharacter}><Glyph name="character" size="sm" /></Sigil>
         <Sigil title="Raise a campaign" size="sm" onclick={createCampaign}><Glyph name="campaign" size="sm" /></Sigil>
@@ -189,8 +168,7 @@
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       'word face'
-      'acts acts'
-      'latest latest';
+      'acts acts';
     align-items: end;
     gap: var(--space-5);
     min-width: 0;
@@ -289,21 +267,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  .hall-hero-latest {
-    grid-area: latest;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    min-width: 0;
-  }
-
-  .hall-hero-last {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(calc(var(--space-8) * 3), 100%), 1fr));
-    gap: var(--space-3);
-    min-width: 0;
   }
 
   .hall-hero-word {

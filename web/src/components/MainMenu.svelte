@@ -252,7 +252,11 @@
     <p class="dnd-menu-empty">No NPC has been written down.</p>
   {:else}
     <div class="dnd-scroll dnd-menu-tree">
-      <Tree rows={npcs.map((entry) => ({ id: entry.id, title: entry.metadata.name, mark: `${entry.metadata.race} ${entry.metadata.class}`, kids: [] }))} on={steps[0] === 'character' ? (steps[1] ?? '') : ''} onopen={openCharacter} />
+      <Tree
+        rows={npcs.map((entry) => ({ id: entry.id, title: entry.metadata.name, mark: [entry.metadata.race, entry.metadata.class].filter(Boolean).join(' '), kids: [] }))}
+        on={steps[0] === 'character' ? (steps[1] ?? '') : ''}
+        onopen={openCharacter}
+      />
     </div>
   {/if}
 {/snippet}
