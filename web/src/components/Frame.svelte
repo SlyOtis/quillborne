@@ -8,8 +8,7 @@ import { currentCharacterId, userCharacters } from '$lib/stores/character.store'
   import { anyDialogOpen, uiStore, menuOpen, menuView, chatOpen, shell } from '$lib/stores/ui.store'
   import { getClock, playNext, playPrev, playing, progress, seekSong, toggleSong, track } from '$lib/music'
   import Aura from '$components/ui/Aura.svelte'
-  import Button from '$components/ui/Button.svelte'
-  import Flame from '$components/ui/Flame.svelte'
+    import Flame from '$components/ui/Flame.svelte'
   import Glass from '$components/ui/Glass.svelte'
   import Sigil from '$components/ui/Sigil.svelte'
   import Sidebar from '$components/ui/Sidebar.svelte'
@@ -31,6 +30,25 @@ import Toast from '$components/ui/Toast.svelte'
 
   const character = $derived($userCharacters.find((one) => one.id === ($currentCharacterId ?? $userProfile?.preferences?.recent_characters?.[0])) ?? null)
   const campaign = $derived($userCampaigns.find((one) => one.id === ($currentCampaignId ?? character?.campaign_id)) ?? null)
+  const onSheet = $derived(Boolean(character) && $resolvedRoute.path === `/main/character/${character?.id}`)
+  let toolsOpen = $state(false)
+
+  $effect(() => {
+    $resolvedRoute.path
+    toolsOpen = false
+  })
+
+  function openCharacter() {
+    if (!character) {
+      navigate('/main/create/character')
+      return
+    }
+    if (onSheet && $shell.tools) {
+      toolsOpen = !toolsOpen
+      return
+    }
+    navigate(`/main/character/${character.id}`)
+  }
   let loadedFor = ''
 
   $effect(() => {
@@ -126,7 +144,9 @@ import Toast from '$components/ui/Toast.svelte'
     {/if}
 
     {#if $shell.back}
-      <Button variant="ghost" size="sm" onclick={$shell.back}>Back</Button>
+      <Sigil title="Back" size="sm" onclick={$shell.back}>
+        <Glyph name="back" size="sm" />
+      </Sigil>
     {/if}
 
     <span class="dnd-shell-mark">{$shell.title}</span>
@@ -137,12 +157,8 @@ import Toast from '$components/ui/Toast.svelte'
 
     <span class="dnd-shell-run" aria-hidden="true"></span>
 
-    {#if $shell.tools}
-      <span class="dnd-shell-tools">{@render $shell.tools()}</span>
-    {/if}
-
     <span class="dnd-shell-stack">
-      <button type="button" class="dnd-shell-chip dnd-shell-chip-round" title={character ? 'Open the sheet' : 'Forge a character'} onclick={() => navigate(character ? `/main/character/${character.id}` : '/main/create/character')}>
+      <button type="button" class="dnd-shell-chip dnd-shell-chip-round" title={character ? (onSheet ? "The sheet's tools" : 'Open the sheet') : 'Forge a character'} aria-expanded={onSheet ? toolsOpen : undefined} onclick={openCharacter}>
         <span class="dnd-shell-chip-face">
           {#if character?.character?.info?.imageUrl}
             <StoredImage src={character.character.info.imageUrl} alt="" />
@@ -171,6 +187,10 @@ import Toast from '$components/ui/Toast.svelte'
         </span>
       </button>
     </span>
+
+    {#if toolsOpen && $shell.tools}
+      <div class="dnd-shell-drop" role="group" aria-label="The sheet's tools">{@render $shell.tools()}</div>
+    {/if}
 
     {#if $shell.drawers}
       <span class="dnd-shell-handle">
@@ -439,6 +459,23 @@ import Toast from '$components/ui/Toast.svelte'
     margin: 0;
     accent-color: var(--metal);
     cursor: pointer;
+  }
+
+  .dnd-shell-drop {
+    position: absolute;
+    inset-block-start: 100%;
+    inset-inline-end: calc(var(--space-8) + var(--space-5));
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+    min-inline-size: calc(var(--space-8) * 4);
+    padding: var(--space-4) var(--space-6);
+    background: var(--texture-noise), linear-gradient(180deg, var(--ground) 0%, var(--ground-deep) 100%);
+    border: var(--border-hair) solid var(--metal-dim);
+    border-block-start: none;
+    box-shadow: var(--shadow-lg);
   }
 
   .dnd-shell-tools {
