@@ -66,14 +66,16 @@
   const {info} = chStore;
 
   let loaded = $state(false);
+  let missing = $state("");
 
   onMount(() => {
     setTheme(getTheme());
 
+    // Never navigate from here: while the next page loads, the router remounts this one with that page's params.
     getCharacter(characterId)
       .then((document) => {
         if (!document?.character) {
-          navigate("/main");
+          missing = "That character does not exist, or it is not shared with you.";
           return;
         }
 
@@ -95,7 +97,7 @@
             .catch(() => (campaign = null));
         }
       })
-      .catch(() => navigate("/main"))
+      .catch((reason) => (missing = reason instanceof Error ? reason.message : String(reason)))
       .finally(() => (loaded = true));
   });
 
@@ -365,7 +367,9 @@
     <Background />
   {/snippet}
 
-  {#if loaded}
+  {#if missing}
+    <p class="sheet-alarm" role="alert">{missing}</p>
+  {:else if loaded}
     <div class="sheet-band">
       <header class="sheet-crown">
         <button
