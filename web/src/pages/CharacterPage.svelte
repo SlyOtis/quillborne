@@ -52,7 +52,7 @@
   let campaign = $state<{ id: string, name: string } | null>(null);
   let fleet = $state<number | null>(null);
 
-  const VIEWS = [{ id: 'sheet', label: 'Character' }, { id: 'dock', label: 'Dock' }];
+  const VIEWS = [{ id: 'sheet', label: 'Character', glyph: 'character' }, { id: 'dock', label: 'Dock', glyph: 'anchor' }] as const;
   const dockPath = `/main/character/${characterId}/dock`;
   const tail = $derived($resolvedRoute.path.split('/').filter(Boolean).slice(3));
   const view = $derived(tail[0] === 'dock' ? 'dock' : 'sheet');
@@ -458,20 +458,21 @@
   {/snippet}
 
   {#if loaded && fleet}
-    <div class="sheet-views" role="tablist" aria-label="Character views">
+    <nav class="sheet-marks" aria-label="Character views">
       {#each VIEWS as one (one.id)}
         <button
           type="button"
-          class="sheet-view"
-          class:sheet-view-on={view === one.id}
-          role="tab"
-          aria-selected={view === one.id}
+          class="sheet-mark"
+          class:sheet-mark-on={view === one.id}
+          aria-current={view === one.id ? 'page' : undefined}
+          title={one.label}
           onclick={() => openView(one.id)}
         >
-          {one.label}
+          <Glyph name={one.glyph} size="sm" />
+          <span class="sheet-mark-word">{one.label}</span>
         </button>
       {/each}
-    </div>
+    </nav>
   {/if}
 
   {#if missing}
@@ -667,67 +668,82 @@
     color: var(--ink);
   }
 
-  .sheet-views {
+  .sheet-marks {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-end: var(--space-6);
+    z-index: 3;
     display: flex;
-    gap: var(--space-1);
-    margin-bottom: var(--space-3);
-    padding-inline: var(--space-2);
-    border-bottom: var(--border-heavy) solid var(--metal-dim);
+    align-items: flex-start;
+    gap: var(--space-2);
+    pointer-events: none;
   }
 
-  .sheet-view {
-    position: relative;
-    min-width: 9rem;
-    margin-bottom: calc(var(--border-heavy) * -1);
-    padding: var(--space-2) var(--space-5);
+  .sheet-mark {
+    --mark-notch: 0.55rem;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-1);
+    inline-size: 2.2rem;
+    block-size: 2.8rem;
+    padding: 0 0 calc(var(--mark-notch) + var(--space-1));
     border: none;
-    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - var(--mark-notch)), 0 100%);
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--ember-core) 10%, transparent) 0%, color-mix(in srgb, #000 30%, transparent) 55%, color-mix(in srgb, #000 55%, transparent) 100%),
+      linear-gradient(90deg, color-mix(in srgb, #000 35%, transparent), transparent 30%, transparent 70%, color-mix(in srgb, #000 35%, transparent)),
       var(--texture-grain),
       var(--wood);
-    box-shadow:
-      inset 0 0 0 1px var(--keyline),
-      inset 0 0 0 2px var(--metal-dim),
-      inset 0 3px 0 0 var(--sheen),
-      inset 0 -0.5rem 0.6rem -0.3rem var(--shade-hard);
+    box-shadow: inset 0 0 0 1px var(--keyline), inset 0 0 0 2px var(--metal-dim);
+    color: var(--metal);
     font-family: var(--font-display);
     font-size: var(--text-xs);
     font-weight: 700;
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
-    color: var(--metal);
-    text-shadow: 0 1px 0 #000, 0 0 2px #000;
+    text-shadow: 0 1px 0 #000;
     cursor: pointer;
-    transition: color 0.18s ease, text-shadow 0.18s ease, box-shadow 0.18s ease;
+    pointer-events: auto;
+    transition: block-size 0.22s ease, inline-size 0.22s ease, color 0.18s ease;
   }
 
-  .sheet-view:hover:not(.sheet-view-on) {
+  .sheet-mark-word {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    transition: max-height 0.22s ease, opacity 0.18s ease;
+  }
+
+  .sheet-mark:hover,
+  .sheet-mark:focus-visible {
+    inline-size: 2.6rem;
+    block-size: 8rem;
     color: var(--metal-bright);
     text-shadow: var(--glow-text);
   }
 
-  .sheet-view-on {
+  .sheet-mark:hover .sheet-mark-word,
+  .sheet-mark:focus-visible .sheet-mark-word {
+    max-height: 6rem;
+    opacity: 1;
+  }
+
+  .sheet-mark-on {
     background:
-      radial-gradient(ellipse 80% 90% at 50% 110%, var(--ember-glow) 0%, transparent 70%),
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 26%, transparent) 0%, color-mix(in srgb, #000 30%, transparent) 55%, var(--ground-raised) 100%),
+      radial-gradient(ellipse 90% 60% at 50% 100%, var(--ember-glow) 0%, transparent 70%),
+      linear-gradient(90deg, color-mix(in srgb, #000 30%, transparent), transparent 30%, transparent 70%, color-mix(in srgb, #000 30%, transparent)),
       var(--texture-noise),
       var(--stone);
-    box-shadow:
-      inset 0 1px 0 var(--keyline),
-      inset 1px 0 0 var(--keyline),
-      inset -1px 0 0 var(--keyline),
-      inset 0 2px 0 var(--metal-bright),
-      inset 2px 0 0 var(--metal),
-      inset -2px 0 0 var(--metal),
-      0 0 0.9rem var(--ember-glow);
+    box-shadow: inset 0 0 0 1px var(--keyline), inset 0 0 0 2px var(--metal-bright);
     color: var(--metal-bright);
-    text-shadow: var(--glow-text);
   }
 
-  .sheet-view:focus-visible {
+  .sheet-mark:focus-visible {
     outline: none;
-    box-shadow: var(--focus-ring);
   }
 
   .sheet-dock {
