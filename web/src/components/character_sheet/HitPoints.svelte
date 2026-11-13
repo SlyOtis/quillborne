@@ -82,7 +82,7 @@
   }
 </script>
 
-<div class="vitals" style="--vitals-fill: {percent}%">
+<div class="vitals" class:vitals-down={hp.current === 0} style="--vitals-fill: {percent}%">
   <span class="dnd-label vitals-title">Hit Points</span>
   <IconBtn title="Roll hit dice" disabled={!$rules.resolved} onclick={onrest}><Glyph name="dice" size="md" /></IconBtn>
   <span class="vitals-potion" aria-hidden="true">
@@ -300,15 +300,21 @@
   .vitals-body {
     position: relative;
     z-index: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    grid-auto-rows: auto;
     gap: var(--space-1);
     flex: 1;
     min-width: 0;
+    min-block-size: calc(var(--space-8) + var(--space-5));
+  }
+
+  .vitals-down .vitals-body {
+    gap: 0;
   }
 
   .vitals-fields {
+    container-type: size;
     display: flex;
     flex-wrap: wrap;
     align-items: end;
@@ -321,13 +327,17 @@
     padding-block: var(--space-1);
   }
 
+  .vitals-down .vitals-field > .dnd-num {
+    padding-block: 0;
+  }
+
   .vitals-field .vitals-inline {
     inline-size: calc(3ch + var(--space-3));
     padding: 0 var(--space-1);
     border-color: transparent;
     background: none;
     box-shadow: none;
-    font-size: var(--text-lg);
+    font-size: clamp(var(--text-sm), 40cqb, var(--text-lg));
     text-align: center;
     line-height: 1;
     color: var(--metal-bright);
@@ -352,12 +362,12 @@
 
   .vitals-slash {
     font-family: var(--font-figures);
-    font-size: var(--text-lg);
+    font-size: clamp(var(--text-sm), 40cqb, var(--text-lg));
     color: var(--metal-dim);
   }
 
   .vitals-field-large .vitals-inline {
-    font-size: var(--text-2xl);
+    font-size: clamp(var(--text-sm), 46cqb, var(--text-2xl));
   }
 
   .vitals-field {
@@ -367,8 +377,9 @@
     align-items: center;
     gap: var(--space-0);
     font-family: var(--font-display);
-    font-size: var(--text-xs);
+    font-size: clamp(calc(var(--text-xs) * 0.6), 18cqb, var(--text-xs));
     font-weight: 600;
+    line-height: 1.2;
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--metal);
@@ -401,8 +412,8 @@
   }
 
   .vitals-roll > :global(.dnd-iconbtn) {
-    inline-size: var(--space-6);
-    block-size: var(--space-6);
+    inline-size: var(--space-5);
+    block-size: var(--space-5);
   }
 
   .vitals-step {
@@ -450,7 +461,7 @@
   .vitals-divider {
     display: block;
     block-size: var(--border-hair);
-    margin-block: var(--space-1);
+    margin-block: 0;
     background: linear-gradient(90deg, transparent, var(--metal-dim) 15%, var(--metal) 50%, var(--metal-dim) 85%, transparent);
   }
 
@@ -463,6 +474,7 @@
   .vitals-word {
     font-family: var(--font-display);
     font-size: var(--text-xs);
+    line-height: 1;
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--metal);
