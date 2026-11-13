@@ -25,8 +25,8 @@
     badge?: string
     /** Colours the rim against the active theme. */
     tone?: 'metal' | 'ember' | 'verdigris'
-    /** Row fills the width of a column. Tile is a fixed width portrait for a rail. */
-    layout?: 'row' | 'tile'
+    /** Row fills the width of a column. Tile is a fixed width portrait for a rail. Face centres the words and the stat column with no medallion. */
+    layout?: 'row' | 'tile' | 'face'
     /** Heavy rings the card in the full gilt rim and lights its keyline, the mark of the reader's own. */
     frame?: 'thin' | 'heavy'
     /** Marks the card as the one being read. */
@@ -51,14 +51,16 @@
     <span class="dnd-card-finial"><Ornament name="finial" size="xs" tone="metal" /></span>
   {/if}
 
-  <span class="dnd-card-medallion">
-    {#if image}
-      <span class="dnd-card-portrait"><StoredImage src={image} alt="" /></span>
-    {:else}
-      <span class="dnd-card-initial">{initial}</span>
-    {/if}
-    <span class="dnd-card-rim"></span>
-  </span>
+  {#if layout !== 'face'}
+    <span class="dnd-card-medallion">
+      {#if image}
+        <span class="dnd-card-portrait"><StoredImage src={image} alt="" /></span>
+      {:else}
+        <span class="dnd-card-initial">{initial}</span>
+      {/if}
+      <span class="dnd-card-rim"></span>
+    </span>
+  {/if}
 
   <span class="dnd-card-body">
     <span class="dnd-card-title">{title}</span>
@@ -129,6 +131,29 @@
     gap: var(--space-3);
     width: 11.4rem;
     padding: var(--space-3);
+  }
+
+  .dnd-card-face {
+    flex-direction: column;
+    padding: var(--space-5) var(--space-4);
+    text-align: center;
+  }
+
+  .dnd-card-face .dnd-card-body {
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .dnd-card-face .dnd-card-title {
+    font-size: var(--text-xl);
+    max-width: 100%;
+  }
+
+  .dnd-card-face .dnd-card-stats {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-3);
   }
 
   .dnd-card-ember {
