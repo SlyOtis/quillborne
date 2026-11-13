@@ -806,7 +806,7 @@ import Toast from '$components/ui/Toast.svelte'
   }
 
   .dnd-shell-hold > :global(*) {
-    animation: dnd-shell-arrive 180ms ease-out both;
+    animation: dnd-shell-arrive 180ms ease-out backwards;
   }
 
   @keyframes dnd-shell-arrive {
