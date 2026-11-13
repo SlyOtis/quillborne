@@ -752,6 +752,8 @@
   .foot-keys {
     display: inline-flex;
     flex-wrap: wrap;
+    flex-shrink: 0;
+    max-width: 100%;
     align-items: center;
     gap: var(--space-2) var(--space-5);
   }
