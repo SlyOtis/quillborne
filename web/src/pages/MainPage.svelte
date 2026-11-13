@@ -6,16 +6,18 @@
   import { getCharacterStore } from "$lib/engine";
   import type { CharacterContext } from "$lib/types";
   import { sidebarStore } from "$lib/navigation";
-  import { uiStore, anyDialogOpen } from "$lib/stores/ui.store";
-  import { userCharacters } from "$lib/stores/character.store";
+  import { uiStore, anyDialogOpen, postNotice } from "$lib/stores/ui.store";
+  import { getRecentFirst, userCharacters } from "$lib/stores/character.store";
   import { userCampaigns } from "$lib/stores/campaign.store";
-  import { userProfile, userDetails } from "$lib/stores/auth.store";
+  import { user, userProfile, userDetails } from "$lib/stores/auth.store";
+  import { getAll, type Resource } from "$lib/resources";
   import { navigate } from "sly-svelte-location-router";
   import CharactersPanel from "./main/CharactersPanel.svelte";
   import CampaignsPanel from "./main/CampaignsPanel.svelte";
-  import LorePanel from "./main/LorePanel.svelte";
+  import LorePanel, { KINDS, TONES } from "./main/LorePanel.svelte";
+  import Card from "$components/ui/Card.svelte";
+  import ResourceCard from "$components/campaign/ResourceCard.svelte";
   import Button from "$components/ui/Button.svelte";
-  import Ornament from "$components/ui/Ornament.svelte";
   import Shell from "$components/ui/Shell.svelte";
   import Sigil from "$components/ui/Sigil.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
@@ -34,11 +36,19 @@
   });
 
   let loading = $state(true);
-  let error = $state<string | null>(null);
   let campaignSearch = $state('');
   let characterSearch = $state('');
+  let lore = $state<Record<string, Resource[]>>({});
+  let loreLoading = $state(true);
 
   const name = $derived($userDetails?.display_name || $userProfile?.display_name || 'Adventurer');
+  const written = $derived(KINDS.reduce((sum, kind) => sum + (lore[kind]?.length ?? 0), 0));
+  const newestCampaign = $derived($userCampaigns[0] ?? null);
+  const newestCharacter = $derived(getRecentFirst($userCharacters, $userProfile?.preferences?.recent_characters ?? [])[0] ?? null);
+  const newestLore = $derived(
+    KINDS.flatMap((kind) => (lore[kind] ?? []).map((one) => ({ kind, one })))
+      .sort((a, b) => (b.one.created_at ?? '').localeCompare(a.one.created_at ?? ''))[0] ?? null
+  );
 
   onMount(async () => {
     setTheme(getTheme());
@@ -51,9 +61,19 @@
       userCharacters.set(characters);
       userCampaigns.set(campaigns);
     } catch (err) {
-      error = err instanceof Error ? err.message : 'The archive did not answer';
+      postNotice(err instanceof Error ? err.message : 'The archive did not answer');
     } finally {
       loading = false;
+    }
+
+    const userId = $user?.user_id ?? '';
+    try {
+      const rolls = await Promise.all(KINDS.map((kind) => getAll({ at: 'user', id: userId }, kind)));
+      lore = Object.fromEntries(KINDS.map((kind, index) => [kind, rolls[index]]));
+    } catch (err) {
+      postNotice(err instanceof Error ? err.message : 'The archive did not answer');
+    } finally {
+      loreLoading = false;
     }
   });
 
@@ -69,10 +89,6 @@
   function createCampaign() {
     navigate('/main/create/campaign');
   }
-
-  function dismissError() {
-    error = null;
-  }
 </script>
 
 <Shell drawers title="Hearth" width="full">
@@ -82,27 +98,38 @@
     </Sigil>
   {/snippet}
 
-  {#if error}
-    <div class="hall-error" role="alert">
-      <span class="hall-error-mark"><Ornament name="skull" size="sm" tone="ember" /></span>
-      <p class="hall-error-text">{error}</p>
-      <Button variant="ghost" size="sm" onclick={dismissError}>Dismiss</Button>
-    </div>
-  {/if}
-
   <div class="hall-grid">
     <section class="hall-hero" aria-label="Hearth">
       <div class="hall-hero-word">
         <p class="dnd-label hall-hero-eyebrow">The hearth is lit</p>
         <h1 class="dnd-heading hall-hero-name">{name}</h1>
         <p class="hall-hero-note">
-          {$userCharacters.length} characters, {$userCampaigns.length} campaigns.
+          {$userCharacters.length} characters, {$userCampaigns.length} campaigns, {written} pages.
         </p>
+      </div>
+      <div class="hall-hero-latest">
+        <p class="dnd-label hall-hero-last-label">Latest</p>
+        <div class="hall-hero-last">
+          {#if newestCampaign}
+            <Card title={newestCampaign.name} sub={newestCampaign.description} tone="verdigris" badge={newestCampaign.is_active ? 'live' : undefined} onclick={() => navigate(`/main/campaign/${newestCampaign.id}`)}>
+              <span>Players {newestCampaign.player_ids.length}</span>
+              <span>Characters {newestCampaign.character_ids.length}</span>
+            </Card>
+          {/if}
+          {#if newestCharacter}
+            <Card title={newestCharacter.metadata.name} sub="Level {newestCharacter.metadata.level} {newestCharacter.metadata.race} {newestCharacter.metadata.class}" image={newestCharacter.character.info?.imageUrl} tone="ember" onclick={() => navigate(`/main/character/${newestCharacter.id}`)}>
+              <span>HP {newestCharacter.character.info?.hp?.current ?? 0}/{newestCharacter.character.info?.hp?.max ?? 0}</span>
+              <span>AC {newestCharacter.character.info?.ac ?? 10}</span>
+            </Card>
+          {/if}
+          {#if newestLore}
+            <ResourceCard under="/main/{newestLore.kind}" kind={newestLore.kind} one={newestLore.one} tone={TONES[newestLore.kind]} />
+          {/if}
+        </div>
       </div>
       <div class="hall-hero-acts">
         <Button variant="primary" size="md" onclick={createCharacter}>Forge a Character</Button>
         <Button variant="secondary" size="md" onclick={createCampaign}>Raise a Campaign</Button>
-        <Button variant="ghost" size="md" onclick={() => navigate('/main/vehicles')}>Visit the Dock</Button>
       </div>
     </section>
 
@@ -146,7 +173,7 @@
         <span class="hall-divide-note">what you have written</span>
         <span class="hall-divide-run"></span>
       </header>
-      <LorePanel />
+      <LorePanel held={lore} loading={loreLoading} />
     </section>
   </div>
 </Shell>
@@ -154,18 +181,48 @@
 <style>
   .hall-hero {
     grid-area: hero;
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+    grid-template-areas:
+      'word latest'
+      'acts acts';
     align-items: center;
-    justify-content: space-between;
-    gap: var(--space-4);
+    gap: var(--space-5) var(--space-6);
     min-width: 0;
-    padding-bottom: var(--space-4);
-    border-bottom: none;
-    box-shadow: 0 var(--border-hair) 0 color-mix(in srgb, var(--metal) 45%, transparent);
+  }
+
+  @container page (max-width: 900px) {
+    .hall-hero {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        'word'
+        'latest'
+        'acts';
+    }
+  }
+
+  .hall-hero-latest {
+    grid-area: latest;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .hall-hero-last {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(calc(var(--space-8) * 3), 100%), 1fr));
+    gap: var(--space-3);
+    min-width: 0;
+  }
+
+  .hall-hero-last-label {
+    margin: 0;
+    color: var(--metal);
   }
 
   .hall-hero-word {
+    grid-area: word;
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
@@ -179,7 +236,7 @@
   }
 
   .hall-hero-name {
-    font-size: var(--text-3xl);
+    font-size: calc(var(--text-3xl) * 1.25);
     font-weight: 700;
     letter-spacing: var(--tracking-caps);
     color: var(--metal-bright);
@@ -196,37 +253,27 @@
   }
 
   .hall-hero-acts {
+    grid-area: acts;
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-3);
-  }
-
-  .hall-error {
-    display: flex;
     align-items: center;
     gap: var(--space-3);
-    padding: var(--space-3) var(--space-4);
-    border: var(--border-hair) solid color-mix(in srgb, var(--state-bad) 55%, transparent);
-    border-radius: var(--radius-sm);
-    background:
-      linear-gradient(180deg, color-mix(in srgb, var(--state-bad) 22%, transparent), color-mix(in srgb, var(--state-bad) 6%, transparent)),
-      var(--texture-noise),
-      var(--ground-deep);
-    box-shadow: var(--bevel-down);
-  }
-
-  .hall-error-mark {
-    display: flex;
-    flex: none;
-  }
-
-  .hall-error-text {
-    flex: 1;
     min-width: 0;
-    margin: 0;
-    font-size: var(--text-sm);
-    color: var(--ink);
-    overflow-wrap: anywhere;
+  }
+
+  .hall-hero-acts::before,
+  .hall-hero-acts::after {
+    content: '';
+    height: var(--border-hair);
+    background: color-mix(in srgb, var(--metal) 45%, transparent);
+  }
+
+  .hall-hero-acts::before {
+    flex: 1 1 var(--space-8);
+  }
+
+  .hall-hero-acts::after {
+    flex: 0 0 var(--space-6);
   }
 
   .hall-grid {
