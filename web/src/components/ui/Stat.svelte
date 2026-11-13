@@ -62,7 +62,7 @@
     justify-content: center;
     gap: var(--space-1);
     min-width: 0;
-    padding: var(--space-3) var(--space-2) calc(var(--space-4) + var(--space-2));
+    padding: var(--space-3) var(--space-2) calc(var(--space-5) + var(--space-3));
     --stat-light: var(--metal);
     --stat-brace: var(--metal);
     --stat-rim: var(--metal);
@@ -119,7 +119,7 @@
 
   .dnd-stat-label {
     position: absolute;
-    inset-block-end: var(--space-2);
+    inset-block-end: var(--space-4);
     inset-inline: var(--space-2);
     display: flex;
     white-space: nowrap;
