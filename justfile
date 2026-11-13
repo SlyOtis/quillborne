@@ -34,6 +34,22 @@ build-web: env
 build-server:
     sh scripts/build-server.sh
 
+build-cli:
+    go build -ldflags "-X github.com/nimling/nimbody/cli.Version=$(git rev-parse --short=12 HEAD)" -o bin/qubo ./cmd/qubo
+
+install-cli: build-cli
+    install -m 755 bin/qubo `go env GOPATH`/bin/qubo
+    `go env GOPATH`/bin/qubo version
+
+install-cli-completion: install-cli
+    `go env GOPATH`/bin/qubo completion --auto
+
+install-cli-skill: install-cli
+    `go env GOPATH`/bin/qubo skill install --project
+
+qubo *args:
+    go run ./cmd/qubo "$@"
+
 gen-types:
     tygo generate
 
@@ -58,8 +74,10 @@ dev-server:
 dev-web:
     cd web && pnpm dev
 
-seed:
-    go run ./test/seed
+seed: (seed-state "local")
+
+seed-state name:
+    QUBO_TOKEN="${QUBO_TOKEN:-$SAUTH_DEBUG_USER_ID}" go run ./cmd/qubo --endpoint "http://localhost:$SERVER_PORT" state import database/state/{{name}}.ndjson
 
 preview: build-web
     cd web && pnpm preview

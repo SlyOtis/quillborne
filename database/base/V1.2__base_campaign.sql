@@ -14,16 +14,6 @@ CREATE TABLE IF NOT EXISTS campaign (
     sa_deleted_at    TIMESTAMPTZ
 );
 
-ALTER TABLE campaign DROP COLUMN IF EXISTS party_ids;
-
-DO $$ BEGIN
-    IF EXISTS (SELECT 1 FROM claimius.table_info WHERE object_type = 'public.party') THEN
-        PERFORM claimius.delete_table_info('public.party');
-    END IF;
-END $$;
-
-DROP TABLE IF EXISTS party;
-
 COMMENT ON TABLE campaign IS 'A table of play: the dungeon master who created it and the players granted its player claim';
 COMMENT ON COLUMN campaign.id IS 'The campaign id';
 COMMENT ON COLUMN campaign.user_id IS 'The dungeon master, samna_user.user_id';
@@ -59,8 +49,6 @@ CREATE TABLE IF NOT EXISTS campaign_map (
     sa_updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     sa_deleted_at  TIMESTAMPTZ
 );
-
-ALTER TABLE campaign_map ADD COLUMN IF NOT EXISTS plan JSONB;
 
 CREATE INDEX IF NOT EXISTS idx_campaign_map_campaign ON campaign_map (campaign_id);
 
@@ -102,8 +90,6 @@ CREATE TABLE IF NOT EXISTS encounter (
     sa_updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     sa_deleted_at     TIMESTAMPTZ
 );
-
-ALTER TABLE encounter DROP COLUMN IF EXISTS share_parties;
 
 CREATE INDEX IF NOT EXISTS idx_encounter_campaign ON encounter (campaign_id);
 
@@ -187,8 +173,6 @@ CREATE TABLE IF NOT EXISTS song (
     sa_deleted_at     TIMESTAMPTZ
 );
 
-ALTER TABLE song DROP COLUMN IF EXISTS share_parties;
-
 CREATE INDEX IF NOT EXISTS idx_song_campaign ON song (campaign_id);
 
 COMMENT ON TABLE song IS 'A track in a campaign''s music library';
@@ -206,12 +190,6 @@ COMMENT ON COLUMN song.sa_created_by IS 'The user_claim of the creator';
 COMMENT ON COLUMN song.sa_created_at IS 'When the row was created';
 COMMENT ON COLUMN song.sa_updated_at IS 'When the row last changed';
 COMMENT ON COLUMN song.sa_deleted_at IS 'When the row was soft deleted';
-
-
-
-
-
-
 
 SELECT claimius.upsert_table_info('public.campaign');
 SELECT claimius.upsert_table_info('public.campaign_map');

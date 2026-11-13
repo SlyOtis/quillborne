@@ -14,6 +14,8 @@ import (
 	"github.com/SlyOtis/quillborne/internal/broker"
 	"github.com/SlyOtis/quillborne/internal/db"
 	"github.com/SlyOtis/quillborne/internal/handler"
+	"github.com/SlyOtis/quillborne/internal/qubo"
+	"github.com/SlyOtis/quillborne/internal/state"
 	"github.com/SlyOtis/quillborne/internal/storage"
 	"github.com/SlyOtis/quillborne/internal/version"
 	"github.com/joho/godotenv"
@@ -129,6 +131,10 @@ func main() {
 		me.GET("/organization", saecho.GetMeOrganizations)
 
 		handler.PutRoutes(api, userAuth)
+	}
+
+	if err := state.Register(e, userAuth, version.Version, qubo.Table().Operations()); err != nil {
+		e.Logger.Fatalf("state: %v", err)
 	}
 
 	e.GET("/*", handler.GetHTML(htmlPath))

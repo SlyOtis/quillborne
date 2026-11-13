@@ -1,6 +1,6 @@
 FROM golang:1.26-alpine AS smig-build
 RUN apk add --no-cache git
-RUN go install -ldflags "-X github.com/nimling/samna-migrate/pkg/cli.Version=v1.5.13" github.com/nimling/samna-migrate/cmd@v1.5.13 \
+RUN go install -ldflags "-X github.com/nimling/samna-migrate/pkg/cli.Version=v1.5.14" github.com/nimling/samna-migrate/cmd@v1.5.14 \
     && mv /go/bin/cmd /usr/local/bin/smig
 
 FROM postgres:17-alpine

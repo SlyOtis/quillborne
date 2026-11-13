@@ -1,0 +1,884 @@
+{
+  "format": "2",
+  "service": "quillborne",
+  "version": "",
+  "groups": [
+    {
+      "name": "profile",
+      "schema": {
+        "properties": {
+          "display_name": {
+            "description": "The name shown at the table.",
+            "type": "string"
+          },
+          "email": {
+            "description": "The address the player signs in with.",
+            "type": "string"
+          },
+          "friends": {
+            "description": "The user ids the player has added as friends.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "photo_url": {
+            "description": "The stored address of the portrait.",
+            "type": "string"
+          },
+          "preferences": {
+            "description": "Theme, sound, animations, recent characters and shortcuts."
+          },
+          "user_id": {
+            "description": "The player the profile belongs to, samna_user.user_id.",
+            "format": "uuid",
+            "type": "string",
+            "x-immutable": true
+          }
+        },
+        "required": [
+          "user_id",
+          "email",
+          "display_name"
+        ],
+        "type": "object"
+      },
+      "depends_on": [],
+      "refs": {},
+      "filters": [
+        "user_id"
+      ],
+      "fields": {
+        "sensitive": [],
+        "immutable": [
+          "/user_id"
+        ],
+        "server_default": [],
+        "sensitive_by": {}
+      }
+    },
+    {
+      "name": "tag",
+      "schema": {
+        "properties": {
+          "name": {
+            "description": "The display name, one tag per lowercase form.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "depends_on": [],
+      "refs": {},
+      "filters": [],
+      "fields": {
+        "sensitive": [],
+        "immutable": [],
+        "server_default": [],
+        "sensitive_by": {}
+      }
+    },
+    {
+      "name": "catalog_entry",
+      "schema": {
+        "properties": {
+          "description": {
+            "description": "What the entry is.",
+            "type": "string"
+          },
+          "digest": {
+            "description": "The digest of the source the entry was read from.",
+            "type": "string"
+          },
+          "entry": {
+            "description": "The entry as the rules engine reads it."
+          },
+          "kind": {
+            "description": "classes or races.",
+            "type": "string"
+          },
+          "name": {
+            "description": "The display name.",
+            "type": "string"
+          },
+          "owner_id": {
+            "description": "The player whose upload the entry was read from.",
+            "format": "uuid",
+            "type": "string",
+            "x-immutable": true
+          },
+          "slug": {
+            "description": "The address name of the entry.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "slug",
+          "name"
+        ],
+        "type": "object"
+      },
+      "depends_on": [],
+      "refs": {},
+      "filters": [],
+      "fields": {
+        "sensitive": [],
+        "immutable": [
+          "/owner_id"
+        ],
+        "server_default": [],
+        "sensitive_by": {}
+      }
+    },
+    {
+      "name": "campaign",
+      "schema": {
+        "properties": {
+          "description": {
+            "description": "What the campaign is about.",
+            "type": "string"
+          },
+          "dm_id": {
+            "description": "The dungeon master, samna_user.user_id.",
+            "format": "uuid",
+            "type": "string",
+            "x-immutable": true
+          },
+          "is_active": {
+            "description": "Whether the campaign is being played.",
+            "type": "boolean"
+          },
+          "name": {
+            "description": "The campaign name.",
+            "type": "string"
+          },
+          "player_ids": {
+            "description": "The user ids seated at the table, each granted the Players claim.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "settings": {
+            "description": "Character editing, sheet sharing, private notes and the experience mode."
+          }
+        },
+        "required": [
+          "dm_id",
+          "name"
+        ],
+        "type": "object"
+      },
+      "depends_on": [
+        "profile"
+      ],
+      "refs": {},
+      "filters": [
+        "user_id"
+      ],
+      "fields": {
+        "sensitive": [],
+        "immutable": [
+          "/dm_id"
+        ],
+        "server_default": [],
+        "sensitive_by": {}
+      }
+    },
+    {
+      "name": "character",
+      "schema": {
+        "properties": {
+          "campaign_id": {
+            "description": "The key of the campaign record.",
+            "type": "string"
+          },
+          "character": {
+            "description": "The whole sheet as the rules engine reads it."
+          },
+          "is_public": {
+            "description": "Whether anyone signed in may read the sheet.",
+            "type": "boolean"
+          },
+          "metadata": {
+            "description": "Name, level, class, race, status, tags, version and the template flag shown in lists."
+          },
+          "owner_id": {
+            "description": "The player the character belongs to.",
+            "format": "uuid",
+            "type": "string",
+            "x-immutable": true
+          }
+        },
+        "required": [
+          "owner_id",
+          "character"
+        ],
+        "type": "object"
+      },
+      "depends_on": [
+        "campaign"
+      ],
+      "refs": {
+        "campaign_id": "campaign"
+      },
+      "filters": [
+        "campaign_id",
+        "user_id"
+      ],
+      "fields": {
+        "sensitive": [],
+        "immutable": [
+          "/owner_id"
+        ],
+        "server_default": [],
+        "sensitive_by": {}
+      }
+    },
+    {
+      "name": "vehicle",
+      "schema": {
+        "properties": {
+          "campaign_id": {
+            "description": "The key of the campaign record.",
+            "type": "string"
+          },
+          "components": {
+            "description": "The installed components."
+          },
+          "crew": {
+            "description": "Every crew member with their character and role; the character ids are those of the export and are mapped on import."
+          },
+          "layout": {
+            "description": "The deck layout key.",
+            "type": "string"
+          },
+          "name": {
+            "description": "The vehicle name.",
+            "type": "string"
+          },
+          "overlay": {
+            "description": "The homebrew catalogue entries this vehicle alone carries."
+          },
+          "owner_id": {
+            "description": "The player who built it.",
+            "format": "uuid",
+            "type": "string",
+            "x-immutable": true
+          },
+          "rulings": {
+            "description": "The option chosen for each rules ambiguity by its id."
+          },
+          "states": {
+            "description": "The hit points and condition of each component by component id."
+          },
+          "stats": {
+            "description": "The vehicle level statistics."
+          },
+          "system": {
+            "description": "The vehicle rule system id.",
+            "type": "string"
+          },
+          "template": {
+            "description": "The template key it was built from.",
+            "type": "string"
+          },
+          "template_version": {
+            "description": "The version of the template it was built from.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "owner_id",
+          "system",
+          "layout"
+        ],
+        "type": "object"
+      },
+      "depends_on": [
+        "campaign",
+        "character"
+      ],
+      "refs": {
+        "campaign_id": "campaign"
+      },
+      "filters": [
+        "campaign_id",
+        "user_id"
+      ],
+      "fields": {
+        "sensitive": [],
+        "immutable": [
+          "/owner_id"
+        ],
+        "server_default": [],
+        "sensitive_by": {}
+      }
+    },
+    {
+      "name": "resource",
+      "schema": {
+        "properties": {
+          "campaign_id": {
+            "description": "The key of the campaign record.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The lede under the name.",
+            "type": "string"
+          },
+          "fields": {
+            "description": "Everything else the page carries: tags, facts, pictures, frame, block document and the fields of its own kind."
+          },
+          "kind": {
+            "description": "Which of the seven kinds the page is: entries, items, weapons, armor, locations, maps or sessions.",
+            "type": "string"
+          },
+          "name": {
+            "description": "The name shown at the head.",
+            "type": "string"
+          },
+          "owner_id": {
+            "description": "The player who wrote it down.",
+            "format": "uuid",
+            "type": "string",
+            "x-immutable": true
+          },
+          "parent_id": {
+            "description": "The key of the resource record.",
+            "type": "string"
+          },
+          "share_campaigns": {
+            "description": "The campaigns whose tables read it.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "share_users": {
+            "description": "The players it is shared with by name.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "owner_id",
+          "name"
+        ],
+        "type": "object"
+      },
+      "depends_on": [
+        "campaign"
+      ],
+      "refs": {
+        "campaign_id": "campaign",
+        "parent_id": "resource"
+      },
+      "filters": [
+        "campaign_id",
+        "user_id"
+      ],
+      "fields": {
+        "sensitive": [],
+        "immutable": [
+          "/owner_id"
+        ],
+        "server_default": [],
+        "sensitive_by": {}
+      }
+    },
+    {
+      "name": "campaign_map",
+      "schema": {
+        "properties": {
+          "campaign_id": {
+            "description": "The key of the campaign record.",
+            "type": "string"
+          },
+          "image_url": {
+            "description": "The stored address of the map picture.",
+            "type": "string"
+          },
+          "is_visible": {
+            "description": "Whether the players see the map.",
+            "type": "boolean"
+          },
+          "layers": {
+            "description": "The image layers drawn over the map."
+          },
+          "markers": {
+            "description": "The markers placed on the map, each pointing at a record by record_kind and record_id; the ids are those of the export and are mapped on import."
+          },
+          "max_zoom": {
+            "description": "The largest zoom the map allows.",
+            "type": "number"
+          },
+          "min_zoom": {
+            "description": "The smallest zoom the map allows.",
+            "type": "number"
+          },
+          "owner_id": {
+            "description": "The dungeon master who drew it.",
+            "format": "uuid",
+            "type": "string",
+            "x-immutable": true
+          },
+          "parent_map_id": {
+            "description": "The key of the campaign_map record.",
+            "type": "string"
+          },
+          "plan": {
+            "description": "The drawn plan as a nimap document, shown in 3D."
+          },
+          "title": {
+            "description": "The map title.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "campaign_id",
+          "owner_id",
+          "title"
+        ],
+        "type": "object"
+      },
+      "depends_on": [
+        "campaign",
+        "character",
+        "resource"
+      ],
+      "refs": {
+        "campaign_id": "campaign",
+        "parent_map_id": "campaign_map"
+      },
+      "filters": [
+        "campaign_id"
+      ],
+      "fields": {
+        "sensitive": [],
+        "immutable": [
+          "/owner_id"
+        ],
+        "server_default": [],
+        "sensitive_by": {}
+      }
+    },
+    {
+      "name": "encounter",
+      "schema": {
+        "properties": {
+          "campaign_id": {
+            "description": "The key of the campaign record.",
+            "type": "string"
+          },
+          "combatants": {
+            "description": "Every combatant with its kind, initiative, hit points and conditions; character ids are those of the export and are mapped on import."
+          },
+          "is_active": {
+            "description": "Whether the encounter is running.",
+            "type": "boolean"
+          },
+          "owner_id": {
+            "description": "The player who set it up.",
+            "format": "uuid",
+            "type": "string",
+            "x-immutable": true
+          },
+          "round": {
+            "description": "The current round.",
+            "type": "integer"
+          },
+          "share_campaigns": {
+            "description": "The campaigns whose tables read it.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "share_users": {
+            "description": "The players it is shared with by name.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": {
+            "description": "The encounter title.",
+            "type": "string"
+          },
+          "turn": {
+            "description": "The index of the combatant whose turn it is.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "campaign_id",
+          "owner_id",
+          "title"
+        ],
+        "type": "object"
+      },
+      "depends_on": [
+        "campaign",
+        "character"
+      ],
+      "refs": {
+        "campaign_id": "campaign"
+      },
+      "filters": [
+        "campaign_id"
+      ],
+      "fields": {
+        "sensitive": [],
+        "immutable": [
+          "/owner_id"
+        ],
+        "server_default": [],
+        "sensitive_by": {}
+      }
+    },
+    {
+      "name": "song",
+      "schema": {
+        "properties": {
+          "address": {
+            "description": "The stored address of the audio file.",
+            "type": "string"
+          },
+          "campaign_id": {
+            "description": "The key of the campaign record.",
+            "type": "string"
+          },
+          "duration": {
+            "description": "The length in seconds.",
+            "type": "number"
+          },
+          "owner_id": {
+            "description": "The player who added it.",
+            "format": "uuid",
+            "type": "string",
+            "x-immutable": true
+          },
+          "share_campaigns": {
+            "description": "The campaigns whose tables hear it.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "share_users": {
+            "description": "The players it is shared with by name.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": {
+            "description": "The song title.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "campaign_id",
+          "owner_id",
+          "title"
+        ],
+        "type": "object"
+      },
+      "depends_on": [
+        "campaign"
+      ],
+      "refs": {
+        "campaign_id": "campaign"
+      },
+      "filters": [
+        "campaign_id"
+      ],
+      "fields": {
+        "sensitive": [],
+        "immutable": [
+          "/owner_id"
+        ],
+        "server_default": [],
+        "sensitive_by": {}
+      }
+    },
+    {
+      "name": "chat_entry",
+      "schema": {
+        "properties": {
+          "author_id": {
+            "description": "The user id of the author.",
+            "format": "uuid",
+            "type": "string",
+            "x-immutable": true
+          },
+          "author_name": {
+            "description": "The name the author posted under.",
+            "type": "string"
+          },
+          "body": {
+            "description": "The message text.",
+            "type": "string"
+          },
+          "campaign_id": {
+            "description": "The key of the campaign record.",
+            "type": "string"
+          },
+          "card_kind": {
+            "description": "The card the entry is drawn as.",
+            "type": "string"
+          },
+          "dice": {
+            "description": "Each die as it landed."
+          },
+          "formula": {
+            "description": "The dice formula rolled.",
+            "type": "string"
+          },
+          "is_hidden": {
+            "description": "Whether only the dungeon master and the author read the entry.",
+            "type": "boolean"
+          },
+          "kind": {
+            "description": "message or roll.",
+            "type": "string"
+          },
+          "query": {
+            "description": "The question asked of the assistant.",
+            "type": "string"
+          },
+          "roll": {
+            "description": "The sum of the dice.",
+            "type": "number"
+          },
+          "roll_kind": {
+            "description": "What the roll was for.",
+            "type": "string"
+          },
+          "total": {
+            "description": "The roll with its modifiers.",
+            "type": "number"
+          }
+        },
+        "required": [
+          "campaign_id",
+          "author_id",
+          "kind"
+        ],
+        "type": "object"
+      },
+      "depends_on": [
+        "campaign"
+      ],
+      "refs": {
+        "campaign_id": "campaign"
+      },
+      "filters": [
+        "campaign_id"
+      ],
+      "fields": {
+        "sensitive": [],
+        "immutable": [
+          "/author_id"
+        ],
+        "server_default": [],
+        "sensitive_by": {}
+      }
+    },
+    {
+      "name": "asset",
+      "schema": {
+        "properties": {
+          "banner_id": {
+            "description": "The key of the asset record.",
+            "type": "string"
+          },
+          "campaign_id": {
+            "description": "The key of the campaign record.",
+            "type": "string"
+          },
+          "description": {
+            "description": "What the asset holds.",
+            "type": "string"
+          },
+          "document": {
+            "description": "The block document of a document asset."
+          },
+          "icon": {
+            "description": "An emoji or an icon name.",
+            "type": "string"
+          },
+          "index": {
+            "description": "The display order among siblings.",
+            "type": "integer"
+          },
+          "mime_type": {
+            "description": "The media type; inode/directory for a folder, application/vnd.mar.document+json for a block document.",
+            "type": "string"
+          },
+          "name": {
+            "description": "The display name.",
+            "type": "string"
+          },
+          "parent_id": {
+            "description": "The key of the asset record.",
+            "type": "string"
+          },
+          "properties": {
+            "description": "Free form customization owned by the reader."
+          },
+          "type": {
+            "description": "The classification: folder, document, image, audio.",
+            "type": "string"
+          },
+          "uploaded_by": {
+            "description": "The player who stored it.",
+            "format": "uuid",
+            "type": "string",
+            "x-immutable": true
+          }
+        },
+        "required": [
+          "name",
+          "mime_type",
+          "uploaded_by"
+        ],
+        "type": "object"
+      },
+      "depends_on": [
+        "campaign"
+      ],
+      "refs": {
+        "banner_id": "asset",
+        "campaign_id": "campaign",
+        "parent_id": "asset"
+      },
+      "filters": [
+        "campaign_id"
+      ],
+      "fields": {
+        "sensitive": [],
+        "immutable": [
+          "/uploaded_by"
+        ],
+        "server_default": [],
+        "sensitive_by": {}
+      }
+    },
+    {
+      "name": "object_asset",
+      "schema": {
+        "properties": {
+          "asset_id": {
+            "description": "The key of the asset record.",
+            "type": "string"
+          },
+          "object_id": {
+            "description": "The row the asset is attached to, by the id it had where the export was made.",
+            "format": "uuid",
+            "type": "string",
+            "x-immutable": true
+          },
+          "object_type": {
+            "description": "The table of the row the asset is attached to, public.\u003ctable\u003e.",
+            "type": "string"
+          },
+          "properties": {
+            "description": "Free form customization of this attachment, overriding the asset's key by key."
+          }
+        },
+        "required": [
+          "asset_id",
+          "object_type",
+          "object_id"
+        ],
+        "type": "object"
+      },
+      "depends_on": [
+        "asset",
+        "campaign",
+        "character",
+        "vehicle",
+        "resource",
+        "campaign_map",
+        "encounter",
+        "song"
+      ],
+      "refs": {
+        "asset_id": "asset"
+      },
+      "filters": [],
+      "fields": {
+        "sensitive": [],
+        "immutable": [
+          "/object_id"
+        ],
+        "server_default": [],
+        "sensitive_by": {}
+      }
+    },
+    {
+      "name": "tag_object",
+      "schema": {
+        "properties": {
+          "object_id": {
+            "description": "The tagged row, by the id it had where the export was made.",
+            "format": "uuid",
+            "type": "string",
+            "x-immutable": true
+          },
+          "object_type": {
+            "description": "The table of the tagged row, public.\u003ctable\u003e.",
+            "type": "string"
+          },
+          "tag_id": {
+            "description": "The key of the tag record.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tag_id",
+          "object_type",
+          "object_id"
+        ],
+        "type": "object"
+      },
+      "depends_on": [
+        "tag",
+        "campaign",
+        "character",
+        "vehicle",
+        "resource",
+        "asset"
+      ],
+      "refs": {
+        "tag_id": "tag"
+      },
+      "filters": [],
+      "fields": {
+        "sensitive": [],
+        "immutable": [
+          "/object_id"
+        ],
+        "server_default": [],
+        "sensitive_by": {}
+      }
+    }
+  ]
+}

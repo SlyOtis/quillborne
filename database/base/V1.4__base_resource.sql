@@ -23,38 +23,6 @@ CREATE TABLE IF NOT EXISTS resource (
     sa_deleted_at     TIMESTAMPTZ
 );
 
-ALTER TABLE resource DROP COLUMN IF EXISTS share_parties;
-
-DO $$ BEGIN
-    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'resource' AND column_name = 'title') THEN
-        ALTER TABLE resource RENAME COLUMN title TO name;
-    END IF;
-END $$;
-
-ALTER TABLE resource ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT '';
-UPDATE resource SET description = coalesce(fields->>'description', '') WHERE description = '' AND fields ? 'description';
-
-DO $$ BEGIN
-    IF EXISTS (
-        SELECT 1 FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid
-         WHERE t.typname = 'resource_kind' AND e.enumlabel IN ('heroes', 'quests', 'npcs')
-    ) THEN
-        UPDATE resource SET kind = 'entries' WHERE kind::text = 'quests';
-        DELETE FROM resource_update WHERE resource_id IN (
-            SELECT id FROM resource
-             WHERE kind::text IN ('heroes', 'npcs')
-                OR sa_root_id IN (SELECT id FROM resource WHERE kind::text IN ('heroes', 'npcs'))
-        );
-        DELETE FROM resource
-         WHERE kind::text IN ('heroes', 'npcs')
-            OR sa_root_id IN (SELECT id FROM resource WHERE kind::text IN ('heroes', 'npcs'));
-        ALTER TYPE resource_kind RENAME TO resource_kind_old;
-        CREATE TYPE resource_kind AS ENUM ('entries', 'items', 'weapons', 'armor', 'locations', 'maps', 'sessions');
-        ALTER TABLE resource ALTER COLUMN kind TYPE resource_kind USING kind::text::resource_kind;
-        DROP TYPE resource_kind_old;
-    END IF;
-END $$;
-
 COMMENT ON TYPE resource_kind IS 'The seven kinds of lore a player or a campaign keeps';
 
 CREATE INDEX IF NOT EXISTS idx_resource_campaign_kind ON resource (campaign_id, kind);
