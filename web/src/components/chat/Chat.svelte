@@ -7,7 +7,6 @@
   import { user, userDetails, userProfile } from "$lib/stores/auth.store";
   import Sigil from "$components/ui/Sigil.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
-  import Fold from "$components/ui/Fold.svelte";
   import FriendsPanel from "$pages/main/FriendsPanel.svelte";
   import { rollMode, rollHidden, type RollMode } from "$lib/engine";
   import { currentCampaignId } from "$lib/stores/campaign.store";
@@ -48,7 +47,7 @@
 
   let friends = $state<Profile[]>([])
   let friendsLoading = $state(true)
-  let friendsOpen = $state(false)
+  let view = $state<'chat' | 'party'>('chat')
 
   $effect(() => {
     const ids = $userProfile?.friends ?? []
@@ -59,7 +58,7 @@
   })
 
   const isDm = $derived(Boolean($user?.user_id) && dmOf === $user?.user_id)
-  let scroller: HTMLElement
+  let scroller = $state<HTMLElement | null>(null)
   
   // Audio recording state
   let isRecording = $state(false)
@@ -69,7 +68,7 @@
 
   $effect(() => {
     chatLog.length || stateThinking?.length || stateError?.length || showHidden;
-    scroller.scrollTo(0, scroller.scrollHeight)
+    scroller?.scrollTo(0, scroller.scrollHeight)
   })
 
   function onKeyDown(e: KeyboardEvent) {
@@ -295,9 +294,13 @@
 
 <div class="root" class:disabled={isDialogOpen}>
     <div class="inner">
-        <Fold title="Friends" count={friends.length} variant="row" open={friendsOpen} ontoggle={() => friendsOpen = !friendsOpen}>
-            <FriendsPanel loading={friendsLoading} bind:friends />
-        </Fold>
+        <div class="tabs" role="tablist" aria-label="The drawer">
+            <button type="button" class="tab" class:tab-on={view === 'chat'} role="tab" aria-selected={view === 'chat'} onclick={() => view = 'chat'}>Chat</button>
+            <button type="button" class="tab" class:tab-on={view === 'party'} role="tab" aria-selected={view === 'party'} onclick={() => view = 'party'}>Party <span class="tab-count">{friends.length}</span></button>
+        </div>
+        {#if view === 'party'}
+        <div class="party"><FriendsPanel loading={friendsLoading} bind:friends /></div>
+        {:else}
         <div class="scroll" bind:this={scroller}>
             <ul>
                 {#each chatLog as logItem}
@@ -362,6 +365,7 @@
                 </Sigil>
             </div>
         </div>
+        {/if}
     </div>
 </div>
 
@@ -488,7 +492,8 @@
         user-select: none;
     }
 
-    .modes {
+    .modes,
+    .tabs {
         display: flex;
         align-self: stretch;
         gap: 0;
@@ -499,7 +504,8 @@
         box-shadow: var(--rim-thin), var(--bevel-down);
     }
 
-    .mode {
+    .mode,
+    .tab {
         position: relative;
         flex: 1;
         padding: var(--space-1) var(--space-2);
@@ -521,30 +527,36 @@
         transition: color 0.18s ease, text-shadow 0.18s ease, box-shadow 0.18s ease;
     }
 
-    .mode:first-child {
+    .mode:first-child,
+    .tab:first-child {
         border-radius: var(--radius-sm) 0 0 var(--radius-sm);
     }
 
-    .mode:last-child {
+    .mode:last-child,
+    .tab:last-child {
         border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
     }
 
-    .mode:hover {
+    .mode:hover,
+    .tab:hover {
         color: var(--metal-bright);
         text-shadow: var(--glow-text);
     }
 
-    .mode:active {
+    .mode:active,
+    .tab:active {
         filter: brightness(0.85);
     }
 
-    .mode:focus-visible {
+    .mode:focus-visible,
+    .tab:focus-visible {
         outline: none;
         box-shadow: var(--focus-ring);
         z-index: 1;
     }
 
-    .mode-on {
+    .mode-on,
+    .tab-on {
         color: var(--metal-bright);
         text-shadow: var(--glow-text);
         background:
@@ -558,6 +570,25 @@
 
     .mode-hidden {
         flex: 1.4;
+    }
+
+    .tabs {
+        flex: none;
+        margin: var(--space-3) var(--space-3) var(--space-2);
+    }
+
+    .tab-count {
+        margin-inline-start: var(--space-1);
+        font-family: var(--font-figures);
+        font-variant-numeric: lining-nums tabular-nums;
+        color: var(--ink-dim);
+    }
+
+    .party {
+        flex: 1;
+        min-height: 0;
+        padding: var(--space-3);
+        overflow-y: auto;
     }
 
     .actions {

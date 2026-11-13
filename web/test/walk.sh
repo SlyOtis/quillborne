@@ -134,15 +134,17 @@ for w in 1280 1600; do
 done
 pw resize 1600 900 >/dev/null
 
-page="friends in the chat"
+page="party in the chat"
 pw click "getByTitle('Toggle the chat')" >/dev/null
-if wait_for "document.querySelector('.dnd-shell-chat-open .dnd-sidebar-end .dnd-fold') !== null" "the chat panel with its friends fold"; then
-  friends_head=".dnd-sidebar-end .dnd-fold .dnd-fold-head"
-  [ "$(js "document.querySelector('$friends_head .dnd-fold-title').textContent.trim()")" = "Friends" ] || fail "the chat panel's fold is not Friends"
-  js "document.querySelector('$friends_head').click() ?? null" >/dev/null
-  wait_for "document.querySelector('.dnd-sidebar-end .dnd-fold-open') !== null && document.querySelector('.dnd-sidebar-end .dnd-fold .dnd-loading') === null" "the friends fold to open"
-  [ "$(js "document.querySelector('.dnd-sidebar-end .dnd-fold .dnd-card') !== null || document.querySelector('.dnd-sidebar-end .dnd-fold .dnd-empty') !== null")" = "true" ] || fail "the friends list shows neither a friend nor its empty state"
-  [ "$(js "document.querySelector('.dnd-sidebar-end .dnd-fold #friend-address') !== null && [...document.querySelectorAll('.dnd-sidebar-end .dnd-fold .dnd-button')].some((e) => e.textContent.trim() === 'Add')")" = "true" ] || fail "the friends fold carries no add-a-friend field with its Add button"
+if wait_for "document.querySelector('.dnd-shell-chat-open .dnd-sidebar-end [role=tablist]') !== null" "the chat panel with its tabs"; then
+  tabs="$(js "[...document.querySelectorAll('.dnd-sidebar-end [role=tab]')].map((e) => e.textContent.trim().split(/\\s/)[0]).join(',')")"
+  [ "$tabs" = "Chat,Party" ] || fail "the drawer tabs are $tabs, not Chat,Party"
+  js "[...document.querySelectorAll('.dnd-sidebar-end [role=tab]')].find((e) => e.textContent.trim().startsWith('Party')).click() ?? null" >/dev/null
+  wait_for "document.querySelector('.dnd-sidebar-end [role=tab][aria-selected=\"true\"]')?.textContent.trim().startsWith('Party') && document.querySelector('.dnd-sidebar-end .dnd-loading') === null" "the party tab to open"
+  [ "$(js "document.querySelector('.dnd-sidebar-end .dnd-card') !== null || document.querySelector('.dnd-sidebar-end .dnd-empty') !== null")" = "true" ] || fail "the party list shows neither a friend nor its empty state"
+  [ "$(js "document.querySelector('.dnd-sidebar-end #friend-address') !== null && [...document.querySelectorAll('.dnd-sidebar-end .dnd-button')].some((e) => e.textContent.trim() === 'Add')")" = "true" ] || fail "the party tab carries no add-a-friend field with its Add button"
+  js "[...document.querySelectorAll('.dnd-sidebar-end [role=tab]')].find((e) => e.textContent.trim().startsWith('Chat')).click() ?? null" >/dev/null
+  wait_for "document.querySelector('.dnd-sidebar-end textarea') !== null" "the chat tab to return"
   pw click "getByTitle('Toggle the menu')" >/dev/null
   wait_for "document.querySelector('.dnd-shell-menu-open') !== null && document.querySelector('.dnd-shell-chat-open') === null" "the menu to open and the chat to close"
   pw click "getByTitle('Toggle the chat')" >/dev/null
