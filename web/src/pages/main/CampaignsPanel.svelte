@@ -2,6 +2,7 @@
   import Glyph from "$components/ui/Glyph.svelte";
   import { navigate } from "sly-svelte-location-router";
   import { userCampaigns } from "$lib/stores/campaign.store";
+  import { user } from "$lib/stores/auth.store";
   import Card from "$components/ui/Card.svelte";
 
   let { loading = false, search = '' } = $props();
@@ -32,13 +33,16 @@
     {#each shown as entry (entry.id)}
       <Card
         title={entry.name}
-        sub={entry.description}
+        sub="Campaign started {new Date(entry.created_at).toLocaleDateString()}"
         tone="verdigris"
-        badge={entry.is_active ? 'live' : undefined}
+        layout="face"
         onclick={() => openCampaign(entry.id)}
       >
-        <span>Players {entry.player_ids.length}</span>
-        <span>Characters {entry.character_ids.length}</span>
+        <span class="camps-count">
+          <span class="camps-figure">{entry.player_ids.length}</span>
+          <span class="dnd-label">{entry.player_ids.length === 1 ? 'Player' : 'Players'}</span>
+        </span>
+        <span class="dnd-label camps-role">Role: {entry.dm_id === $user?.user_id ? 'Dungeon master' : 'Player'}</span>
       </Card>
     {/each}
   </div>
@@ -103,5 +107,24 @@
     grid-template-columns: repeat(auto-fit, minmax(min(var(--camps-seat), 100%), 1fr));
     gap: var(--space-3);
     min-width: 0;
+  }
+
+  .camps-count {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .camps-figure {
+    font-family: var(--font-figures);
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: lining-nums tabular-nums;
+    color: var(--metal-bright);
+  }
+
+  .camps-role {
+    color: var(--ink);
   }
 </style>

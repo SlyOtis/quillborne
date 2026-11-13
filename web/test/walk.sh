@@ -102,17 +102,17 @@ visit /main "$hearth" "the hearth" && check_page bar
 page="/main at 1280 and 1600"
 for w in 1280 1600; do
   pw resize "$w" 900 >/dev/null
-  wait_for "document.querySelectorAll('.hall-grid .hall-plot').length === 3 && document.querySelector('.hall-grid .dnd-loading') === null" "the three hearth regions at $w" || continue
+  wait_for "document.querySelectorAll('.hall-grid .hall-plot').length === 2 && document.querySelector('.hall-grid .dnd-loading') === null" "the two hearth regions at $w" || continue
   [ "$(js "document.querySelector('.hall-grid .hall-hero .hall-hero-name') !== null")" = "true" ] || fail "no hero over the regions at $w"
   regions="$(js "[...document.querySelectorAll('.hall-grid .hall-plot')].map((e) => e.getAttribute('aria-label')).join(',')")"
-  [ "$regions" = "Campaigns,Characters,Items" ] || fail "the hearth regions are $regions at $w"
+  [ "$regions" = "Campaigns,Characters" ] || fail "the hearth regions are $regions at $w"
   plates="$(js "document.querySelectorAll('.hall-grid .dnd-panelbox-head, .hall-grid .dnd-rail-head, .hall-grid .dnd-rail-step').length")"
   [ "$plates" = "0" ] || fail "$plates header plates, rail heads or step arrows stand on the hearth at $w"
   gone="$(js "[...document.querySelectorAll('.hall-grid [aria-label]')].map((e) => e.getAttribute('aria-label')).filter((n) => /^(Party|Parties|Cast|Catalog)$/.test(n)).join(',')")"
   [ -z "$gone" ] || fail "the hearth still carries $gone at $w"
-  laid="$(js "(() => { const g = document.querySelector('.hall-grid').getBoundingClientRect(); const c = document.querySelector('.hall-plot-camps').getBoundingClientRect(); const r = document.querySelector('.hall-plot-roll').getBoundingClientRect(); const l = document.querySelector('.hall-plot-items').getBoundingClientRect(); const wide = [c, r, l].every((e) => Math.abs(e.left - g.left) < 1 && Math.abs(e.right - g.right) < 1); const under = c.bottom <= r.top && r.bottom <= l.top; return (wide ? 'wide' : 'narrow') + ':' + (under ? 'stacked' : 'shuffled') })()")"
-  [ "${laid%%:*}" = "wide" ] || fail "campaigns, characters and items do not span the hearth's width at $w"
-  [ "${laid##*:}" = "stacked" ] || fail "campaigns, characters and items do not stack in that order at $w"
+  laid="$(js "(() => { const g = document.querySelector('.hall-grid').getBoundingClientRect(); const c = document.querySelector('.hall-plot-camps').getBoundingClientRect(); const r = document.querySelector('.hall-plot-roll').getBoundingClientRect(); const wide = [c, r].every((e) => Math.abs(e.left - g.left) < 1 && Math.abs(e.right - g.right) < 1); const under = c.bottom <= r.top; return (wide ? 'wide' : 'narrow') + ':' + (under ? 'stacked' : 'shuffled') })()")"
+  [ "${laid%%:*}" = "wide" ] || fail "campaigns and characters do not span the hearth's width at $w"
+  [ "${laid##*:}" = "stacked" ] || fail "campaigns and characters do not stack in that order at $w"
   [ "$(js "document.querySelector('.hall-grid .hall-plot-friends') === null")" = "true" ] || fail "the hearth still carries a friends column at $w"
   over="$(js "Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth")"
   [ "$over" -le 0 ] || fail "the hearth is ${over}px wider than the viewport at $w"

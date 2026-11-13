@@ -9,15 +9,12 @@
   import { uiStore, anyDialogOpen, postNotice } from "$lib/stores/ui.store";
   import { getRecentFirst, userCharacters } from "$lib/stores/character.store";
   import { userCampaigns } from "$lib/stores/campaign.store";
-  import { user, userProfile, userDetails } from "$lib/stores/auth.store";
-  import { getAll, type Resource } from "$lib/resources";
+  import { userProfile, userDetails } from "$lib/stores/auth.store";
   import { navigate } from "sly-svelte-location-router";
   import CharactersPanel from "./main/CharactersPanel.svelte";
   import CampaignsPanel from "./main/CampaignsPanel.svelte";
-  import { KINDS, TONES } from "./main/LorePanel.svelte";
-  import Card from "$components/ui/Card.svelte";
-  import ResourceCard from "$components/campaign/ResourceCard.svelte";
   import Portrait from "$components/ui/Portrait.svelte";
+  import Card from "$components/ui/Card.svelte";
   import Button from "$components/ui/Button.svelte";
   import Shell from "$components/ui/Shell.svelte";
   import Sigil from "$components/ui/Sigil.svelte";
@@ -36,18 +33,13 @@
   });
 
   let loading = $state(true);
-  let lore = $state<Record<string, Resource[]>>({});
+  let campaignSearch = $state('');
+  let characterSearch = $state('');
 
   const name = $derived($userDetails?.display_name || $userProfile?.display_name || 'Adventurer');
-  const items = $derived([...(lore.items ?? []), ...(lore.weapons ?? []), ...(lore.armor ?? [])]);
-  const written = $derived(KINDS.reduce((sum, kind) => sum + (lore[kind]?.length ?? 0), 0));
   const newestCampaign = $derived($userCampaigns[0] ?? null);
   const newestCharacter = $derived(getRecentFirst($userCharacters, $userProfile?.preferences?.recent_characters ?? [])[0] ?? null);
   const heroCampaign = $derived($userCampaigns.find((one) => one.id === newestCharacter?.campaign_id) ?? null);
-  const newestLore = $derived(
-    KINDS.flatMap((kind) => (lore[kind] ?? []).map((one) => ({ kind, one })))
-      .sort((a, b) => (b.one.created_at ?? '').localeCompare(a.one.created_at ?? ''))[0] ?? null
-  );
 
   onMount(async () => {
     setTheme(getTheme());
@@ -63,14 +55,6 @@
       postNotice(err instanceof Error ? err.message : 'The archive did not answer');
     } finally {
       loading = false;
-    }
-
-    const userId = $user?.user_id ?? '';
-    try {
-      const rolls = await Promise.all(KINDS.map((kind) => getAll({ at: 'user', id: userId }, kind)));
-      lore = Object.fromEntries(KINDS.map((kind, index) => [kind, rolls[index]]));
-    } catch (err) {
-      postNotice(err instanceof Error ? err.message : 'The archive did not answer');
     }
   });
 
@@ -95,7 +79,7 @@
         <p class="dnd-label hall-hero-eyebrow">The hearth is lit</p>
         <h1 class="dnd-heading hall-hero-name">{name}</h1>
         <p class="hall-hero-note">
-          {$userCharacters.length} characters, {$userCampaigns.length} campaigns, {written} pages.
+          {$userCharacters.length} characters, {$userCampaigns.length} campaigns.
         </p>
       </div>
       {#if newestCharacter}
@@ -134,9 +118,6 @@
               <span>AC {newestCharacter.character.info?.ac ?? 10}</span>
             </Card>
           {/if}
-          {#if newestLore}
-            <ResourceCard under="/main/{newestLore.kind}" kind={newestLore.kind} one={newestLore.one} tone={TONES[newestLore.kind]} />
-          {/if}
         </div>
       </div>
       <div class="hall-hero-acts">
@@ -164,27 +145,6 @@
       </header>
       <CharactersPanel {loading} />
     </section>
-
-    <section class="hall-plot hall-plot-items" aria-label="Items">
-      <header class="hall-divide">
-        <h2 class="dnd-label hall-divide-name">Items</h2>
-        <span class="hall-divide-note">{items.length} in the pack</span>
-        <span class="hall-divide-run"></span>
-      </header>
-      {#if items.length === 0}
-        <div class="dnd-empty">
-          <span class="dnd-empty-mark"><Glyph name="gear" size="lg" /></span>
-          <span>No item is written down yet</span>
-        </div>
-      {:else}
-        <div class="dnd-stack">
-          {#each items as one (one.id)}
-            <ResourceCard under="/main/items" kind="items" {one} tone="metal" />
-          {/each}
-        </div>
-      {/if}
-    </section>
-
   </div>
 </Shell>
 
@@ -367,12 +327,11 @@
   .hall-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
     grid-template-areas:
       'hero'
       'camps'
-      'roll'
-      'items';
+      'roll';
     column-gap: var(--space-6);
     row-gap: var(--space-6);
     min-width: 0;
@@ -391,10 +350,6 @@
 
   .hall-plot-roll {
     grid-area: roll;
-  }
-
-  .hall-plot-items {
-    grid-area: items;
   }
 
   .hall-divide {
