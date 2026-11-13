@@ -36,14 +36,15 @@ Every table holds application data, so nothing is aged and there is no `public.p
 
 The campaign is the one grouping at the table. Every player seated in it, every holder of its Players claim, is the party, and there is no party apart from the campaign.
 
-Everything the party lives through is a `resource` row of one of the eight kinds, held by the campaign through `campaign_id`. A player's own lore is the same row without one. The campaign kinds the table reads:
+Everything the party lives through is a `resource` row of one of the seven kinds, held by the campaign through `campaign_id`. A player's own lore is the same row without one. The campaign kinds the table reads:
 
 - `sessions` is the log: a number, a title, a play date, a summary, and who was present.
-- `npcs` is the cast, called **NPCs** everywhere a player reads it: a role, a disposition, where they are found, a portrait. The DM adds them, and so does any seated player, because a resource with a `campaign_id` needs only read on the campaign. A page written in a campaign starts shared with that campaign, so it reaches the table; its owner narrows that in Access.
 - `locations` is every **Place** charted, its kind, and the map and marker that fix its position.
 - `items` is every **Item**: a kind, a rarity, whether it needs attunement, its weight and worth, who holds it and where it lies.
 
-The kind names stay as they are; the display names are NPCs, Items and Places. `CampaignRecordKind`, what a map pin stands for, is `'place' | 'npc' | 'item' | 'session'`.
+A page written in a campaign starts shared with that campaign, so it reaches the table; its owner narrows that in Access. The kind names stay as they are; the display names are Items and Places. `CampaignRecordKind`, what a map pin stands for, is `'place' | 'character' | 'item' | 'session'`.
+
+An NPC is a character, never a kind of its own: a `character` row in the campaign whose `metadata.tags` holds `npc`, called **NPCs** everywhere a player reads it. The DM adds one, and so does any seated player, and it is bound like every sheet at the table, so every seated player reads it. The party's sheets are the campaign's characters without the tag. A map pin stands for an NPC with `record_kind` `character`, and an encounter combatant names it by `character_id`.
 
 Prose on a resource is a block document, stored as the JSON that `web/src/lib/blocks.ts` writes, never as loose markdown. `getDocument` reads a stored string whether it is that JSON or older markdown, so a page written before the editor still opens.
 

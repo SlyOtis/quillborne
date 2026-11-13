@@ -335,7 +335,7 @@ func TestAPageSharedWithACampaignReachesItsTable(t *testing.T) {
 	requireStack(t)
 	campaignID := postCampaign(t)
 	seatPlayer(t, campaignID)
-	status, made := call(t, dungeonMaster, http.MethodPost, "/api/resource", `{"kind":"npcs","name":"Old Moss","campaign_id":"`+campaignID+`"}`, nil, handler.PostResource)
+	status, made := call(t, dungeonMaster, http.MethodPost, "/api/resource", `{"kind":"entries","name":"Old Moss","campaign_id":"`+campaignID+`"}`, nil, handler.PostResource)
 	if status != http.StatusCreated {
 		t.Fatalf("PostResource: %d %+v", status, made.Error)
 	}

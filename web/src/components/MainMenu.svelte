@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { getCampaign, getCampaignCharacters, getCampaignVehiclesStream } from '$lib/api'
+  import { getCampaign, getCampaignCharacters, getCampaignVehiclesStream, isNpc } from '$lib/api'
   import type { Campaign, Character, Vehicle } from '$lib/api/types'
   import type { Snippet } from 'svelte'
   import { navigate, currentRoute, resolvedRoute } from 'sly-svelte-location-router'
-  import { getAll, getChildren, getRoots, isResourceKind, RESOURCES, type Npc, type Place, type Resource, type ResourceKind } from '$lib/resources'
+  import { getAll, getChildren, getRoots, isResourceKind, RESOURCES, type Place, type Resource, type ResourceKind } from '$lib/resources'
   import { user, userDetails, userProfile } from '$lib/stores/auth.store'
   import { userCampaigns } from '$lib/stores/campaign.store'
   import Fold from '$components/ui/Fold.svelte'
@@ -17,7 +17,6 @@
   let addOpen = $state(false)
   let campaign = $state<Campaign | null>(null)
   let characters = $state<Character[]>([])
-  let npcs = $state<Npc[]>([])
   let places = $state<Place[]>([])
   let vehicles = $state<Vehicle[]>([])
   let loading = $state(false)
@@ -51,11 +50,13 @@
   let more = $state<Record<string, Resource[]>>({})
 
   const isDm = $derived(Boolean(campaign && $user && campaign.dm_id === $user.user_id))
+  const seated = $derived(characters.filter((entry) => !isNpc(entry)))
+  const npcs = $derived(characters.filter(isNpc))
   const searchKey = navigator.userAgent.includes('Mac') ? 'Cmd K' : 'Ctrl K'
   const name = $derived($userDetails?.display_name || $userProfile?.display_name || 'Adventurer')
   const initial = $derived(name.charAt(0).toUpperCase())
   const party = $derived(
-    [...characters].sort((a, b) => Number(b.owner_id === $user?.user_id) - Number(a.owner_id === $user?.user_id))
+    [...seated].sort((a, b) => Number(b.owner_id === $user?.user_id) - Number(a.owner_id === $user?.user_id))
   )
   const lore = $derived(npcs.length + places.length)
 
@@ -66,7 +67,6 @@
     if (!id) {
       campaign = null
       characters = []
-      npcs = []
       places = []
       vehicles = []
       error = null
@@ -82,16 +82,14 @@
 
     void (async () => {
       try {
-        const [record, seated, cast, sites] = await Promise.all([
+        const [record, sheets, sites] = await Promise.all([
           getCampaign(id),
           getCampaignCharacters(id),
-          getAll({ at: 'campaign', id }, 'npcs') as Promise<Npc[]>,
           getAll({ at: 'campaign', id }, 'places') as Promise<Place[]>
         ])
         if (!live) return
         campaign = record
-        characters = seated
-        npcs = cast
+        characters = sheets
         places = sites
 
         const [entries, ...gear] = await Promise.all(['entries' as ResourceKind, ...GEAR].map((roll) => getAll({ at: 'campaign', id }, roll)))
@@ -145,7 +143,7 @@
       <p class="dnd-menu-note" role="alert">{error}</p>
     {/if}
 
-    {@render section('party', 'Party', characters.length, roster)}
+    {@render section('party', 'Party', seated.length, roster)}
     {@render section('npcs', 'NPCs', npcs.length, people)}
     {@render section('places', 'Places', places.length, sites)}
     {@render section('vehicles', 'Vehicles', vehicles.length, fleet)}

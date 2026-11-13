@@ -33,7 +33,6 @@ export interface Resource extends Access {
   created_at: string | null
 }
 
-export type Disposition = 'friendly' | 'neutral' | 'hostile' | 'unknown'
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'very rare' | 'legendary' | 'artifact'
 export type DamageKind =
   | 'bludgeoning' | 'piercing' | 'slashing' | 'fire' | 'cold' | 'lightning' | 'necrotic' | 'radiant'
@@ -43,13 +42,6 @@ export type PlaceKind =
 
 /** A story entry or a note. */
 export interface Entry extends Resource {}
-
-/** Someone the party meets, written down by the DM or a player. */
-export interface Npc extends Resource {
-  role: string
-  disposition: Disposition
-  species: string
-}
 
 /** Any object that is not a weapon or armor. */
 export interface Item extends Resource {
@@ -148,36 +140,6 @@ export function postEntry(owner: Owner, one: Partial<Entry>): Promise<string> {
 
 export function putEntry(owner: Owner, id: string, one: Partial<Entry>): Promise<void> {
   return putResource(id, putShared(one))
-}
-
-// NPCs
-
-export async function getNpcs(owner: Owner): Promise<Npc[]> {
-  const stored = await getResources<Stored>(owner, 'npcs')
-  return stored.map((one) => ({
-    ...getShared(one),
-    role: String(one.role ?? ''),
-    disposition: (one.disposition as Disposition) ?? 'unknown',
-    species: String(one.species ?? '')
-  }))
-}
-
-export function postNpc(owner: Owner, one: Partial<Npc>): Promise<string> {
-  return postResource(owner, 'npcs', {
-    ...putShared(one),
-    role: one.role ?? '',
-    disposition: one.disposition ?? 'unknown',
-    species: one.species ?? ''
-  })
-}
-
-export function putNpc(owner: Owner, id: string, one: Partial<Npc>): Promise<void> {
-  return putResource(id, {
-    ...putShared(one),
-    role: one.role ?? '',
-    disposition: one.disposition ?? 'unknown',
-    species: one.species ?? ''
-  })
 }
 
 // Items
@@ -365,7 +327,7 @@ export function putSession(owner: Owner, id: string, one: Partial<Session>): Pro
 // What a page needs to draw a resource it was handed by name
 
 export type ResourceKind =
-  | 'entries' | 'npcs' | 'items' | 'weapons' | 'armor' | 'places' | 'maps' | 'sessions'
+  | 'entries' | 'items' | 'weapons' | 'armor' | 'places' | 'maps' | 'sessions'
 
 export type FieldForm = 'text' | 'number' | 'choice' | 'flag'
 
@@ -401,23 +363,6 @@ A note, a rumour, a scrap of lore. Write it however it is useful.
 - Where it came from
 - Who repeats it
 - What it would cost to check`,
-
-  npcs: `## At a glance
-
-Write the one line you would say at the table.
-
-## What they want
-
-The thing they are chasing, and what they will trade for it.
-
-## What they know
-
-- Something the party can get out of them
-- Something they will lie about
-
-## Voice
-
-> "Say that again, slower."`,
 
   items: `## What it is
 
@@ -508,20 +453,6 @@ Threads to pick up next time.
 
 export const RESOURCES: Record<ResourceKind, ResourceShape> = {
   entries: { part: 'entries', one: 'Entry', many: 'Entries', word: 'entry', words: 'entries', fields: [], mark: () => '', example: EXAMPLES.entries },
-  npcs: {
-    part: 'npcs',
-    one: 'NPC',
-    many: 'NPCs',
-    word: 'NPC',
-    words: 'NPCs',
-    fields: [
-      { key: 'role', label: 'Role', form: 'text' },
-      { key: 'disposition', label: 'Disposition', form: 'choice', choices: ['friendly', 'neutral', 'hostile', 'unknown'] },
-      { key: 'species', label: 'Species', form: 'text' }
-    ],
-    mark: (one) => (one as Npc).role || (one as Npc).disposition,
-    example: EXAMPLES.npcs
-  },
   items: {
     part: 'items',
     one: 'Item',
@@ -634,7 +565,6 @@ export async function getAll(owner: Owner, kind: ResourceKind, groups = false): 
 
 export function getEvery(owner: Owner, kind: ResourceKind): Promise<Resource[]> {
   if (kind === 'entries') return getEntries(owner)
-  if (kind === 'npcs') return getNpcs(owner)
   if (kind === 'items') return getItems(owner)
   if (kind === 'weapons') return getWeapons(owner)
   if (kind === 'armor') return getArmor(owner)
@@ -645,7 +575,6 @@ export function getEvery(owner: Owner, kind: ResourceKind): Promise<Resource[]> 
 
 export function postOne(owner: Owner, kind: ResourceKind, one: Record<string, unknown>): Promise<string> {
   if (kind === 'entries') return postEntry(owner, one)
-  if (kind === 'npcs') return postNpc(owner, one)
   if (kind === 'items') return postItem(owner, one)
   if (kind === 'weapons') return postWeapon(owner, one)
   if (kind === 'armor') return postArmor(owner, one)
@@ -661,7 +590,6 @@ export function putOne(
   one: Record<string, unknown>
 ): Promise<void> {
   if (kind === 'entries') return putEntry(owner, id, one)
-  if (kind === 'npcs') return putNpc(owner, id, one)
   if (kind === 'items') return putItem(owner, id, one)
   if (kind === 'weapons') return putWeapon(owner, id, one)
   if (kind === 'armor') return putArmor(owner, id, one)

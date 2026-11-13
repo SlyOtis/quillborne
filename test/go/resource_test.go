@@ -45,16 +45,16 @@ func TestAListOfPagesShowsWhatTheReaderMaySee(t *testing.T) {
 	}
 
 	campaignID := postCampaign(t)
-	tableID := postResource(t, dungeonMaster, `{"kind":"npcs","name":"Old Moss","campaign_id":"`+campaignID+`","share_campaigns":["`+campaignID+`"]}`)
-	if status, _ := call(t, player, http.MethodGet, "/api/resource?kind=npcs&campaign_id="+campaignID, "", nil, handler.GetResources); status == http.StatusOK {
+	tableID := postResource(t, dungeonMaster, `{"kind":"entries","name":"Old Moss","campaign_id":"`+campaignID+`","share_campaigns":["`+campaignID+`"]}`)
+	if status, _ := call(t, player, http.MethodGet, "/api/resource?kind=entries&campaign_id="+campaignID, "", nil, handler.GetResources); status == http.StatusOK {
 		t.Fatalf("a player away from the table listed its pages")
 	}
 	seatPlayer(t, campaignID)
-	status, table := call(t, player, http.MethodGet, "/api/resource?kind=npcs&campaign_id="+campaignID, "", nil, handler.GetResources)
+	status, table := call(t, player, http.MethodGet, "/api/resource?kind=entries&campaign_id="+campaignID, "", nil, handler.GetResources)
 	if status != http.StatusOK || !listed(t, table, tableID) {
 		t.Fatalf("a seated player misses a page shared with the table: %d", status)
 	}
-	if status, _ := call(t, player, http.MethodGet, "/api/resource?kind=npcs&campaign_id=not-an-id", "", nil, handler.GetResources); status != http.StatusBadRequest {
+	if status, _ := call(t, player, http.MethodGet, "/api/resource?kind=entries&campaign_id=not-an-id", "", nil, handler.GetResources); status != http.StatusBadRequest {
 		t.Fatalf("a bad campaign_id answered %d", status)
 	}
 }

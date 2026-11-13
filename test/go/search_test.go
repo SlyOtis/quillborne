@@ -32,7 +32,7 @@ func TestTheSearchFindsWhatTheReaderMayRead(t *testing.T) {
 	campaignID := postCampaign(t)
 	seatPlayer(t, campaignID)
 	word := "Mortlake" + strings.ToUpper(uuid.NewString()[:6])
-	status, page := call(t, dungeonMaster, http.MethodPost, "/api/resource", `{"kind":"npcs","name":"`+word+` the Ferrier","description":"Rows the drowned to the far bank","campaign_id":"`+campaignID+`","share_campaigns":["`+campaignID+`"]}`, nil, handler.PostResource)
+	status, page := call(t, dungeonMaster, http.MethodPost, "/api/resource", `{"kind":"entries","name":"`+word+` the Ferrier","description":"Rows the drowned to the far bank","campaign_id":"`+campaignID+`","share_campaigns":["`+campaignID+`"]}`, nil, handler.PostResource)
 	if status != http.StatusCreated {
 		t.Fatalf("PostResource: %d %+v", status, page.Error)
 	}
