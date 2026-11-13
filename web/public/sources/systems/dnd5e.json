@@ -59,7 +59,7 @@
   "derived": [
     { "id": "initiative", "title": "Initiative", "value": "mod.dex + bonus.initiative" },
     { "id": "armorClass", "title": "Armor Class", "value": "10 + mod.dex + bonus.armorClass" },
-    { "id": "carryCapacity", "title": "Carry Capacity", "value": "attr.str * 15", "unit": "lb" },
+    { "id": "carryCapacity", "title": "Carry Capacity", "value": "attr.str * 15", "unit": "lb", "hidden": true },
     { "id": "speed", "title": "Speed", "value": "30 + bonus.speed", "unit": "ft" },
     { "id": "maxHitPoints", "title": "Maximum Hit Points", "value": "max(1, bonus.hitPoints + mod.con * level)" },
     { "id": "spellSaveDc", "title": "Spell Save DC", "value": "8 + prof + bonus.spellcasting" },

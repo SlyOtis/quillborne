@@ -57,7 +57,6 @@ describe('getResolvedCharacter on the 5e core', () => {
     const derived = (id: string) => resolved.derived.find((entry) => entry.id === id)?.value
     expect(derived('initiative')).toBe(4)
     expect(derived('armorClass')).toBe(14)
-    expect(derived('carryCapacity')).toBe(165)
   })
 
   it('resolves a pool whose maximum is a derived value', () => {
