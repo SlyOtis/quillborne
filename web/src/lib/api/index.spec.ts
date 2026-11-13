@@ -164,15 +164,16 @@ describe('the media contract', () => {
     expect(blockReaderSource).toContain("onclick={() => openAsset?.(block.options.assetId ?? '')}")
   })
 
-  it('plays a recording, a video and a pdf from what its address resolves to, so an old file: reference reaches no player', () => {
+  it('plays a video and a pdf from what its address resolves to, so an old file: reference reaches no player, and reads a recording as a link row', () => {
     for (const source of [blockReaderSource, blockEditorSource]) {
       expect(source).not.toMatch(/<(audio|video|object)\b[^>]*(src|data)=\{block\.options\.src/)
     }
-    expect(blockReaderSource).toContain('<audio controls src={url}></audio>')
+    expect(blockReaderSource).not.toContain('<audio')
+    expect(blockReaderSource).toContain('<a class="dnd-read-link dnd-read-sound-link" href={address(block)}')
     expect(blockReaderSource).toContain('<video controls src={url}></video>')
     expect(blockReaderSource).toContain('<object data={url} type="application/pdf"')
     expect(blockEditorSource).toContain('<video controls src={url}></video>')
-    expect(blockReaderSource.match(/\{#await getFileUrl\(block\.options\.src \?\? ''\) then url\}/g)).toHaveLength(3)
+    expect(blockReaderSource.match(/\{#await getFileUrl\(block\.options\.src \?\? ''\) then url\}/g)).toHaveLength(2)
   })
 
   it('feeds the dialog its listing and its upload from the host', () => {

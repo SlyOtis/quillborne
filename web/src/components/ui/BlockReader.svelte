@@ -293,15 +293,10 @@
           {/each}
         </section>
       {:else if block.kind === 'audio'}
-        <figure class="dnd-read-sound">
-          {#await getFileUrl(block.options.src ?? '') then url}
-            {#if url}
-              <!-- svelte-ignore a11y_media_has_caption -->
-              <audio controls src={url}></audio>
-            {/if}
-          {/await}
-          {#if block.text}<figcaption>{block.text}</figcaption>{/if}
-        </figure>
+        <p class="dnd-read-line dnd-read-iconrow">
+          <Glyph name="sound" size="sm" />
+          <a class="dnd-read-link dnd-read-sound-link" href={address(block)} target="_blank" rel="noreferrer noopener">{nameOf(block)}</a>
+        </p>
       {:else if block.kind === 'video'}
         <figure class="dnd-read-sound dnd-read-video">
           {#await getFileUrl(block.options.src ?? '') then url}
@@ -824,7 +819,6 @@
     box-shadow: var(--rim-thin), inset 0 0 16px 2px var(--shade-hard);
   }
 
-  .dnd-read-sound audio,
   .dnd-read-sound video,
   .dnd-read-sound object {
     width: 100%;
