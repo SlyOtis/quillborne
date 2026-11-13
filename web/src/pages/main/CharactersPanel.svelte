@@ -60,11 +60,9 @@
   </div>
   </div>
   {#if !open}
-    <div class="roll-foot">
-      <Button variant="ghost" size="sm" onclick={() => (open = true)}>
-        Show the {shown.length} {shown.length === 1 ? 'character' : 'characters'}
-      </Button>
-    </div>
+    <Button variant="plain" size="sm" fill onclick={() => (open = true)}>
+      Show the {shown.length} {shown.length === 1 ? 'character' : 'characters'}
+    </Button>
   {/if}
 {/if}
 
@@ -83,25 +81,6 @@
   .roll-fold-shut {
     -webkit-mask-image: linear-gradient(180deg, var(--ground-deep) calc(100% - var(--space-8) * 2), transparent 100%);
     mask-image: linear-gradient(180deg, var(--ground-deep) calc(100% - var(--space-8) * 2), transparent 100%);
-  }
-
-  .roll-foot {
-    display: flex;
-    align-items: center;
-    gap: var(--space-4);
-    margin-block-start: calc(var(--space-7) * -1);
-  }
-
-  .roll-foot::before,
-  .roll-foot::after {
-    content: '';
-    flex: 1;
-    block-size: var(--border-hair);
-    background: linear-gradient(90deg, transparent, var(--metal-dim));
-  }
-
-  .roll-foot::after {
-    background: linear-gradient(90deg, var(--metal-dim), transparent);
   }
 
   .roll-grid {

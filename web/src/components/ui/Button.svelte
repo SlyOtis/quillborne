@@ -12,8 +12,8 @@
     onclick,
     children
   }: {
-    /** Picks the tone of the button against the active theme. */
-    variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
+    /** Picks the tone of the button against the active theme. Plain is the words alone, with no frame. */
+    variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'plain'
     /** Sets the height and the label size of the button. */
     size?: 'sm' | 'md' | 'lg'
     /** Native button type. Submit inside a form, button everywhere else. */
@@ -234,6 +234,17 @@
 
   .dnd-button-ghost:hover:not(:disabled) {
     --button-rim: linear-gradient(180deg, var(--metal) 0%, var(--metal-dim) 100%);
+  }
+
+  .dnd-button-plain,
+  .dnd-button-plain:hover:not(:disabled) {
+    filter: none;
+  }
+
+  .dnd-button-plain .dnd-button-frame,
+  .dnd-button-plain .dnd-button-face,
+  .dnd-button-plain .dnd-button-sheen {
+    display: none;
   }
 
   .dnd-button-danger {

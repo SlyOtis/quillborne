@@ -45,11 +45,9 @@
     {/each}
   </div>
   {#if !open}
-    <div class="camps-foot">
-      <Button variant="ghost" size="sm" onclick={() => (open = true)}>
-        Show the {shown.length} {shown.length === 1 ? 'campaign' : 'campaigns'}
-      </Button>
-    </div>
+    <Button variant="plain" size="sm" fill onclick={() => (open = true)}>
+      Show the {shown.length} {shown.length === 1 ? 'campaign' : 'campaigns'}
+    </Button>
   {/if}
 {/if}
 
@@ -67,25 +65,6 @@
   .camps-band-shut {
     -webkit-mask-image: linear-gradient(180deg, var(--ground-deep) calc(100% - var(--unfold-rest)), transparent 100%);
     mask-image: linear-gradient(180deg, var(--ground-deep) calc(100% - var(--unfold-rest)), transparent 100%);
-  }
-
-  .camps-foot {
-    display: flex;
-    align-items: center;
-    gap: var(--space-4);
-    margin-block-start: calc(var(--space-6) * -1);
-  }
-
-  .camps-foot::before,
-  .camps-foot::after {
-    content: '';
-    flex: 1;
-    block-size: var(--border-hair);
-    background: linear-gradient(90deg, transparent, var(--metal-dim));
-  }
-
-  .camps-foot::after {
-    background: linear-gradient(90deg, var(--metal-dim), transparent);
   }
 
   .camps-count {

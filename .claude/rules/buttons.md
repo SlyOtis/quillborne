@@ -7,7 +7,7 @@ paths:
 
 ## The four
 
-`Button` carries a word. Primary, secondary, ghost and danger. Anything the user reads as a sentence is this and nothing else.
+`Button` carries a word. Primary, secondary, ghost, danger and plain, which is the words alone with no frame. Anything the user reads as a sentence is this and nothing else.
 
 `FrameBtn` is a glyph inside a traced frame. It is the forged HUD button: the shell bar handles, the dialog close, the section header sigils on the hearth. Reach for it when the control is a landmark the eye should find without reading.
 
