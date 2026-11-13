@@ -34,7 +34,7 @@ Quillborne is the table's character sheets, campaigns, maps and vessels as a hos
 
 ## The gate
 
-13. `just gate` before anything is called done. Zero errors and zero warnings; a new warning is a regression.
+13. `just gate` before anything is called done. Zero errors and zero warnings; a new warning is a regression. Done is merged: you merge your own pull request without asking, `workflow.md` 11.
 14. A merge to `main` deploys to tst: `.github/workflows/azure-deploy.yml` builds, migrates and deploys with the first twelve characters of the commit as the version. There is no deploy command. A schema or claim change ships with the code that needs it.
 
 ## Local test data

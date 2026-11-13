@@ -28,21 +28,20 @@ A task file is `title`, `slug`, `state` (`open`, `building`, `review`, `done`), 
 
 ## Handing a task to an agent
 
-4. `tree.sh <number> <slug>` for the task, then one `Agent` for it, `general-purpose`, with `isolation` unset, because the tree is already made; its name goes into the task's `agent` line. The brief carries, in this order: the worktree path and that every command runs from it; the task number and the user's words for the feature, nothing inferred; the files it owns and the files it must not touch; the contract it must not break, `~/.claude/rules/code.md`, the api spec as served and the claims model of `data.md`; the mechanism it must reuse, named by path; that it runs `just gate` in its tree and starts its stack with the `run` skill on its own slot when the feature has to be seen; that it commits on its branch with one line saying what the change does, pushes, opens the pull request ready for review, never as a draft, through the `github` skill with the body of `~/.claude/rules/git.md` and no issue line, and reports the pull request number, the files it changed and what it could not do. No verification, screenshot or test step beyond the gate unless the user asked for one. A brief that names a section produces that section, so it names the diff.
+4. `tree.sh <number> <slug>` for the task, then one `Agent` for it, `general-purpose`, with `isolation` unset, because the tree is already made; its name goes into the task's `agent` line. The brief carries, in this order: the worktree path and that every command runs from it; the task number and the user's words for the feature, nothing inferred; the files it owns and the files it must not touch; the contract it must not break, `~/.claude/rules/code.md`, the api spec as served and the claims model of `data.md`; the mechanism it must reuse, named by path; that it runs `just gate` in its tree and starts its stack with the `run` skill on its own slot when the feature has to be seen; that it commits on its branch with one line saying what the change does, pushes, opens the pull request, never as a draft, through the `github` skill with the body of `~/.claude/rules/git.md` and no issue line, and reports the pull request number, the files it changed and what it could not do. No verification, screenshot or test step beyond the gate unless the user asked for one. A brief that names a section produces that section, so it names the diff.
 5. Every file the brief names has been read in this session first; `~/.claude/hooks/read_gate.sh` refuses the call otherwise.
-6. An agent's report naming a new endpoint, column, SQL function or name is a stop: the change goes to the user before anything merges, `code.md`.
 
 ## When an agent reports
 
-7. Write the pull request number into the task and set it to `review`. Read the pull request diff against main, not the report. A route, a verb and a state group move together, `cli.md`; a thing a player sees has its records in `database/state/local.ndjson`, `setup.md` Local test data.
-8. Test on the main checkout when the feature has to be seen or felt: check the branch out there, start it with the `run` skill, drive it with the `nimon` skill, and put the checkout back on its branch after. A gate alone is enough for a change nothing visible depends on.
-9. Mark the pull request ready when it is up to date with main and the gate is clean, and merge it through the `github` skill. Then `land.sh <slug>`, and the next task on the board starts from the main that now carries it.
-10. A feature that comes back wrong goes back to the same agent through `SendMessage` with what is wrong in the user's words, never rebuilt by the table.
+6. Write the pull request number into the task and set it to `review`. Read the pull request diff against main, not the report. A route, a verb and a state group move together, `cli.md`; a thing a player sees has its records in `database/state/local.ndjson`, `setup.md` Local test data.
+7. Test on the main checkout when the feature has to be seen or felt: check the branch out there, start it with the `run` skill, drive it with the `nimon` skill, and put the checkout back on its branch after. A gate alone is enough for a change nothing visible depends on.
+8. Mark the pull request ready when it is up to date with main and the gate is clean, and merge it through the `github` skill. Then `land.sh <slug>`, and the next task on the board starts from the main that now carries it.
+9. A feature that comes back wrong goes back to the same agent through `SendMessage` with what is wrong in the user's words, never rebuilt by the table.
 
 ## Several sessions
 
-11. Another session in the same checkout is told which files it owns and which are this session's, once, through `SendMessage`; each commits only its own files, and a change to a file the other owns is handed over rather than made. A branch two sessions share has one pull request.
+10. Another session in the same checkout is told which files it owns and which are this session's, once, through `SendMessage`; each commits only its own files, and a change to a file the other owns is handed over rather than made. A branch two sessions share has one pull request.
 
 ## Hand over
 
-12. Tell the user, per task: its number, the branch, the pull request and its state, and what, if anything, waits on them. The board is `board.sh`; nothing is restated from memory.
+11. Tell the user, per task: its number, the branch, the pull request and its state, and what, if anything, waits on them. The board is `board.sh`; nothing is restated from memory.
