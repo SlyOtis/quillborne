@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-number=${1:?issue number}
+number=${1:?task number}
 slug=${2:?slug}
 kind=${3:-feat}
 
@@ -10,6 +10,7 @@ cd "$main"
 name="$(basename "$main")"
 tree="$(dirname "$main")/$name-$slug"
 branch="$kind/$number-$slug"
+task="$main/.claude/tasks/features/$number-$slug.md"
 
 if [ -d "$tree" ]; then
     echo "tree: $tree exists"
@@ -48,4 +49,9 @@ sed -i '' "s/^SAUTH_DEBUG_PRIVATE_SEED=$/SAUTH_DEBUG_PRIVATE_SEED=${seed:-$(open
 echo "slot: $n, service $((4290 + n)), postgres $((5490 + n)), azurite $((10000 + n)), vite $((5173 + n))"
 
 (cd "$tree" && just build-db > /dev/null 2>&1 && echo "database image: $name-$slug-db") || echo "database image: just build-db failed in $tree"
+
+if [ -f "$task" ]; then
+    sed -i '' -e "s/^state: .*/state: building/" -e "s|^tree: .*|tree: $tree|" "$task"
+    echo "task $number: building"
+fi
 echo "$tree"
