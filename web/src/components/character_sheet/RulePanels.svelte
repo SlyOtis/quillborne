@@ -3,6 +3,7 @@
   import type { Readable } from 'svelte/store'
   import type { RulesState } from '$lib/rules/store'
   import type { PanelField, ResolvedCharacter } from '$lib/rules/spec.types'
+  import Pool from '$components/ui/Pool.svelte'
 
   const {
     skip = []
@@ -32,10 +33,6 @@
       const entry = resolved.senses.find((candidate) => candidate.id === field.id)
       return entry && { title: entry.title, value: entry.value, note: entry.unit }
     }
-    if (field.source === 'pool') {
-      const entry = resolved.pools.find((candidate) => candidate.id === field.id)
-      return entry && { title: entry.title, value: entry.remaining, note: `of ${entry.max}` }
-    }
     const entry = resolved.derived.find((candidate) => candidate.id === field.id)
     return entry && { title: entry.title, value: entry.value, note: entry.unit }
   }
@@ -48,13 +45,20 @@
     <section class="dnd-rule-panel dnd-panel dnd-keyline">
       <div class="dnd-rule-panel-body dnd-rule-panel-{panel.layout}">
         {#each panel.fields as field (field.source + field.id)}
-          {@const entry = getEntry($rules.resolved, field)}
-          {#if entry}
-            <div class="dnd-rule-panel-entry dnd-panel dnd-keyline">
-              <span class="dnd-rule-panel-value">{entry.value}</span>
-              {#if entry.note}<span class="dnd-rule-panel-note">{entry.note}</span>{/if}
-              <span class="dnd-rule-panel-label">{entry.title}</span>
-            </div>
+          {#if field.source === 'pool'}
+            {@const pool = $rules.resolved.pools.find((candidate) => candidate.id === field.id)}
+            {#if pool}
+              <Pool title={pool.title} note={pool.description} max={pool.max} current={pool.remaining} view={pool.view} />
+            {/if}
+          {:else}
+            {@const entry = getEntry($rules.resolved, field)}
+            {#if entry}
+              <div class="dnd-rule-panel-entry dnd-panel dnd-keyline">
+                <span class="dnd-rule-panel-value">{entry.value}</span>
+                {#if entry.note}<span class="dnd-rule-panel-note">{entry.note}</span>{/if}
+                <span class="dnd-rule-panel-label">{entry.title}</span>
+              </div>
+            {/if}
           {/if}
         {/each}
       </div>
@@ -76,6 +80,7 @@
   .dnd-rule-panel-title {
     margin: auto calc(var(--space-1) - var(--space-3)) calc(var(--space-1) - var(--space-3));
     padding: var(--space-1) var(--space-3);
+    border-radius: 0 0 calc(var(--radius-lg) - var(--space-1)) calc(var(--radius-lg) - var(--space-1));
     background:
       linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
       var(--texture-noise),
@@ -107,6 +112,10 @@
 
   .dnd-rule-panel-list {
     grid-template-columns: 1fr;
+  }
+
+  .dnd-rule-panel-body > :global(.dnd-pool-pips) {
+    grid-column: 1 / -1;
   }
 
   .dnd-rule-panel-entry {

@@ -82,6 +82,7 @@
         align-self: stretch;
         margin: auto calc(var(--space-1) - var(--space-3)) calc(var(--space-1) - var(--space-3));
         padding: var(--space-1) var(--space-3);
+        border-radius: 0 0 calc(var(--radius-lg) - var(--space-1)) calc(var(--radius-lg) - var(--space-1));
         background:
             linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
             var(--texture-noise),
@@ -165,19 +166,5 @@
     .pip-lit:is(:hover, :has(+ :hover), :has(+ * + :hover), :has(+ * + * + :hover)),
     .pip:is(:hover, :has(+ :hover), :has(+ * + :hover), :has(+ * + * + :hover)) {
         border-color: var(--metal-bright);
-    }
-
-    .root > .dnd-caption {
-        margin: 0 calc(var(--space-1) - var(--space-3)) calc(var(--space-1) - var(--space-3));
-        padding: var(--space-1) var(--space-3);
-        background:
-            linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
-            var(--texture-noise),
-            var(--stone);
-        border-radius: 0 0 var(--radius-md) var(--radius-md);
-        box-shadow: var(--bevel-up), inset 0 1px 0 var(--metal-dim), inset 0 2px 0 var(--keyline);
-        color: var(--metal-bright);
-        letter-spacing: var(--tracking-caps);
-        text-shadow: 0 1px 0 #000;
     }
 </style>

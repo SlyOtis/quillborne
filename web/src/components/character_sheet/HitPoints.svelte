@@ -10,17 +10,20 @@
     putTemporaryHitPoints,
     rollDeathSave,
     updateCharacterWithChangeLog
-  , rollDie, writeRollLog} from "$lib/engine";
+  } from "$lib/engine";
   import IconBtn from "$components/ui/IconBtn.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
   import Ornament from "$components/ui/Ornament.svelte";
-  import Stat from "$components/ui/Stat.svelte";
+
+  const {onrest}: {
+    /** Runs when the player asks to roll hit dice, and opens the short rest. */
+    onrest?: () => void
+  } = $props()
 
   const {info} = getContext<CharacterContext>('character')
   const rules = getContext<Readable<RulesState>>('rules')
 
   let amount = $state(1)
-  let dice = $state(1)
 
   const hp = $derived($info.hp)
   const percent = $derived(hp.max > 0 ? Math.max(0, Math.min(100, (hp.current / hp.max) * 100)) : 0)
@@ -35,7 +38,6 @@
     {at: 93, size: 0.44, wait: 1.8, time: 8.1, sway: -1}
   ]
   const scope = $derived($rules.resolved?.scope)
-  const hitDice = $derived($rules.resolved?.pools.find(pool => pool.id === 'hitDice'))
   const saves = $derived(hp.deathSaves ?? {successes: 0, failures: 0})
   const successes = $derived(scope?.['derived.deathSaveSuccesses'] ?? 0)
   const failures = $derived(scope?.['derived.deathSaveFailures'] ?? 0)
@@ -74,21 +76,15 @@
     window.dispatchEvent(new CustomEvent('playHealSpell'))
   }
 
-  async function rollHitDice() {
-    const die = $info.class?.hitDice?.die || 8
-    const count = Math.max(1, Math.floor(dice))
-    const res = await rollDie(die, count)
-    writeRollLog('roll', `Rolled ${count} hit dice`, `${count}d${die}`, res.sum, res.sum, res.rolls.join(','))
-  }
-
   async function deathSave() {
     if (!scope) return
     await rollDeathSave(scope)
   }
 </script>
 
-<div class="vitals" style="--vitals-fill: {percent}%">
+<div class="vitals" class:vitals-down={hp.current === 0} style="--vitals-fill: {percent}%">
   <span class="dnd-label vitals-title">Hit Points</span>
+  <IconBtn title="Roll hit dice" disabled={!$rules.resolved} onclick={onrest}><Glyph name="dice" size="md" /></IconBtn>
   <span class="vitals-potion" aria-hidden="true">
     <span class="vitals-wave vitals-wave-back"></span>
     <span class="vitals-wave vitals-wave-mid"></span>
@@ -123,12 +119,6 @@
         <IconBtn title="Heal {amount}, up to the maximum" tone="verdigris" onclick={heal}><Glyph name="add" size="sm" /></IconBtn>
         <IconBtn title="Take {amount} damage, temporary hit points first" tone="ember" onclick={damage}><Glyph name="minus" size="sm" /></IconBtn>
       </span>
-      <span class="vitals-step" role="group" aria-label="Hit dice">
-        <span class="vitals-cell" title="How many hit dice to roll">
-          <input class="dnd-num vitals-amount" type="number" min="0" max={hitDice?.remaining ?? 0} bind:value={dice} aria-label="Hit dice to roll" />
-        </span>
-        <IconBtn title="Roll {dice} hit dice" disabled={!$rules.resolved} onclick={rollHitDice}><Glyph name="dice" size="sm" /></IconBtn>
-      </span>
     </div>
 
     {#if hp.current === 0}
@@ -153,8 +143,6 @@
     {/if}
   </div>
 </div>
-
-<Stat label="Hit dice" value="{hitDice?.remaining ?? 0}/{hitDice?.max ?? '--'}" sub="d{$info.class?.hitDice?.die || 8}" title="Hit dice left to spend" />
 
 <style>
   .vitals {
@@ -302,18 +290,31 @@
     box-shadow: 0 var(--space-0) var(--space-1) var(--shade-hard);
   }
 
+  .vitals > :global(.dnd-iconbtn) {
+    position: absolute;
+    inset-block-start: var(--space-1);
+    inset-inline-end: var(--space-1);
+    z-index: 2;
+  }
+
   .vitals-body {
     position: relative;
     z-index: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    grid-auto-rows: auto;
     gap: var(--space-1);
     flex: 1;
     min-width: 0;
+    min-block-size: calc(var(--space-8) + var(--space-5));
+  }
+
+  .vitals-down .vitals-body {
+    gap: 0;
   }
 
   .vitals-fields {
+    container-type: size;
     display: flex;
     flex-wrap: wrap;
     align-items: end;
@@ -326,13 +327,17 @@
     padding-block: var(--space-1);
   }
 
+  .vitals-down .vitals-field > .dnd-num {
+    padding-block: 0;
+  }
+
   .vitals-field .vitals-inline {
     inline-size: calc(3ch + var(--space-3));
     padding: 0 var(--space-1);
     border-color: transparent;
     background: none;
     box-shadow: none;
-    font-size: var(--text-lg);
+    font-size: clamp(var(--text-sm), 40cqb, var(--text-lg));
     text-align: center;
     line-height: 1;
     color: var(--metal-bright);
@@ -357,12 +362,12 @@
 
   .vitals-slash {
     font-family: var(--font-figures);
-    font-size: var(--text-lg);
+    font-size: clamp(var(--text-sm), 40cqb, var(--text-lg));
     color: var(--metal-dim);
   }
 
   .vitals-field-large .vitals-inline {
-    font-size: var(--text-2xl);
+    font-size: clamp(var(--text-sm), 46cqb, var(--text-2xl));
   }
 
   .vitals-field {
@@ -372,8 +377,9 @@
     align-items: center;
     gap: var(--space-0);
     font-family: var(--font-display);
-    font-size: var(--text-xs);
+    font-size: clamp(calc(var(--text-xs) * 0.6), 18cqb, var(--text-xs));
     font-weight: 600;
+    line-height: 1.2;
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--metal);
@@ -406,8 +412,8 @@
   }
 
   .vitals-roll > :global(.dnd-iconbtn) {
-    inline-size: var(--space-6);
-    block-size: var(--space-6);
+    inline-size: var(--space-5);
+    block-size: var(--space-5);
   }
 
   .vitals-step {
@@ -455,7 +461,7 @@
   .vitals-divider {
     display: block;
     block-size: var(--border-hair);
-    margin-block: var(--space-1);
+    margin-block: 0;
     background: linear-gradient(90deg, transparent, var(--metal-dim) 15%, var(--metal) 50%, var(--metal-dim) 85%, transparent);
   }
 
@@ -468,6 +474,7 @@
   .vitals-word {
     font-family: var(--font-display);
     font-size: var(--text-xs);
+    line-height: 1;
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--metal);
