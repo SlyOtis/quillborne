@@ -1,27 +1,43 @@
 <script lang="ts" module>
+  import type { GlyphName } from './Glyph.svelte'
+
   export type TreeRow = {
     id: string
     title: string
     mark?: string
+    glyph?: GlyphName
     kids?: TreeRow[]
   }
 </script>
 
 <script lang="ts">
+  import Glyph from './Glyph.svelte'
+
   const {
     rows,
     on = '',
+    search = '',
     onopen
   }: {
     /** The rows drawn, each carrying its own kids. */
     rows: TreeRow[]
     /** The row being read, drawn as the current one. */
     on?: string
+    /** Case insensitive substring filter on row titles; a match is drawn flat, wherever it sits in the tree. */
+    search?: string
     /** Runs with the id of the row the reader picked. */
     onopen: (id: string) => void
   } = $props()
 
   let shut = $state<Record<string, boolean>>({})
+
+  const wanted = $derived(search.trim().toLowerCase())
+
+  function flatten(held: TreeRow[]): TreeRow[] {
+    return held.flatMap((row) => [...(row.title.toLowerCase().includes(wanted) ? [{ ...row, kids: [] }] : []), ...flatten(row.kids ?? [])])
+  }
+
+  const shown = $derived(wanted ? flatten(rows) : rows)
 </script>
 
 {#snippet limb(row: TreeRow)}
@@ -42,6 +58,9 @@
       {/if}
 
       <button type="button" class="dnd-tree-name" onclick={() => onopen(row.id)}>
+        {#if row.glyph}
+          <span class="dnd-tree-glyph"><Glyph name={row.glyph} size="sm" /></span>
+        {/if}
         <span class="dnd-tree-title">{row.title}</span>
         {#if row.mark}
           <span class="dnd-tree-mark">{row.mark}</span>
@@ -60,7 +79,7 @@
 {/snippet}
 
 <ul class="dnd-tree">
-  {#each rows as row (row.id)}
+  {#each shown as row (row.id)}
     {@render limb(row)}
   {/each}
 </ul>
@@ -83,9 +102,10 @@
 
   .dnd-tree-row {
     display: grid;
-    grid-template-columns: var(--space-4) minmax(0, 1fr) auto;
+    grid-template-columns: var(--space-4) minmax(0, 1fr);
     align-items: center;
     gap: var(--space-1);
+    min-width: 0;
     min-height: var(--tree-row);
     border-radius: var(--radius-sm);
   }
@@ -132,10 +152,10 @@
   }
 
   .dnd-tree-name {
-    grid-column: 2 / -1;
-    display: grid;
-    grid-template-columns: subgrid;
+    grid-column: 2;
+    display: flex;
     align-items: center;
+    gap: var(--space-2);
     min-width: 0;
     min-height: var(--tree-row);
     padding: 0;
@@ -153,13 +173,17 @@
 
   .dnd-tree-name:first-child {
     grid-column: 1 / -1;
+    padding-inline-start: calc(var(--space-4) + var(--space-1));
   }
 
-  .dnd-tree-name:first-child .dnd-tree-title {
-    grid-column: 2;
+  .dnd-tree-glyph {
+    display: flex;
+    flex: none;
+    color: var(--metal);
   }
 
   .dnd-tree-title {
+    flex: 1 1 auto;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -182,6 +206,11 @@
   }
 
   .dnd-tree-mark {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-family: var(--font-figures);
     font-size: var(--text-xs);
     color: var(--ink-faint);

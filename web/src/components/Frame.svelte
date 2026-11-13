@@ -28,7 +28,7 @@ import Toast from '$components/ui/Toast.svelte'
     setDialogState: uiStore.setDialogState
   })
 
-  const character = $derived($userCharacters.find((one) => one.id === ($currentCharacterId ?? $userProfile?.preferences?.recent_characters?.[0])) ?? null)
+  const character = $derived($userCharacters.find((one) => one.id === ($currentCharacterId ?? $userProfile?.preferences?.active_characters?.[$currentCampaignId ?? $userCampaigns[0]?.id ?? ''] ?? $userProfile?.preferences?.recent_characters?.[0])) ?? null)
   const campaign = $derived($userCampaigns.find((one) => one.id === ($currentCampaignId ?? character?.campaign_id)) ?? null)
   const onSheet = $derived(Boolean(character) && $resolvedRoute.path === `/main/character/${character?.id}`)
   let toolsOpen = $state(false)

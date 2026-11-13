@@ -1,33 +1,36 @@
 <script lang="ts">
-  import { getCampaign, isNpc } from '$lib/api'
-  import type { Campaign } from '$lib/api/types'
+  import { getCampaign, isNpc, putProfilePreferences } from '$lib/api'
+  import type { Campaign, Owner } from '$lib/api/types'
   import type { Snippet } from 'svelte'
   import { navigate, currentRoute, resolvedRoute } from 'sly-svelte-location-router'
   import { getAll, getChildren, getRoots, isResourceKind, RESOURCES, type Resource, type ResourceKind } from '$lib/resources'
   import { user, userDetails, userProfile } from '$lib/stores/auth.store'
   import { userCampaigns } from '$lib/stores/campaign.store'
-  import { userCharacters } from '$lib/stores/character.store'
+  import { currentCharacterId, userCharacters } from '$lib/stores/character.store'
   import Fold from '$components/ui/Fold.svelte'
   import Tree, { type TreeRow } from '$components/ui/Tree.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
-  import Glyph from '$components/ui/Glyph.svelte'
+  import Glyph, { type GlyphName } from '$components/ui/Glyph.svelte'
+  import PillTabs, { type PillTab } from '$components/ui/PillTabs.svelte'
+  import SearchInput from '$components/ui/SearchInput.svelte'
   import { actionBlocks, getAction, shortcuts } from '$lib/actions'
-  import { uiStore } from '$lib/stores/ui.store'
+  import { postNotice, uiStore } from '$lib/stores/ui.store'
 
   let campaign = $state<Campaign | null>(null)
   let loading = $state(false)
   let error = $state<string | null>(null)
   let open = $state(['characters', 'campaigns'])
   let reached = $state('')
+  let hunt = $state('')
 
   type Tab = 'campaign' | 'character' | 'scribe'
-  const TABS: { id: Tab; title: string }[] = [
-    { id: 'campaign', title: 'Campaign' },
-    { id: 'character', title: 'Character' },
-    { id: 'scribe', title: 'Scribe' }
+  const TABS: PillTab[] = [
+    { value: 'campaign', label: 'Campaign' },
+    { value: 'character', label: 'Character' },
+    { value: 'scribe', label: 'Scribe' }
   ]
   const TAB_KEY = 'quillborne.menu.tab'
-  const isTab = (held: string | null): held is Tab => TABS.some((one) => one.id === held)
+  const isTab = (held: string | null): held is Tab => TABS.some((one) => one.value === held)
 
   function readTab(): Tab {
     try {
@@ -40,21 +43,12 @@
 
   let tab = $state<Tab>(readTab())
 
-  function pickTab(next: Tab) {
+  function pickTab(next: string) {
+    if (!isTab(next)) return
     tab = next
     try {
       sessionStorage.setItem(TAB_KEY, next)
     } catch {}
-  }
-
-  function stepTab(event: KeyboardEvent) {
-    const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0
-    if (!step) return
-    event.preventDefault()
-    const at = TABS.findIndex((one) => one.id === tab)
-    const next = TABS[(at + step + TABS.length) % TABS.length].id
-    pickTab(next)
-    document.getElementById(`menu-tab-${next}`)?.focus()
   }
 
   const steps = $derived($resolvedRoute.path.split('/').filter(Boolean).slice(1))
@@ -63,6 +57,11 @@
   const here = $derived(steps[0] === 'character' ? 'characters' : isResourceKind(asked) ? asked : 'campaigns')
 
   const openId = $derived(steps[0] === 'campaign' ? steps[3] ?? '' : steps[1] ?? '')
+
+  const SCRIBE = 'scribe'
+  const scribeOpen = $derived(
+    $resolvedRoute.path === '/main/scribe' ? new URLSearchParams($resolvedRoute.search ?? '').get('page') || SCRIBE : ''
+  )
 
   $effect(() => {
     if (here === reached) return
@@ -76,21 +75,28 @@
       : $userCampaigns[0]?.id ?? ''
   )
 
+  const owner = $derived<Owner | null>(campaignId ? { at: 'campaign', id: campaignId } : $user ? { at: 'user', id: $user.user_id } : null)
+
   const GEAR: ResourceKind[] = ['items', 'weapons', 'armor']
   let kinds = $state<Record<string, ResourceKind>>({})
 
   let more = $state<Record<string, Resource[]>>({})
 
-  const mine = $derived($userCharacters.filter((entry) => entry.owner_id === $user?.user_id && !isNpc(entry)))
+  const mine = $derived($userCharacters.filter((entry) => entry.owner_id === $user?.user_id && !isNpc(entry) && entry.campaign_id === campaignId))
+  const activeId = $derived($userProfile?.preferences?.active_characters?.[campaignId])
+  const current = $derived(
+    $userCharacters.find((one) => one.id === ($currentCharacterId ?? activeId ?? $userProfile?.preferences?.recent_characters?.[0])) ?? mine[0] ?? null
+  )
   const searchKey = navigator.userAgent.includes('Mac') ? 'Cmd K' : 'Ctrl K'
   const name = $derived($userDetails?.display_name || $userProfile?.display_name || 'Adventurer')
   const initial = $derived(name.charAt(0).toUpperCase())
 
   $effect(() => {
     const id = campaignId
+    const at = owner
     let live = true
 
-    if (!id) {
+    if (!at) {
       campaign = null
       error = null
       loading = false
@@ -102,13 +108,14 @@
 
     void (async () => {
       try {
-        const record = await getCampaign(id)
+        const [record, entries, ...gear] = await Promise.all([
+          id ? getCampaign(id) : Promise.resolve(null),
+          getAll(at, 'entries'),
+          ...(id ? GEAR.map((roll) => getAll(at, roll)) : [])
+        ])
         if (!live) return
         campaign = record
-
-        const [entries, ...gear] = await Promise.all(['entries' as ResourceKind, ...GEAR].map((roll) => getAll({ at: 'campaign', id }, roll)))
-        if (!live) return
-        kinds = Object.fromEntries(GEAR.flatMap((kind, index) => gear[index].map((row) => [row.id, kind])))
+        kinds = Object.fromEntries(GEAR.flatMap((kind, index) => (gear[index] ?? []).map((row) => [row.id, kind])))
         more = { entries, items: gear.flat() }
       } catch (reason) {
         if (!live) return
@@ -131,49 +138,67 @@
     if (campaign) navigate(`/main/campaign/${campaign.id}${where}`)
   }
 
-  function twigs(rows: Resource[], kind: ResourceKind): TreeRow[] {
+  function twigs(rows: Resource[], kind: ResourceKind, glyph?: GlyphName): TreeRow[] {
     const limb = (row: Resource): TreeRow => ({
       id: row.id,
       title: row.title,
       mark: RESOURCES[kind].mark(row),
+      glyph,
       kids: getChildren(rows, row.id).map(limb)
     })
     return getRoots(rows).map(limb)
   }
 
+  const pages = $derived<TreeRow[]>([{ id: SCRIBE, title: 'Scribe', glyph: 'home', kids: twigs(more.entries ?? [], 'entries', 'scroll') }])
+
   function openResource(kind: ResourceKind, id: string) {
     openCampaign(`/${kinds[id] ?? kind}/${id}`)
+  }
+
+  function openPage(id: string) {
+    navigate(id === SCRIBE ? '/main/scribe' : `/main/scribe?page=${id}`)
   }
 
   function openCharacter(characterId: string) {
     navigate(`/main/character/${characterId}`)
   }
+
+  function sheetOf(entry: (typeof $userCharacters)[number]): TreeRow {
+    return {
+      id: entry.id,
+      title: entry.metadata.name,
+      mark: `Lv ${entry.metadata.level} ${entry.metadata.race} ${entry.metadata.class}`,
+      glyph: 'character',
+      kids: []
+    }
+  }
+
+  async function pickCharacter(characterId: string) {
+    const held = $userProfile?.preferences
+    if (held && campaignId) {
+      const active_characters = { ...(held.active_characters ?? {}), [campaignId]: characterId }
+      userProfile.update((profile) => (profile ? { ...profile, preferences: { ...profile.preferences, active_characters } } : profile))
+      try {
+        await putProfilePreferences({ ...held, active_characters })
+      } catch (reason) {
+        postNotice(reason instanceof Error ? reason.message : String(reason))
+      }
+    }
+    openCharacter(characterId)
+  }
 </script>
 
 <nav class="dnd-menu" aria-label="Campaign navigator">
-  <div class="dnd-menu-rail" role="tablist" aria-label="Navigator">
-    {#each TABS as one (one.id)}
-      <button
-        type="button"
-        class="dnd-menu-tab"
-        class:dnd-menu-tab-on={tab === one.id}
-        role="tab"
-        id="menu-tab-{one.id}"
-        aria-selected={tab === one.id}
-        aria-controls="menu-panel-{one.id}"
-        tabindex={tab === one.id ? 0 : -1}
-        onclick={() => pickTab(one.id)}
-        onkeydown={stepTab}
-      >
-        {one.title}
-      </button>
-    {/each}
-    <IconBtn title="Home" active={$currentRoute.path === '/main'} onclick={() => navigate('/main')}>
-      <Glyph name="home" size="sm" />
-    </IconBtn>
-    <IconBtn title="Open scribe" active={$currentRoute.path === '/main/scribe'} onclick={() => navigate('/main/scribe')}>
-      <Glyph name="edit" size="sm" />
-    </IconBtn>
+  <div class="dnd-menu-rail">
+    <PillTabs value={tab} options={TABS} name="menu" onchange={pickTab} />
+    <span class="dnd-menu-rail-acts">
+      <IconBtn title="Home" active={$currentRoute.path === '/main'} onclick={() => navigate('/main')}>
+        <Glyph name="home" size="sm" />
+      </IconBtn>
+      <IconBtn title="Open scribe" active={$currentRoute.path === '/main/scribe'} onclick={() => navigate('/main/scribe')}>
+        <Glyph name="edit" size="sm" />
+      </IconBtn>
+    </span>
   </div>
 
   <div class="dnd-scroll dnd-menu-body" role="tabpanel" id="menu-panel-{tab}" aria-labelledby="menu-tab-{tab}">
@@ -185,9 +210,27 @@
       {@render section('campaigns', 'Campaigns', $userCampaigns.length, tables)}
       {@render roll('items')}
     {:else if tab === 'character'}
-      {@render section('characters', 'Characters', mine.length, roster)}
+      {#if current}
+        <div class="dnd-menu-tree dnd-menu-current">
+          <Tree rows={[sheetOf(current)]} on={steps[0] === 'character' ? (steps[1] ?? '') : ''} onopen={openCharacter} />
+        </div>
+      {:else}
+        <p class="dnd-menu-empty dnd-menu-current">You have no character yet.</p>
+      {/if}
+      {#if mine.length > 1}
+        {@render section('characters', 'Characters', mine.length, roster)}
+      {/if}
     {:else}
-      {@render roll('entries')}
+      <div class="dnd-menu-pages">
+        <SearchInput bind:value={hunt} placeholder="Search the pages..." />
+        {#if loading}
+          <div class="dnd-loading"><span class="dnd-spinner"></span></div>
+        {:else}
+          <div class="dnd-scroll dnd-menu-pages-tree">
+            <Tree rows={pages} on={scribeOpen} search={hunt} onopen={openPage} />
+          </div>
+        {/if}
+      </div>
     {/if}
   </div>
 
@@ -256,17 +299,9 @@
 {/snippet}
 
 {#snippet roster()}
-  {#if mine.length === 0}
-    <p class="dnd-menu-empty">You have no character yet.</p>
-  {:else}
-    <div class="dnd-scroll dnd-menu-tree">
-      <Tree
-        rows={mine.map((entry) => ({ id: entry.id, title: entry.metadata.name, mark: `Lv ${entry.metadata.level} ${entry.metadata.race} ${entry.metadata.class}`, kids: [] }))}
-        on={steps[0] === 'character' ? (steps[1] ?? '') : ''}
-        onopen={openCharacter}
-      />
-    </div>
-  {/if}
+  <div class="dnd-scroll dnd-menu-tree">
+    <Tree rows={mine.map(sheetOf)} on={current?.id ?? ''} onopen={pickCharacter} />
+  </div>
 {/snippet}
 
 {#snippet tables()}
@@ -287,28 +322,20 @@
   .dnd-menu {
     --menu-row: 2.6rem;
     --menu-rows: 5;
-    --menu-gap: var(--space-3);
     --menu-pad: var(--space-4);
     --menu-line: var(--metal-dim);
-    --menu-line-strong: var(--metal);
     --menu-surface: var(--ground-raised);
-    --menu-surface-lift: var(--ground-lift);
     --menu-surface-sunk: var(--ground-deep);
     --menu-text: var(--ink);
     --menu-text-muted: var(--ink-dim);
     --menu-text-faint: var(--ink-faint);
     --menu-accent: var(--metal-bright);
-    --menu-radius: var(--radius-sm);
-    --menu-stone:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
-      var(--texture-noise),
-      var(--stone);
+    --menu-hair: var(--border-hair) solid color-mix(in srgb, var(--metal-dim) 80%, transparent);
 
     display: grid;
     grid-template-rows: auto minmax(0, 1fr) auto auto;
     height: 100%;
-    gap: var(--menu-gap);
-    padding: var(--menu-pad);
+    min-width: 0;
     overflow: hidden;
     color: var(--menu-text);
   }
@@ -317,107 +344,56 @@
     position: relative;
     z-index: 2;
     display: flex;
-    align-items: flex-end;
-    gap: var(--space-1);
-    padding: var(--space-1) 0 0;
-  }
-
-  .dnd-menu-tab {
-    position: relative;
-    flex: 0 1 auto;
+    align-items: center;
+    gap: var(--space-2);
     min-width: 0;
-    padding: var(--space-2) var(--space-3);
-    border: none;
-    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-    background:
-      linear-gradient(180deg, color-mix(in srgb, var(--ember-core) 10%, transparent) 0%, color-mix(in srgb, #000 30%, transparent) 55%, color-mix(in srgb, #000 55%, transparent) 100%),
-      var(--texture-grain),
-      var(--wood);
-    box-shadow:
-      inset 0 0 0 1px var(--keyline),
-      inset 0 0 0 2px var(--metal-dim),
-      inset 0 3px 0 0 var(--sheen),
-      inset 0 -0.5rem 0.6rem -0.3rem var(--shade-hard);
-    font-family: var(--font-display);
-    font-size: var(--text-xs);
-    font-weight: 700;
-    letter-spacing: var(--tracking-caps);
-    text-transform: uppercase;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    color: var(--metal);
-    text-shadow: 0 1px 0 #000, 0 0 2px #000;
-    cursor: pointer;
-    transition: color 0.18s ease, text-shadow 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
+    padding: var(--space-2) var(--menu-pad);
+    border-bottom: var(--menu-hair);
   }
 
-  .dnd-menu-tab:hover:not(.dnd-menu-tab-on) {
-    color: var(--metal-bright);
-    text-shadow: var(--glow-text);
-    box-shadow:
-      inset 0 0 0 1px var(--keyline),
-      inset 0 0 0 2px var(--metal),
-      inset 0 3px 0 0 var(--sheen),
-      inset 0 -0.5rem 0.6rem -0.3rem var(--shade-hard);
-  }
-
-  .dnd-menu-tab:active:not(.dnd-menu-tab-on) {
-    filter: brightness(0.7);
-  }
-
-  .dnd-menu-tab-on {
-    z-index: 1;
-    padding-block: var(--space-3) var(--space-2);
-    background:
-      radial-gradient(ellipse 80% 90% at 50% 110%, var(--ember-glow) 0%, transparent 70%),
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 26%, transparent) 0%, color-mix(in srgb, #000 30%, transparent) 55%, var(--ground-raised) 100%),
-      var(--texture-noise),
-      var(--stone);
-    box-shadow:
-      inset 0 1px 0 var(--keyline),
-      inset 1px 0 0 var(--keyline),
-      inset -1px 0 0 var(--keyline),
-      inset 0 2px 0 var(--metal-bright),
-      inset 2px 0 0 var(--metal),
-      inset -2px 0 0 var(--metal),
-      inset 0 3px 0 var(--metal-dim),
-      0 0 0.9rem var(--ember-glow);
-    color: var(--metal-bright);
-    text-shadow: var(--glow-text);
-    filter: none;
-  }
-
-  .dnd-menu-tab:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
-  }
-
-  .dnd-menu-rail > :global(.dnd-iconbtn) {
-    align-self: center;
-    inline-size: calc(var(--menu-row) - var(--space-2));
-    block-size: calc(var(--menu-row) - var(--space-2));
-    color: var(--menu-text-muted);
-  }
-
-  .dnd-menu-rail > :global(.dnd-menu-tab + .dnd-iconbtn) {
+  .dnd-menu-rail-acts {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-1);
     margin-inline-start: auto;
   }
 
-  .dnd-menu-rail > :global(.dnd-iconbtn:hover:not(:disabled)) {
-    color: var(--menu-accent);
-    background: color-mix(in srgb, var(--menu-accent) 14%, transparent);
+  .dnd-menu-rail :global(.dnd-iconbtn[title]:hover::after),
+  .dnd-menu-rail :global(.dnd-iconbtn[title]:focus-visible::after) {
+    top: calc(100% + var(--space-1));
+    bottom: auto;
   }
 
   .dnd-menu-body {
     display: flex;
     flex-direction: column;
+    min-width: 0;
     min-height: 0;
-    margin-inline: calc(var(--menu-pad) * -1);
   }
 
   .dnd-menu-tree {
     max-height: calc(var(--menu-row) * var(--menu-rows));
+    overflow-y: auto;
+  }
+
+  .dnd-menu-current {
+    padding: var(--space-2) var(--menu-pad);
+    border-bottom: var(--menu-hair);
+  }
+
+  .dnd-menu-pages {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-height: 0;
+    padding: var(--space-3) var(--menu-pad);
+  }
+
+  .dnd-menu-pages-tree {
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
   }
 
@@ -442,13 +418,12 @@
   .dnd-menu-foot {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
-    gap: var(--space-3);
-    margin: 0 calc(var(--menu-pad) * -1) 0;
-    padding: var(--space-3) var(--menu-pad);
-    background: var(--menu-stone);
-    box-shadow: var(--bevel-up), inset 0 1px 0 var(--keyline), inset 0 2px 0 var(--metal), inset 0 3px 0 var(--keyline), 0 -4px 10px var(--shade);
+    gap: var(--space-2);
+    min-width: 0;
+    padding: var(--space-1) var(--menu-pad);
+    border-top: var(--menu-hair);
   }
 
   .dnd-menu-search {
@@ -496,9 +471,8 @@
     align-items: center;
     gap: var(--space-2);
     min-width: 0;
-    margin: calc(var(--menu-gap) * -1) calc(var(--menu-pad) * -1) calc(var(--menu-pad) * -1);
     padding: var(--space-2) var(--menu-pad);
-    border-top: var(--border-hair) solid var(--menu-line);
+    border-top: var(--menu-hair);
     background: var(--menu-surface-sunk);
     color: var(--menu-text);
   }
@@ -573,16 +547,14 @@
   .dnd-menu-foot-cell {
     position: relative;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: var(--space-0);
-    min-inline-size: var(--menu-row);
+    gap: var(--space-1);
+    min-width: 0;
     padding-inline: var(--space-1);
   }
 
   .dnd-menu-foot-word {
-    max-inline-size: calc(var(--menu-row) * 1.6);
+    max-inline-size: calc(var(--menu-row) * 2);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -592,21 +564,10 @@
     color: var(--menu-text-muted);
   }
 
-  .dnd-menu-foot-cell > :global(.dnd-iconbtn) {
-    inline-size: calc(var(--menu-row) - var(--space-2));
-    block-size: calc(var(--menu-row) - var(--space-2));
-    color: var(--menu-text-muted);
-  }
-
-  .dnd-menu-foot-cell > :global(.dnd-iconbtn:hover:not(:disabled)) {
-    color: var(--menu-accent);
-    background: color-mix(in srgb, var(--menu-accent) 14%, transparent);
-  }
-
   .dnd-menu-foot-cell + .dnd-menu-foot-cell::before {
     content: '';
     position: absolute;
-    inset-inline-start: calc((var(--space-3) + var(--border-hair)) / -2);
+    inset-inline-start: calc((var(--space-2) + var(--border-hair)) / -2);
     top: 50%;
     width: var(--border-hair);
     height: var(--size-split);
