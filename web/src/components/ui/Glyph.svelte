@@ -14,6 +14,7 @@
   export type GlyphName =
     | 'dice'
     | 'menu'
+    | 'anchor'
     | 'chat'
     | 'bell'
     | 'send'
@@ -191,6 +192,10 @@
   {:else if name === 'character'}
     <path d="M12 3 14.4 8.2 20 9l-4 4 .9 5.6L12 16l-4.9 2.6L8 13 4 9l5.6-.8L12 3Z" />
     <path d="M12 7.5 13 10l2.6.4-1.9 1.8.5 2.6-2.2-1.2-2.2 1.2.5-2.6L8.4 10.4 11 10l1-2.5Z" fill="currentColor" stroke="none" opacity="0.8" />
+
+  {:else if name === 'anchor'}
+    <circle cx="12" cy="5" r="2" />
+    <path d="M12 7v13M8 10.5h8M5 13a7 7 0 0 0 14 0M5 13l-1.5 1.5M5 13l1.5 1.5M19 13l-1.5 1.5M19 13l1.5 1.5" />
 
   {:else if name === 'campaign'}
     <path d="M4 20V9l4-3 4 3 4-3 4 3v11Z" />
