@@ -47,7 +47,7 @@
     lancet: 'M4 136V46C4 22 24 4 50 4s46 18 46 42v90Z',
     ogee: 'M4 136V54c0-14 12-20 20-28C34 16 40 4 50 4s16 12 26 22c8 8 20 14 20 28v82Z',
     trefoil: 'M4 136V56c0-11 7-19 17-21 1-17 12-31 29-31s28 14 29 31c10 2 17 10 17 21v80Z',
-    shield: 'M4 4h92v74c0 28-22 43-46 54C26 121 4 106 4 78Z',
+    shield: 'M4 13C4 13 28.5 4 50 15.7 71.5 4 96 13 96 13V68.5C96 100.8 68.4 118.4 50 136 31.6 118.4 4 100.8 4 68.5Z',
     round: 'M50 4c26 0 46 20 46 46v40c0 26-20 46-46 46S4 116 4 90V50C4 24 24 4 50 4Z',
     cusped:
       'M4 136V62c0-7 6-9 10-12 5-4 5-11 10-15 5-4 11-3 15-7 5-5 5-24 11-24s6 19 11 24c4 4 10 3 15 7 5 4 5 11 10 15 4 3 10 5 10 12v74Z',
@@ -67,7 +67,7 @@
     </defs>
   </svg>
 
-  <span class="dnd-portrait-glass" style={frame === 'arch' ? undefined : `clip-path: url(#dnd-portrait-)`}>
+  <span class="dnd-portrait-glass" style={frame === 'arch' ? undefined : `clip-path: url(#dnd-portrait-${frame})`}>
     {#if picture}
       <StoredImage src={picture} {alt} />
     {:else}
@@ -83,6 +83,9 @@
     <path d={shape} class="dnd-portrait-edge" />
     <path d={shape} class="dnd-portrait-rim" />
     <path d={shape} class="dnd-portrait-key" />
+    {#if frame === 'shield'}
+      <path d="M50 136v10.3M43.9 141.1l6.1 11.7 6.1-11.7" class="dnd-portrait-point" />
+    {/if}
   </svg>
   {/if}
 </span>
@@ -214,5 +217,12 @@
     vector-effect: non-scaling-stroke;
     transform: scale(0.93);
     transform-origin: center;
+  }
+
+  .dnd-portrait-point {
+    fill: none;
+    stroke: var(--metal);
+    stroke-width: var(--border-hair);
+    vector-effect: non-scaling-stroke;
   }
 </style>

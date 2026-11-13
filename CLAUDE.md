@@ -34,7 +34,7 @@ Quillborne is the table's character sheets, campaigns, maps and vessels as a hos
 
 ## The gate
 
-13. `just gate` before anything is called done. Zero errors and zero warnings; a new warning is a regression.
+13. `just gate` before anything is called done. Zero errors and zero warnings; a new warning is a regression. Done is merged: you merge your own pull request without asking, `workflow.md` 11.
 14. A merge to `main` deploys to tst: `.github/workflows/azure-deploy.yml` builds, migrates and deploys with the first twelve characters of the commit as the version. There is no deploy command. A schema or claim change ships with the code that needs it.
 
 ## Local test data
@@ -78,3 +78,4 @@ Skills in `.claude/skills/`:
 - `qubo`: the cli, its state export and import and its mcp tools; installed by `just install-cli-skill`.
 - `nimon` and `nimon-pr`: drive the browser through a page or a pull request and record it; installed by `just install`.
 - `git` and `github`: the git cli and everything that talks to GitHub.
+- `impeccable`: the frontend design skill with its four agents under `.claude/agents/`; its launcher fetches the platform binary on first use, so the binary is never committed.
