@@ -508,7 +508,7 @@
           <Portrait
             src={$info.imageUrl}
             alt={$info.name || 'Character'}
-            frame={($info.imageFrame as PortraitFrame) ?? 'arch'}
+            frame={($info.imageFrame as PortraitFrame) ?? 'shield'}
             size="md"
           />
         </button>
