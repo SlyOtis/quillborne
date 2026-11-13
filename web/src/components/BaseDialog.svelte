@@ -156,10 +156,11 @@
   .dialog {
     --dialog-radius: var(--radius-xl);
     --dialog-rim-w: 0.375rem;
+    --dialog-shift: -50%;
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, var(--dialog-shift));
     display: flex;
     flex-direction: column;
     padding: var(--dialog-rim-w);
@@ -180,7 +181,7 @@
 
   .dialog-top {
     top: 10vh;
-    transform: translateX(-50%);
+    --dialog-shift: 0%;
   }
 
   .dialog::before {
@@ -304,11 +305,11 @@
   @keyframes dialog-enter {
     from {
       opacity: 0;
-      transform: translate(-50%, -48%) scale(0.97);
+      transform: translate(-50%, calc(var(--dialog-shift) + 2%)) scale(0.97);
     }
     to {
       opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
+      transform: translate(-50%, var(--dialog-shift)) scale(1);
     }
   }
 </style>
