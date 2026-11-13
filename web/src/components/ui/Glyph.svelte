@@ -8,10 +8,42 @@
     /** Scales the mark against the type scale. */
     size?: 'sm' | 'md' | 'lg'
   } = $props()
+
+  const drawn = $derived(mar.get(name))
+  const attrs = $derived(drawn?.attrs ?? hand)
 </script>
 
 <script lang="ts" module>
+  import type { SVGAttributes } from 'svelte/elements'
+  import type { MarGlyphName } from './glyphs/names'
+
+  const files = import.meta.glob<string>('./glyphs/*.svg', { query: '?raw', import: 'default', eager: true })
+
+  const mar = new Map<string, { attrs: SVGAttributes<SVGSVGElement>; inner: string }>()
+  for (const [path, raw] of Object.entries(files)) {
+    const open = raw.match(/<svg\b([^>]*)>/i)
+    const attrs: Record<string, string> = {}
+    if (open) {
+      for (const [, key, value] of open[1].matchAll(/([\w:-]+)="([^"]*)"/g)) {
+        if (key === 'width' || key === 'height' || key === 'class') continue
+        attrs[key] = value
+      }
+    }
+    const inner = raw.replace(/^[\s\S]*?<svg\b[^>]*>/i, '').replace(/<\/svg>\s*$/i, '').trim()
+    mar.set(path.slice('./glyphs/'.length, -'.svg'.length), { attrs: attrs as SVGAttributes<SVGSVGElement>, inner })
+  }
+
+  const hand: SVGAttributes<SVGSVGElement> = {
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    'stroke-width': '1.6',
+    'stroke-linecap': 'round',
+    'stroke-linejoin': 'round'
+  }
+
   export type GlyphName =
+    | MarGlyphName
     | 'dice'
     | 'menu'
     | 'anchor'
@@ -99,16 +131,14 @@
 
 <svg
   class="dnd-glyph dnd-glyph-{size}"
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke="currentColor"
-  stroke-width="1.6"
-  stroke-linecap="round"
-  stroke-linejoin="round"
+  {...attrs}
   aria-hidden="true"
   focusable="false"
 >
-  {#if name === 'weapon'}
+  {#if drawn}
+    {@html drawn.inner}
+
+  {:else if name === 'weapon'}
     <path d="M19 4 9.5 13.5M19 4h-3.5M19 4v3.5" />
     <path d="M7 12l5 5M5.5 15.5l3 3M4 20l3-3" />
 
