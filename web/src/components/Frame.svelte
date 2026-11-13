@@ -13,6 +13,7 @@
   import Glyph from '$components/ui/Glyph.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
   import StoredImage from '$components/ui/StoredImage.svelte'
+import Toast from '$components/ui/Toast.svelte'
   import MenuPanel from '$components/MenuPanel.svelte'
   import Chat from '$chat/Chat.svelte'
 
@@ -240,6 +241,7 @@
 
   <Sidebar side="end" open={$shell.drawers && $chatOpen} run="var(--size-chat-max)" edge="none"><Chat /></Sidebar>
   <span class="dnd-shell-stud dnd-shell-stud-end" aria-hidden="true"></span>
+  <Toast />
 </main>
 
 <style>
@@ -260,7 +262,6 @@
       var(--texture-noise),
       linear-gradient(180deg, var(--ground-raised) 0%, var(--ground-deep) 100%);
     --shell-menu: 0px;
-    --shell-bend: calc(var(--radius-xl) * 1.5);
     --shell-chat: 0px;
     --size-menu-max: 400px;
     --size-chat-max: 400px;
@@ -636,18 +637,10 @@
     overflow: hidden;
     z-index: 11;
     container: shell / inline-size;
-    --bend-start: 0px;
-    --bend-end: 0px;
-    border-start-start-radius: var(--bend-start);
-    border-end-start-radius: var(--bend-start);
-    border-start-end-radius: var(--bend-end);
-    border-end-end-radius: var(--bend-end);
     background:
       var(--texture-noise),
       var(--backdrop);
-    transition:
-      border-radius 250ms ease-in-out,
-      box-shadow 250ms ease-in-out;
+    transition: box-shadow 250ms ease-in-out;
   }
 
   .dnd-shell-content::before,
@@ -662,23 +655,10 @@
 
   .dnd-shell-content::after {
     inset: 0;
-    border-radius: inherit;
   }
 
   .dnd-shell-content::before {
     inset: var(--space-1);
-    border-start-start-radius: max(0px, calc(var(--bend-start) - var(--space-1)));
-    border-end-start-radius: max(0px, calc(var(--bend-start) - var(--space-1)));
-    border-start-end-radius: max(0px, calc(var(--bend-end) - var(--space-1)));
-    border-end-end-radius: max(0px, calc(var(--bend-end) - var(--space-1)));
-  }
-
-  .dnd-shell-menu-open > .dnd-shell-content {
-    --bend-start: var(--shell-bend);
-  }
-
-  .dnd-shell-chat-open > .dnd-shell-content {
-    --bend-end: var(--shell-bend);
   }
 
   .dnd-shell-menu-open > .dnd-shell-content,
@@ -847,7 +827,7 @@
   }
 
   .dnd-shell-hold-narrow {
-    max-width: 860px;
+    max-width: 1040px;
   }
 
   .dnd-shell-hold-wide {

@@ -530,11 +530,12 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
-    padding: var(--space-4);
-    border: none;
-    border-radius: var(--radius-sm);
-    background: var(--texture-noise), linear-gradient(180deg, var(--ground-raised) 0%, var(--ground-deep) 100%);
-    box-shadow: var(--rim-thin), inset 0 0 1rem 0.125rem var(--shade-hard);
+    padding: var(--space-4) 0;
+    border-top: var(--border-hair) solid color-mix(in srgb, var(--metal-dim) 45%, transparent);
+  }
+
+  .user-service:last-child {
+    padding-bottom: 0;
   }
 
   .user-service-head {

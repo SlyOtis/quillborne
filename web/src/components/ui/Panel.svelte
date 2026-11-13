@@ -160,6 +160,6 @@
   }
 
   .dnd-panelbox-pad-md .dnd-panelbox-body {
-    padding: var(--space-4);
+    padding: var(--space-5) var(--space-6);
   }
 </style>

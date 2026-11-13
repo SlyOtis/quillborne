@@ -4,7 +4,7 @@
   import { navigate } from 'sly-svelte-location-router'
   import { getTheme, setTheme } from '$lib/dialogs/theme'
   import { userCampaigns } from '$lib/stores/campaign.store'
-  import { anyDialogOpen, uiStore } from '$lib/stores/ui.store'
+  import { anyDialogOpen, postNotice, uiStore } from '$lib/stores/ui.store'
   import Button from '$components/ui/Button.svelte'
   import Ornament from '$components/ui/Ornament.svelte'
   import Shell from '$components/ui/Shell.svelte'
@@ -20,7 +20,6 @@
   })
 
   let loading = $state(true)
-  let error = $state<string | null>(null)
   let search = $state('')
 
   onMount(async () => {
@@ -29,7 +28,7 @@
     try {
       userCampaigns.set(await getCampaigns())
     } catch (reason) {
-      error = reason instanceof Error ? reason.message : 'The archive did not answer'
+      postNotice(reason instanceof Error ? reason.message : 'The archive did not answer')
     } finally {
       loading = false
     }
@@ -38,22 +37,10 @@
   function createCampaign() {
     navigate('/main/create/campaign')
   }
-
-  function dismissError() {
-    error = null
-  }
 </script>
 
 <Shell drawers title="Campaigns" width="wide" back={() => navigate('/main')}>
   <div class="camps">
-    {#if error}
-      <div class="camps-error" role="alert">
-        <span class="camps-error-mark"><Ornament name="skull" size="sm" tone="ember" /></span>
-        <p class="camps-error-text">{error}</p>
-        <Button variant="ghost" size="sm" onclick={dismissError}>Dismiss</Button>
-      </div>
-    {/if}
-
     <header class="camps-crown">
       <p class="dnd-label camps-eyebrow">Chronicles</p>
       <h1 class="dnd-heading dnd-heading-hero camps-name">Campaigns</h1>
@@ -149,28 +136,4 @@
     min-width: 0;
   }
 
-  .camps-error {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-3) var(--space-4);
-    border: var(--border-hair) solid var(--state-bad);
-    border-radius: var(--radius-sm);
-    background: var(--texture-noise), linear-gradient(180deg, color-mix(in srgb, var(--state-bad) 14%, var(--ground-raised)), var(--ground-deep));
-    box-shadow: var(--bevel-down);
-  }
-
-  .camps-error-mark {
-    display: flex;
-    flex: none;
-  }
-
-  .camps-error-text {
-    flex: 1;
-    min-width: 0;
-    margin: 0;
-    font-size: var(--text-sm);
-    color: var(--ink);
-    overflow-wrap: anywhere;
-  }
 </style>

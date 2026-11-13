@@ -78,3 +78,22 @@ export const shell = writable<ShellParts>({ title: '', width: 'wide', flush: fal
 
 /** The sound board of the character sheet on screen, which the menu drawer plays from. */
 export const soundBoard = writable<CharacterContext['soundBoard'] | null>(null);
+
+/** A line the frame shows as a toast in the bottom right until it is dismissed. */
+export interface Notice {
+  id: number;
+  text: string;
+}
+
+let noticeCount = 0;
+
+export const notices = writable<Notice[]>([]);
+
+export function postNotice(text: string) {
+  noticeCount += 1;
+  notices.update((held) => [...held, { id: noticeCount, text }]);
+}
+
+export function deleteNotice(id: number) {
+  notices.update((held) => held.filter((one) => one.id !== id));
+}

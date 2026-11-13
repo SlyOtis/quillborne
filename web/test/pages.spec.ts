@@ -141,9 +141,9 @@ describe('no text character stands in for an icon', () => {
     })
   }
 
-  it('draws the hearth alarm as a skull and not a warning sign', () => {
-    expect(at('MainPage').source).toMatch(
-      /<span class="hall-error-mark"><Ornament name="skull" size="sm" tone="ember" \/><\/span>/
+  it('draws the toast alarm as a skull and not a warning sign', () => {
+    expect(component('src/components/ui/Toast.svelte').source).toMatch(
+      /<span class="dnd-toast-mark"><Ornament name="skull" size="sm" tone="ember" \/><\/span>/
     )
   })
 
