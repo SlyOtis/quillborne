@@ -31,7 +31,7 @@
   import type { DynamicGridItem, DynamicGridMode, DynamicGridPlacement } from "$lib/dynamic-grid";
   import Overlay from "$components/Overlay.svelte";
   import { sidebarStore } from "$lib/navigation";
-  import { uiStore, anyDialogOpen, menuView, soundBoard } from "$lib/stores/ui.store";
+  import { uiStore, anyDialogOpen, menuView, soundBoard, postNotice } from "$lib/stores/ui.store";
   import { navigate, resolvedRoute } from "sly-svelte-location-router";
   import Shell from "$components/ui/Shell.svelte";
   import VehiclesPage from "./VehiclesPage.svelte";
@@ -112,6 +112,8 @@
         if (document.owner_id === $user?.user_id) {
           putCharacterPlayed(characterId)
             .catch((reason) => characterWriteError.set(reason instanceof Error ? reason.message : String(reason)));
+        } else {
+          postNotice("Another player's character. You can read the sheet, but only they can change it.");
         }
 
         if (document.campaign_id) {
@@ -565,10 +567,6 @@
       </div>
     </div>
 
-    {#if reading}
-      <p class="sheet-reading" role="status">Another player's character. You can read the sheet, but only they can change it.</p>
-    {/if}
-
     {#if $characterWriteError}
       <p class="sheet-alarm" role="alert">{$characterWriteError}</p>
     {/if}
@@ -669,16 +667,6 @@
 
   .sheet-still-on :global(:is(button, [role='button'], label, input, select, textarea):not([role='tab'], [aria-expanded])) {
     cursor: default;
-  }
-
-  .sheet-reading {
-    margin: 0;
-    padding: var(--space-3) var(--space-4);
-    border-radius: var(--radius-sm);
-    background: var(--texture-noise), var(--ground-deep);
-    box-shadow: var(--bevel-down);
-    font-size: var(--text-sm);
-    color: var(--ink-dim);
   }
 
   .sheet-alarm {
