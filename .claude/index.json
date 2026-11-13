@@ -778,6 +778,21 @@
         "campaign",
         "character"
       ]
+    },
+    {
+      "path": ".claude/skills/features/SKILL.md",
+      "kind": "skill",
+      "answers": "How incoming features are taken in as issues, given a worktree and an agent each through tree.sh, verified on the main checkout, merged and landed with land.sh; board.sh prints what is in motion.",
+      "keywords": [
+        "feature",
+        "worktree",
+        "agent",
+        "board",
+        "intake",
+        "land",
+        "parallel",
+        "pull request"
+      ]
     }
   ]
 }

@@ -74,6 +74,7 @@ Rules in `.claude/rules/`, each read when its paths are touched:
 Skills in `.claude/skills/`:
 
 - `run`: start Quillborne locally on this worktree's own slot, signed in as the debug user.
+- `features`: take features in as they arrive, one issue, one worktree and one agent each, verify on the main checkout and merge each the moment it works.
 - `qubo`: the cli, its state export and import and its mcp tools; installed by `just install-cli-skill`.
 - `nimon` and `nimon-pr`: drive the browser through a page or a pull request and record it; installed by `just install`.
 - `git` and `github`: the git cli and everything that talks to GitHub.
