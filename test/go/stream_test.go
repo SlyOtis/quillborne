@@ -224,7 +224,7 @@ func TestAProfileStreamCarriesItsOwnersChangesAlone(t *testing.T) {
 func TestAResourceStreamCarriesLiveEditsToItsReaders(t *testing.T) {
 	requireBroker(t)
 	ensureProfile(t, player, "pip@quillborne.local")
-	resourceID := postResource(t, dungeonMaster, `{"kind":"entries","title":"Streamed draft"}`)
+	resourceID := postResource(t, dungeonMaster, `{"kind":"entries","name":"Streamed draft"}`)
 	params := map[string]string{"id": resourceID}
 	server := streamServer(t)
 	if !getRefused(t, server, player, "/api/resource/"+resourceID+"/stream") {

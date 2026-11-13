@@ -620,7 +620,7 @@ export function applyStateToCharacter(partialState: Partial<Character>, fromDocu
   Object.entries(partialState).forEach(([key, value]) => {
     const propertyKey = key as keyof Character;
     if (store[propertyKey] && value !== undefined) {
-      (store[propertyKey] as any).set(value);
+      (store[propertyKey] as any).set(propertyKey === 'info' ? { ...getEmptyCharacterInfo(), ...(value as object) } : value);
     }
   });
 

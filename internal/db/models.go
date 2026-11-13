@@ -109,12 +109,12 @@ type Encounter struct {
 	Round      int             `bun:"round" json:"round"`
 	Turn       int             `bun:"turn" json:"turn"`
 	IsActive   bool            `bun:"is_active" json:"is_active"`
-	Share `tstype:",extends"`
-	OwnerID   uuid.UUID    `bun:"sa_owner_id" json:"-"`
-	CreatedBy *uuid.UUID   `bun:"sa_created_by" json:"-"`
-	CreatedAt time.Time    `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
-	UpdatedAt time.Time    `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
-	DeletedAt bun.NullTime `bun:"sa_deleted_at,soft_delete,nullzero" json:"-"`
+	Share      `tstype:",extends"`
+	OwnerID    uuid.UUID    `bun:"sa_owner_id" json:"-"`
+	CreatedBy  *uuid.UUID   `bun:"sa_created_by" json:"-"`
+	CreatedAt  time.Time    `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
+	UpdatedAt  time.Time    `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
+	DeletedAt  bun.NullTime `bun:"sa_deleted_at,soft_delete,nullzero" json:"-"`
 }
 
 type Vehicle struct {
@@ -177,12 +177,12 @@ type Song struct {
 	Title      string    `bun:"title" json:"title"`
 	Address    string    `bun:"address" json:"address"`
 	Duration   float64   `bun:"duration" json:"duration"`
-	Share `tstype:",extends"`
-	OwnerID   uuid.UUID    `bun:"sa_owner_id" json:"-"`
-	CreatedBy *uuid.UUID   `bun:"sa_created_by" json:"-"`
-	CreatedAt time.Time    `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
-	UpdatedAt time.Time    `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
-	DeletedAt bun.NullTime `bun:"sa_deleted_at,soft_delete,nullzero" json:"-"`
+	Share      `tstype:",extends"`
+	OwnerID    uuid.UUID    `bun:"sa_owner_id" json:"-"`
+	CreatedBy  *uuid.UUID   `bun:"sa_created_by" json:"-"`
+	CreatedAt  time.Time    `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
+	UpdatedAt  time.Time    `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
+	DeletedAt  bun.NullTime `bun:"sa_deleted_at,soft_delete,nullzero" json:"-"`
 }
 
 type Character struct {
@@ -191,6 +191,8 @@ type Character struct {
 	ID           uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
 	UserID       uuid.UUID       `bun:"user_id" json:"owner_id"`
 	CampaignID   *uuid.UUID      `bun:"campaign_id" json:"campaign_id,omitempty"`
+	Name         string          `bun:"name" json:"name"`
+	Description  string          `bun:"description" json:"description"`
 	Sheet        json.RawMessage `bun:"sheet,type:jsonb" json:"character"`
 	Metadata     json.RawMessage `bun:"metadata,type:jsonb" json:"metadata"`
 	Sources      json.RawMessage `bun:"sources,type:jsonb" json:"-"`
@@ -206,20 +208,21 @@ type Character struct {
 type Resource struct {
 	bun.BaseModel `json:"-" bun:"table:resource"`
 
-	ID         uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
-	Kind       string          `bun:"kind" json:"kind"`
-	UserID     uuid.UUID       `bun:"user_id" json:"owner_id"`
-	CampaignID *uuid.UUID      `bun:"campaign_id" json:"campaign_id,omitempty"`
-	Title      string          `bun:"title" json:"title"`
-	Fields     json.RawMessage `bun:"fields,type:jsonb" json:"-"`
-	Share `tstype:",extends"`
-	OwnerID   uuid.UUID    `bun:"sa_owner_id" json:"-"`
-	ParentID  uuid.UUID    `bun:"sa_parent_id" json:"-"`
-	RootID    uuid.UUID    `bun:"sa_root_id" json:"-"`
-	CreatedBy *uuid.UUID   `bun:"sa_created_by" json:"-"`
-	CreatedAt time.Time    `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
-	UpdatedAt time.Time    `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
-	DeletedAt bun.NullTime `bun:"sa_deleted_at,soft_delete,nullzero" json:"-"`
+	ID          uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
+	Kind        string          `bun:"kind" json:"kind"`
+	UserID      uuid.UUID       `bun:"user_id" json:"owner_id"`
+	CampaignID  *uuid.UUID      `bun:"campaign_id" json:"campaign_id,omitempty"`
+	Name        string          `bun:"name" json:"name"`
+	Description string          `bun:"description" json:"description"`
+	Fields      json.RawMessage `bun:"fields,type:jsonb" json:"-"`
+	Share       `tstype:",extends"`
+	OwnerID     uuid.UUID    `bun:"sa_owner_id" json:"-"`
+	ParentID    uuid.UUID    `bun:"sa_parent_id" json:"-"`
+	RootID      uuid.UUID    `bun:"sa_root_id" json:"-"`
+	CreatedBy   *uuid.UUID   `bun:"sa_created_by" json:"-"`
+	CreatedAt   time.Time    `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
+	UpdatedAt   time.Time    `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
+	DeletedAt   bun.NullTime `bun:"sa_deleted_at,soft_delete,nullzero" json:"-"`
 }
 
 type ResourceUpdate struct {

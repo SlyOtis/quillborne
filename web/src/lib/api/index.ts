@@ -13,6 +13,7 @@ import {
   unwrap
 } from './core'
 import type {
+  Tag,
   Asset,
   Campaign,
   CampaignMap,
@@ -188,6 +189,9 @@ export const getCharacterStream = (characterId: string, onChange: (character: Ch
   )
 
 export const putCharacterPlayed = (characterId: string) => apiPut(`character/${characterId}/played`)
+
+export const putCharacterLayout = (characterId: string, layout: CharacterMetadata['layout']) =>
+  apiPut(`character/${characterId}`, { metadata: { layout } })
 
 export const putCharacter = (characterId: string, sheet: CharacterSheet) =>
   apiPut(`character/${characterId}`, { character: sheet, metadata: getCharacterMetadata(sheet) })
@@ -597,3 +601,26 @@ export const getCatalog = <T>(kind: string, digest?: string) => apiGet<T[]>(path
 
 export const putCatalogEntry = (kind: string, id: string, entry: unknown) =>
   apiPut(`catalog/${kind}/${encodeURIComponent(id)}`, entry)
+
+export interface SearchHit {
+  id: string
+  object_type: string
+  name: string | null
+  description: string | null
+  rank: number
+  kind?: string
+  campaign_id?: string
+}
+
+export interface SearchBody {
+  q?: string
+  object_types?: string[]
+  ids?: string[]
+  exclude_ids?: string[]
+  tag_ids?: string[]
+  limit?: number
+}
+
+export const postSearch = (body: SearchBody) => apiPost<SearchHit[]>('search', body)
+
+export const getTags = (q: string) => apiGet<Tag[]>(path('tag', { q, limit: '10' }))

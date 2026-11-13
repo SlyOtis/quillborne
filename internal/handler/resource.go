@@ -23,7 +23,7 @@ var resourceKinds = map[string]bool{
 }
 
 var resourceColumns = map[string]bool{
-	"id": true, "kind": true, "owner_id": true, "campaign_id": true, "created_at": true, "updated_at": true,
+	"id": true, "kind": true, "name": true, "description": true, "owner_id": true, "campaign_id": true, "created_at": true, "updated_at": true,
 	"share_users": true, "share_campaigns": true, "readers": true,
 }
 
@@ -37,7 +37,8 @@ func getResourceRecord(resource db.Resource) map[string]any {
 	record["id"] = resource.ID
 	record["kind"] = resource.Kind
 	record["owner_id"] = resource.UserID
-	record["title"] = resource.Title
+	record["name"] = resource.Name
+	record["description"] = resource.Description
 	record["share_users"] = resource.ShareUsers
 	record["share_campaigns"] = resource.ShareCampaigns
 	record["created_at"] = resource.CreatedAt
@@ -100,20 +101,19 @@ func putResourceRecord(resource *db.Resource, body map[string]any) (bool, error)
 			}
 			shared = true
 			continue
-		case "title":
+		case "name":
 			if text, ok := value.(string); ok {
-				resource.Title = text
+				resource.Name = text
+			}
+		case "description":
+			if text, ok := value.(string); ok {
+				resource.Description = text
 			}
 		}
 		if resourceColumns[key] || key == "parent_id" {
 			continue
 		}
 		fields[key] = value
-	}
-	if resource.Title == "" {
-		if name, ok := fields["name"].(string); ok {
-			resource.Title = name
-		}
 	}
 	encoded, err := json.Marshal(fields)
 	if err != nil {
@@ -159,7 +159,7 @@ func GetResources(ctx echo.Context) error {
 		q = q.Where("campaign_id IS NULL").Where("user_id = ?", userID)
 	}
 	q = sdb.ObjectWhere(q, actorID, db.OBJECT_TYPE_RESOURCE, sdb.ACCESS_READ, nil, nil, 0)
-	if err := q.OrderExpr("resource.title").Scan(rctx); err != nil {
+	if err := q.OrderExpr("resource.name").Scan(rctx); err != nil {
 		ctx.Logger().Errorf("GetResources: %v", err)
 		return respond.ErrorInternal(ctx)
 	}
@@ -260,7 +260,7 @@ func PostResource(ctx echo.Context) error {
 		if _, err := tx.NewInsert().Model(&resource).ExcludeColumn("sa_created_at", "sa_updated_at", "sa_deleted_at", "reader_claim_id").Returning("*").Exec(tctx); err != nil {
 			return err
 		}
-		if err := sdb.Write(tctx, tx, "PostResource", "create", db.OBJECT_TYPE_RESOURCE, resource.ID, resource.OwnerID, w.Access.UserClaimID, resource.Title); err != nil {
+		if err := sdb.Write(tctx, tx, "PostResource", "create", db.OBJECT_TYPE_RESOURCE, resource.ID, resource.OwnerID, w.Access.UserClaimID, resource.Name); err != nil {
 			return err
 		}
 		if err := postOwnerBinding(tctx, tx, w, db.OBJECT_TYPE_RESOURCE, resource.ID, sdb.ACCESS_MEMBER); err != nil {
@@ -320,10 +320,10 @@ func PutResource(ctx echo.Context) error {
 				return err
 			}
 		}
-		if _, err := tx.NewUpdate().Model(&resource).Column("title", "fields", "share_users", "share_campaigns", "sa_updated_at").WherePK().Exec(tctx); err != nil {
+		if _, err := tx.NewUpdate().Model(&resource).Column("name", "description", "fields", "share_users", "share_campaigns", "sa_updated_at").WherePK().Exec(tctx); err != nil {
 			return err
 		}
-		return sdb.Write(tctx, tx, "PutResource", "update", db.OBJECT_TYPE_RESOURCE, resource.ID, resource.OwnerID, ac.UserClaimID, resource.Title)
+		return sdb.Write(tctx, tx, "PutResource", "update", db.OBJECT_TYPE_RESOURCE, resource.ID, resource.OwnerID, ac.UserClaimID, resource.Name)
 	}); err != nil {
 		ctx.Logger().Errorf("PutResource: %v", err)
 		return respond.ErrorInternal(ctx)
@@ -359,7 +359,7 @@ func DeleteResource(ctx echo.Context) error {
 		if _, err := tx.NewDelete().Model((*db.ResourceUpdate)(nil)).Where("resource_id = ?", resourceID).Exec(tctx); err != nil {
 			return err
 		}
-		return sdb.Write(tctx, tx, "DeleteResource", "delete", db.OBJECT_TYPE_RESOURCE, resource.ID, resource.OwnerID, ac.UserClaimID, resource.Title)
+		return sdb.Write(tctx, tx, "DeleteResource", "delete", db.OBJECT_TYPE_RESOURCE, resource.ID, resource.OwnerID, ac.UserClaimID, resource.Name)
 	}); err != nil {
 		ctx.Logger().Errorf("DeleteResource: %v", err)
 		return respond.ErrorInternal(ctx)

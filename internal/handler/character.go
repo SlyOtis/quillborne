@@ -64,6 +64,25 @@ func getStoredMetadata(metadata map[string]any) (json.RawMessage, *bool) {
 	return encoded, public
 }
 
+func putCharacterName(character *db.Character) {
+	var sheet struct {
+		Info struct {
+			Name        string `json:"name"`
+			Description string `json:"description"`
+		} `json:"info"`
+	}
+	_ = json.Unmarshal(character.Sheet, &sheet)
+	var metadata struct {
+		Name string `json:"name"`
+	}
+	_ = json.Unmarshal(character.Metadata, &metadata)
+	character.Name = metadata.Name
+	if character.Name == "" {
+		character.Name = sheet.Info.Name
+	}
+	character.Description = sheet.Info.Description
+}
+
 func putPublicBinding(ctx context.Context, tx bun.Tx, w *Writer, characterID uuid.UUID, public bool) error {
 	access := sdb.ACCESS_MEMBER
 	if public {
@@ -170,6 +189,7 @@ func PostCharacter(ctx echo.Context) error {
 	if public != nil {
 		character.IsPublic = *public
 	}
+	putCharacterName(&character)
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		if _, err := tx.NewInsert().Model(&character).ExcludeColumn("id", "sa_created_at", "sa_updated_at", "sa_deleted_at").Returning("*").Exec(tctx); err != nil {
 			return err
@@ -252,6 +272,8 @@ func PutCharacter(ctx echo.Context) error {
 			public = nil
 		}
 	}
+	putCharacterName(&character)
+	columns = append(columns, "name", "description")
 	character.UpdatedAt = time.Now()
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		if _, err := tx.NewUpdate().Model(&character).Column(columns...).WherePK().Exec(tctx); err != nil {

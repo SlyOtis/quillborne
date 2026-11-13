@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { getCampaigns, getCharacters } from '$lib/api'
-  import type { Owner } from '$lib/api/types'
+  import { getTags, postSearch, type SearchHit } from '$lib/api'
   import BaseDialog from "../BaseDialog.svelte";
   import Field from "$components/ui/Field.svelte";
   import Glyph, { type GlyphName } from "$components/ui/Glyph.svelte";
@@ -9,8 +8,7 @@
   import { uiStore, isSearchDialogOpen, searchSeed } from "$lib/stores/ui.store";
   import { user } from "$lib/stores/auth.store";
   import { ACTIONS, actionBlocks, shortcuts } from "$lib/actions";
-  import { getEvery, RESOURCES, type Resource, type ResourceKind } from "$lib/resources";
-  import { getDocument, getDocumentText } from "$lib/blocks";
+  import { RESOURCES, type ResourceKind } from "$lib/resources";
 
   interface Hit {
     id: string;
@@ -31,8 +29,6 @@
     text: string;
     mark: boolean;
   }
-
-  const KINDS = Object.keys(RESOURCES) as ResourceKind[];
 
   const GLYPHS: Record<ResourceKind, GlyphName> = {
     entries: 'scroll',
@@ -61,6 +57,13 @@
   let loading = $state(false);
   let error = $state<string | null>(null);
   let selectedIndex = $state(0);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let asked = 0;
+
+  const SEARCH_DELAY = 250;
+  const SEARCH_MIN = 2;
+  const SEARCH_LIMIT = 30;
+  const SEARCH_TYPES = ['campaign', 'character', 'resource', 'vehicle'];
 
   const rites = $derived<Hit[]>(
     ACTIONS.filter((one) => one.id !== 'search').map((one) => ({
@@ -112,7 +115,7 @@
     tokens.length === 0
       ? rites
       : [...rites, ...pages]
-          .filter((hit) => isTagged(hit) && words.every((word) => hit.hay.includes(word)))
+          .filter((hit) => hit.group === 'Actions' ? isTagged(hit) && words.every((word) => hit.hay.includes(word)) : true)
           .map((hit, index) => ({ hit, index, rank: getRank(hit) }))
           .sort((a, b) => a.rank - b.rank || a.index - b.index)
           .slice(0, 60)
@@ -157,87 +160,47 @@
     return parts;
   }
 
-  function getHay(parts: string[]): string {
-    return parts.filter(Boolean).join(' ').toLowerCase();
-  }
-
-  function getPage(one: Resource, kind: ResourceKind, under: string, place: string): Hit {
-    const mark = RESOURCES[kind].mark(one);
+  function getHit(one: SearchHit): Hit {
+    const name = one.name ?? '';
+    const sub = one.description ?? '';
+    const hay = `${name} ${sub}`.toLowerCase();
+    if (one.object_type === 'public.campaign') {
+      return { id: `campaign/${one.id}`, title: name, sub, group: 'Campaigns', place: '', glyph: 'campaign', key: '', tags: [], token: '', hay, run: () => navigate(`/main/campaign/${one.id}`) };
+    }
+    if (one.object_type === 'public.character') {
+      return { id: `character/${one.id}`, title: name, sub, group: 'Characters', place: '', glyph: 'character', key: '', tags: [], token: '', hay, run: () => navigate(`/main/character/${one.id}`) };
+    }
+    if (one.object_type === 'public.vehicle') {
+      return { id: `vehicle/${one.id}`, title: name, sub, group: 'Vessels', place: '', glyph: 'gear', key: '', tags: [], token: '', hay, run: () => navigate(`/main/vehicles/${one.id}`) };
+    }
+    const kind = (one.kind === 'locations' ? 'places' : one.kind ?? 'entries') as ResourceKind;
+    const under = one.campaign_id ? `/main/campaign/${one.campaign_id}` : '/main';
     return {
       id: `${under}/${kind}/${one.id}`,
-      title: one.title,
-      sub: [mark, one.description].filter(Boolean).join(' · '),
-      group: RESOURCES[kind].many,
-      place,
-      glyph: GLYPHS[kind],
+      title: name,
+      sub,
+      group: RESOURCES[kind]?.many ?? kind,
+      place: one.campaign_id ? 'At the table' : 'Your own',
+      glyph: GLYPHS[kind] ?? 'scroll',
       key: '',
-      tags: one.tags,
-      token: one.tags[0] ? `#${one.tags[0]}` : '',
-      hay: getHay([
-        one.title,
-        one.description,
-        mark,
-        ...one.tags,
-        ...one.facts.flatMap((fact) => [fact.label, fact.value]),
-        getDocumentText(getDocument(one.content))
-      ]),
+      tags: [],
+      token: '',
+      hay,
       run: () => navigate(`${under}/${kind}/${one.id}`)
     };
   }
 
-  async function getPages(userId: string): Promise<Hit[]> {
-    const [campaigns, sheets] = await Promise.all([
-      getCampaigns().catch(() => []),
-      getCharacters().catch(() => [])
-    ]);
-
-    const shelves: { owner: Owner; under: string; place: string }[] = [
-      { owner: { at: 'user', id: userId }, under: '/main', place: 'Your own' },
-      ...campaigns.map((one) => ({
-        owner: { at: 'campaign', id: one.id } as Owner,
-        under: `/main/campaign/${one.id}`,
-        place: one.name
-      }))
-    ];
-
-    const rolls = await Promise.all(
-      shelves.flatMap((shelf) =>
-        KINDS.map(async (kind) => {
-          const all = await getEvery(shelf.owner, kind).catch(() => [] as Resource[]);
-          return all.map((one) => getPage(one, kind, shelf.under, shelf.place));
-        })
-      )
-    );
-
-    return [
-      ...sheets.map((one) => ({
-        id: `/main/character/${one.id}`,
-        title: one.metadata.name,
-        sub: `Level ${one.metadata.level} ${one.metadata.race} ${one.metadata.class}`.trim(),
-        group: 'Characters',
-        place: '',
-        glyph: 'character' as GlyphName,
-        key: '',
-        tags: (one.metadata.tags ?? []) as string[],
-        token: one.metadata.tags?.[0] ? `#${one.metadata.tags[0]}` : '',
-        hay: getHay([one.metadata.name, one.metadata.race, one.metadata.class, ...one.metadata.tags]),
-        run: () => navigate(`/main/character/${one.id}`)
-      })),
-      ...campaigns.map((one) => ({
-        id: `/main/campaign/${one.id}`,
-        title: one.name,
-        sub: one.description,
-        group: 'Campaigns',
-        place: '',
-        glyph: 'campaign' as GlyphName,
-        key: '',
-        tags: [],
-        token: '',
-        hay: getHay([one.name, one.description]),
-        run: () => navigate(`/main/campaign/${one.id}`)
-      })),
-      ...rolls.flat()
-    ];
+  async function getPages(): Promise<Hit[]> {
+    const tagIds: string[] = [];
+    for (const tag of tagged) {
+      const found = (await getTags(tag).catch(() => [])).find((one) => one.name.toLowerCase() === tag);
+      if (!found) return [];
+      tagIds.push(found.id);
+    }
+    const q = words.join(' ');
+    if (q.length < SEARCH_MIN && tagIds.length === 0) return [];
+    const hits = await postSearch({ q: q || undefined, object_types: SEARCH_TYPES, tag_ids: tagIds.length ? tagIds : undefined, limit: SEARCH_LIMIT });
+    return hits.map(getHit);
   }
 
   function putChips(held: string[], rest: string) {
@@ -308,20 +271,26 @@
   });
 
   $effect(() => {
-    const userId = $user?.user_id ?? '';
-    if (!isOpen || !userId) return;
-
-    void (async () => {
+    const open = isOpen && Boolean($user?.user_id);
+    const key = `${words.join(' ')}|${tagged.join(' ')}`;
+    clearTimeout(timer);
+    if (!open) return;
+    const mine = ++asked;
+    timer = setTimeout(() => {
       loading = true;
       error = null;
-      try {
-        pages = await getPages(userId);
-      } catch (reason) {
-        error = reason instanceof Error ? reason.message : String(reason);
-      } finally {
-        loading = false;
-      }
-    })();
+      void getPages()
+        .then((found) => {
+          if (mine === asked) pages = found;
+        })
+        .catch((reason) => {
+          if (mine === asked) error = reason instanceof Error ? reason.message : String(reason);
+        })
+        .finally(() => {
+          if (mine === asked) loading = false;
+        });
+    }, key ? SEARCH_DELAY : 0);
+    return () => clearTimeout(timer);
   });
 
   $effect(() => {

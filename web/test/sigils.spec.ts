@@ -109,10 +109,12 @@ const tones = values('tone')
 const sizes = values('size')
 const fallback = (prop: string) => new RegExp(`${prop}\\s*=\\s*'([^']+)'`).exec(sigil.slice(0, sigil.indexOf('}: {')))?.[1]
 
+const sigilGlyphs = (source: string): string[] =>
+  (source.match(/<Sigil[\s\S]*?<\/Sigil>/g) ?? []).flatMap((block) => [...block.matchAll(/<Glyph name="([^"]+)"/g)].map((match) => match[1]))
+
 const bar: [string, string, number][] = [
-  ['the frame handles', region(read('src/components/Frame.svelte'), '<header class="dnd-shell-bar">', '</header>'), 4],
-  ["the sheet's tools", region(read('src/pages/CharacterPage.svelte'), '{#snippet tools()}', '{/snippet}'), 5],
-  ["the hearth's tools", region(read('src/pages/MainPage.svelte'), '{#snippet tools()}', '{/snippet}'), 1]
+  ['the frame handles', region(read('src/components/Frame.svelte'), '<header class="dnd-shell-bar">', '</header>'), 2],
+  ["the sheet's tools", region(read('src/pages/CharacterPage.svelte'), '{#snippet tools()}', '{/snippet}'), 6]
 ]
 
 describe('no bar call site decides the sigil design', () => {
@@ -136,7 +138,7 @@ describe('no bar call site decides the sigil design', () => {
     })
 
     it(`${where} differ by their glyph alone`, () => {
-      const glyphs = [...source.matchAll(/<Glyph name="([^"]+)"/g)].map((match) => match[1])
+      const glyphs = sigilGlyphs(source)
       expect(glyphs.length).toBe(count)
       expect(new Set(glyphs).size).toBe(count)
     })
@@ -149,18 +151,17 @@ describe('no bar call site decides the sigil design', () => {
       size: attrs.size
     }))
 
-    expect(drawn.length).toBe(10)
+    expect(drawn.length).toBe(8)
     expect([...new Set(drawn.map((one) => JSON.stringify(one)))]).toEqual([
       JSON.stringify({ frame: 'quatrefoil', tone: 'metal', size: 'sm' })
     ])
   })
 
   it('names every tool the bar draws', () => {
-    const glyphs = bar.flatMap(([, source]) => [...source.matchAll(/<Glyph name="([^"]+)"/g)].map((match) => match[1]))
+    const glyphs = bar.flatMap(([, source]) => sigilGlyphs(source))
     expect(glyphs).toEqual([
-      'menu', 'search', 'music', 'chat',
-      'sound', 'export', 'levelup', 'sources', 'theme',
-      'theme'
+      'back', 'chat',
+      'sound', 'export', 'levelup', 'sources', 'blocks', 'theme'
     ])
   })
 })

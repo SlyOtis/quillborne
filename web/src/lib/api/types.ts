@@ -74,6 +74,7 @@ export interface CharacterMetadata {
   tags: string[]
   is_template: boolean
   is_public: boolean
+  layout?: Record<string, { x: number; y: number; w: number; h: number }>
 }
 
 export type MapMarkerKind =

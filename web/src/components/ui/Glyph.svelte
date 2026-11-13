@@ -14,6 +14,7 @@
   export type GlyphName =
     | 'menu'
     | 'chat'
+    | 'bell'
     | 'send'
     | 'export'
     | 'levelup'
@@ -132,6 +133,10 @@
   {:else if name === 'menu'}
     <path d="M4 7h16M4 12h16M4 17h16" />
     <path d="M12 3.5 13.4 5 12 6.5 10.6 5 12 3.5Z" fill="currentColor" stroke="none" />
+
+  {:else if name === 'bell'}
+    <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15Z" />
+    <path d="M10 20a2 2 0 0 0 4 0" opacity="0.75" />
 
   {:else if name === 'chat'}
     <path d="M4 9c0-2.2 1.8-4 4-4h8c2.2 0 4 1.8 4 4v4c0 2.2-1.8 4-4 4h-4l-4 3v-3c-2.2 0-4-1.8-4-4Z" />

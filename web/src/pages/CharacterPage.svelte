@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as api from '$lib/api'
-  import { getCampaign, getCharacter, postCharacterCopy, postFile, putCharacterPlayed, putProfileRecentCharacters } from '$lib/api'
+  import { getCampaign, getCharacter, postCharacterCopy, postFile, putCharacterLayout, putCharacterPlayed, putProfileRecentCharacters } from '$lib/api'
   import type { Character } from '$lib/api/types'
   import { getTheme, setTheme } from "$lib/dialogs/theme";
   import Senses from "$character-sheet/Senses.svelte";
@@ -26,6 +26,8 @@
   import { getRulesStore } from "$lib/rules/store";
   import { setContext, onDestroy, onMount, untrack, type Snippet } from "svelte";
   import Fold from "$components/ui/Fold.svelte";
+  import DynamicGrid from "$components/ui/DynamicGrid.svelte";
+  import type { DynamicGridItem, DynamicGridPlacement } from "$lib/dynamic-grid";
   import Overlay from "$components/Overlay.svelte";
   import { sidebarStore } from "$lib/navigation";
   import { uiStore, anyDialogOpen, menuView, soundBoard } from "$lib/stores/ui.store";
@@ -77,6 +79,7 @@
 
         setCharacterReadOnly(document.owner_id !== $user?.user_id);
         applyStateToCharacter(document.character, true);
+        layout = document.metadata.layout ?? {};
         ownerId = document.owner_id;
         currentCharacterId.set(characterId);
         putProfileRecentCharacters(getRecentCharacters($userProfile?.preferences?.recent_characters ?? [], characterId))
@@ -94,6 +97,41 @@
       })
       .catch(() => navigate("/main"))
       .finally(() => (loaded = true));
+  });
+
+  function stepNumber(input: HTMLInputElement, delta: number) {
+    const min = input.min === '' ? -Infinity : Number(input.min);
+    const max = input.max === '' ? Infinity : Number(input.max);
+    input.value = String(Math.min(max, Math.max(min, (Number(input.value) || 0) + delta)));
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function isNumberField(target: EventTarget | null): target is HTMLInputElement {
+    return target instanceof HTMLInputElement && target.type === 'number' && target.classList.contains('dnd-num');
+  }
+
+  function wheelNumber(event: WheelEvent) {
+    if (!isNumberField(event.target) || event.deltaY === 0) return;
+    event.preventDefault();
+    stepNumber(event.target, event.deltaY < 0 ? 1 : -1);
+  }
+
+  function keyNumber(event: KeyboardEvent) {
+    if (!isNumberField(event.target)) return;
+    if (event.key === 'ArrowRight') stepNumber(event.target, 1);
+    else if (event.key === 'ArrowLeft') stepNumber(event.target, -1);
+    else return;
+    event.preventDefault();
+  }
+
+  $effect(() => {
+    window.addEventListener('wheel', wheelNumber, { passive: false });
+    window.addEventListener('keydown', keyNumber);
+    return () => {
+      window.removeEventListener('wheel', wheelNumber);
+      window.removeEventListener('keydown', keyNumber);
+    };
   });
 
   onDestroy(() => {
@@ -201,6 +239,28 @@
 
   const tight = $derived(room > 0 && room < 760)
 
+  const sheetPlaces: DynamicGridItem[] = [
+    { id: 'saves', x: 0, y: 0, w: 4, h: 9, minW: 2, minH: 3 },
+    { id: 'senses', x: 4, y: 0, w: 4, h: 9, minW: 2, minH: 3 },
+    { id: 'proficiencies', x: 8, y: 0, w: 4, h: 9, minW: 2, minH: 3 },
+    { id: 'skills', x: 0, y: 9, w: 3, h: 22, minW: 2, minH: 6 },
+    { id: 'actions', x: 3, y: 9, w: 9, h: 22, minW: 4, minH: 8 },
+    { id: 'defences', x: 0, y: 31, w: 6, h: 9, minW: 3, minH: 3 },
+    { id: 'rules', x: 6, y: 31, w: 6, h: 9, minW: 3, minH: 3 }
+  ]
+  let layout = $state<Record<string, { x: number; y: number; w: number; h: number }>>({})
+  let arranging = $state(false)
+  const rulePanels = $derived($rules.resolved?.panels.filter((panel) => !['abilities', 'defence', 'saves', 'senses'].includes(panel.id)) ?? [])
+  const places = $derived(sheetPlaces.filter((place) => place.id !== 'rules' || rulePanels.length > 0).map((place) => ({ ...place, ...layout[place.id] })))
+
+  function putLayout(placements: DynamicGridPlacement[]) {
+    const next = { ...layout }
+    for (const { id, x, y, w, h } of placements) next[id] = { x, y, w, h }
+    layout = next
+    putCharacterLayout(characterId, next)
+      .catch((reason) => characterWriteError.set(reason instanceof Error ? reason.message : String(reason)))
+  }
+
   async function postPortrait(event: Event) {
     const input = event.currentTarget as HTMLInputElement
     const file = input.files?.[0]
@@ -292,6 +352,9 @@
       <Sigil title="Import sources" size="sm" onclick={() => postUIAction('openSourceImport')}>
         <Glyph name="sources" size="sm" />
       </Sigil>
+      <Sigil title="Lay out the sheet" size="sm" active={arranging} onclick={() => (arranging = !arranging)}>
+        <Glyph name="blocks" size="sm" />
+      </Sigil>
     {/if}
     <Sigil title="Change theme" size="sm" onclick={() => postUIAction('openThemeDialog')}>
       <Glyph name="theme" size="sm" />
@@ -351,22 +414,27 @@
               <span class="sheet-campaign-word">Campaign</span>
               <span class="sheet-campaign-name">{campaign.name}</span>
             </a>
+          {:else}
+            <span class="sheet-campaign">
+              <span class="sheet-campaign-word">Campaign</span>
+              <span class="sheet-campaign-name">None</span>
+            </span>
           {/if}
         </span>
 
         <span class="sheet-gear">
           {#if owned}
-            <Sigil title="Choose the portrait frame" frame="ring" size="sm" onclick={() => postUIAction('openFrameDialog')}>
-              <Glyph name="gear" size="sm" />
+            <Sigil title="Choose the portrait frame" size="md" onclick={() => postUIAction('openFrameDialog')}>
+              <Glyph name="gear" size="md" />
             </Sigil>
           {/if}
-          <IconBtn title="Copy this character" disabled={working} onclick={postCopy}>
-            <Glyph name="copy" size="sm" />
-          </IconBtn>
+          <Sigil title="Copy this character" size="md" disabled={working} onclick={postCopy}>
+            <Glyph name="copy" size="md" />
+          </Sigil>
           {#if owned}
-            <IconBtn title="Delete this character" disabled={working} onclick={() => (deleting = true)}>
-              <Glyph name="remove" size="sm" />
-            </IconBtn>
+            <Sigil title="Delete this character" size="md" disabled={working} onclick={() => (deleting = true)}>
+              <Glyph name="remove" size="md" />
+            </Sigil>
           {/if}
         </span>
 
@@ -409,30 +477,50 @@
       <Inspiration />
     </div>
 
-    <div class="sheet-grid" bind:clientWidth={room}>
-      <div class="sheet-column">
-        {@render group('saves', 'Saving throws', saves)}
-        {@render group('senses', 'Senses', senses)}
-        {@render group('proficiencies', 'Proficiencies', proficiencies)}
-        {@render group('rules', 'Rules', ruleBlocks)}
-        {@render group('defences', 'Defences and conditions', defences)}
-      </div>
-
-      {@render group('skills', 'Skills', skills)}
-
-      <div class="sheet-tabs">
-        <div class="sheet-slots">
-          <Initiative bind:initiative={$info.initiative}/>
-          <PlainBox bind:value={$info.ac}
-                    title="Armor"
-                    subTitle="class"
-          />
-          {#each slots as slot (slot.id)}
-            <PlainBox value={slot.value} title={slot.title} subTitle={slot.unit}/>
-          {/each}
-        </div>
-        {@render group('actions', 'Actions and inventory', tabs)}
-      </div>
+    <div class="sheet-grid" class:sheet-grid-arranging={arranging} bind:clientWidth={room}>
+      <DynamicGrid
+        items={places}
+        columns={12}
+        mode={arranging ? 'fixed' : 'flow'}
+        minColWidth={60}
+        rowHeight={24}
+        margin={[12, 12]}
+        padding={[0, 0]}
+        draggable={arranging}
+        resizable={arranging}
+        onmove={putLayout}
+        onresize={putLayout}
+      >
+        {#snippet item(placed)}
+          {#if placed.id === 'saves'}
+            {@render group('saves', 'Saving throws', saves)}
+          {:else if placed.id === 'senses'}
+            {@render group('senses', 'Senses', senses)}
+          {:else if placed.id === 'proficiencies'}
+            {@render group('proficiencies', 'Proficiencies', proficiencies)}
+          {:else if placed.id === 'rules'}
+            {@render group('rules', 'Rules', ruleBlocks)}
+          {:else if placed.id === 'skills'}
+            {@render group('skills', 'Skills', skills)}
+          {:else if placed.id === 'defences'}
+            {@render group('defences', 'Defences and conditions', defences)}
+          {:else if placed.id === 'actions'}
+            <div class="sheet-tabs">
+              <div class="sheet-slots">
+                <Initiative bind:initiative={$info.initiative}/>
+                <PlainBox bind:value={$info.ac}
+                          title="Armor"
+                          subTitle="class"
+                />
+                {#each slots as slot (slot.id)}
+                  <PlainBox value={slot.value} title={slot.title} subTitle={slot.unit}/>
+                {/each}
+              </div>
+              {@render group('actions', 'Actions and inventory', tabs)}
+            </div>
+          {/if}
+        {/snippet}
+      </DynamicGrid>
     </div>
     </div>
   {/if}
@@ -482,7 +570,7 @@
 
   .sheet-band {
     display: grid;
-    grid-template-columns: minmax(min(30rem, 100%), 1fr) minmax(0, 48rem);
+    grid-template-columns: minmax(min(30rem, 100%), 1fr) minmax(0, 36rem);
     align-items: stretch;
     gap: var(--space-3);
     min-width: 0;
@@ -542,7 +630,7 @@
     flex: none;
     align-items: center;
     align-self: flex-start;
-    gap: var(--space-1);
+    gap: var(--space-2);
   }
 
   .sheet-title {
@@ -659,53 +747,38 @@
 
   .sheet-slots {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(6.5rem, 100%), 1fr));
+    grid-template-columns: repeat(auto-fill, min(6rem, 100%));
+    justify-content: start;
     align-items: stretch;
-    gap: var(--space-2);
+    gap: var(--space-5) var(--space-2);
     min-width: 0;
   }
 
   .sheet-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 2fr);
-    align-items: start;
-    gap: var(--space-3);
     min-width: 0;
+  }
+
+  .sheet-grid :global(.dnd-grid-item) {
+    overflow: auto;
+  }
+
+  .sheet-grid-arranging :global(.dnd-grid-item) {
+    outline: var(--border-hair) dashed color-mix(in srgb, var(--metal-dim) 60%, transparent);
+    outline-offset: calc(-1 * var(--border-hair));
+    border-radius: var(--radius-sm);
   }
 
   .sheet-tabs {
     display: flex;
     flex-direction: column;
-    align-self: stretch;
     gap: var(--space-3);
     min-width: 0;
     min-height: 0;
     contain: inline-size;
   }
 
-  .sheet-column {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
-    grid-auto-rows: min-content;
-    align-items: stretch;
-    gap: var(--space-3);
-    min-width: 0;
-  }
-
-  @container page (max-width: 1200px) {
-    .sheet-grid {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
-    }
-
-    .sheet-tabs {
-      grid-column: 1 / -1;
-      min-height: 60vh;
-    }
-  }
-
   @container page (max-width: 760px) {
-    .sheet-band,
-    .sheet-grid {
+    .sheet-band {
       grid-template-columns: minmax(0, 1fr);
     }
 

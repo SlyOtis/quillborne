@@ -26,7 +26,7 @@ func TestAListOfPagesShowsWhatTheReaderMaySee(t *testing.T) {
 	if status, _ := call(t, dungeonMaster, http.MethodGet, "/api/resource?kind=heroes", "", nil, handler.GetResources); status != http.StatusBadRequest {
 		t.Fatalf("a list of an unknown kind answered %d", status)
 	}
-	resourceID := postResource(t, dungeonMaster, `{"kind":"items","title":"Lantern of Hollowmere"}`)
+	resourceID := postResource(t, dungeonMaster, `{"kind":"items","name":"Lantern of Hollowmere"}`)
 	params := map[string]string{"id": resourceID}
 	_, mine := call(t, dungeonMaster, http.MethodGet, "/api/resource?kind=items", "", nil, handler.GetResources)
 	if !listed(t, mine, resourceID) {
@@ -45,7 +45,7 @@ func TestAListOfPagesShowsWhatTheReaderMaySee(t *testing.T) {
 	}
 
 	campaignID := postCampaign(t)
-	tableID := postResource(t, dungeonMaster, `{"kind":"entries","title":"Old Moss","campaign_id":"`+campaignID+`","share_campaigns":["`+campaignID+`"]}`)
+	tableID := postResource(t, dungeonMaster, `{"kind":"entries","name":"Old Moss","campaign_id":"`+campaignID+`","share_campaigns":["`+campaignID+`"]}`)
 	if status, _ := call(t, player, http.MethodGet, "/api/resource?kind=entries&campaign_id="+campaignID, "", nil, handler.GetResources); status == http.StatusOK {
 		t.Fatalf("a player away from the table listed its pages")
 	}
@@ -62,7 +62,7 @@ func TestAListOfPagesShowsWhatTheReaderMaySee(t *testing.T) {
 func TestOnlyTheOwnerBurnsAPage(t *testing.T) {
 	requireStack(t)
 	ensureProfile(t, player, "pip@quillborne.local")
-	resourceID := postResource(t, dungeonMaster, `{"kind":"entries","title":"Burnable","share_users":["`+player.String()+`"]}`)
+	resourceID := postResource(t, dungeonMaster, `{"kind":"entries","name":"Burnable","share_users":["`+player.String()+`"]}`)
 	params := map[string]string{"id": resourceID}
 	if status, _ := call(t, player, http.MethodGet, "/", "", params, handler.GetResource); status != http.StatusOK {
 		t.Fatalf("the reader was refused the page: %d", status)

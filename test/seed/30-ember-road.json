@@ -152,7 +152,7 @@
     "body": {
       "kind": "sessions",
       "campaign_id": "${ember}",
-      "title": "The Toll at Cinder Bridge",
+      "name": "The Toll at Cinder Bridge",
       "description": "The company meets, and pays a toll nobody should have asked for.",
       "tags": [
         "arc one"
@@ -172,7 +172,7 @@
     "body": {
       "kind": "sessions",
       "campaign_id": "${ember}",
-      "title": "Smoke over Hollowmere",
+      "name": "Smoke over Hollowmere",
       "description": "The fog reaches the town, and one more lamp goes dark.",
       "tags": [
         "arc one"
@@ -191,7 +191,7 @@
     "body": {
       "kind": "entries",
       "campaign_id": "${ember}",
-      "title": "The Missing Lamplighters",
+      "name": "The Missing Lamplighters",
       "description": "Five lamplighters have vanished from Hollowmere in a month, and nobody knows what took them.",
       "tags": [
         "main"
@@ -333,7 +333,7 @@
     "body": {
       "kind": "entries",
       "campaign_id": "${ember}",
-      "title": "The Ashen Hand",
+      "name": "The Ashen Hand",
       "description": "The cult leader behind the fog. Kept from the players until they earn the name.",
       "tags": [
         "secret"
@@ -472,7 +472,7 @@
     "body": {
       "kind": "locations",
       "campaign_id": "${ember}",
-      "title": "Hollowmere",
+      "name": "Hollowmere",
       "description": "A lakeside town of crooked roofs and a hundred lamp posts, fewer lit each week.",
       "category": "town",
       "map_id": "",
@@ -487,7 +487,7 @@
     "body": {
       "kind": "locations",
       "campaign_id": "${ember}",
-      "title": "The Drowned Lantern",
+      "name": "The Drowned Lantern",
       "description": "Hollowmere's inn, half sunk into the lake shore. The ale is warm and the gossip is warmer.",
       "category": "inn",
       "map_id": "",
@@ -502,7 +502,7 @@
     "body": {
       "kind": "items",
       "campaign_id": "${ember}",
-      "title": "Lantern of Kindled Paths",
+      "name": "Lantern of Kindled Paths",
       "description": "While lit, it shows footprints left in the last day as faint embers.",
       "category": "wondrous item",
       "rarity": "uncommon",
@@ -520,7 +520,7 @@
     "body": {
       "kind": "items",
       "campaign_id": "${ember}",
-      "title": "Cinder Key",
+      "name": "Cinder Key",
       "description": "A brass key still warm to the touch. It opens the toll house on Cinder Bridge, and one door nobody has found.",
       "category": "key",
       "rarity": "common",
@@ -538,7 +538,7 @@
     "body": {
       "kind": "items",
       "campaign_id": "${ember}",
-      "title": "Ashen Cloak",
+      "name": "Ashen Cloak",
       "description": "Grey wool that sheds soot instead of taking it. The wearer leaves no footprints in ash.",
       "category": "wondrous item",
       "rarity": "uncommon",
@@ -556,7 +556,7 @@
     "body": {
       "kind": "items",
       "campaign_id": "${ember}",
-      "title": "Morrow's Ledger",
+      "name": "Morrow's Ledger",
       "description": "The reeve's book of lamp oil deliveries. The last nine entries are in a hand that is not hers.",
       "category": "book",
       "rarity": "common",
@@ -574,7 +574,7 @@
     "body": {
       "kind": "items",
       "campaign_id": "${ember}",
-      "title": "Wick Cutter",
+      "name": "Wick Cutter",
       "description": "A lamplighter's hooked knife. Wren keeps it sharper than any lamplighter needs.",
       "category": "dagger",
       "rarity": "common",

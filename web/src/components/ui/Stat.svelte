@@ -59,9 +59,10 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-2);
+    justify-content: center;
+    gap: var(--space-1);
     min-width: 0;
-    padding: var(--space-3) 0.85rem var(--space-4);
+    padding: var(--space-3) var(--space-2) calc(var(--space-5) + var(--space-3));
     --stat-light: var(--metal);
     --stat-brace: var(--metal);
     --stat-rim: var(--metal);
@@ -117,7 +118,11 @@
   }
 
   .dnd-stat-label {
+    position: absolute;
+    inset-block-end: var(--space-4);
+    inset-inline: var(--space-2);
     display: flex;
+    white-space: nowrap;
     align-items: center;
     justify-content: center;
     gap: var(--space-2);
@@ -145,10 +150,10 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 1px;
-    min-width: 3.75rem;
-    min-height: 2.6rem;
-    padding: var(--space-2) var(--space-3);
+    gap: 0;
+    min-width: calc(var(--space-7) + var(--space-2));
+    min-height: var(--space-7);
+    padding: var(--space-1) var(--space-3);
     border: none;
     background: linear-gradient(180deg, var(--metal-bright) 0%, var(--stat-rim) 30%, var(--metal-dim) 75%, var(--stat-rim) 100%);
     color: var(--ink);
@@ -216,8 +221,10 @@
   .dnd-stat-sub {
     position: relative;
     z-index: 2;
+    margin-block-start: calc(var(--space-1) * -1);
     font-family: var(--font-display);
     font-size: var(--text-xs);
+    line-height: 1;
     color: var(--ink-dim);
     text-shadow: 0 1px 0 #000;
   }
@@ -235,11 +242,12 @@
 
   .dnd-stat-score {
     position: absolute;
-    bottom: -0.85rem;
+    z-index: 2;
+    bottom: calc(var(--space-3) * -1);
     left: 50%;
     transform: translateX(-50%);
-    min-width: 2.4rem;
-    padding: 1px var(--space-3);
+    min-width: var(--space-7);
+    padding: 0 var(--space-2);
     background: var(--texture-noise), linear-gradient(180deg, var(--ground-lift), var(--ground-deep));
     border: none;
     border-radius: var(--radius-sm);

@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS resource (
     kind              resource_kind NOT NULL,
     user_id           UUID NOT NULL,
     campaign_id       UUID REFERENCES campaign(id),
-    title             TEXT NOT NULL DEFAULT '',
+    name              TEXT NOT NULL DEFAULT '',
+    description       TEXT NOT NULL DEFAULT '',
     fields            JSONB NOT NULL DEFAULT '{}'::jsonb,
     share_users       UUID[] NOT NULL DEFAULT '{}',
     share_campaigns   UUID[] NOT NULL DEFAULT '{}',
@@ -23,6 +24,15 @@ CREATE TABLE IF NOT EXISTS resource (
 );
 
 ALTER TABLE resource DROP COLUMN IF EXISTS share_parties;
+
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'resource' AND column_name = 'title') THEN
+        ALTER TABLE resource RENAME COLUMN title TO name;
+    END IF;
+END $$;
+
+ALTER TABLE resource ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT '';
+UPDATE resource SET description = coalesce(fields->>'description', '') WHERE description = '' AND fields ? 'description';
 
 DO $$ BEGIN
     IF EXISTS (
@@ -56,7 +66,8 @@ COMMENT ON COLUMN resource.id IS 'The resource id';
 COMMENT ON COLUMN resource.kind IS 'Which of the seven kinds the resource is';
 COMMENT ON COLUMN resource.user_id IS 'The player who wrote it down';
 COMMENT ON COLUMN resource.campaign_id IS 'The campaign that keeps the resource, empty for a player''s own';
-COMMENT ON COLUMN resource.title IS 'The title shown at the head, what a list sorts by';
+COMMENT ON COLUMN resource.name IS 'The name shown at the head, what a list sorts by and what the shared search finds';
+COMMENT ON COLUMN resource.description IS 'The lede under the name, searched with it';
 COMMENT ON COLUMN resource.fields IS 'Everything else the page carries: lede, tags, facts, pictures, frame, block document, grouping and the fields of its own kind';
 COMMENT ON COLUMN resource.share_users IS 'The players it is shared with by name';
 COMMENT ON COLUMN resource.share_campaigns IS 'The campaigns whose tables read it';

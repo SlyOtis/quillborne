@@ -12,7 +12,9 @@
   {
     "as": "pip",
     "call": "POST /api/campaign/${bell}/player",
-    "body": { "email": "testy@quillborne.local" }
+    "body": {
+      "email": "testy@quillborne.local"
+    }
   },
   {
     "as": "testy",
@@ -24,12 +26,14 @@
     "body": {
       "kind": "sessions",
       "campaign_id": "${bell}",
-      "title": "Low Tide",
+      "name": "Low Tide",
       "description": "Brann wades out to the abbey and hears the bell.",
       "number": 1,
       "played_at": "2026-10-24",
       "body": "{\"blocks\":[{\"id\":\"bs1a\",\"kind\":\"paragraph\",\"text\":\"The tide went out further than anyone in Saltmarsh remembers, and the abbey's bell tower stood clear of the water for the first time in forty years.\",\"options\":{}}]}",
-      "share_campaigns": ["${bell}"]
+      "share_campaigns": [
+        "${bell}"
+      ]
     }
   },
   {
@@ -38,9 +42,11 @@
     "body": {
       "kind": "entries",
       "campaign_id": "${bell}",
-      "title": "Who Rings the Bell",
+      "name": "Who Rings the Bell",
       "description": "Someone climbs the drowned tower and rings the bell at every low tide, though no one has been seen going up.",
-      "share_campaigns": ["${bell}"]
+      "share_campaigns": [
+        "${bell}"
+      ]
     }
   },
   {

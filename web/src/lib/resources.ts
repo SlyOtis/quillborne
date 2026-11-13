@@ -90,7 +90,7 @@ type Stored = Record<string, unknown> & { id: string }
 function getShared(stored: Stored): Resource {
   return {
     id: stored.id,
-    title: String(stored.title ?? stored.name ?? 'Unnamed'),
+    title: String(stored.name ?? 'Unnamed'),
     description: String(stored.description ?? ''),
     tags: Array.isArray(stored.tags) ? (stored.tags as string[]) : [],
     facts: Array.isArray(stored.facts) ? (stored.facts as Fact[]) : [],
@@ -110,7 +110,6 @@ function getShared(stored: Stored): Resource {
 
 function putShared(one: Partial<Resource>): Record<string, unknown> {
   return {
-    title: one.title ?? '',
     name: one.title ?? '',
     description: one.description ?? '',
     tags: one.tags ?? [],

@@ -13,12 +13,12 @@
   import { navigate } from "sly-svelte-location-router";
   import CharactersPanel from "./main/CharactersPanel.svelte";
   import CampaignsPanel from "./main/CampaignsPanel.svelte";
+  import Portrait from "$components/ui/Portrait.svelte";
   import Card from "$components/ui/Card.svelte";
   import Button from "$components/ui/Button.svelte";
   import Shell from "$components/ui/Shell.svelte";
   import Sigil from "$components/ui/Sigil.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
-  import { postUIAction } from "$lib/chat";
 
   const {unsubscribe, ...chStore} = getCharacterStore('local')
   const unsubscribeSidebar = sidebarStore.subscribe(() => {});
@@ -39,6 +39,7 @@
   const name = $derived($userDetails?.display_name || $userProfile?.display_name || 'Adventurer');
   const newestCampaign = $derived($userCampaigns[0] ?? null);
   const newestCharacter = $derived(getRecentFirst($userCharacters, $userProfile?.preferences?.recent_characters ?? [])[0] ?? null);
+  const heroCampaign = $derived($userCampaigns.find((one) => one.id === newestCharacter?.campaign_id) ?? null);
 
   onMount(async () => {
     setTheme(getTheme());
@@ -72,12 +73,6 @@
 </script>
 
 <Shell drawers title="Hearth" width="full">
-  {#snippet tools()}
-    <Sigil title="Change theme" size="sm" onclick={() => postUIAction('openThemeDialog')}>
-      <Glyph name="theme" size="sm" />
-    </Sigil>
-  {/snippet}
-
   <div class="hall-grid">
     <section class="hall-hero" aria-label="Hearth">
       <div class="hall-hero-word">
@@ -87,8 +82,29 @@
           {$userCharacters.length} characters, {$userCampaigns.length} campaigns.
         </p>
       </div>
+      {#if newestCharacter}
+        <div class="hall-hero-face">
+          {#if heroCampaign}
+            <a class="hall-hero-flag" href="/main/campaign/{heroCampaign.id}">
+              <span class="dnd-label hall-hero-flag-word">Campaign</span>
+              <span class="hall-hero-flag-name">{heroCampaign.name}</span>
+              <span class="hall-hero-flag-note">Players {heroCampaign.player_ids.length} </span>
+              <span class="hall-hero-flag-note">Characters {heroCampaign.character_ids.length}</span>
+              {#if heroCampaign.description}
+                <span class="hall-hero-flag-lede">{heroCampaign.description}</span>
+              {/if}
+            </a>
+          {/if}
+          <button type="button" class="hall-hero-portrait" title="Open {newestCharacter.metadata.name}" onclick={() => navigate(`/main/character/${newestCharacter.id}`)}>
+            <Portrait src={newestCharacter.character.info?.imageUrl} alt={newestCharacter.metadata.name} frame="shield" size="fill" initial={newestCharacter.metadata.name.charAt(0)} />
+          </button>
+        </div>
+      {/if}
       <div class="hall-hero-latest">
-        <p class="dnd-label hall-hero-last-label">Latest</p>
+        <header class="hall-divide">
+          <h2 class="dnd-label hall-divide-name">Latest</h2>
+          <span class="hall-divide-run"></span>
+        </header>
         <div class="hall-hero-last">
           {#if newestCampaign}
             <Card title={newestCampaign.name} sub={newestCampaign.description} tone="verdigris" badge={newestCampaign.is_active ? 'live' : undefined} onclick={() => navigate(`/main/campaign/${newestCampaign.id}`)}>
@@ -115,16 +131,9 @@
         <h2 class="dnd-label hall-divide-name">Campaigns</h2>
         <span class="hall-divide-note">{$userCampaigns.length} under way</span>
         <span class="hall-divide-run"></span>
-        <input
-          type="text"
-          class="dnd-search hall-divide-search"
-          placeholder="Search the chronicles..."
-          aria-label="Search campaigns"
-          bind:value={campaignSearch}
-        />
         <Sigil title="Raise a new campaign" tone="verdigris" size="sm" onclick={createCampaign} frame="plate"><Glyph name="campaign" size="sm" /></Sigil>
       </header>
-      <CampaignsPanel {loading} search={campaignSearch} />
+      <CampaignsPanel {loading} />
     </section>
 
     <section class="hall-plot hall-plot-roll" aria-label="Characters">
@@ -132,16 +141,9 @@
         <h2 class="dnd-label hall-divide-name">Characters</h2>
         <span class="hall-divide-note">{$userCharacters.length} on the roll</span>
         <span class="hall-divide-run"></span>
-        <input
-          type="text"
-          class="dnd-search hall-divide-search"
-          placeholder="Search the roll..."
-          aria-label="Search characters"
-          bind:value={characterSearch}
-        />
         <Sigil title="Forge a new character" tone="ember" size="sm" onclick={createCharacter} frame="star"><Glyph name="character" size="sm" /></Sigil>
       </header>
-      <CharactersPanel {loading} search={characterSearch} />
+      <CharactersPanel {loading} />
     </section>
   </div>
 </Shell>
@@ -150,23 +152,106 @@
   .hall-hero {
     grid-area: hero;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+    grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
-      'word latest'
-      'acts acts';
-    align-items: center;
-    gap: var(--space-5) var(--space-6);
+      'word face'
+      'acts acts'
+      'latest latest';
+    align-items: end;
+    gap: var(--space-5);
     min-width: 0;
   }
 
-  @container page (max-width: 900px) {
-    .hall-hero {
-      grid-template-columns: minmax(0, 1fr);
-      grid-template-areas:
-        'word'
-        'latest'
-        'acts';
-    }
+  .hall-hero-face {
+    grid-area: face;
+    display: flex;
+    align-items: center;
+    justify-content: end;
+    min-width: 0;
+    block-size: calc(var(--space-8) * 3);
+  }
+
+  .hall-hero-portrait {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex: none;
+    block-size: 100%;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: none;
+    cursor: pointer;
+  }
+
+  .hall-hero-portrait:focus-visible,
+  .hall-hero-flag:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  .hall-hero-flag {
+    --flag-tail: var(--space-5);
+    position: relative;
+    z-index: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    max-width: calc(var(--space-8) * 5);
+    min-width: 0;
+    min-block-size: calc(var(--space-8) * 2);
+    justify-content: center;
+    margin-inline-end: calc(var(--space-8) * -1);
+    padding: var(--space-4) calc(var(--space-8) + var(--space-5)) var(--space-4) calc(var(--flag-tail) + var(--space-4));
+    color: var(--ink);
+    text-decoration: none;
+    text-align: end;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, var(--flag-tail) 50%);
+    background:
+      linear-gradient(var(--metal), var(--metal)) 0 0 / 100% var(--border-hair) no-repeat,
+      linear-gradient(var(--metal), var(--metal)) 0 100% / 100% var(--border-hair) no-repeat,
+      var(--texture-noise),
+      linear-gradient(180deg, var(--ground-deep) 0%, var(--ground) 100%);
+  }
+
+  .hall-hero-flag-word {
+    margin: 0;
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-caps);
+    color: var(--metal-dim);
+  }
+
+  .hall-hero-flag-name {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 700;
+    letter-spacing: var(--tracking-wide);
+    text-shadow: 0 0.0625rem 0 var(--ground-deep), 0 0 0.5rem var(--ember-glow);
+    color: var(--metal-bright);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hall-hero-flag-note {
+    font-family: var(--font-display);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  .hall-hero-flag-lede {
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-style: italic;
+    color: var(--ink-dim);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .hall-hero-latest {
@@ -182,11 +267,6 @@
     grid-template-columns: repeat(auto-fit, minmax(min(calc(var(--space-8) * 3), 100%), 1fr));
     gap: var(--space-3);
     min-width: 0;
-  }
-
-  .hall-hero-last-label {
-    margin: 0;
-    color: var(--metal);
   }
 
   .hall-hero-word {
@@ -245,7 +325,6 @@
   }
 
   .hall-grid {
-    --hall-search: calc(var(--space-8) * 3);
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto minmax(0, 1fr);
@@ -301,12 +380,6 @@
 
   .hall-divide-run {
     flex: 1;
-    min-width: 0;
-  }
-
-  .hall-divide-search {
-    flex: 0 1 var(--hall-search);
-    width: auto;
     min-width: 0;
   }
 </style>

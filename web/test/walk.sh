@@ -64,12 +64,13 @@ check_page() {
   pw press Meta+k >/dev/null; expect_search true "Cmd K"
   pw press Escape >/dev/null; expect_search false "Escape"
   [ "$bar" = "bar" ] || return 0
-  local box
-  box="$(js "JSON.stringify((() => { const r = document.querySelector(\"button[title^='Search ']\").getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2] })())")"
-  pw run-code "async page => { await page.mouse.click($(jq '.[0]' <<<"$box"), $(jq '.[1]' <<<"$box")) }" >/dev/null
-  expect_search true "the bar search button"
-  pw run-code "async page => { await page.mouse.click($(jq '.[0]' <<<"$box"), $(jq '.[1]' <<<"$box")) }" >/dev/null
-  expect_search false "a second press of the bar search button"
+  pw click "getByTitle('Toggle the menu')" >/dev/null
+  wait_for "document.querySelector('.dnd-shell-menu-open .dnd-menu-search') !== null" "the search item at the top of the drawer"
+  pw click "locator('.dnd-menu-search')" >/dev/null
+  expect_search true "the drawer search item"
+  pw press Escape >/dev/null; expect_search false "Escape on the drawer search"
+  pw click "getByTitle('Toggle the menu')" >/dev/null
+  wait_for "document.querySelector('.dnd-shell-menu-open') === null" "the drawer to close after the search"
 }
 
 visit() {
@@ -155,7 +156,7 @@ else
   rows="[...document.querySelectorAll('.fray-row')]"
   pw goto "$base/main/campaign/$campaign_id?tab=encounter" >/dev/null
   wait_for "document.querySelector('.fray') !== null && document.querySelector('.dnd-loading') === null" "the encounter tab"
-  encounter_id="$(js "(async () => { const { postCampaignEncounter } = await import('/src/lib/api/index.ts'); return postCampaignEncounter('$campaign_id', { title: 'Walk Ambush', is_active: true, is_known: true, round: 3, turn: 1, combatants: [{ id: 'w1', name: 'Goblin Cutter', kind: 'npc', initiative: 8, hit_points: 5, max_hit_points: 12, conditions: ['prone'], is_hit_points_known: true }, { id: 'w2', name: 'Walk Hero', kind: 'character', character_id: 'w-c1', initiative: 17, hit_points: 22, max_hit_points: 30, conditions: [], is_hit_points_known: true }, { id: 'w3', name: 'Dire Wolf', kind: 'npc', initiative: 12, hit_points: 9, max_hit_points: 26, conditions: [], is_hit_points_known: true }] }) })()")"
+  encounter_id="$(js "(async () => { const { postCampaignEncounter } = await import('/src/lib/api/index.ts'); return postCampaignEncounter('$campaign_id', { title: 'Walk Ambush', is_active: true, is_known: true, round: 3, turn: 1, combatants: [{ id: 'w1', name: 'Goblin Cutter', kind: 'npc', npc_id: 'w-n1', initiative: 8, hit_points: 5, max_hit_points: 12, conditions: ['prone'], is_hit_points_known: true }, { id: 'w2', name: 'Walk Hero', kind: 'character', character_id: 'w-c1', initiative: 17, hit_points: 22, max_hit_points: 30, conditions: [], is_hit_points_known: true }, { id: 'w3', name: 'Dire Wolf', kind: 'npc', npc_id: 'w-n2', initiative: 12, hit_points: 9, max_hit_points: 26, conditions: [], is_hit_points_known: true }] }) })()")"
   wait_for "document.querySelector('#fray-chosen option[value=\"$encounter_id\"]') !== null" "the new encounter in the picker"
   js "(() => { const pick = document.querySelector('#fray-chosen'); pick.value = '$encounter_id'; pick.dispatchEvent(new Event('change', { bubbles: true })); return true })()" >/dev/null
   if wait_for "$rows.length === 3 && document.querySelector('.fray').textContent.includes('Walk Ambush')" "the combatants to stream into the tracker"; then
@@ -187,8 +188,8 @@ if visit "$sheet" "document.querySelector('.sheet-name')?.textContent.trim() ===
   [ "$crown_names" = "false" ] || fail "the crown names a frame"
   boxes="$(js "document.querySelectorAll('.sheet-slots > *').length")"
   [ "$boxes" -ge 5 ] || fail "the stat slots carry only $boxes boxes"
-  strip="$(js "/defen[cs]es/i.test(document.querySelector('.sheet-column')?.textContent ?? '')")"
-  [ "$strip" = "true" ] || fail "the defences block does not stand in the sheet column"
+  strip="$(js "/defen[cs]es/i.test(document.querySelector('.sheet-grid')?.textContent ?? '')")"
+  [ "$strip" = "true" ] || fail "the defences block does not stand in the sheet grid"
   for w in 1280 1600 2000; do
     pw resize "$w" 900 >/dev/null
     spill="$(js "[...document.querySelectorAll('.sheet-slots *')].filter((e) => e.children.length === 0 && e.textContent.trim() && (() => { const b = e.closest('.sheet-slots > *').getBoundingClientRect(), r = e.getBoundingClientRect(); return r.left < b.left - 1 || r.right > b.right + 1 })()).map((e) => e.textContent.trim()).join(', ')")"
