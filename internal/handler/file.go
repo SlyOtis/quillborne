@@ -937,8 +937,8 @@ func PostObjectAsset(ctx echo.Context) error {
 		CreatedBy:  w.Access.UserClaimID,
 	}
 	page := map[uuid.UUID]sdb.ClaimAccess{}
-	if table == db.OBJECT_TYPE_RESOURCE {
-		if page, err = getPageShare(rctx, []uuid.UUID{item.ObjectID}); err != nil {
+	if table == db.OBJECT_TYPE_RESOURCE || table == db.OBJECT_TYPE_CAMPAIGN {
+		if page, err = getPageShare(rctx, table, []uuid.UUID{item.ObjectID}); err != nil {
 			ctx.Logger().Errorf("PostObjectAsset: %v", err)
 			return respond.ErrorInternal(ctx)
 		}
@@ -947,8 +947,8 @@ func PostObjectAsset(ctx echo.Context) error {
 		if _, err := tx.NewInsert().Model(&item).ExcludeColumn("id", "sa_created_at", "sa_updated_at", "sa_deleted_at").Returning("*").Exec(tctx); err != nil {
 			return err
 		}
-		if table == db.OBJECT_TYPE_RESOURCE {
-			if err := putAssetShare(tctx, tx, w, assetID, item.ObjectID, page, nil); err != nil {
+		if table == db.OBJECT_TYPE_RESOURCE || table == db.OBJECT_TYPE_CAMPAIGN {
+			if err := putAssetShare(tctx, tx, w, assetID, table, item.ObjectID, page, nil); err != nil {
 				return err
 			}
 		}
@@ -1004,8 +1004,8 @@ func PutObjectAsset(ctx echo.Context) error {
 		CreatedBy:  w.Access.UserClaimID,
 	}
 	page := map[uuid.UUID]sdb.ClaimAccess{}
-	if table == db.OBJECT_TYPE_RESOURCE {
-		if page, err = getPageShare(rctx, []uuid.UUID{item.ObjectID}); err != nil {
+	if table == db.OBJECT_TYPE_RESOURCE || table == db.OBJECT_TYPE_CAMPAIGN {
+		if page, err = getPageShare(rctx, table, []uuid.UUID{item.ObjectID}); err != nil {
 			ctx.Logger().Errorf("PutObjectAsset: %v", err)
 			return respond.ErrorInternal(ctx)
 		}
@@ -1030,8 +1030,8 @@ func PutObjectAsset(ctx echo.Context) error {
 				return err
 			}
 		}
-		if table == db.OBJECT_TYPE_RESOURCE {
-			if err := putAssetShare(tctx, tx, w, assetID, item.ObjectID, page, nil); err != nil {
+		if table == db.OBJECT_TYPE_RESOURCE || table == db.OBJECT_TYPE_CAMPAIGN {
+			if err := putAssetShare(tctx, tx, w, assetID, table, item.ObjectID, page, nil); err != nil {
 				return err
 			}
 		}
@@ -1084,8 +1084,8 @@ func DeleteObjectAsset(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
 	page := map[uuid.UUID]sdb.ClaimAccess{}
-	if table == db.OBJECT_TYPE_RESOURCE {
-		if page, err = getPageShare(rctx, []uuid.UUID{item.ObjectID}); err != nil {
+	if table == db.OBJECT_TYPE_RESOURCE || table == db.OBJECT_TYPE_CAMPAIGN {
+		if page, err = getPageShare(rctx, table, []uuid.UUID{item.ObjectID}); err != nil {
 			ctx.Logger().Errorf("DeleteObjectAsset: %v", err)
 			return respond.ErrorInternal(ctx)
 		}
@@ -1098,8 +1098,8 @@ func DeleteObjectAsset(ctx echo.Context) error {
 		if _, err := tx.NewUpdate().Model(&item).Set("sa_deleted_at = NOW()").WherePK().Exec(tctx); err != nil {
 			return err
 		}
-		if table == db.OBJECT_TYPE_RESOURCE {
-			if err := putAssetShare(tctx, tx, w, assetID, item.ObjectID, nil, gone); err != nil {
+		if table == db.OBJECT_TYPE_RESOURCE || table == db.OBJECT_TYPE_CAMPAIGN {
+			if err := putAssetShare(tctx, tx, w, assetID, table, item.ObjectID, nil, gone); err != nil {
 				return err
 			}
 		}
