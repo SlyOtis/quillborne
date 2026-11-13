@@ -51,7 +51,7 @@
     quatrefoil: '0 0 64 64',
     finial: '0 0 32 72',
     cusp: '0 0 72 72',
-    forge: '0 0 160 96',
+    forge: '0 0 128 96',
     portrait: '0 0 64 64'
   }
 
@@ -365,58 +365,37 @@
     <path d="M26 4c0 10-8 18-18 20" stroke="currentColor" stroke-width="1.4" opacity="0.6" stroke-linecap="round" />
 
   {:else if name === 'forge'}
+    <path d="M58 90C40 90 20 80 14 56" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    <path d="M70 90c18 0 38-10 44-34" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    <path d="M23 76c-8-1-13-6-14-14 8 1 13 6 14 14Z" class="dnd-ornament-accent" opacity="0.9" />
+    <path d="M16 62c-6-5-8-11-6-18 6 4 8 11 6 18Z" class="dnd-ornament-accent" opacity="0.7" />
+    <path d="M105 76c8-1 13-6 14-14-8 1-13 6-14 14Z" class="dnd-ornament-accent" opacity="0.9" />
+    <path d="M112 62c6-5 8-11 6-18-6 4-8 11-6 18Z" class="dnd-ornament-accent" opacity="0.7" />
     <path
-      d="M34 70C22 64 12 66 4 76c10 4 20 2 30-6Z"
-      class="dnd-ornament-accent"
-      opacity="0.85"
-    />
-    <path
-      d="M126 70c12-6 22-4 30 6-10 4-20 2-30-6Z"
-      class="dnd-ornament-accent"
-      opacity="0.85"
-    />
-    <path d="M58 20 82 50" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" />
-    <path
-      d="M61 7l7 8-17 14-6-8Z"
+      d="M26 44h74c10 0 18-2 24-6-3 9-12 16-24 18H78v10h12l6 12H32l6-12h12V56H40c-8 0-14-5-14-12Z"
       fill="url(#dnd-grad-metal)"
       stroke="currentColor"
       stroke-width="1.6"
       stroke-linejoin="round"
     />
-    <path d="M120 6C110 14 98 30 84 50" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    <path d="M40 56h38" stroke="var(--ground-deep)" stroke-width="1.4" opacity="0.6" />
+    <path d="M84 47h5v5h-5Z" fill="var(--ground-deep)" opacity="0.7" />
+    <path d="M40 19 66 44" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
     <path
-      d="M120 6c-13-3-24 3-30 16 11 3 22-3 30-16Z"
-      class="dnd-ornament-accent"
-    />
-    <path
-      d="M106 20c-8 0-14 6-16 14 8-1 13-6 16-14Z"
-      class="dnd-ornament-accent"
-      opacity="0.7"
-    />
-    <path
-      d="M38 52h82c7 0 13 3 17 8l-7 6h-28v6H58v-6H46c-5 0-8-3-8-7Z"
-      fill="url(#dnd-grad-metal)"
-      stroke="currentColor"
-      stroke-width="1.6"
-      stroke-linejoin="round"
-    />
-    <path d="M70 58h10" stroke="var(--ground-deep)" stroke-width="2" stroke-linecap="round" />
-    <path d="M64 72l-6 8h44l-6-8" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
-    <path
-      d="M50 80h60v6H50Z"
+      d="M46.3 11.1 39.9 4.8 25.8 18.9 32.1 25.2Z"
       fill="url(#dnd-grad-metal)"
       stroke="currentColor"
       stroke-width="1.6"
       stroke-linejoin="round"
     />
     <path
-      d="M96 44v-7M89 46l-4-5M103 46l4-5"
+      d="M74 36l4-7M80 42l8-3M70 30v-8"
       stroke-width="1.6"
       stroke-linecap="round"
       class="dnd-ornament-accent-stroke"
     />
-    <circle cx="80" cy="92" r="3.5" fill="currentColor" />
-    <path d="M70 92H56M90 92h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+    <circle cx="78" cy="24" r="1.6" class="dnd-ornament-accent-fill" />
+    <circle cx="64" cy="92" r="3.5" fill="currentColor" />
 
   {:else if name === 'portrait'}
     <path
