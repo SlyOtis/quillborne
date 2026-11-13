@@ -102,7 +102,6 @@
       <div class="hall-hero-acts">
         <Button variant="primary" size="md" onclick={createCharacter}>Forge a Character</Button>
         <Button variant="secondary" size="md" onclick={createCampaign}>Raise a Campaign</Button>
-        <Button variant="ghost" size="md" onclick={() => navigate('/main/vehicles')}>Visit the Dock</Button>
       </div>
     </section>
 
