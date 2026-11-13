@@ -33,8 +33,8 @@
   import { uiStore, anyDialogOpen, menuView, soundBoard } from "$lib/stores/ui.store";
   import { navigate, resolvedRoute } from "sly-svelte-location-router";
   import Shell from "$components/ui/Shell.svelte";
-  import Stops from "$components/ui/Stops.svelte";
   import VehiclesPage from "./VehiclesPage.svelte";
+  import VehiclePage from "./VehiclePage.svelte";
   import Portrait, { type PortraitFrame } from "$components/ui/Portrait.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
   import IconBtn from "$components/ui/IconBtn.svelte";
@@ -53,10 +53,13 @@
   let fleet = $state<number | null>(null);
 
   const VIEWS = [{ id: 'sheet', label: 'Character' }, { id: 'dock', label: 'Dock' }];
-  const view = $derived($resolvedRoute.path.endsWith('/dock') ? 'dock' : 'sheet');
+  const dockPath = `/main/character/${characterId}/dock`;
+  const tail = $derived($resolvedRoute.path.split('/').filter(Boolean).slice(3));
+  const view = $derived(tail[0] === 'dock' ? 'dock' : 'sheet');
+  const vessel = $derived(tail[1] ?? '');
 
   function openView(next: string) {
-    navigate(`/main/character/${characterId}${next === 'dock' ? '/dock' : ''}`);
+    if (next !== view || vessel) navigate(next === 'dock' ? dockPath : `/main/character/${characterId}`);
   }
 
   $effect(() => {
@@ -383,21 +386,11 @@
   {/if}
 {/snippet}
 
-{#snippet views()}
-  {#if fleet}
-    <Stops stops={VIEWS} stop={view} onopen={openView} />
-  {/if}
-{/snippet}
-
-{#if view === 'dock' && campaign && fleet}
-<VehiclesPage dock={{ campaignId: campaign.id, nav: views, back: () => openView('sheet') }} />
-{:else}
 <Shell
   title={$info.name || 'Character'}
   width="full"
   back={() => navigate('/main')}
   drawers
-  nav={views}
 >
   {#snippet tools()}
     {#if owned}
@@ -464,8 +457,33 @@
     <Background />
   {/snippet}
 
+  {#if loaded && fleet}
+    <div class="sheet-views" role="tablist" aria-label="Character views">
+      {#each VIEWS as one (one.id)}
+        <button
+          type="button"
+          class="sheet-view"
+          class:sheet-view-on={view === one.id}
+          role="tab"
+          aria-selected={view === one.id}
+          onclick={() => openView(one.id)}
+        >
+          {one.label}
+        </button>
+      {/each}
+    </div>
+  {/if}
+
   {#if missing}
     <p class="sheet-alarm" role="alert">{missing}</p>
+  {:else if loaded && view === 'dock' && campaign && fleet}
+    <div class="sheet-dock">
+      {#if vessel}
+        <VehiclePage dock={{ base: dockPath, aboard: characterId }} />
+      {:else}
+        <VehiclesPage dock={{ campaignId: campaign.id, base: dockPath }} />
+      {/if}
+    </div>
   {:else if loaded}
     <div class="sheet-band">
       <header class="sheet-crown">
@@ -596,7 +614,6 @@
     </div>
   {/if}
 </Shell>
-{/if}
 
 {#if picking}
   <MediaDialog
@@ -648,6 +665,73 @@
     box-shadow: var(--bevel-down);
     font-size: var(--text-sm);
     color: var(--ink);
+  }
+
+  .sheet-views {
+    display: flex;
+    gap: var(--space-1);
+    margin-bottom: var(--space-3);
+    padding-inline: var(--space-2);
+    border-bottom: var(--border-heavy) solid var(--metal-dim);
+  }
+
+  .sheet-view {
+    position: relative;
+    min-width: 9rem;
+    margin-bottom: calc(var(--border-heavy) * -1);
+    padding: var(--space-2) var(--space-5);
+    border: none;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--ember-core) 10%, transparent) 0%, color-mix(in srgb, #000 30%, transparent) 55%, color-mix(in srgb, #000 55%, transparent) 100%),
+      var(--texture-grain),
+      var(--wood);
+    box-shadow:
+      inset 0 0 0 1px var(--keyline),
+      inset 0 0 0 2px var(--metal-dim),
+      inset 0 3px 0 0 var(--sheen),
+      inset 0 -0.5rem 0.6rem -0.3rem var(--shade-hard);
+    font-family: var(--font-display);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    color: var(--metal);
+    text-shadow: 0 1px 0 #000, 0 0 2px #000;
+    cursor: pointer;
+    transition: color 0.18s ease, text-shadow 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .sheet-view:hover:not(.sheet-view-on) {
+    color: var(--metal-bright);
+    text-shadow: var(--glow-text);
+  }
+
+  .sheet-view-on {
+    background:
+      radial-gradient(ellipse 80% 90% at 50% 110%, var(--ember-glow) 0%, transparent 70%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 26%, transparent) 0%, color-mix(in srgb, #000 30%, transparent) 55%, var(--ground-raised) 100%),
+      var(--texture-noise),
+      var(--stone);
+    box-shadow:
+      inset 0 1px 0 var(--keyline),
+      inset 1px 0 0 var(--keyline),
+      inset -1px 0 0 var(--keyline),
+      inset 0 2px 0 var(--metal-bright),
+      inset 2px 0 0 var(--metal),
+      inset -2px 0 0 var(--metal),
+      0 0 0.9rem var(--ember-glow);
+    color: var(--metal-bright);
+    text-shadow: var(--glow-text);
+  }
+
+  .sheet-view:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  .sheet-dock {
+    min-width: 0;
   }
 
   .sheet-band {

@@ -83,11 +83,6 @@
       component: page("ScribePage", () => import("./pages/ScribePage.svelte")),
       guard: requireSignIn
     },
-    "/main/character/:id/dock": {
-      name: "character-dock",
-      component: page("CharacterPage", () => import("./pages/CharacterPage.svelte")),
-      guard: requireSignIn
-    },
     "/main/user": {
       name: "user",
       component: page("UserPage", () => import("./pages/UserPage.svelte")),
@@ -118,6 +113,14 @@
     "/main/vehicles/:id": {
       name: "vehicle-view",
       component: page("VehiclePage", () => import("./pages/VehiclePage.svelte")),
+      guard: requireSignIn
+    }
+  }
+
+  for (const tail of ["dock", "dock/:vehicle", "dock/:vehicle/:stop"]) {
+    routes[`/main/character/:id/${tail}`] = {
+      name: "character-view",
+      component: page("CharacterPage", () => import("./pages/CharacterPage.svelte")),
       guard: requireSignIn
     }
   }

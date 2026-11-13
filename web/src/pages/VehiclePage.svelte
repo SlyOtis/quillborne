@@ -37,6 +37,8 @@
   import VehiclePapers from '$components/vehicle/VehiclePapers.svelte'
   import VehicleRulings from '$components/vehicle/VehicleRulings.svelte'
 
+  const { dock }: { dock?: { base: string; aboard: string } } = $props()
+
   setContext('dialogState', {
     get isAnyDialogOpen() {
       return $anyDialogOpen
@@ -66,9 +68,10 @@
 
   const NOBODY = 'nobody'
 
-  const steps = $derived($resolvedRoute.path.split('/').filter(Boolean))
-  const vehicleId = $derived(steps[1] === 'vehicles' ? (steps[2] ?? '') : '')
-  const stop = $derived(STOPS.find((entry) => entry.id === steps[3])?.id ?? 'deck')
+  const home = $derived(dock?.base ?? '/main/vehicles')
+  const steps = $derived($resolvedRoute.path.slice(home.length).split('/').filter(Boolean))
+  const vehicleId = $derived(steps[0] ?? '')
+  const stop = $derived(STOPS.find((entry) => entry.id === steps[1])?.id ?? 'deck')
 
   let vehicle = $state<Vehicle | null>(null)
   let base = $state<VehicleSystem | null>(null)
@@ -203,7 +206,7 @@
   $effect(() => {
     if (!vehicleId || !sheetsRead) return
     if (aboard === NOBODY || choices.some((entry) => entry.id === aboard)) return
-    const held = localStorage.getItem(`dnd_vehicle_aboard_${vehicleId}`)
+    const held = dock?.aboard ?? localStorage.getItem(`dnd_vehicle_aboard_${vehicleId}`)
     aboard = held === NOBODY ? NOBODY : (choices.find((entry) => entry.id === held)?.id ?? choices[0]?.id ?? NOBODY)
   })
 
@@ -230,7 +233,7 @@
   }
 
   function open(next: string) {
-    navigate(`/main/vehicles/${vehicleId}${next === 'deck' ? '' : `/${next}`}`)
+    navigate(`${home}/${vehicleId}${next === 'deck' ? '' : `/${next}`}`)
   }
 
   async function save(fields: VehicleFields) {
@@ -258,20 +261,33 @@
   }
 
   const toneOf = (tone: string | undefined) => (tone === 'bad' ? 'bane' : tone === 'good' ? 'verdigris' : tone === 'warn' ? 'ember' : 'metal')
-  const back = $derived(vehicle?.campaign_id ? `/main/campaign/${vehicle.campaign_id}/vehicles` : '/main/vehicles')
+  const back = $derived(dock?.base ?? (vehicle?.campaign_id ? `/main/campaign/${vehicle.campaign_id}/vehicles` : '/main/vehicles'))
 </script>
 
+{#if dock}
+  <div class="ves-stops">
+    <Button variant="ghost" size="sm" onclick={() => navigate(back)}>Back to the dock</Button>
+    <Stops stops={STOPS} {stop} onopen={open} />
+  </div>
+  {@render body()}
+{:else}
 <Shell drawers title={vehicle?.name ?? 'Vehicle'} width="full" back={() => navigate(back)}>
   {#snippet nav()}
     <Stops stops={STOPS} {stop} onopen={open} />
   {/snippet}
+
+  {@render body()}
+</Shell>
+{/if}
+
+{#snippet body()}
 
   {#if loading}
     <div class="dnd-loading"><span class="dnd-spinner"></span></div>
   {:else if !vehicle}
     <div class="ves-void">
       <p class="dnd-empty">That vehicle does not exist, or you do not sail with it.</p>
-      <Button variant="secondary" size="sm" onclick={() => navigate('/main/vehicles')}>Back to the dock</Button>
+      <Button variant="secondary" size="sm" onclick={() => navigate(back)}>Back to the dock</Button>
     </div>
   {:else if problem || (error && !system)}
     <div class="ves-void">
@@ -376,9 +392,16 @@
       {/if}
     </div>
   {/if}
-</Shell>
+{/snippet}
 
 <style>
+  .ves-stops {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+  }
+
   .ves {
     display: grid;
     gap: var(--space-4);
