@@ -6,7 +6,7 @@ OUT="$FOLDER/names.ts"
 
 echo "Writing $OUT from $FOLDER..."
 {
-    echo "export type MarGlyphName ="
+    echo "export type IconName ="
     for file in "$FOLDER"/*.svg; do
         echo "  | '$(basename "$file" .svg)'"
     done

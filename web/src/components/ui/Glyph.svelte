@@ -9,17 +9,17 @@
     size?: 'sm' | 'md' | 'lg'
   } = $props()
 
-  const drawn = $derived(mar.get(name))
+  const drawn = $derived(icons.get(name))
   const attrs = $derived(drawn?.attrs ?? hand)
 </script>
 
 <script lang="ts" module>
   import type { SVGAttributes } from 'svelte/elements'
-  import type { MarGlyphName } from './glyphs/names'
+  import type { IconName } from './glyphs/names'
 
   const files = import.meta.glob<string>('./glyphs/*.svg', { query: '?raw', import: 'default', eager: true })
 
-  const mar = new Map<string, { attrs: SVGAttributes<SVGSVGElement>; inner: string }>()
+  const icons = new Map<string, { attrs: SVGAttributes<SVGSVGElement>; inner: string }>()
   for (const [path, raw] of Object.entries(files)) {
     const open = raw.match(/<svg\b([^>]*)>/i)
     const attrs: Record<string, string> = {}
@@ -30,7 +30,7 @@
       }
     }
     const inner = raw.replace(/^[\s\S]*?<svg\b[^>]*>/i, '').replace(/<\/svg>\s*$/i, '').trim()
-    mar.set(path.slice('./glyphs/'.length, -'.svg'.length), { attrs: attrs as SVGAttributes<SVGSVGElement>, inner })
+    icons.set(path.slice('./glyphs/'.length, -'.svg'.length), { attrs: attrs as SVGAttributes<SVGSVGElement>, inner })
   }
 
   const hand: SVGAttributes<SVGSVGElement> = {
@@ -43,7 +43,7 @@
   }
 
   export type GlyphName =
-    | MarGlyphName
+    | IconName
     | 'dice'
     | 'menu'
     | 'anchor'

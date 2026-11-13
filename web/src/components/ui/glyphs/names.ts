@@ -1,4 +1,4 @@
-export type MarGlyphName =
+export type IconName =
   | 'activity'
   | 'addressbook'
   | 'aligncenter'
