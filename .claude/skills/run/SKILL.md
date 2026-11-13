@@ -158,7 +158,7 @@ Tell the user:
 - `air: not found`: Go's bin folder is not on `PATH`.
 - A port is already in use, or Vite says `Port <n> is already in use`: go back to step 5.
 - The dev server answers 504 Outdated Optimize Dep after `just gate` or `just build`: both remove
-  `web/node_modules/.vite`, so restart `just dev`.
+  `web/.vite`, so restart `just dev`.
 - Saving a key answers 500: the seed is empty. Go back to step 2, then restart `just dev`.
 - `pnpm dev` opens Brave on this worktree's Vite port when Brave is not already running. Without Brave it prints
   `Unable to find application named 'Brave Browser'`, which is harmless.
