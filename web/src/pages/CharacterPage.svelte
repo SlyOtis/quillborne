@@ -518,22 +518,26 @@
         </button>
 
         <span class="sheet-lines">
-          {#if naming}
-            <Field label="Name" id="character-name">
-              <input
-                id="character-name"
-                type="text"
-                bind:this={nameInput}
-                bind:value={draftName}
-                onkeydown={keyName}
-                onblur={putName}
-              />
-            </Field>
-          {:else}
-            <span class="sheet-title">
+          <span class="sheet-title">
+            {#if naming}
+              <Field label="Name" id="character-name">
+                <input
+                  id="character-name"
+                  type="text"
+                  bind:this={nameInput}
+                  bind:value={draftName}
+                  onkeydown={keyName}
+                  onblur={putName}
+                />
+              </Field>
+            {:else}
               <h1 class="dnd-heading sheet-name">{$info.name || 'Unnamed Character'}</h1>
+            {/if}
+            <span class="sheet-level">
+              <span class="sheet-level-word">Level</span>
+              <span class="sheet-level-figure">{$info.level || 1}</span>
             </span>
-          {/if}
+          </span>
           <span class="sheet-meta">
             <span class="sheet-kin">{$info.race?.name || 'Unknown'} {$info.class?.name || 'Unknown'}</span>
             {#if campaign}
@@ -544,10 +548,6 @@
           </span>
         </span>
 
-        <span class="sheet-level">
-          <span class="sheet-level-word">Level</span>
-          <span class="sheet-level-figure">{$info.level || 1}</span>
-        </span>
         <span class="sheet-rests">
           <span class="sheet-still" class:sheet-still-on={reading} use:still={reading}>
             <button type="button" class="sheet-rest" title="Short rest" disabled={!$rules.resolved} onclick={() => (shortResting = true)}>
@@ -783,12 +783,12 @@
 
   .sheet-crown {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-rows: auto auto auto;
     grid-template-areas:
-      'face name level rest'
-      'face meta level rest'
-      'rule rule level rest';
+      'face name rest'
+      'face meta rest'
+      'rule rule rest';
     align-items: center;
     align-content: center;
     column-gap: var(--space-4);
@@ -895,8 +895,7 @@
     display: contents;
   }
 
-  .sheet-lines > .sheet-title,
-  .sheet-lines > :global(.dnd-field) {
+  .sheet-lines > .sheet-title {
     grid-area: name;
   }
 
@@ -913,8 +912,8 @@
 
   .sheet-title {
     display: flex;
-    align-items: center;
-    gap: var(--space-2);
+    align-items: baseline;
+    gap: var(--space-4);
     min-width: 0;
   }
 
@@ -951,14 +950,10 @@
   }
 
   .sheet-level {
-    grid-area: level;
     display: flex;
-    flex-direction: row;
+    flex: none;
     align-items: baseline;
-    justify-content: center;
-    align-self: center;
     gap: var(--space-2);
-    padding-inline: var(--space-3);
     color: var(--metal);
     text-shadow: 0 1px 0 #000;
   }
@@ -1160,14 +1155,7 @@
         'face name name'
         'face meta meta'
         'rule rule rule'
-        'level level rest';
-    }
-
-    .sheet-level {
-      flex-direction: row;
-      gap: var(--space-2);
-      padding-inline: 0;
-      border-inline-start: none;
+        '. . rest';
     }
   }
 </style>
