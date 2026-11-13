@@ -33,6 +33,7 @@ export type BlockWrap = 'wrap' | 'balance' | 'nowrap'
 export type BlockLeading = 'tight' | 'normal' | 'relaxed' | 'loose'
 export type BlockView = 'full' | 'link' | 'icon' | 'hidden'
 export type BlockPlacement = 'inline' | 'left' | 'right'
+export type BlockFont = '--font-display' | '--font-body' | '--font-mono'
 
 export interface BlockOptions {
   /** Heading depth, one through six. */
@@ -57,7 +58,9 @@ export interface BlockOptions {
   wrap?: BlockWrap
   /** The block's own line height. */
   leading?: BlockLeading
-  /** Set when the block carries its own look rather than the page's. */
+  /** The token of the face the block's own text is set in, when it does not take the page's. */
+  font?: BlockFont
+  /** Set when the block carries its own text look rather than inheriting the one around it. */
   own?: boolean
   /** Who voted for what on a poll block, by user id. */
   votes?: Record<string, string>
@@ -73,6 +76,10 @@ export interface BlockOptions {
   image?: string
   /** Where a table of contents sits: in the flow, or as a legend on one side of the page. */
   placement?: BlockPlacement
+  /** Whether a table of contents shows its title. */
+  showTitle?: boolean
+  /** Whether a table of contents draws without its box. */
+  bare?: boolean
   /** The id of the sub page a page block links to. */
   page?: string
   /** The asset a file block opens. */
@@ -85,8 +92,9 @@ export interface BlockOptions {
 
 /** The options a block keeps in the fence, which markdown has no form for. */
 const KEPT: (keyof BlockOptions)[] = [
-  'align', 'size', 'width', 'wrap', 'leading', 'own', 'open', 'level', 'language', 'src', 'alt',
-  'done', 'votes', 'assetId', 'name', 'url', 'mimeType', 'depth', 'view', 'description', 'image', 'page', 'placement'
+  'align', 'size', 'width', 'wrap', 'leading', 'font', 'own', 'open', 'level', 'language', 'src', 'alt',
+  'done', 'votes', 'assetId', 'name', 'url', 'mimeType', 'depth', 'view', 'description', 'image', 'page', 'placement',
+  'showTitle', 'bare'
 ]
 
 /** The options a block's plain markdown form already carries. */
@@ -111,6 +119,38 @@ export interface Block {
 
 export interface BlockDocument {
   blocks: Block[]
+}
+
+export interface Marks {
+  bold?: boolean
+  italic?: boolean
+  code?: boolean
+  strike?: boolean
+  link?: string
+}
+
+/** One piece of a text block: a marked run, a mention pill or a line break. */
+export type Run =
+  | { text: string; marks?: Marks }
+  | { ref: 'mention'; mark: '@' | '#'; label: string; id?: string }
+  | { ref: 'break' }
+
+export type Inline = Run[]
+
+export type NodeKind = BlockKind | 'item' | 'column'
+
+/** A block as the editor holds it: text as runs, children by id, or neither. */
+export interface BlockNode {
+  id: string
+  kind: NodeKind
+  inline: Inline | null
+  children: string[] | null
+  options: BlockOptions
+}
+
+export interface BlockTree {
+  root: string[]
+  nodes: Record<string, BlockNode>
 }
 
 export type ReferenceKind = 'npc' | 'item' | 'place' | 'session' | 'map'
@@ -155,9 +195,30 @@ const KINDS: BlockKind[] = [
 
 const LINKED: BlockKind[] = ['video', 'pdf', 'page']
 const LISTED: BlockKind[] = ['bullet', 'number', 'todo']
+const TEXTED: NodeKind[] = [
+  'paragraph', 'heading', 'code', 'mermaid', 'html', 'table', 'poll', 'meeting',
+  'image', 'video', 'audio', 'pdf', 'bookmark', 'embed', 'map', 'page', 'toggle'
+]
+const HOLDING: NodeKind[] = ['bullet', 'number', 'todo', 'item', 'quote', 'callout', 'toggle', 'columns', 'column']
+const RAW: NodeKind[] = ['code', 'mermaid', 'html', 'table', 'poll', 'meeting', 'embed', 'map']
 
-export function isListKind(kind: BlockKind): boolean {
-  return LISTED.includes(kind)
+export function isListKind(kind: NodeKind): boolean {
+  return (LISTED as NodeKind[]).includes(kind)
+}
+
+/** A kind whose node carries text as runs. */
+export function isTextKind(kind: NodeKind): boolean {
+  return TEXTED.includes(kind)
+}
+
+/** A kind whose node holds other nodes. */
+export function isHoldingKind(kind: NodeKind): boolean {
+  return HOLDING.includes(kind)
+}
+
+/** A text kind whose runs carry no marks, written as they are typed. */
+export function isRawKind(kind: NodeKind): boolean {
+  return RAW.includes(kind)
 }
 
 export function getBlockId(): string {
@@ -194,6 +255,238 @@ export function getDocumentFromMarkdown(markdown: string): BlockDocument {
   return { blocks: blocks.length > 0 ? blocks : [getBlock()] }
 }
 
+const CODE = /`([^`\n]+)`/y
+const LINK = /\[([^\]\n]+)\]\(([^)\s]+)\)/y
+const MENTION = /([@#])([\p{L}\p{N}_-]+)/uy
+const BOLD = /(\*\*|__)(?=\S)([^\n]*?\S)\1/y
+const STRIKE = /~~(?=\S)([^\n]*?\S)~~/y
+const STAR = /\*(?=[^\s*])([^*\n]*[^\s*])\*/y
+const UNDER = /_(?=[^\s_])([^_\n]*[^\s_])_/y
+
+function isWord(char: string | undefined): boolean {
+  return !!char && /[\p{L}\p{N}]/u.test(char)
+}
+
+function withMarks(text: string, marks: Marks): Run {
+  const held: Marks = {}
+  if (marks.bold) held.bold = true
+  if (marks.italic) held.italic = true
+  if (marks.code) held.code = true
+  if (marks.strike) held.strike = true
+  if (marks.link) held.link = marks.link
+  return Object.keys(held).length > 0 ? { text, marks: held } : { text }
+}
+
+function sameMarks(one: Marks | undefined, two: Marks | undefined): boolean {
+  const a = one ?? {}
+  const b = two ?? {}
+  return !!a.bold === !!b.bold && !!a.italic === !!b.italic && !!a.code === !!b.code && !!a.strike === !!b.strike && (a.link ?? '') === (b.link ?? '')
+}
+
+function readInline(text: string, marks: Marks, out: Inline): void {
+  let at = 0
+  let plain = ''
+  const flush = () => {
+    if (plain) out.push(withMarks(plain, marks))
+    plain = ''
+  }
+  const match = (pattern: RegExp): RegExpExecArray | null => {
+    pattern.lastIndex = at
+    return pattern.exec(text)
+  }
+
+  while (at < text.length) {
+    const char = text[at]
+    const before = at > 0 ? text[at - 1] : undefined
+
+    if (char === '\n') {
+      flush()
+      out.push({ ref: 'break' })
+      at += 1
+      continue
+    }
+
+    if (char === '`' && !marks.code) {
+      const hit = match(CODE)
+      if (hit) {
+        flush()
+        out.push(withMarks(hit[1], { ...marks, code: true }))
+        at += hit[0].length
+        continue
+      }
+    }
+
+    if (char === '[' && !marks.code) {
+      const hit = match(LINK)
+      if (hit) {
+        flush()
+        const sigil = /^([@#])(\S.*)$/.exec(hit[1])
+        if (sigil && !marks.link) {
+          out.push({ ref: 'mention', mark: sigil[1] as '@' | '#', label: sigil[2].trim(), id: hit[2] })
+        } else {
+          readInline(hit[1], { ...marks, link: hit[2] }, out)
+        }
+        at += hit[0].length
+        continue
+      }
+    }
+
+    if ((char === '@' || char === '#') && !marks.code && (before === undefined || /\s/.test(before))) {
+      const hit = match(MENTION)
+      if (hit) {
+        flush()
+        out.push({ ref: 'mention', mark: hit[1] as '@' | '#', label: hit[2] })
+        at += hit[0].length
+        continue
+      }
+    }
+
+    if (!marks.code) {
+      if ((char === '*' || char === '_') && text[at + 1] === char && !marks.bold && (char === '*' || !isWord(before))) {
+        const hit = match(BOLD)
+        if (hit && (char === '*' || !isWord(text[at + hit[0].length]))) {
+          flush()
+          readInline(hit[2], { ...marks, bold: true }, out)
+          at += hit[0].length
+          continue
+        }
+      }
+      if (char === '~' && text[at + 1] === '~' && !marks.strike) {
+        const hit = match(STRIKE)
+        if (hit) {
+          flush()
+          readInline(hit[1], { ...marks, strike: true }, out)
+          at += hit[0].length
+          continue
+        }
+      }
+      if (char === '*' && !marks.italic) {
+        const hit = match(STAR)
+        if (hit) {
+          flush()
+          readInline(hit[1], { ...marks, italic: true }, out)
+          at += hit[0].length
+          continue
+        }
+      }
+      if (char === '_' && !marks.italic && !isWord(before)) {
+        const hit = match(UNDER)
+        if (hit && !isWord(text[at + hit[0].length])) {
+          flush()
+          readInline(hit[1], { ...marks, italic: true }, out)
+          at += hit[0].length
+          continue
+        }
+      }
+    }
+
+    plain += char
+    at += 1
+  }
+
+  flush()
+}
+
+/** Adjacent runs that carry the same marks, joined into one. */
+export function getMergedInline(inline: Inline): Inline {
+  const out: Inline = []
+  for (const run of inline) {
+    const last = out[out.length - 1]
+    if (last && 'text' in last && 'text' in run && sameMarks(last.marks, run.marks)) {
+      out[out.length - 1] = { ...last, text: last.text + run.text }
+      continue
+    }
+    if ('text' in run && run.text === '') continue
+    out.push(run)
+  }
+  return out
+}
+
+/** The runs a block's markdown text is made of: marks, mention pills and breaks. */
+export function getInline(text: string): Inline {
+  const out: Inline = []
+  readInline(text, {}, out)
+  return getMergedInline(out)
+}
+
+/** The markdown text that reads back into the same runs. */
+export function getInlineMarkdown(inline: Inline): string {
+  return getMergedInline(inline)
+    .map((run) => {
+      if ('ref' in run) {
+        if (run.ref === 'break') return '\n'
+        return run.id ? `[${run.mark}${run.label}](${run.id})` : `${run.mark}${run.label.replace(/\s+/g, '')}`
+      }
+      const marks = run.marks ?? {}
+      const lead = /^\s*/.exec(run.text)?.[0] ?? ''
+      const trail = /\s*$/.exec(run.text)?.[0] ?? ''
+      let text = run.text.trim()
+      if (!text) return run.text
+      if (marks.code) text = `\`${text}\``
+      if (marks.bold) text = `**${text}**`
+      if (marks.italic) text = `_${text}_`
+      if (marks.strike) text = `~~${text}~~`
+      if (marks.link) text = `[${text}](${marks.link})`
+      return `${lead}${text}${trail}`
+    })
+    .join('')
+}
+
+/** The runs as plain text, a mention as its sigil and label and a break as a newline. */
+export function getInlineText(inline: Inline): string {
+  return inline
+    .map((run) => ('ref' in run ? (run.ref === 'break' ? '\n' : `${run.mark}${run.label}`) : run.text))
+    .join('')
+}
+
+/** How far the caret can travel through the runs: a character each, a pill or a break one. */
+export function getInlineLength(inline: Inline): number {
+  return inline.reduce((sum, run) => sum + ('ref' in run ? 1 : run.text.length), 0)
+}
+
+/** The runs cut in two at an offset, a text run split where the offset falls inside it. */
+export function getSplitInline(inline: Inline, offset: number): [Inline, Inline] {
+  const left: Inline = []
+  const right: Inline = []
+  let at = 0
+  for (const run of inline) {
+    const length = 'ref' in run ? 1 : run.text.length
+    if (at + length <= offset) left.push(run)
+    else if (at >= offset) right.push(run)
+    else if ('text' in run) {
+      const cut = offset - at
+      left.push(run.marks ? { text: run.text.slice(0, cut), marks: run.marks } : { text: run.text.slice(0, cut) })
+      right.push(run.marks ? { text: run.text.slice(cut), marks: run.marks } : { text: run.text.slice(cut) })
+    } else right.push(run)
+    at += length
+  }
+  return [left, right]
+}
+
+/** The runs between two offsets. */
+export function getSlicedInline(inline: Inline, from: number, to: number): Inline {
+  const [head] = getSplitInline(inline, to)
+  const [, middle] = getSplitInline(head, from)
+  return middle
+}
+
+/** The runs with a mark set over a range when any run there lacks it, or taken off when every run carries it. */
+export function getMarkedInline(inline: Inline, from: number, to: number, mark: keyof Marks, link = ''): Inline {
+  const [head, tail] = getSplitInline(inline, to)
+  const [left, middle] = getSplitInline(head, from)
+  const texts = middle.filter((run): run is { text: string; marks?: Marks } => 'text' in run)
+  const every = texts.length > 0 && texts.every((run) => (mark === 'link' ? !!run.marks?.link : !!run.marks?.[mark]))
+  const marked = middle.map((run) => {
+    if ('ref' in run) return run
+    const marks: Marks = { ...run.marks }
+    if (every) delete marks[mark]
+    else if (mark === 'link') marks.link = link
+    else marks[mark] = true
+    return withMarks(run.text, marks)
+  })
+  return getMergedInline([...left, ...marked, ...tail])
+}
+
 function getDepth(lead: string): number {
   return Math.floor(lead.replace(/\t/g, '  ').length / 2)
 }
@@ -203,10 +496,26 @@ function getListOptions(lead: string, held: BlockOptions = {}): BlockOptions {
   return depth > 0 ? { ...held, depth } : held
 }
 
+const OPENER = /^(#{1,6}\s|>|```|\s*[-*+]\s|\s*\d+[.)]\s|!\[|\[toc\]|\[(video|pdf|page):)/
+
+/** Lines of one block joined: a line ending in two spaces keeps its break, any other joins with a space. */
+function getJoinedLines(raw: string[]): string {
+  return raw.reduce((out, line, index) => (index === 0 ? line.trim() : `${out}${/\S {2,}$/.test(raw[index - 1]) ? '\n' : ' '}${line.trim()}`), '')
+}
+
 export function getBlocksFromMarkdown(markdown: string): Block[] {
   const lines = markdown.replace(/\r\n/g, '\n').split('\n')
   const blocks: Block[] = []
   let at = 0
+
+  const continued = (first: string): string => {
+    const raw = [first]
+    while (/\S {2,}$/.test(raw[raw.length - 1]) && at < lines.length && lines[at].trim() !== '' && !OPENER.test(lines[at])) {
+      raw.push(lines[at])
+      at += 1
+    }
+    return getJoinedLines(raw)
+  }
 
   while (at < lines.length) {
     const line = lines[at]
@@ -238,7 +547,6 @@ export function getBlocksFromMarkdown(markdown: string): Block[] {
         }
       }
 
-      // The info string names one of our own blocks, or it is a code fence.
       if (isBlockKind(named) && named !== 'code') {
         blocks.push(getBlock(named, body.join('\n'), options))
       } else {
@@ -263,8 +571,8 @@ export function getBlocksFromMarkdown(markdown: string): Block[] {
 
     const task = /^(\s*)[-*]\s+\[([ xX])\]\s+(.*)$/.exec(line)
     if (task) {
-      blocks.push(getBlock('todo', task[3].trim(), getListOptions(task[1], { done: task[2].toLowerCase() === 'x' })))
       at += 1
+      blocks.push(getBlock('todo', continued(task[3]), getListOptions(task[1], { done: task[2].toLowerCase() === 'x' })))
       continue
     }
 
@@ -288,45 +596,48 @@ export function getBlocksFromMarkdown(markdown: string): Block[] {
       continue
     }
 
-    const callout = /^>\s*\[!\w+\]\s*(.*)$/.exec(line)
-    if (callout) {
-      blocks.push(getBlock('callout', callout[1].trim()))
-      at += 1
-      continue
-    }
-
-    const quote = /^>\s?(.*)$/.exec(line)
-    if (quote) {
-      blocks.push(getBlock('quote', quote[1].trim()))
-      at += 1
+    if (line.startsWith('>')) {
+      const stripped: string[] = []
+      while (at < lines.length && lines[at].startsWith('>')) {
+        stripped.push(lines[at].replace(/^>\s?/, ''))
+        at += 1
+      }
+      const callout = /^\s*\[!\w+\]\s*(.*)$/.exec(stripped[0])
+      if (callout) stripped[0] = callout[1]
+      const paragraphs: string[][] = [[]]
+      for (const one of stripped) {
+        if (one.trim() === '') {
+          if (paragraphs[paragraphs.length - 1].length > 0) paragraphs.push([])
+        } else {
+          paragraphs[paragraphs.length - 1].push(one)
+        }
+      }
+      const text = paragraphs.filter((run) => run.length > 0).map(getJoinedLines).join('\n\n')
+      blocks.push(getBlock(callout ? 'callout' : 'quote', text))
       continue
     }
 
     const bullet = /^(\s*)[-*+]\s+(.*)$/.exec(line)
     if (bullet) {
-      blocks.push(getBlock('bullet', bullet[2].trim(), getListOptions(bullet[1])))
       at += 1
+      blocks.push(getBlock('bullet', continued(bullet[2]), getListOptions(bullet[1])))
       continue
     }
 
     const number = /^(\s*)\d+[.)]\s+(.*)$/.exec(line)
     if (number) {
-      blocks.push(getBlock('number', number[2].trim(), getListOptions(number[1])))
       at += 1
+      blocks.push(getBlock('number', continued(number[2]), getListOptions(number[1])))
       continue
     }
 
-    const run: string[] = [line.trim()]
+    const run: string[] = [line]
     at += 1
-    while (
-      at < lines.length &&
-      lines[at].trim() !== '' &&
-      !/^(#{1,6}\s|>|```|\s*[-*+]\s|\s*\d+[.)]\s|!\[|\[toc\]|\[(video|pdf|page):)/.test(lines[at])
-    ) {
-      run.push(lines[at].trim())
+    while (at < lines.length && lines[at].trim() !== '' && !OPENER.test(lines[at])) {
+      run.push(lines[at])
       at += 1
     }
-    blocks.push(getBlock('paragraph', run.join(' ')))
+    blocks.push(getBlock('paragraph', getJoinedLines(run)))
   }
 
   return blocks
@@ -373,6 +684,17 @@ function getLead(block: Block): string {
   return '  '.repeat(Math.max(0, block.options.depth ?? 0))
 }
 
+/** The lines of a text whose breaks end in two spaces, so they survive as breaks. */
+function getBrokenLines(text: string): string[] {
+  const lines = text.split('\n')
+  return lines.map((line, index) => (index < lines.length - 1 ? `${line}  ` : line))
+}
+
+/** The lines a quote or callout writes: broken lines per paragraph, a bare line between paragraphs. */
+function getQuoteLines(text: string): string[] {
+  return text.split('\n\n').flatMap((paragraph, index) => (index === 0 ? getBrokenLines(paragraph) : ['', ...getBrokenLines(paragraph)]))
+}
+
 export function getBlockMarkdown(block: Block): string {
   const plain = Object.keys(getKept(block)).length === 0
 
@@ -380,22 +702,26 @@ export function getBlockMarkdown(block: Block): string {
   if (block.kind === 'toc' && plain) return '[toc]'
 
   const own: BlockKind[] = ['table', 'toggle', 'poll', 'audio', 'bookmark', 'mermaid', 'html', 'columns', 'embed', 'meeting', 'map', 'file']
-  if (!plain || own.includes(block.kind)) return getFence(block, getHeld(block))
+  if (!plain || own.includes(block.kind) || (block.kind === 'heading' && block.text.includes('\n'))) return getFence(block, getHeld(block))
 
   if (block.kind === 'image') return `![${(block.options.alt ?? '').replace(/\s*\n\s*/g, ' ')}](${block.options.src ?? ''})`
   if (block.kind === 'code') return `\`\`\`${block.options.language ?? ''}\n${block.text}\n\`\`\``
-  if (block.kind === 'todo') return `${getLead(block)}- [${block.options.done ? 'x' : ' '}] ${block.text}`
+  if (block.kind === 'todo') return `${getLead(block)}- [${block.options.done ? 'x' : ' '}] ${getBrokenLines(block.text).join(`\n${getLead(block)}  `)}`
   if (LINKED.includes(block.kind)) {
     const address = block.kind === 'page' ? (block.options.page ?? '') : (block.options.src ?? '')
     return `[${block.kind}: ${block.text}](${address})`
   }
 
   if (block.kind === 'heading') return `${'#'.repeat(Math.min(Math.max(block.options.level ?? 1, 1), 6))} ${block.text}`
-  if (block.kind === 'quote') return `> ${block.text}`
-  if (block.kind === 'callout') return `> [!note] ${block.text}`
-  if (block.kind === 'bullet') return `${getLead(block)}- ${block.text}`
-  if (block.kind === 'number') return `${getLead(block)}1. ${block.text}`
-  return block.text
+  if (block.kind === 'quote') return getQuoteLines(block.text).map((line) => (line === '' ? '>' : `> ${line}`)).join('\n')
+  if (block.kind === 'callout') {
+    return getQuoteLines(block.text)
+      .map((line, index) => (index === 0 ? `> [!note] ${line}` : line === '' ? '>' : `> ${line}`))
+      .join('\n')
+  }
+  if (block.kind === 'bullet') return `${getLead(block)}- ${getBrokenLines(block.text).join(`\n${getLead(block)}  `)}`
+  if (block.kind === 'number') return `${getLead(block)}1. ${getBrokenLines(block.text).join(`\n${getLead(block)}  `)}`
+  return getBrokenLines(block.text).join('\n')
 }
 
 export function getDocumentMarkdown(document: BlockDocument): string {
@@ -410,10 +736,12 @@ export function getReferences(document: BlockDocument): Reference[] {
   const found = new Map<string, Reference>()
 
   for (const block of document.blocks) {
-    for (const hit of block.text.matchAll(/(^|\s)([@#])([\p{L}\p{N}_-]+)/gu)) {
-      const mark = hit[2] as '@' | '#'
-      const label = hit[3]
-      found.set(`${mark}${label.toLowerCase()}`, { mark, label })
+    for (const run of getInline(block.text)) {
+      if (!('ref' in run) || run.ref !== 'mention') continue
+      const key = `${run.mark}${run.label.toLowerCase()}`
+      const held = found.get(key)
+      if (held && held.id) continue
+      found.set(key, run.id ? { mark: run.mark, label: run.label, id: run.id } : { mark: run.mark, label: run.label })
     }
   }
 
@@ -424,9 +752,284 @@ export function isBlockKind(value: string): value is BlockKind {
   return (KINDS as string[]).includes(value)
 }
 
+export function getNode(kind: NodeKind, inline: Inline | null = null, children: string[] | null = null, options: BlockOptions = {}, id = getBlockId()): BlockNode {
+  return { id, kind, inline, children, options }
+}
+
+/**
+ * The flat blocks as the tree the editor works on: list items nested by their
+ * depth under one list node, a quote or callout holding a paragraph per run
+ * of its text, a toggle holding its summary and the blocks of its body, and a
+ * columns block holding a column per part. Every other block is one node whose
+ * runs are its text.
+ */
+export function getTree(blocks: Block[]): BlockTree {
+  const tree: BlockTree = { root: [], nodes: {} }
+  const lists: { id: string; depth: number; kind: BlockKind; last: string }[] = []
+
+  const put = (node: BlockNode): string => {
+    tree.nodes[node.id] = node
+    return node.id
+  }
+  const paragraph = (text: string): string => put(getNode('paragraph', getInline(text)))
+  const grown = (markdown: string): string[] => {
+    const sub = getTree(getBlocksFromMarkdown(markdown))
+    Object.assign(tree.nodes, sub.nodes)
+    return sub.root.length > 0 ? sub.root : [paragraph('')]
+  }
+
+  for (const block of blocks) {
+    if (isListKind(block.kind)) {
+      let depth = Math.max(0, block.options.depth ?? 0)
+      while (lists.length > 0 && lists[lists.length - 1].depth > depth) lists.pop()
+      depth = Math.min(depth, lists.length > 0 ? lists[lists.length - 1].depth + 1 : 0)
+      let top = lists[lists.length - 1]
+      if (top && top.depth === depth && top.kind !== block.kind) {
+        lists.pop()
+        top = lists[lists.length - 1]
+      }
+      if (!top || top.depth < depth) {
+        const list = put(getNode(block.kind, null, []))
+        if (top) tree.nodes[top.last].children?.push(list)
+        else tree.root.push(list)
+        lists.push({ id: list, depth, kind: block.kind, last: '' })
+        top = lists[lists.length - 1]
+      }
+      const { depth: _depth, ...rest } = block.options
+      const item = put(getNode('item', null, [paragraph(block.text)], rest, block.id))
+      tree.nodes[top.id].children?.push(item)
+      top.last = item
+      continue
+    }
+
+    lists.length = 0
+
+    if (block.kind === 'quote' || block.kind === 'callout') {
+      tree.root.push(put(getNode(block.kind, null, block.text.split('\n\n').map(paragraph), block.options, block.id)))
+      continue
+    }
+    if (block.kind === 'toggle') {
+      const [summary = '', ...body] = block.text.split('\n')
+      tree.root.push(put(getNode('toggle', getInline(summary), grown(body.join('\n')), block.options, block.id)))
+      continue
+    }
+    if (block.kind === 'columns') {
+      const columns = getColumns(block.text).map((column) => put(getNode('column', null, grown(column))))
+      tree.root.push(put(getNode('columns', null, columns, block.options, block.id)))
+      continue
+    }
+    if (block.kind === 'image') {
+      const { alt, ...rest } = block.options
+      tree.root.push(put(getNode('image', getInline(alt ?? ''), null, rest, block.id)))
+      continue
+    }
+    tree.root.push(put(getNode(block.kind, isTextKind(block.kind) ? getInline(block.text) : null, null, block.options, block.id)))
+  }
+
+  return tree
+}
+
+/** The tree back as the flat blocks the document stores, list items carrying their depth. */
+export function getTreeBlocks(tree: BlockTree, ids: string[] = tree.root, depth = 0): Block[] {
+  const out: Block[] = []
+
+  for (const id of ids) {
+    const node = tree.nodes[id]
+    if (!node) continue
+
+    if (isListKind(node.kind)) {
+      for (const itemId of node.children ?? []) {
+        const item = tree.nodes[itemId]
+        if (!item) continue
+        const kids = (item.children ?? []).map((one) => tree.nodes[one]).filter((one): one is BlockNode => !!one)
+        const text = kids.find((one) => one.kind === 'paragraph')
+        out.push({
+          id: item.id,
+          kind: node.kind as BlockKind,
+          text: text ? getInlineMarkdown(text.inline ?? []) : '',
+          options: depth > 0 ? { ...item.options, depth } : item.options
+        })
+        for (const kid of kids) {
+          if (kid !== text) out.push(...getTreeBlocks(tree, [kid.id], depth + 1))
+        }
+      }
+      continue
+    }
+
+    if (node.kind === 'item' || node.kind === 'column') {
+      out.push(...getTreeBlocks(tree, node.children ?? [], depth))
+      continue
+    }
+
+    out.push(getNodeBlock(tree, node))
+  }
+
+  return out
+}
+
+function getNodeBlock(tree: BlockTree, node: BlockNode): Block {
+  const options = { ...node.options }
+  const children = (node.children ?? []).map((one) => tree.nodes[one]).filter((one): one is BlockNode => !!one)
+
+  if (node.kind === 'quote' || node.kind === 'callout') {
+    return { id: node.id, kind: node.kind, text: children.map((one) => getInlineMarkdown(one.inline ?? [])).join('\n\n'), options }
+  }
+  if (node.kind === 'toggle') {
+    const summary = getInlineMarkdown(node.inline ?? []).replace(/\n/g, ' ')
+    return { id: node.id, kind: 'toggle', text: `${summary}\n${getDocumentMarkdown({ blocks: getTreeBlocks(tree, node.children ?? []) })}`, options }
+  }
+  if (node.kind === 'columns') {
+    return {
+      id: node.id,
+      kind: 'columns',
+      text: children.map((column) => getDocumentMarkdown({ blocks: getTreeBlocks(tree, column.children ?? []) })).join('\n---\n'),
+      options
+    }
+  }
+  if (node.kind === 'image') {
+    const alt = getInlineText(node.inline ?? [])
+    if (alt) options.alt = alt
+    else delete options.alt
+    return { id: node.id, kind: 'image', text: '', options }
+  }
+  return { id: node.id, kind: node.kind as BlockKind, text: node.inline ? getInlineMarkdown(node.inline) : '', options }
+}
+
+export function getParentId(tree: BlockTree, id: string): string | null {
+  for (const node of Object.values(tree.nodes)) {
+    if (node.children?.includes(id)) return node.id
+  }
+  return null
+}
+
+export function getSiblingIds(tree: BlockTree, parentId: string | null): string[] {
+  return parentId === null ? tree.root : (tree.nodes[parentId]?.children ?? [])
+}
+
+export function getLocation(tree: BlockTree, id: string): { parentId: string | null; index: number } | null {
+  const rootIndex = tree.root.indexOf(id)
+  if (rootIndex >= 0) return { parentId: null, index: rootIndex }
+  const parentId = getParentId(tree, id)
+  if (parentId === null) return null
+  return { parentId, index: getSiblingIds(tree, parentId).indexOf(id) }
+}
+
+/** The ids from the root down to the node, the node last. */
+export function getPath(tree: BlockTree, id: string): string[] | null {
+  if (!tree.nodes[id]) return null
+  const trail = [id]
+  let current = id
+  while (!tree.root.includes(current)) {
+    const parent = getParentId(tree, current)
+    if (parent === null) return null
+    trail.unshift(parent)
+    current = parent
+  }
+  return trail
+}
+
+export function getDescendantIds(tree: BlockTree, id: string): string[] {
+  const out: string[] = []
+  const walk = (current: string) => {
+    for (const child of tree.nodes[current]?.children ?? []) {
+      out.push(child)
+      walk(child)
+    }
+  }
+  walk(id)
+  return out
+}
+
+/** The next or previous node in order, climbing out of a parent when there is no sibling left. */
+export function getAdjacentId(tree: BlockTree, id: string, by: -1 | 1): string | null {
+  let current = id
+  for (let step = 0; step < 32; step += 1) {
+    const at = getLocation(tree, current)
+    if (!at) return null
+    const next = getSiblingIds(tree, at.parentId)[at.index + by]
+    if (next) return next
+    if (at.parentId === null) return null
+    current = at.parentId
+  }
+  return null
+}
+
+/** The siblings between two nodes at the depth where their paths part. */
+export function getRangeIds(tree: BlockTree, from: string, to: string): string[] {
+  const one = getPath(tree, from)
+  const two = getPath(tree, to)
+  if (!one || !two) return []
+  const limit = Math.min(one.length, two.length)
+  let depth = 0
+  while (depth < limit && one[depth] === two[depth]) depth += 1
+  if (depth >= limit) depth = limit - 1
+  const start = one[depth]
+  const end = two[depth]
+  if (start === end) return [start]
+  const siblings = getSiblingIds(tree, depth === 0 ? null : one[depth - 1])
+  const a = siblings.indexOf(start)
+  const b = siblings.indexOf(end)
+  if (a < 0 || b < 0) return []
+  return siblings.slice(Math.min(a, b), Math.max(a, b) + 1)
+}
+
+/** Every text node under the ids, in reading order. */
+export function getTextIds(tree: BlockTree, ids: string[] = tree.root): string[] {
+  const out: string[] = []
+  const walk = (list: string[]) => {
+    for (const id of list) {
+      const node = tree.nodes[id]
+      if (!node) continue
+      if (node.inline) out.push(id)
+      walk(node.children ?? [])
+    }
+  }
+  walk(ids)
+  return out
+}
+
+/** Puts the node in the tree under the parent at the index, unlinking it from where it was. */
+export function putNode(tree: BlockTree, node: BlockNode, parentId: string | null, index: number): void {
+  tree.nodes[node.id] = node
+  unlinkNode(tree, node.id)
+  const siblings = getSiblingIds(tree, parentId)
+  siblings.splice(Math.max(0, Math.min(index, siblings.length)), 0, node.id)
+}
+
+function unlinkNode(tree: BlockTree, id: string): void {
+  const rootIndex = tree.root.indexOf(id)
+  if (rootIndex >= 0) {
+    tree.root.splice(rootIndex, 1)
+    return
+  }
+  for (const node of Object.values(tree.nodes)) {
+    const index = node.children?.indexOf(id) ?? -1
+    if (index >= 0) node.children?.splice(index, 1)
+  }
+}
+
+/** Takes the node and everything under it out of the tree. */
+export function deleteNode(tree: BlockTree, id: string): void {
+  if (!tree.nodes[id]) return
+  const dropped = [id, ...getDescendantIds(tree, id)]
+  unlinkNode(tree, id)
+  for (const one of dropped) delete tree.nodes[one]
+}
+
+/** The text look a node reads: its own when it carries one, else the nearest holder's, else the page's. */
+export function getLook(tree: BlockTree, id: string): { font?: BlockFont; size?: BlockSize; leading?: BlockLeading } {
+  const path = getPath(tree, id) ?? []
+  for (let step = path.length - 1; step >= 0; step -= 1) {
+    const node = tree.nodes[path[step]]
+    if (!node?.options.own) continue
+    return { font: node.options.font, size: node.options.size, leading: node.options.leading }
+  }
+  return {}
+}
+
 /** The anchor a heading is reached by, made from its own words. */
 export function getSlug(text: string): string {
-  return text
+  return getInlineText(getInline(text))
     .toLowerCase()
     .normalize('NFKD')
     .replace(/[^\p{L}\p{N}\s-]/gu, '')
@@ -513,10 +1116,22 @@ function escape(text: string): string {
 }
 
 function getInlineHtml(text: string): string {
-  return escape(text).replace(
-    /(^|\s)([@#])([\p{L}\p{N}_-]+)/gu,
-    (_, lead: string, mark: string, label: string) => `${lead}<span class="dnd-ref dnd-ref-${mark === '@' ? 'who' : 'tag'}">${mark}${label}</span>`
-  )
+  return getInline(text)
+    .map((run) => {
+      if ('ref' in run) {
+        if (run.ref === 'break') return '<br />'
+        return `<span class="dnd-ref dnd-ref-${run.mark === '@' ? 'who' : 'tag'}"${run.id ? ` data-id="${escape(run.id)}"` : ''}>${run.mark}${escape(run.label)}</span>`
+      }
+      const marks = run.marks ?? {}
+      let html = escape(run.text)
+      if (marks.code) html = `<code>${html}</code>`
+      if (marks.bold) html = `<strong>${html}</strong>`
+      if (marks.italic) html = `<em>${html}</em>`
+      if (marks.strike) html = `<s>${html}</s>`
+      if (marks.link) html = `<a href="${escape(marks.link)}">${html}</a>`
+      return html
+    })
+    .join('')
 }
 
 function getStyleHtml(block: Block): string {
@@ -582,9 +1197,9 @@ function getBlockHtml(block: Block, number: string | undefined, blocks: Block[])
       return `<h${level} id="${getSlug(block.text)}"${style}>${number ? `${number} ` : ''}${text}</h${level}>`
     }
     case 'quote':
-      return `<blockquote${style}>${text}</blockquote>`
+      return `<blockquote${style}>${block.text.split('\n\n').map((one) => `<p>${getInlineHtml(one)}</p>`).join('')}</blockquote>`
     case 'callout':
-      return `<aside class="dnd-callout"${style}>${text}</aside>`
+      return `<aside class="dnd-callout"${style}>${block.text.split('\n\n').map((one) => `<p>${getInlineHtml(one)}</p>`).join('')}</aside>`
     case 'code':
       return `<pre><code${block.options.language ? ` class="language-${escape(block.options.language)}"` : ''}>${escape(block.text)}</code></pre>`
     case 'mermaid':
@@ -601,7 +1216,7 @@ function getBlockHtml(block: Block, number: string | undefined, blocks: Block[])
     }
     case 'toggle': {
       const [head, ...rest] = block.text.split('\n')
-      return `<details${block.options.open ? ' open' : ''}><summary>${escape(head)}</summary><p>${getInlineHtml(rest.join('\n'))}</p></details>`
+      return `<details${block.options.open ? ' open' : ''}><summary>${getInlineHtml(head)}</summary>${getDocumentHtml(getDocumentFromMarkdown(rest.join('\n')))}</details>`
     }
     case 'poll': {
       const [ask, ...choices] = block.text.split('\n').filter(Boolean)
@@ -735,13 +1350,11 @@ export function getBlockEmailHtml(block: Block): string {
     return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse">${cells.join('')}</table>`
   }
 
-  // A toggle cannot fold in a mail client, so it degrades to its own content.
   if (block.kind === 'toggle') {
     const [head, ...rest] = block.text.split('\n')
     return `<div style="${body}"><strong style="color:${MAIL.metal}">${escape(head)}</strong><br />${escape(rest.join(' '))}</div>`
   }
 
-  // A poll cannot be voted on in a mail client, so it degrades to the tally.
   if (block.kind === 'poll') {
     const votes = Object.values(block.options.votes ?? {})
     const lines = block.text.split('\n').filter(Boolean)
@@ -753,7 +1366,6 @@ export function getBlockEmailHtml(block: Block): string {
     return `<div style="${body}"><strong style="color:${MAIL.metal}">${escape(ask ?? '')}</strong></div>${tally.join('')}`
   }
 
-  // A recording, a video or a pdf cannot play in a mail client, so it degrades to a link.
   if (block.kind === 'audio' || block.kind === 'video' || block.kind === 'pdf') {
     const src = escape(block.options.src ?? '')
     return `<div style="${body}"><a href="${src}" style="color:${MAIL.metal}">${escape(block.text || src)}</a></div>`
