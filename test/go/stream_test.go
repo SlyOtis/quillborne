@@ -128,6 +128,9 @@ func streamServer(t *testing.T) *httptest.Server {
 	}
 	e.GET("/api/campaign/:id/stream", handler.GetCampaignStream, actor)
 	e.GET("/api/vehicle/:id/stream", handler.GetVehicleStream, actor)
+	e.GET("/api/profile/stream", handler.GetProfileStream, actor)
+	e.GET("/api/resource/:id/stream", handler.GetResourceStream, actor)
+	e.GET("/api/character/:id/stream", handler.GetCharacterStream, actor)
 	server := httptest.NewServer(e)
 	t.Cleanup(server.Close)
 	return server
@@ -184,5 +187,85 @@ func TestACampaignStreamIsRefusedAwayFromTheTable(t *testing.T) {
 	defer res.Body.Close()
 	if res.StatusCode == http.StatusOK {
 		t.Fatalf("a player away from the table opened the campaign stream")
+	}
+}
+
+func getRefused(t *testing.T, server *httptest.Server, actor uuid.UUID, path string) bool {
+	t.Helper()
+	req, _ := http.NewRequest(http.MethodGet, server.URL+path, nil)
+	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set("X-Actor", actor.String())
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("stream %s: %v", path, err)
+	}
+	res.Body.Close()
+	return res.StatusCode != http.StatusOK
+}
+
+func TestAProfileStreamCarriesItsOwnersChangesAlone(t *testing.T) {
+	requireBroker(t)
+	ensureProfile(t, dungeonMaster, "testy@quillborne.local")
+	ensureProfile(t, player, "pip@quillborne.local")
+	server := streamServer(t)
+	mine := openStream(t, server, dungeonMaster, "/api/profile/stream")
+	theirs := openStream(t, server, player, "/api/profile/stream")
+	if status, answer := call(t, dungeonMaster, http.MethodPut, "/api/profile", `{"display_name":"Testy streams"}`, nil, handler.PutProfile); status != http.StatusOK {
+		t.Fatalf("PutProfile: %d %+v", status, answer.Error)
+	}
+	if line, ok := next(mine, wait); !ok || !strings.Contains(line, `"kind":"profile"`) || !strings.Contains(line, dungeonMaster.String()) {
+		t.Fatalf("the owner did not hear their profile change: %q", line)
+	}
+	if line, ok := next(theirs, time.Second); ok {
+		t.Fatalf("another player heard the profile change: %q", line)
+	}
+}
+
+func TestAResourceStreamCarriesLiveEditsToItsReaders(t *testing.T) {
+	requireBroker(t)
+	ensureProfile(t, player, "pip@quillborne.local")
+	resourceID := postResource(t, dungeonMaster, `{"kind":"entries","title":"Streamed draft"}`)
+	params := map[string]string{"id": resourceID}
+	server := streamServer(t)
+	if !getRefused(t, server, player, "/api/resource/"+resourceID+"/stream") {
+		t.Fatalf("a player opened the stream of a page not shared with them")
+	}
+	if status, _ := call(t, dungeonMaster, http.MethodPut, "/", `{"share_users":["`+player.String()+`"]}`, params, handler.PutResource); status != http.StatusOK {
+		t.Fatalf("PutResource share: %d", status)
+	}
+	owner := openStream(t, server, dungeonMaster, "/api/resource/"+resourceID+"/stream")
+	reader := openStream(t, server, player, "/api/resource/"+resourceID+"/stream")
+	status, posted := call(t, dungeonMaster, http.MethodPost, "/", `{"body":"AQID"}`, params, handler.PostResourceUpdate)
+	if status != http.StatusCreated {
+		t.Fatalf("PostResourceUpdate: %d %+v", status, posted.Error)
+	}
+	updateID := id(t, posted)
+	for name, lines := range map[string]<-chan string{"owner": owner, "reader": reader} {
+		if line, ok := next(lines, wait); !ok || !strings.Contains(line, updateID) || !strings.Contains(line, `"kind":"update"`) {
+			t.Fatalf("the %s did not hear the live edit: %q", name, line)
+		}
+	}
+}
+
+func TestACharacterStreamCarriesChangesToThoseWhoReadTheSheet(t *testing.T) {
+	requireBroker(t)
+	campaignID := postCampaign(t)
+	seatPlayer(t, campaignID)
+	characterID := postCharacter(t, dungeonMaster, "Streamed Brann")
+	params := map[string]string{"id": characterID}
+	server := streamServer(t)
+	if !getRefused(t, server, player, "/api/character/"+characterID+"/stream") {
+		t.Fatalf("a player opened the stream of a private sheet")
+	}
+	postCampaignCharacter(t, dungeonMaster, campaignID, characterID)
+	owner := openStream(t, server, dungeonMaster, "/api/character/"+characterID+"/stream")
+	table := openStream(t, server, player, "/api/character/"+characterID+"/stream")
+	if status, answer := call(t, dungeonMaster, http.MethodPut, "/", `{"character":{"info":{"name":"Brann the Streamed"}}}`, params, handler.PutCharacter); status != http.StatusOK {
+		t.Fatalf("PutCharacter: %d %+v", status, answer.Error)
+	}
+	for name, lines := range map[string]<-chan string{"owner": owner, "seated player": table} {
+		if line, ok := next(lines, wait); !ok || !strings.Contains(line, characterID) || !strings.Contains(line, `"kind":"character"`) {
+			t.Fatalf("the %s did not hear the sheet change: %q", name, line)
+		}
 	}
 }
