@@ -5,7 +5,7 @@
   const {
     src,
     alt,
-    frame = 'lancet',
+    frame = 'arch',
     size = 'md',
     initial
   }: {
@@ -26,10 +26,11 @@
 </script>
 
 <script lang="ts" module>
-  export type PortraitFrame = 'lancet' | 'ogee' | 'trefoil' | 'shield' | 'round' | 'cusped' | 'gable' | 'quatrefoil' | 'reliquary'
+  export type PortraitFrame = 'arch' | 'lancet' | 'ogee' | 'trefoil' | 'shield' | 'round' | 'cusped' | 'gable' | 'quatrefoil' | 'reliquary'
 
   /** Every frame the player may choose, in the order a picker should show them. */
   export const PORTRAIT_FRAMES: { id: PortraitFrame; title: string }[] = [
+    { id: 'arch', title: 'Arch' },
     { id: 'lancet', title: 'Lancet' },
     { id: 'ogee', title: 'Ogee' },
     { id: 'trefoil', title: 'Trefoil' },
@@ -42,6 +43,7 @@
   ]
 
   export const SHAPES: Record<PortraitFrame, string> = {
+    arch: 'M4 136V50C4 25 25 4 50 4s46 21 46 46v86Z',
     lancet: 'M4 136V46C4 22 24 4 50 4s46 18 46 42v90Z',
     ogee: 'M4 136V54c0-14 12-20 20-28C34 16 40 4 50 4s16 12 26 22c8 8 20 14 20 28v82Z',
     trefoil: 'M4 136V56c0-11 7-19 17-21 1-17 12-31 29-31s28 14 29 31c10 2 17 10 17 21v80Z',
@@ -56,7 +58,7 @@
   }
 </script>
 
-<span class="dnd-portrait dnd-portrait-{size}">
+<span class="dnd-portrait dnd-portrait-{size}" class:dnd-portrait-arched={frame === 'arch'}>
   <svg class="dnd-portrait-art" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true" focusable="false">
     <defs>
       <clipPath id="dnd-portrait-{frame}" clipPathUnits="objectBoundingBox">
@@ -65,19 +67,24 @@
     </defs>
   </svg>
 
-  <span class="dnd-portrait-glass" style="clip-path: url(#dnd-portrait-{frame})">
+  <span class="dnd-portrait-glass" style={frame === 'arch' ? undefined : `clip-path: url(#dnd-portrait-)`}>
     {#if picture}
       <StoredImage src={picture} {alt} />
     {:else}
       <span class="dnd-portrait-initial">{initial ?? alt.charAt(0).toUpperCase()}</span>
     {/if}
+    {#if frame === 'arch'}
+      <span class="dnd-portrait-ring"></span>
+    {/if}
   </span>
 
+  {#if frame !== 'arch'}
   <svg class="dnd-portrait-trace" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true" focusable="false">
     <path d={shape} class="dnd-portrait-edge" />
     <path d={shape} class="dnd-portrait-rim" />
     <path d={shape} class="dnd-portrait-key" />
   </svg>
+  {/if}
 </span>
 
 <style>
@@ -123,6 +130,33 @@
       radial-gradient(circle at 50% 45%, transparent 55%, color-mix(in srgb, #000 55%, transparent) 100%),
       var(--texture-noise),
       radial-gradient(circle at 38% 26%, var(--ground-lift) 0%, var(--ground-deep) 84%);
+  }
+
+  .dnd-portrait-arched {
+    aspect-ratio: 3 / 4;
+  }
+
+  .dnd-portrait-arched .dnd-portrait-glass {
+    -webkit-mask: var(--mask-arch) center / 100% 100% no-repeat;
+    mask: var(--mask-arch) center / 100% 100% no-repeat;
+  }
+
+  .dnd-portrait-arched .dnd-portrait-glass::after {
+    background: linear-gradient(180deg, transparent 45%, var(--ground-deep) 100%);
+    opacity: 0.85;
+  }
+
+  .dnd-portrait-ring {
+    position: absolute;
+    inset: 0;
+    box-shadow:
+      inset 0 0 0 1px var(--keyline),
+      inset 0 0 0 2px var(--metal-dim),
+      inset 0 0 0 3px var(--metal),
+      inset 0 0 0 4px var(--metal-bright),
+      inset 0 0 0 5px var(--keyline),
+      inset 0 0 14px var(--shade-hard);
+    pointer-events: none;
   }
 
   .dnd-portrait-glass::after {

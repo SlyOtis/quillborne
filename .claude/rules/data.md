@@ -29,8 +29,9 @@ The schema and the api are snake_case throughout: `user_id`, `campaign_id`, `cha
 - `object_asset`: attaches an asset to any row by `object_type` and `object_id`; its `properties` override the asset's key by key. `tag` and `tag_object` tag any row the same way.
 - `catalog_entry`: the shared class and race readings.
 - `vehicle`: a vessel the table sails, with a `campaign_id` when a campaign sails it: its vehicle `system`, `template` and `layout` keys, the installed `components`, the `states` of each, `stats`, `rulings`, the homebrew `overlay`, the `crew`, the `revision` and its `history`, and its `crew_claim_id`.
+- `state_key`: the key a `/api/state` import named a row by, `group`, `key` and `object_id`, so the next import of the same key finds the row. Written by the import alone and not registered with claimius.
 
-Every table holds application data, so nothing is aged and there is no `public.prune`.
+Every table holds application data, so nothing is aged and there is no `public.prune`. The base files carry each table in its final shape and nothing else: no `ALTER`, `RENAME`, `DROP` or `UPDATE`; a change to a table changes the file that creates it, and the deploy's `smig up` replays the drifted file, so every statement stays re runnable.
 
 ## The campaign is the story
 
@@ -68,7 +69,7 @@ A claim, a binding or a grant is made only through the claim helpers in `interna
 
 ## The api
 
-`handler.PutRoutes` in `internal/handler/routes.go` mounts every route under `/api`, behind the Samna Auth user middleware `cmd/main.go` hands it: `/profile` with its `details`, `/character`, `/campaign` with its `map`, `encounter`, `song` and `chat`, `/resource` with its `update`, `/asset` with its `data` and `object`, `/file` with the folder tree and `move`, `/tag` with its `object`, `/ai`, `/catalog`, `/vehicle`, and `/claim` with `/:type/:id/claim`. Sign in, the callback, sign out and `/api/auth/me` come from the middleware and stay in `cmd/main.go`. The local test data in `test/seed/` runs through the same `PutRoutes` with a middleware of its own that signs each step in as the player it names.
+`handler.PutRoutes` in `internal/handler/routes.go` mounts every route under `/api`, behind the Samna Auth user middleware `cmd/main.go` hands it: `/profile` with its `details`, `/character`, `/campaign` with its `map`, `encounter`, `song` and `chat`, `/resource` with its `update`, `/asset` with its `data` and `object`, `/file` with the folder tree and `move`, `/tag` with its `object`, `/ai`, `/catalog`, `/vehicle`, and `/claim` with `/:type/:id/claim`. Sign in, the callback, sign out and `/api/auth/me` come from the middleware and stay in `cmd/main.go`. Beside them `state.Register` in `cmd/main.go` mounts nimbody's common set: `/status`, `/mcp` serving the `qubo` resource table as tools, and `/api/state` with its export and import, behind the same user middleware. The groups in `internal/state/`, one per table, export through `sdb.ObjectWhere` and import, delete and store blobs by calling the handlers of `PutRoutes` in process as the record's owner on a local run and as the caller on tst, so the local table in `database/state/` and a tst export are made by the same handlers as every player's request.
 
 On the web the api layer is `web/src/lib/api/`, the shape nimployer and bookable use. `core.ts` holds `ApiError`, the session, `path`, `request`, `unwrap` and `getStream`. `index.ts` holds every call as a plain exported function, `getCharacter`, `postCampaignMap`, `getCampaignChatStream`, and a new read or write is one more function there, never a helper of its own. `types.ts` re-exports `generated.ts` and `generated_auth.ts`, which `just gen-types` writes with tygo from `internal/db` and the middleware's `shared` models, and narrows a jsonb field with `extends Omit<...>` where the web needs its shape. No type the Go models carry is written by hand: a model change is followed by `just gen-types`.
 

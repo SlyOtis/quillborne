@@ -127,35 +127,29 @@
             <span><b>5ft.</b> reach</span>
         {/if}
     </div>
-    <div class="hit">
+    <div class="hit" class:attack-dry={isRanged && buttonsDisabled}>
         <Button
             variant="secondary"
             size="sm"
             fill
             disabled={buttonsDisabled}
-            title="Roll {action.name} to hit"
+            title={isRanged && buttonsDisabled ? 'No ammo' : `Roll ${action.name} to hit`}
             onclick={rollToHit}
         >
             +{action.toHit || 0}
         </Button>
-        {#if isRanged && buttonsDisabled}
-            <span class="ammo-warning">No ammo!</span>
-        {/if}
     </div>
-    <div class="attack">
+    <div class="attack" class:attack-dry={isRanged && buttonsDisabled}>
         <Button
             variant="secondary"
             size="sm"
             fill
             disabled={buttonsDisabled || !action.damage?.[0]}
-            title="Roll {action.name} damage"
+            title={isRanged && buttonsDisabled ? 'No ammo' : `Roll ${action.name} damage`}
             onclick={rollAttackDamage}
         >
             {action.damage?.[0] ? renderDamage(action.damage[0]) : 'No damage'}
         </Button>
-        {#if isRanged && buttonsDisabled}
-            <span class="ammo-warning">No ammo!</span>
-        {/if}
     </div>
     <div class="properties">
         <span title={properties}>{properties}</span>
@@ -245,25 +239,9 @@
         white-space: nowrap;
     }
 
-    .ammo-warning {
-        background: linear-gradient(180deg, color-mix(in srgb, var(--state-bad) 70%, var(--ground-deep)), color-mix(in srgb, var(--state-bad) 40%, var(--ground-deep)));
-        box-shadow: inset 0 0 0 1px var(--keyline), var(--bevel-up);
-        color: var(--ink);
-        padding: var(--space-0) var(--space-1);
+    .attack-dry :global(.dnd-button) {
+        box-shadow: inset 0 0 0 var(--border-width) var(--state-bad), 0 0 0.4rem color-mix(in srgb, var(--state-bad) 50%, transparent);
         border-radius: var(--radius-sm);
-        font-family: var(--font-display);
-        font-size: var(--text-xs);
-        font-weight: 700;
-        letter-spacing: var(--tracking-wide);
-        text-shadow: 0 1px 0 #000;
-        white-space: nowrap;
-        text-align: center;
-        animation: pulse 1s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-        0%, 100% { opacity: 0.8; }
-        50% { opacity: 1; }
     }
 
     .hit, .attack {

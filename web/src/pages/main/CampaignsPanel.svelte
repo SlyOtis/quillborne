@@ -5,14 +5,13 @@
   import { user } from "$lib/stores/auth.store";
   import Card from "$components/ui/Card.svelte";
 
-  let { loading = false, search = '' } = $props();
+  let { loading = false, search = '', open = $bindable(false) }: { loading?: boolean; search?: string; open?: boolean } = $props();
 
   let shown = $derived($userCampaigns.filter((entry) =>
     entry.name.toLowerCase().includes(search.toLowerCase()) ||
     entry.description.toLowerCase().includes(search.toLowerCase())
   ));
 
-  let open = $state(false);
   const folded = $derived(shown.length > 6);
 
   function openCampaign(campaignId: string) {
@@ -46,12 +45,13 @@
       </Card>
     {/each}
   </div>
+  </div>
   {#if folded}
     <button type="button" class="camps-more" aria-expanded={open} onclick={() => (open = !open)}>
       <span class="dnd-label camps-more-word">{open ? 'Fold the chronicles' : `See all ${shown.length}`}</span>
+      <span class="camps-more-glyph"><Glyph name={open ? 'fold' : 'unfold'} size="sm" /></span>
     </button>
   {/if}
-  </div>
 {/if}
 
 <style>
@@ -67,29 +67,32 @@
     max-block-size: calc(var(--camps-row) * 3 + var(--space-3) * 2);
   }
 
-  .camps-more {
-    position: absolute;
-    inset-inline: 0;
-    inset-block-end: 0;
-    display: flex;
-    align-items: end;
-    justify-content: center;
-    padding: var(--space-6) 0 var(--space-2);
-    border: none;
-    background: linear-gradient(180deg, transparent 0%, var(--ground-deep) 100%);
-    color: var(--metal);
-    cursor: pointer;
+  .camps-fold-closed {
+    -webkit-mask-image: linear-gradient(180deg, var(--ground-deep) calc(100% - var(--camps-row) * 0.8), transparent 100%);
+    mask-image: linear-gradient(180deg, var(--ground-deep) calc(100% - var(--camps-row) * 0.8), transparent 100%);
   }
 
-  .camps-fold:not(.camps-fold-closed) .camps-more {
-    position: static;
-    padding-block: var(--space-2);
+  .camps-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    inline-size: 100%;
+    padding: var(--space-2) 0;
+    border: none;
     background: none;
+    color: var(--metal);
+    cursor: pointer;
   }
 
   .camps-more:hover .camps-more-word,
   .camps-more:focus-visible .camps-more-word {
     color: var(--metal-bright);
+  }
+
+  .camps-more-glyph {
+    display: flex;
+    color: var(--metal);
   }
 
   .camps-more:focus-visible {

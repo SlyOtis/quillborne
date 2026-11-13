@@ -27,6 +27,7 @@ export const ACTIONS: AppAction[] = [
   { id: 'export', title: 'Export this character', glyph: 'export', ui: 'exportCharacter', run: () => postUIAction('exportCharacter') },
   { id: 'sources', title: 'Import sources', glyph: 'sources', ui: 'openSourceImport', run: () => postUIAction('openSourceImport') },
   { id: 'hearth', title: 'Hearth', glyph: 'campaign', run: () => navigate('/main') },
+  { id: 'scribe', title: 'Scribe', glyph: 'edit', run: () => navigate('/main/scribe') },
   { id: 'profile', title: 'Your profile', glyph: 'character', run: () => navigate('/main/user') }
 ]
 

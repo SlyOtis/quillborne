@@ -8,7 +8,7 @@
       label: 'Story',
       under: [
         { id: 'sessions', label: 'Sessions' },
-        { id: 'entries', label: 'Entries' }
+        { id: 'entries', label: 'Lore' }
       ]
     },
     {

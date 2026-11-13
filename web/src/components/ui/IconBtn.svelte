@@ -47,11 +47,11 @@
     align-items: center;
     justify-content: center;
     flex: none;
-    height: 100%;
-    aspect-ratio: 1;
-    padding: 0;
+    inline-size: 1.75em;
+    block-size: 1.75em;
+    padding: 0.3em;
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-pill);
     background: none;
     color: var(--icon-tone);
     cursor: pointer;
@@ -75,9 +75,16 @@
     --icon-tone: var(--ink-dim);
   }
 
+  .dnd-iconbtn > :global(svg) {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    margin: 0;
+  }
+
   .dnd-iconbtn:hover:not(:disabled) {
     color: var(--metal-bright);
-    background: color-mix(in srgb, var(--metal) 12%, transparent);
+    background: color-mix(in srgb, var(--metal) 16%, transparent);
   }
 
   .dnd-iconbtn:active:not(:disabled) {

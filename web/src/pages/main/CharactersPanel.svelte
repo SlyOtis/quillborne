@@ -2,16 +2,46 @@
   import Glyph from "$components/ui/Glyph.svelte";
   import { navigate } from "sly-svelte-location-router";
   import { getRecentFirst, userCharacters } from "$lib/stores/character.store";
+  import { userCampaigns } from "$lib/stores/campaign.store";
   import { userProfile } from "$lib/stores/auth.store";
+  import type { Profile } from "$lib/api/types";
   import Card from "$components/ui/Card.svelte";
 
-  let { loading = false, search = '' } = $props();
+  let {
+    loading = false,
+    search = '',
+    open = $bindable(false),
+    profiles = {} as Record<string, Profile>
+  }: {
+    loading?: boolean
+    search?: string
+    open?: boolean
+    profiles?: Record<string, Profile>
+  } = $props();
+
+  const RIMS = ['ember', 'verdigris', 'metal', 'good'] as const;
 
   let shown = $derived(getRecentFirst($userCharacters, $userProfile?.preferences?.recent_characters ?? []).filter((entry) =>
     entry.metadata.name.toLowerCase().includes(search.toLowerCase()) ||
     entry.metadata.class.toLowerCase().includes(search.toLowerCase()) ||
     entry.metadata.race.toLowerCase().includes(search.toLowerCase())
   ));
+
+  const folded = $derived(shown.length > 6);
+
+  function getRim(campaignId: string | undefined, ownerId: string) {
+    const campaign = $userCampaigns.find((one) => one.id === campaignId);
+    if (!campaign) return undefined;
+    const seats = [campaign.dm_id, ...campaign.player_ids.filter((id) => id !== campaign.dm_id)];
+    const at = seats.indexOf(ownerId);
+    return at === -1 ? undefined : RIMS[at % RIMS.length];
+  }
+
+  function getHolder(campaignId: string | undefined, ownerId: string) {
+    if (!campaignId) return undefined;
+    const profile = profiles[ownerId];
+    return { name: profile?.display_name || profile?.email || 'A player', image: profile?.photo_url || undefined };
+  }
 
   function openCharacter(characterId: string) {
     navigate(`/main/character/${characterId}`);
@@ -26,17 +56,21 @@
     <span>No character carries your name yet</span>
   </div>
 {:else}
+  <div class="roll-fold" class:roll-fold-closed={folded && !open}>
   <div class="roll-grid">
     {#each shown as entry (entry.id)}
       <Card
         layout="tile"
         title={entry.metadata.name}
-        sub="Level {entry.metadata.level} {entry.metadata.race} {entry.metadata.class}"
+        sub={entry.metadata.class}
         image={entry.character.info?.imageUrl}
-        badge={entry.metadata.status === 'draft' ? 'Draft' : String(entry.metadata.level)}
+        badge={entry.metadata.status === 'draft' ? 'Draft' : `Lv ${entry.metadata.level}`}
         tone="ember"
+        rim={getRim(entry.campaign_id, entry.owner_id)}
+        holder={getHolder(entry.campaign_id, entry.owner_id)}
         onclick={() => openCharacter(entry.id)}
       >
+        <span class="roll-kin">{entry.metadata.race}</span>
         {#if entry.metadata.status === 'draft'}
           <span class="roll-draft">Not finished</span>
         {:else}
@@ -46,17 +80,98 @@
       </Card>
     {/each}
   </div>
+  </div>
+  {#if folded}
+    <button type="button" class="roll-more" aria-expanded={open} onclick={() => (open = !open)}>
+      <span class="dnd-label roll-more-word">{open ? 'Fold the roll' : `See all ${shown.length}`}</span>
+      <span class="roll-more-glyph"><Glyph name={open ? 'fold' : 'unfold'} size="sm" /></span>
+    </button>
+  {/if}
 {/if}
 
 <style>
-  .roll-grid {
+  .roll-fold {
+    --roll-seat: 11.4rem;
+    --roll-row: calc(var(--roll-seat) * 1.9);
+    --roll-bleed: var(--space-6);
+    position: relative;
+    margin: calc(var(--roll-bleed) * -1) calc(var(--roll-bleed) * -1) 0;
+    padding: var(--roll-bleed) var(--roll-bleed) 0;
+    max-block-size: calc(var(--roll-row) * 60);
+    overflow: hidden;
+    transition: max-block-size 600ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .roll-fold-closed {
+    max-block-size: calc(var(--roll-row) * 3 + var(--space-6) * 2 + var(--roll-bleed));
+  }
+
+  .roll-fold-closed {
+    -webkit-mask-image: linear-gradient(180deg, var(--ground-deep) calc(100% - var(--roll-row) * 0.8), transparent 100%);
+    mask-image: linear-gradient(180deg, var(--ground-deep) calc(100% - var(--roll-row) * 0.8), transparent 100%);
+  }
+
+  .roll-more {
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-4);
+    align-items: center;
+    justify-content: center;
+    inline-size: 100%;
+    margin-block-start: calc(var(--roll-bleed) * -1);
+    padding: var(--space-2) 0;
+    border: none;
+    background: none;
+    color: var(--metal);
+    cursor: pointer;
+  }
+
+  .roll-more:hover .roll-more-word,
+  .roll-more:focus-visible .roll-more-word {
+    color: var(--metal-bright);
+  }
+
+  .roll-more:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  .roll-more-word {
+    margin: 0;
+  }
+
+  .roll-more-glyph {
+    display: flex;
+    color: var(--metal);
+  }
+
+  .roll-more {
+    gap: var(--space-2);
+  }
+
+  .roll-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(var(--roll-seat), 100%), 1fr));
+    gap: var(--space-6);
     min-width: 0;
   }
 
+  .roll-grid :global(.dnd-card-tile) {
+    width: 100%;
+    min-block-size: var(--roll-row);
+  }
+
+  .roll-kin {
+    flex: 1 0 100%;
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    color: var(--ink);
+  }
+
   .roll-draft {
+    display: flex;
+    flex: 1 0 100%;
+    align-items: center;
+    justify-content: center;
+    min-block-size: var(--space-7);
     font-family: var(--font-display);
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;

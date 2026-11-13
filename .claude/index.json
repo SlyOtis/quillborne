@@ -716,6 +716,68 @@
         "edge",
         "starfield"
       ]
+    },
+    {
+      "path": ".claude/rules/cli.md",
+      "kind": "rule",
+      "answers": "What a change to the qubo cli, a state group or the MCP tools must carry: the command table, the bundled skill, the state document and the tests.",
+      "keywords": [
+        "cli",
+        "qubo",
+        "state",
+        "mcp",
+        "terraform",
+        "provider",
+        "command",
+        "tool"
+      ]
+    },
+    {
+      "path": "internal/state",
+      "kind": "code",
+      "answers": "The /api/state groups, one per table: export through sdb.ObjectWhere, import, delete and blobs through the handlers in process, the state_key resolver and the actor rule of a local run.",
+      "keywords": [
+        "state",
+        "export",
+        "import",
+        "ndjson",
+        "group",
+        "key",
+        "upsert",
+        "seed",
+        "blob"
+      ]
+    },
+    {
+      "path": "internal/qubo",
+      "kind": "code",
+      "answers": "The qubo cli on nimbody: the resource table every route is reached through, the state command, the embedded skill and state document, the plugin and the mcp server.",
+      "keywords": [
+        "qubo",
+        "cli",
+        "resource",
+        "verb",
+        "skill",
+        "plugin",
+        "mcp",
+        "login",
+        "config"
+      ]
+    },
+    {
+      "path": "database/state",
+      "kind": "data",
+      "answers": "The tables as state documents: local.ndjson, the table a local run imports, and tst.ndjson, the tst export.",
+      "keywords": [
+        "seed",
+        "test data",
+        "local",
+        "tst",
+        "ndjson",
+        "table",
+        "campaign",
+        "character"
+      ]
     }
   ]
 }

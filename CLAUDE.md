@@ -30,7 +30,7 @@ Quillborne is the table's character sheets, campaigns, maps and vessels as a hos
 
 ## Every feature is reached three ways
 
-12. A feature is reached through the api, through `qubo`, and through the MCP tools the service serves, in the same work and never one side only. The `cli` skill is the formula.
+12. A feature is reached through the api, through `qubo`, and through the MCP tools the service serves, in the same work and never one side only. The `cli` skill is the formula and `cli.md` is what a change here must carry: a route in `handler.PutRoutes`, its verb in `internal/qubo/resources.go`, which the service also serves as its MCP tools, and its `/api/state` group in `internal/state/`.
 
 ## The gate
 
@@ -39,14 +39,15 @@ Quillborne is the table's character sheets, campaigns, maps and vessels as a hos
 
 ## Local test data
 
-15. `test/seed/` is the table every local run starts with: JSON steps, each an api call made as a debug player, that `just dev` runs into its fresh database. A change that adds or alters something a player sees adds or updates its steps in the same branch, so the next local run shows it. It is local only and small, enough to show each feature once from the DM's side and a player's. `setup.md` carries how.
+15. `database/state/local.ndjson` is the table every local run starts with: a `/api/state` document, one record per line with its key, its data and its refs by key, that `just dev` imports through `qubo state import` once the service is up, so every row and every claim is made by the handlers. A change that adds or alters something a player sees adds or updates its records in the same branch, so the next local run shows it. It is small, enough to show each feature once from the DM's side and a player's. `database/state/tst.ndjson` is the tst table, exported with `qubo state export`. `setup.md` carries how.
 
 ## Commands
 
-- `just install`: every tool at its pin, then the web and Go dependencies.
-- `just dev`: the database, the blob store, the service and the web together, seeded. `just dev-db`, `just dev-blob`, `just dev-server` and `just dev-web` run one each; `just seed` loads `test/seed/`.
+- `just install`: every tool at its pin, nimon included, then the web and Go dependencies, the `qubo` cli and the `qubo` and `nimon` skills under `.claude/skills/`.
+- `just dev`: the database, the blob store, the service and the web together, then the local table imported. `just dev-db`, `just dev-blob`, `just dev-server` and `just dev-web` run one each; `just seed` imports `database/state/local.ndjson`, `just seed-state <name>` any file under `database/state/`.
+- `just build-cli`, `just install-cli`, `just install-cli-completion`, `just install-cli-skill`: the `qubo` cli, its completion and its skill. `just qubo <args>` runs it from source.
 - `just build-db`: the local database image. `just migrate <args>`: smig on the local database only.
-- `just check`, `just test`, `just build`: the parts of `just gate`. `just vet`: `go vet`. `just walk`: the browser walk in `web/test/walk.sh`.
+- `just check`, `just test`, `just build`: the parts of `just gate`. `just vet`: `go vet`. `just walk`: the browser walk in `web/test/walk.sh`; a page that has to be seen is driven with the `nimon` skill.
 - `just build-docker`: the image. `just clean`: the local containers and builds.
 - `just setup <env>`, `just apps <env>`, `just domains <env>`: the Samna Auth app and the host, on the owner's word.
 - `just reference <kind>`: the reference readings under `reference/`.
@@ -55,7 +56,7 @@ Quillborne is the table's character sheets, campaigns, maps and vessels as a hos
 
 - A map is a picture with pins and, beside it, a drawn plan shown in 3D. The plan is nimling/nimap, copied into the repo with its editor rewritten in Svelte: `maps.md`.
 - The look is a dark fantasy game UI: a midnight ground, thin gold double rules, diamond studs, and the page raised between its drawers and bending into them. Tokens only, five themes: `components.md` and `DESIGN.md`.
-- Work reaches `main` through a pull request only the owner merges: `workflow.md`.
+- Work reaches `main` through a pull request only the owner merges, cut and merged as often as a feature works: `workflow.md` 11.
 
 ## Index
 
@@ -66,9 +67,13 @@ Rules in `.claude/rules/`, each read when its paths are touched:
 - `buttons.md`: `web/src/components/**`, `web/src/pages/**`.
 - `maps.md`: `web/src/lib/nimap/**`, `web/src/lib/nimap-editor/**`, `web/src/components/nimap/**`, `web/test/nimap/**`, `web/src/components/campaign/CampaignMaps.svelte`.
 - `data.md`: `database/**`, `internal/**`, `cmd/**`, and the web's api, service, types, upload, live editing and AI modules.
+- `cli.md`: `internal/qubo/**`, `internal/state/**`, `cmd/qubo/**`, `test/go/state_test.go`.
 - `registration.md`: `deploy/sauth/**`, the login and redirect pages the deploy uploads to the prophet.
 - `setup.md` and `workflow.md`: everywhere.
 
 Skills in `.claude/skills/`:
 
 - `run`: start Quillborne locally on this worktree's own slot, signed in as the debug user.
+- `qubo`: the cli, its state export and import and its mcp tools; installed by `just install-cli-skill`.
+- `nimon` and `nimon-pr`: drive the browser through a page or a pull request and record it; installed by `just install`.
+- `git` and `github`: the git cli and everything that talks to GitHub.

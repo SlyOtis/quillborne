@@ -131,8 +131,6 @@ COMMENT ON COLUMN tag_object.sa_created_at IS 'When the row was created';
 COMMENT ON COLUMN tag_object.sa_updated_at IS 'When the row last changed';
 COMMENT ON COLUMN tag_object.sa_deleted_at IS 'When the row was soft deleted';
 
-DROP FUNCTION IF EXISTS public.get_assets(TEXT, UUID, TEXT, BOOLEAN, BOOLEAN, TEXT[]);
-
 CREATE OR REPLACE FUNCTION public.get_assets(
     p_object_type          TEXT,
     p_object_id            UUID,

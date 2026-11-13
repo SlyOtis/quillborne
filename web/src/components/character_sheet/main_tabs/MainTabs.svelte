@@ -1,5 +1,6 @@
 <script lang="ts">
   import {onDestroy, untrack, type Snippet} from "svelte";
+  import {fly} from "svelte/transition";
   import {writable} from "svelte/store";
 
   let {
@@ -74,7 +75,11 @@
         id="panel-{$selectedTab}"
         aria-labelledby="tab-{$selectedTab}"
     >
-        {@render tabs[$selectedTab]()}
+        {#key $selectedTab}
+            <div class="pane" in:fly={{ y: 8, duration: 180 }}>
+                {@render tabs[$selectedTab]()}
+            </div>
+        {/key}
     </div>
 </div>
 
@@ -180,6 +185,13 @@
     .tab:focus-visible {
         outline: none;
         box-shadow: var(--focus-ring);
+    }
+
+    .pane {
+        display: flex;
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
     }
 
     .content {

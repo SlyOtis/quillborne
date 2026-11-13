@@ -44,7 +44,6 @@
             <Button
                 variant={skill.proficiency > 0 ? 'secondary' : 'ghost'}
                 size="sm"
-                fill
                 title="Roll {skill.name}"
                 onclick={event => rollSkillCheck(event, skill.name, skill.modifier, skill.proficiency)}
             >
@@ -60,7 +59,7 @@
         position: relative;
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        justify-content: flex-start;
         align-items: stretch;
         gap: var(--space-3);
         padding: var(--space-3);
@@ -71,12 +70,16 @@
     .skills {
         position: relative;
         display: grid;
-        grid-template-columns: auto auto minmax(0, 1fr) auto;
+        grid-template-columns: auto auto minmax(0, 1fr) var(--space-6);
         align-items: center;
-        gap: var(--space-1) var(--space-2);
+        gap: var(--space-0) var(--space-2);
         font-size: var(--text-xs);
         width: 100%;
-        height: 100%;
+        align-content: start;
+    }
+
+    .root > :global(.dnd-caption) {
+        margin-block-start: auto;
     }
 
     span {
@@ -89,6 +92,16 @@
         color: var(--ink-dim);
         border-radius: var(--radius-sm);
         transition: background-color 0.15s ease, color 0.15s ease, text-shadow 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .skills > :global(.dnd-button) {
+        inline-size: var(--space-6);
+        block-size: var(--space-6);
+        aspect-ratio: 1;
+        justify-self: center;
+        --button-text: var(--text-md);
+        --button-pad: 0;
+        font-variant-numeric: lining-nums tabular-nums;
     }
 
     .head {

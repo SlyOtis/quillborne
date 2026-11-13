@@ -27,6 +27,8 @@ version() {
         docker) docker --version | sed 's/.*version \([0-9.]*\).*/\1/' ;;
         az) az version | jq -r '."azure-cli"' ;;
         playwright-cli) brew list --versions playwright-cli 2>/dev/null | awk '{print $2}' ;;
+        nimon) nimon version 2>/dev/null | grep -o "v[0-9.]*" | head -1 ;;
+| awk '{print $2}' ;;
     esac
 }
 
@@ -77,13 +79,16 @@ ensure air "" go_install github.com/air-verse/air@latest
 ensure tygo "" go_install github.com/gzuidhof/tygo@latest
 ensure smig "$SMIG_VERSION" sh -c "GOPRIVATE=github.com/nimling/* go install -ldflags '-X github.com/nimling/samna-migrate/pkg/cli.Version=$SMIG_VERSION' github.com/nimling/samna-migrate/cmd@$SMIG_VERSION && mv '$BIN/cmd' '$BIN/smig'"
 ensure sauth "$SAUTH_VERSION" go_install "github.com/nimling/samna-auth/cmd/sauth@$SAUTH_VERSION"
+ensure nimon "" sh -c "GOPRIVATE=github.com/nimling/* go install github.com/nimling/nimonstrate@latest && mv '$BIN/nimonstrate' '$BIN/nimon'"
 
 case ":$PATH:" in
     *":$BIN:"*) ;;
-    *) echo "Add $BIN to PATH so smig, sauth, air and tygo are found." ;;
+    *) echo "Add $BIN to PATH so smig, sauth, nimon, qubo, air and tygo are found." ;;
 esac
 
 cd web && pnpm install
 cd ..
 go mod download
+just install-cli-skill
+nimon skill install --project
 echo "Installed."

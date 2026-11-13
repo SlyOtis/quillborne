@@ -237,7 +237,7 @@ visit /main "$hearth" "the hearth"
 if [ "$(js "$campaign_card !== null")" = "true" ]; then
   js "$campaign_card.click() ?? null" >/dev/null
   wait_for "location.pathname.startsWith('/main/campaign/')" "a campaign"
-  if visit "$(js "location.pathname")" "document.querySelector('.dnd-shell-mark') !== null && document.querySelector('.dnd-loading') === null" "the campaign"; then
+  if visit "$(js "location.pathname")" "document.querySelector('.dnd-shell-chip') !== null && document.querySelector('.dnd-loading') === null" "the campaign"; then
     campaign_page="$page"
     page="campaign drawers"
     pw click "getByTitle('Toggle the menu')" >/dev/null
@@ -291,7 +291,7 @@ fi
 
 visit /main/create/campaign "document.querySelector('#campaign-prompt') !== null" "the campaign form" && check_page bar
 
-visit /main/user "document.querySelector('.dnd-shell-mark')?.textContent.trim() === 'Profile'" "the profile" && check_page bar
+visit /main/user "document.querySelector('.user-crown') !== null" "the profile" && check_page bar
 
 if [ "${#failures[@]}" -gt 0 ]; then
   printf '\n%d failed\n' "${#failures[@]}"

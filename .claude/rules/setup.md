@@ -10,6 +10,8 @@ Quillborne is a hosted service that signs players in through Samna Auth. A Go se
 
 The web lives in `web/`: `web/src` is the app, `web/public` the static sources and art, `web/test` the walk and its specs. `just dev` starts the database, the local blob store, the service on `SERVER_PORT` and the Vite dev server, and Vite proxies `/api` to the service and nothing else.
 
+The service mounts nimbody's common endpoint set beside its routes: `/status` with its health, `/mcp` serving every `qubo` resource command as a tool, and `/api/state`, the table as data: `GET /api/state` the schema, `POST /api/state/export` every record the caller reaches, `POST /api/state/import` the upsert. `qubo`, built from `cmd/qubo` on nimbody's shared cli layer, is the terminal and the provider over that set; `cli.md` says what a change to it carries.
+
 File originals live in blob storage behind the service: Azure Blob Storage when deployed, Azurite locally on the port the `BlobEndpoint` of `AZURE_STORAGE_CONNECTION_STRING` names, 10000 in `.env.example`. The service streams them with `ETag`, `If-None-Match` and byte ranges, so audio and video play from any point.
 
 AI goes through the service. `/api/ai/*` passes a call on to `REPLICATE_ENDPOINT` with the calling player's own key and streams the answer back; the browser never holds a key and never calls Replicate itself.
@@ -36,10 +38,11 @@ A per player key, such as the Replicate key, is never a key in `.env`, locally o
 
 ## Commands
 
-- `just install` checks every tool the recipes and scripts call for presence and version, go against the `go` line of `go.mod`, node, pnpm, jq, docker, az, playwright-cli, air, smig at the Dockerfile's pin and sauth at the deploy workflow's pin, installs each one that is missing or older than its pin, then installs the web and Go dependencies. sauth is a private nimling module and installs only with read access to it.
+- `just install` checks every tool the recipes and scripts call for presence and version, go against the `go` line of `go.mod`, node, pnpm, jq, docker, az, playwright-cli, air, smig at the Dockerfile's pin and sauth at the deploy workflow's pin, installs each one that is missing or older than its pin, nimon from nimling/nimonstrate at its latest, then installs the web and Go dependencies, the `qubo` cli and the `qubo` and `nimon` skills under `.claude/skills/`. sauth is a private nimling module and installs only with read access to it.
 - `just env` fails when `.env` is missing any key `.env.example` names. `just dev`, `just build` and `just build-web` depend on it.
 - `just dev-db` builds and runs the local Postgres and migrates it, and `just dev-blob` runs Azurite. `just dev` runs both together with the service and the web, and stops them with it; `just dev-server` and `just dev-web` run one each.
-- `just seed` runs the local test data of `test/seed/` into the local database. `just dev` runs it once the database is migrated and before the service starts, so every local run starts with it.
+- `just seed` imports `database/state/local.ndjson` through `qubo state import` against the local service, and `just seed-state <name>` any table under `database/state/`. `just dev` runs it once the service answers, so every local run starts with it.
+- `just build-cli` builds `bin/qubo`, `just install-cli` installs it into Go's bin folder, `just install-cli-completion` its shell completion and `just install-cli-skill` its skill into `.claude/skills/qubo`. `just qubo <args>` runs it from source.
 - `just migrate <args>` runs smig against `database/migrate.yml` on the local database only. No recipe reaches a deployed database; the image's migrate target is what a deploy runs.
 - `just gate` runs check, test, build and vet: svelte-check, vitest, `go test ./...`, the web and server builds, and `go vet`. Zero errors and zero warnings; a new warning is a regression.
 - There is no deploy recipe. A merge to `main` runs `.github/workflows/azure-deploy.yml`: the image, the migrate job, the login and redirect pages, and the container app, all tagged with the first twelve characters of the commit, which is also the version the service reports. Every build, local ones included, stamps that same commit.
@@ -58,18 +61,13 @@ Every worktree runs a local stack of its own, side by side with the others, so e
 
 ## Local test data
 
-`test/seed/` is the table a local run starts with. `users.json` names the debug players: `testy`, the `SAUTH_DEBUG_USER_ID` every local request signs in as, and `pip`, the second player. The `debug` migration step seeds both identities and Pip's profile. Every other `*.json` there is a list of steps, run in file name order:
+`database/state/` holds the tables as `/api/state` documents: `local.ndjson`, the table a local run starts with, and `tst.ndjson`, the tst table as `qubo state export` wrote it. A document is one header line, then one record per line: `group`, the table; `key`, the name the record is known by across imports, a saved name such as `ember` or `tobrin` in the local table and the row's id in an export; `data`, the fields the handler's body takes, with `owner_id`, `dm_id`, `author_id` or `user_id` naming the player who owns the row; and `refs`, the records it points at by key, `campaign_id`, `parent_id`, `tag_id`, `asset_id`. Ids inside a json field, a crew member's `character_id`, a combatant's `character_id`, a marker's `record_id`, a page's `share_campaigns`, are keys too and are mapped on import. The debug players are `testy`, `1d0c0000-0000-4000-8000-000000000001`, the `SAUTH_DEBUG_USER_ID` every local request signs in as, and `pip`, `1d0c0000-0000-4000-8000-000000000002`; the `debug` migration step seeds both identities and Pip's profile.
 
-- `as` names the player who makes the call.
-- `call` is a method and an `/api` path, the way `handler.PutRoutes` mounts it.
-- `body` is the JSON it sends.
-- `save` keeps the id the call answers with under a name, which a later `call` or `body` writes as `${name}`. A player's name works the same way: `${pip}`.
+`just seed-state <name>` runs `qubo state import database/state/<name>.ndjson` against the running local service, and `just dev` runs `just seed`, the local table, once the service answers. The import upserts by key in dependency order, and every record goes through the handlers of `handler.PutRoutes` in process, so every row and every claim is made the way a player makes it on tst; nothing writes the tables or claimius directly. On a local run the service signs the caller in as Testy and the import acts as each record's owner, so Pip's sheets and Pip's table come up as Pip's; on tst every row is made by the caller. A record that fails is reported with its group, its key and the handler's answer, and the import's exit code is 3.
 
-The steps run in process through `handler.PutRoutes` as the player they name, so every row and every claim is made by the handlers, the way it is on tst. Nothing writes the tables or claimius directly. The seed refuses to run without `SAUTH_DEBUG_USER_ID`, which is empty on tst, and nothing under `test/` reaches the image. The first step that fails stops `just dev` with its file, its number and the answer.
+A change that adds or alters something a player sees adds or updates its records in the same branch. A new kind of row gets one or two records, in the campaign it belongs to, and a changed body changes the records that carry it. When the DM and a player see it differently, the records show both sides, the way the Ember Road keeps one page from its players and makes one roll hidden. Keep it small: enough to show each feature once. A file's bytes travel as a blob in the document when it is exported with `--blobs`.
 
-A change that adds or alters something a player sees adds or updates its steps in the same branch. A new kind of row gets one or two examples, in the campaign it belongs to or in a new numbered file for a new concern, and a changed body changes the steps that send it. When the DM and a player see it differently, the steps show both sides, the way the Ember Road keeps one page from its players and makes one roll hidden. Keep it small: enough to show each feature once. Bytes a step cannot send as JSON, such as a map image or a song, wait for a step that can.
-
-`test/seed/main_test.go`, run by `just test`, proves every step names a player, uses only names that earlier steps saved, sends JSON and reaches a mounted route. `just dev` is what proves the handlers accept it.
+`test/go/state_test.go`, run by `just test`, pins `internal/qubo/state.json` to the state groups, proves an import upserts by key and that a player exports only what their claims bind. `just dev` is what proves the local table imports.
 
 ## Tests
 

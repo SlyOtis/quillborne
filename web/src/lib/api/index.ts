@@ -618,6 +618,8 @@ export interface SearchBody {
   ids?: string[]
   exclude_ids?: string[]
   tag_ids?: string[]
+  parent_id?: string
+  parent_type?: string
   limit?: number
 }
 

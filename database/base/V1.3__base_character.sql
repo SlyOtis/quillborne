@@ -19,10 +19,6 @@ CREATE TABLE IF NOT EXISTS character (
 CREATE INDEX IF NOT EXISTS idx_character_user ON character (user_id, sa_updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_character_campaign ON character (campaign_id);
 
-ALTER TABLE character ADD COLUMN IF NOT EXISTS name TEXT NOT NULL DEFAULT '';
-ALTER TABLE character ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT '';
-UPDATE character SET name = coalesce(metadata->>'name', sheet->'info'->>'name', ''), description = coalesce(sheet->'info'->>'description', '') WHERE name = '';
-
 COMMENT ON TABLE character IS 'A player character: the sheet the rules engine resolves, its summary and the sources it was imported from';
 COMMENT ON COLUMN character.id IS 'The character id';
 COMMENT ON COLUMN character.user_id IS 'The player the character belongs to';

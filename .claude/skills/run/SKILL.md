@@ -116,7 +116,7 @@ shell. A plain `&`, `set -m` in a non-interactive zsh, and `bash -mc` all leave 
 perl -MPOSIX -e 'setsid or die "setsid: $!"; exec @ARGV' just dev > "/tmp/$name-dev.log" 2>&1 &
 ```
 
-It starts Postgres and migrates it, Azurite, the local test data, the service under air and Vite. Wait for Vite's `Local:` line in the
+It starts Postgres and migrates it, Azurite, Vite and the service under air, then imports the local table of `database/state/local.ndjson` through `qubo state import` once the service answers. Wait for Vite's `Local:` line in the
 log and for the service port to answer, then measure through Vite's address:
 
 ```sh
@@ -143,8 +143,8 @@ error.
 Tell the user:
 
 - the address, which worktree and branch it serves, and that they are signed in as Testy McTestface
-- that the database starts with the local test data of `test/seed/` on every `just dev` and is removed when it
-  stops: Testy runs one campaign with Pip at the table and sits at Pip's
+- that the database starts with the local table of `database/state/local.ndjson` on every `just dev` and is removed
+  when it stops: Testy runs one campaign with Pip at the table and sits at Pip's
 - that Go changes rebuild and web changes hot reload
 - that the AI features need their own Replicate key, saved on `/user`, and that everything else works without one
 - that it runs in the background, with its log in `/tmp/$name-dev.log`, until they ask you to stop it
@@ -152,9 +152,9 @@ Tell the user:
 ## When it does not come up
 
 - `Image <folder>-db not found`: go back to step 4.
-- `seed: <file> step <n> (...): answered <status>`: a step in `test/seed/` no longer matches the api, or the
-  database image predates a migration the step needs. Run `just build-db` when anything under `database/` changed,
-  otherwise fix the step the way `setup.md` says.
+- `qubo: <n> of <m> records refused`, each with its group, key and the handler's answer: a record in
+  `database/state/local.ndjson` no longer matches the api, or the database image predates a migration it needs. Run
+  `just build-db` when anything under `database/` changed, otherwise fix the record the way `setup.md` says.
 - `air: not found`: Go's bin folder is not on `PATH`.
 - A port is already in use, or Vite says `Port <n> is already in use`: go back to step 5.
 - The dev server answers 504 Outdated Optimize Dep after `just gate` or `just build`: both remove

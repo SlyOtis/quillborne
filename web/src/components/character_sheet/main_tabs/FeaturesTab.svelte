@@ -66,16 +66,16 @@
     }
 
     ul {
-        padding: var(--space-2) var(--space-3);
+        padding: var(--space-1) var(--space-2);
     }
 
     li {
-        margin-bottom: var(--space-3);
+        margin-bottom: var(--space-2);
     }
 
     li:not(:last-child) {
-        padding-bottom: var(--space-4);
-        margin-bottom: var(--space-4);
+        padding-bottom: var(--space-2);
+        margin-bottom: var(--space-2);
     }
 
     li:not(:last-child)::after {
@@ -113,7 +113,7 @@
         letter-spacing: var(--tracking-caps);
         text-transform: uppercase;
         color: var(--ink-faint);
-        margin-bottom: var(--space-3);
+        margin-bottom: var(--space-1);
     }
 
 </style>

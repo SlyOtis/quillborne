@@ -78,6 +78,11 @@
       component: page("CharacterPage", () => import("./pages/CharacterPage.svelte")),
       guard: requireSignIn
     },
+    "/main/scribe": {
+      name: "scribe",
+      component: page("ScribePage", () => import("./pages/ScribePage.svelte")),
+      guard: requireSignIn
+    },
     "/main/user": {
       name: "user",
       component: page("UserPage", () => import("./pages/UserPage.svelte")),
@@ -259,7 +264,10 @@
   .loading-mark {
     display: block;
     inline-size: clamp(4rem, 12vw, 7rem);
-    aspect-ratio: 1;
+    aspect-ratio: 100 / 120;
+    object-fit: cover;
+    -webkit-mask: var(--mask-shield) center / 100% 100% no-repeat;
+    mask: var(--mask-shield) center / 100% 100% no-repeat;
     margin-bottom: var(--space-2);
     filter: drop-shadow(0 0 1.5rem var(--ember-glow));
   }

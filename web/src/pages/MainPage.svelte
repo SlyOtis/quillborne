@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { getCampaigns, getCharacters } from '$lib/api'
-  import type { Campaign, Character } from '$lib/api/types'
+  import { getCampaigns, getCharacters, getProfiles } from '$lib/api'
+  import type { Campaign, Profile } from '$lib/api/types'
   import { getTheme, setTheme } from "$lib/dialogs/theme";
   import { onMount, setContext, onDestroy } from "svelte";
   import { getCharacterStore } from "$lib/engine";
@@ -14,10 +14,12 @@
   import CharactersPanel from "./main/CharactersPanel.svelte";
   import CampaignsPanel from "./main/CampaignsPanel.svelte";
   import Portrait from "$components/ui/Portrait.svelte";
-  import Button from "$components/ui/Button.svelte";
-  import Shell from "$components/ui/Shell.svelte";
+  import Card from "$components/ui/Card.svelte";
   import Sigil from "$components/ui/Sigil.svelte";
+  import { getAll, type Resource } from "$lib/resources";
+  import Shell from "$components/ui/Shell.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
+  import IconBtn from "$components/ui/IconBtn.svelte";
 
   const {unsubscribe, ...chStore} = getCharacterStore('local')
   const unsubscribeSidebar = sidebarStore.subscribe(() => {});
@@ -34,6 +36,10 @@
   let loading = $state(true);
   let campaignSearch = $state('');
   let characterSearch = $state('');
+  let campaignsOpen = $state(false);
+  let charactersOpen = $state(false);
+  let profiles = $state<Record<string, Profile>>({});
+  let lore = $state<{ entry: Resource; campaign: Campaign | null }[]>([]);
 
   const name = $derived($userDetails?.display_name || $userProfile?.display_name || 'Adventurer');
   const newestCharacter = $derived(getRecentFirst($userCharacters, $userProfile?.preferences?.recent_characters ?? [])[0] ?? null);
@@ -49,6 +55,10 @@
       ]);
       userCharacters.set(characters);
       userCampaigns.set(campaigns);
+      const holders = await getProfiles(characters.filter((one) => one.campaign_id).map((one) => one.owner_id));
+      profiles = Object.fromEntries(holders.map((one) => [one.user_id, one]));
+      const shelves = await Promise.all(campaigns.map(async (campaign) => (await getAll({ at: 'campaign', id: campaign.id }, 'entries')).map((entry) => ({ entry, campaign }))));
+      lore = shelves.flat().sort((a, b) => String(b.entry.created_at ?? '').localeCompare(String(a.entry.created_at ?? ''))).slice(0, 6);
     } catch (err) {
       postNotice(err instanceof Error ? err.message : 'The archive did not answer');
     } finally {
@@ -99,8 +109,9 @@
         </div>
       {/if}
       <div class="hall-hero-acts">
-        <Button variant="primary" size="md" onclick={createCharacter}>Forge a Character</Button>
-        <Button variant="secondary" size="md" onclick={createCampaign}>Raise a Campaign</Button>
+        <Sigil title="Forge a character" size="sm" onclick={createCharacter}><Glyph name="character" size="sm" /></Sigil>
+        <Sigil title="Raise a campaign" size="sm" onclick={createCampaign}><Glyph name="campaign" size="sm" /></Sigil>
+        <Sigil title="Write lore" size="sm" onclick={() => navigate('/main/scribe')}><Glyph name="edit" size="sm" /></Sigil>
       </div>
     </section>
 
@@ -109,9 +120,10 @@
         <h2 class="dnd-label hall-divide-name">Campaigns</h2>
         <span class="hall-divide-note">{$userCampaigns.length} under way</span>
         <span class="hall-divide-run"></span>
-        <Sigil title="Raise a new campaign" tone="verdigris" size="sm" onclick={createCampaign} frame="plate"><Glyph name="campaign" size="sm" /></Sigil>
+        <IconBtn title={campaignsOpen ? 'Collapse the campaigns' : 'Expand all campaigns'} onclick={() => (campaignsOpen = !campaignsOpen)}><Glyph name={campaignsOpen ? 'fold' : 'unfold'} size="sm" /></IconBtn>
+        <IconBtn title="Raise a new campaign" onclick={createCampaign}><Glyph name="campaign" size="sm" /></IconBtn>
       </header>
-      <CampaignsPanel {loading} />
+      <CampaignsPanel {loading} bind:open={campaignsOpen} />
     </section>
 
     <section class="hall-plot hall-plot-roll" aria-label="Characters">
@@ -119,9 +131,32 @@
         <h2 class="dnd-label hall-divide-name">Characters</h2>
         <span class="hall-divide-note">{$userCharacters.length} on the roll</span>
         <span class="hall-divide-run"></span>
-        <Sigil title="Forge a new character" tone="ember" size="sm" onclick={createCharacter} frame="star"><Glyph name="character" size="sm" /></Sigil>
+        <IconBtn title={charactersOpen ? 'Collapse the characters' : 'Expand all characters'} onclick={() => (charactersOpen = !charactersOpen)}><Glyph name={charactersOpen ? 'fold' : 'unfold'} size="sm" /></IconBtn>
+        <IconBtn title="Forge a new character" onclick={createCharacter}><Glyph name="character" size="sm" /></IconBtn>
       </header>
-      <CharactersPanel {loading} />
+      <CharactersPanel {loading} bind:open={charactersOpen} {profiles} />
+    </section>
+
+    <section class="hall-plot hall-plot-lore" aria-label="Lore">
+      <header class="hall-divide">
+        <h2 class="dnd-label hall-divide-name">Lore</h2>
+        <span class="hall-divide-note">{lore.length === 0 ? 'Nothing written yet' : 'The latest entries'}</span>
+        <span class="hall-divide-run"></span>
+        <IconBtn title="Write lore" onclick={() => navigate('/main/scribe')}><Glyph name="edit" size="sm" /></IconBtn>
+      </header>
+      {#if lore.length > 0}
+        <div class="hall-lore">
+          {#each lore as { entry, campaign } (entry.id)}
+            <Card
+              title={entry.title}
+              sub={entry.description}
+              badge={campaign?.name}
+              tone="metal"
+              onclick={() => navigate(`/main/campaign/${campaign?.id}/entries/${entry.id}`)}
+            />
+          {/each}
+        </div>
+      {/if}
     </section>
   </div>
 </Shell>
@@ -177,9 +212,11 @@
     max-width: calc(var(--space-8) * 5);
     min-width: 0;
     min-block-size: calc(var(--space-8) * 2);
+    max-block-size: 100%;
     justify-content: center;
-    margin-inline-end: calc(var(--space-8) * -1);
-    padding: var(--space-4) calc(var(--space-8) + var(--space-5)) var(--space-4) calc(var(--flag-tail) + var(--space-4));
+    overflow: hidden;
+    margin-inline-end: calc(var(--space-8) * -1.5);
+    padding: var(--space-4) calc(var(--space-8) * 1.5 + var(--space-5)) var(--space-4) calc(var(--flag-tail) + var(--space-4));
     color: var(--ink);
     text-decoration: none;
     text-align: end;
@@ -217,6 +254,9 @@
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .hall-hero-flag-lede {
@@ -224,11 +264,9 @@
     font-size: var(--text-xs);
     font-style: italic;
     color: var(--ink-dim);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
     overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .hall-hero-word {
@@ -251,7 +289,10 @@
     letter-spacing: var(--tracking-caps);
     color: var(--metal-bright);
     text-shadow: 0 0.125rem 0 var(--ground-deep), 0 0 0.125rem var(--ground-deep), 0 0 1rem var(--ember-glow), 0 0 2.5rem color-mix(in srgb, var(--ember-glow) 60%, transparent);
-    overflow-wrap: anywhere;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .hall-hero-note {
@@ -289,11 +330,12 @@
   .hall-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr);
     grid-template-areas:
       'hero'
       'camps'
-      'roll';
+      'roll'
+      'lore';
     column-gap: var(--space-6);
     row-gap: var(--space-6);
     min-width: 0;
@@ -312,6 +354,17 @@
 
   .hall-plot-roll {
     grid-area: roll;
+  }
+
+  .hall-plot-lore {
+    grid-area: lore;
+  }
+
+  .hall-lore {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
+    gap: var(--space-4);
+    min-width: 0;
   }
 
   .hall-divide {
