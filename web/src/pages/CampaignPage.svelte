@@ -75,7 +75,7 @@
 
   const CAP = 5
 
-  let more = $state<Record<string, boolean>>({ npcs: false, places: false })
+  let more = $state<Record<string, boolean>>({ npcs: false })
 
   function cut<T>(rows: T[], id: string): T[] {
     return more[id] ? rows : rows.slice(0, CAP)
@@ -287,25 +287,6 @@
             </div>
           {/if}
         </section>
-
-        <section class="camp-plot camp-plot-places" aria-label="Places">
-          <header class="camp-divide">
-            <h2 class="dnd-label camp-divide-name">Places</h2>
-            <span class="camp-divide-note">{places.length} places, {maps.length} maps</span>
-            <span class="camp-divide-run"></span>
-            {@render fold('places', places.length)}
-          </header>
-          {#if places.length === 0 && maps.length === 0}
-            <p class="camp-note">Nothing has been charted yet.</p>
-          {:else}
-            <div class="camp-list">
-              {#each cut(places, 'places') as place (place.id)}
-                <ResourceCard under="/main/campaign/{campaignId}/places" kind="places" one={place} tone="verdigris" />
-              {/each}
-              {@render rest('places', places.length)}
-            </div>
-          {/if}
-        </section>
       </div>
     {:else if tab === 'party'}
       <Panel title="Party">
@@ -376,8 +357,7 @@
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       'roll'
-      'npcs'
-      'places';
+      'npcs';
     align-content: start;
     column-gap: var(--space-6);
     row-gap: var(--space-6);
@@ -397,10 +377,6 @@
 
   .camp-plot-npcs {
     grid-area: npcs;
-  }
-
-  .camp-plot-places {
-    grid-area: places;
   }
 
   .camp-divide {
