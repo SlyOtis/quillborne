@@ -114,8 +114,8 @@
     return svg
   }
 
-  const VIEWED: Block['kind'][] = ['image', 'audio', 'video', 'pdf', 'embed', 'map', 'bookmark', 'page']
-  const EMPTIED: Block['kind'][] = ['image', 'audio', 'video', 'pdf', 'embed', 'map', 'bookmark', 'file']
+  const VIEWED: Block['kind'][] = ['image', 'video', 'pdf', 'embed', 'map', 'bookmark', 'page']
+  const EMPTIED: Block['kind'][] = ['image', 'video', 'pdf', 'embed', 'map', 'bookmark', 'file']
 </script>
 
 <div class="dnd-read" class:dnd-read-legended={sides.length > 0} class:dnd-read-legended-left={sides.includes('left')} class:dnd-read-legended-right={sides.includes('right')}>
@@ -129,7 +129,7 @@
           </p>
         {:else if block.options.view === 'icon'}
           <p class="dnd-read-line dnd-read-iconrow">
-            <Glyph name={block.kind === 'image' ? 'picture' : block.kind === 'audio' ? 'sound' : 'sources'} size="sm" />
+            <Glyph name={block.kind === 'image' ? 'picture' : 'sources'} size="sm" />
             <a class="dnd-read-link" href={address(block)} target="_blank" rel="noreferrer noopener">{nameOf(block)}</a>
           </p>
         {/if}
@@ -292,11 +292,6 @@
             </button>
           {/each}
         </section>
-      {:else if block.kind === 'audio'}
-        <p class="dnd-read-line dnd-read-iconrow">
-          <Glyph name="sound" size="sm" />
-          <a class="dnd-read-link dnd-read-sound-link" href={address(block)} target="_blank" rel="noreferrer noopener">{nameOf(block)}</a>
-        </p>
       {:else if block.kind === 'video'}
         <figure class="dnd-read-sound dnd-read-video">
           {#await getFileUrl(block.options.src ?? '') then url}

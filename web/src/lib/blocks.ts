@@ -12,7 +12,6 @@ export type BlockKind =
   | 'table'
   | 'toggle'
   | 'poll'
-  | 'audio'
   | 'bookmark'
   | 'mermaid'
   | 'html'
@@ -189,7 +188,7 @@ export interface MediaAsset {
 
 const KINDS: BlockKind[] = [
   'paragraph', 'heading', 'quote', 'code', 'bullet', 'number', 'divider', 'callout', 'image',
-  'todo', 'table', 'toggle', 'poll', 'audio', 'bookmark', 'mermaid', 'html', 'toc', 'columns',
+  'todo', 'table', 'toggle', 'poll', 'bookmark', 'mermaid', 'html', 'toc', 'columns',
   'video', 'pdf', 'embed', 'meeting', 'map', 'page', 'file'
 ]
 
@@ -197,7 +196,7 @@ const LINKED: BlockKind[] = ['video', 'pdf', 'page']
 const LISTED: BlockKind[] = ['bullet', 'number', 'todo']
 const TEXTED: NodeKind[] = [
   'paragraph', 'heading', 'code', 'mermaid', 'html', 'table', 'poll', 'meeting',
-  'image', 'video', 'audio', 'pdf', 'bookmark', 'embed', 'map', 'page', 'toggle'
+  'image', 'video', 'pdf', 'bookmark', 'embed', 'map', 'page', 'toggle'
 ]
 const HOLDING: NodeKind[] = ['bullet', 'number', 'todo', 'item', 'quote', 'callout', 'toggle', 'columns', 'column']
 const RAW: NodeKind[] = ['code', 'mermaid', 'html', 'table', 'poll', 'meeting', 'embed', 'map']
@@ -701,7 +700,7 @@ export function getBlockMarkdown(block: Block): string {
   if (block.kind === 'divider') return '---'
   if (block.kind === 'toc' && plain) return '[toc]'
 
-  const own: BlockKind[] = ['table', 'toggle', 'poll', 'audio', 'bookmark', 'mermaid', 'html', 'columns', 'embed', 'meeting', 'map', 'file']
+  const own: BlockKind[] = ['table', 'toggle', 'poll', 'bookmark', 'mermaid', 'html', 'columns', 'embed', 'meeting', 'map', 'file']
   if (!plain || own.includes(block.kind) || (block.kind === 'heading' && block.text.includes('\n'))) return getFence(block, getHeld(block))
 
   if (block.kind === 'image') return `![${(block.options.alt ?? '').replace(/\s*\n\s*/g, ' ')}](${block.options.src ?? ''})`
@@ -1225,8 +1224,6 @@ function getBlockHtml(block: Block, number: string | undefined, blocks: Block[])
         .map((choice) => `<li>${escape(choice.trim())} (${votes.filter((one) => one === choice.trim()).length})</li>`)
         .join('')}</ul></section>`
     }
-    case 'audio':
-      return `<figure><audio controls src="${escape(block.options.src ?? '')}"></audio>${block.text ? `<figcaption>${escape(block.text)}</figcaption>` : ''}</figure>`
     case 'video':
       return `<figure><video controls src="${escape(block.options.src ?? '')}"></video>${block.text ? `<figcaption>${escape(block.text)}</figcaption>` : ''}</figure>`
     case 'pdf':
@@ -1366,7 +1363,7 @@ export function getBlockEmailHtml(block: Block): string {
     return `<div style="${body}"><strong style="color:${MAIL.metal}">${escape(ask ?? '')}</strong></div>${tally.join('')}`
   }
 
-  if (block.kind === 'audio' || block.kind === 'video' || block.kind === 'pdf') {
+  if (block.kind === 'video' || block.kind === 'pdf') {
     const src = escape(block.options.src ?? '')
     return `<div style="${body}"><a href="${src}" style="color:${MAIL.metal}">${escape(block.text || src)}</a></div>`
   }

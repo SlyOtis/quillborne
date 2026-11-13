@@ -36,7 +36,6 @@
     { kind: 'poll', title: 'Poll', group: 'Block', mark: '?', description: 'A question the table votes on', keywords: ['vote', 'poll', 'question'] },
     { kind: 'image', title: 'Image', group: 'Media', icon: 'picture', description: 'Embed an image', keywords: ['picture', 'photo'] },
     { kind: 'video', title: 'Video', group: 'Media', mark: '▶', description: 'Embed a video', keywords: ['video', 'movie'] },
-    { kind: 'audio', title: 'Recording', group: 'Media', icon: 'sound', description: 'Record from the microphone', keywords: ['record', 'audio', 'sound'] },
     { kind: 'pdf', title: 'PDF', group: 'Media', mark: 'P', description: 'Embed a PDF', keywords: ['pdf', 'document'] },
     { kind: 'file', title: 'File', group: 'Media', icon: 'sources', description: 'Attach a file', keywords: ['file', 'attachment', 'upload'] },
     { kind: 'bookmark', title: 'Link', group: 'Media', mark: '↗', description: 'Link preview card', keywords: ['link', 'bookmark', 'url'] },
@@ -177,6 +176,7 @@
   type Target = { parentId: string | null; refId: string | null; before: boolean }
   type Made = { node: BlockNode; created: BlockNode[] }
   type Pop = { id: string; from: number; to: number; query: string; top: number; left: number }
+  type PickedKind = Exclude<MediaKind, 'audio'>
 
   const THRESHOLD = 4
   const COALESCE_MS = 400
@@ -239,16 +239,15 @@
   const MEDIA_NAMES: Partial<Record<NodeKind, string>> = {
     image: 'image',
     video: 'video',
-    audio: 'recording',
     pdf: 'PDF',
     bookmark: 'link',
     embed: 'embed',
     map: 'map',
     file: 'file'
   }
-  const VIEWED: NodeKind[] = ['audio', 'video', 'pdf', 'file', 'bookmark', 'embed', 'page']
+  const VIEWED: NodeKind[] = ['video', 'pdf', 'file', 'bookmark', 'embed', 'page']
   const PICKED: NodeKind[] = ['image', 'video', 'pdf', 'file']
-  const UPLOADED: NodeKind[] = ['image', 'video', 'audio', 'pdf', 'file']
+  const UPLOADED: NodeKind[] = ['image', 'video', 'pdf', 'file']
   const LINED: NodeKind[] = ['embed', 'map']
 
   let tree = $state<BlockTree>(getTree(getDocument(value).blocks))
@@ -266,7 +265,6 @@
   let chosen = $state(0)
   let pageSearch = $state<{ id: string; query: string; picks: Mention[]; seeking: boolean; chosen: number } | null>(null)
   let drag = $state<{ id: string | null; made: Made | null; on: boolean; x: number; y: number; ghost: string; target: Target | null } | null>(null)
-  let taping = $state<string | null>(null)
   let frame = $state<HTMLElement>()
   let surface = $state<HTMLElement>()
   let panel = $state<HTMLElement>()
@@ -279,7 +277,6 @@
   let future: { tree: BlockTree; selection: Selection | null }[] = []
   let lastAt = 0
   let coalescing = false
-  let taper: MediaRecorder | null = null
   let pressing = false
   let anchorId: string | null = null
   let handlePress: { x: number; y: number; id: string } | null = null
@@ -1174,7 +1171,7 @@
       })
       return
     }
-    if (isTextKind(kind) && !isHoldingKind(kind) && !PICKED.includes(kind) && !LINED.includes(kind) && kind !== 'audio' && kind !== 'bookmark') {
+    if (isTextKind(kind) && !isHoldingKind(kind) && !PICKED.includes(kind) && !LINED.includes(kind) && kind !== 'bookmark') {
       if (kind === 'meeting' && tree.nodes[id]?.kind === 'paragraph' && getInlineLength(inlineOf(id)) === 0) {
         dispatch(() => placeBlock(id, getMade(kind, options)))
         return
@@ -1187,13 +1184,13 @@
       return
     }
     if (PICKED.includes(kind) && requestMedia) {
-      void placeMedia(id, kind as MediaKind, options)
+      void placeMedia(id, kind as PickedKind, options)
       return
     }
     dispatch(() => placeBlock(id, getMade(kind, options)))
   }
 
-  async function placeMedia(id: string, kind: MediaKind, options: BlockOptions) {
+  async function placeMedia(id: string, kind: PickedKind, options: BlockOptions) {
     const asset = await requestMedia?.(kind)
     if (asset === null) return
     if (!tree.nodes[id]) return
@@ -2044,11 +2041,9 @@
         break
       case 'image':
       case 'video':
-      case 'pdf':
-      case 'audio': {
+      case 'pdf': {
         const name = MEDIA_NAMES[kind] ?? kind
-        if (kind === 'audio') own.push({ title: taping === first.id ? 'Stop the recording' : 'Record', glyph: taping === first.id ? 'stop' : 'record', description: 'From the microphone', run: () => void recordSound(first.id) })
-        own.push(mediaField(first, kind as MediaKind, `Replace ${name}`, first.options.src ?? '', 'src'))
+        own.push(mediaField(first, kind as PickedKind, `Replace ${name}`, first.options.src ?? '', 'src'))
         break
       }
       case 'bookmark': {
@@ -2159,7 +2154,7 @@
     return [...shared, ...kept, { title: 'Delete', glyph: 'remove', description: removeLabel, bane: true, run: deleteAll }]
   }
 
-  function mediaField(held: BlockNode, kind: MediaKind, title: string, current: string, key: 'src' | 'url'): Option {
+  function mediaField(held: BlockNode, kind: PickedKind, title: string, current: string, key: 'src' | 'url'): Option {
     const description = current || `No ${MEDIA_NAMES[kind] ?? kind} set`
     if (requestMedia) {
       return {
@@ -2286,34 +2281,7 @@
     })
   }
 
-  async function recordSound(id: string) {
-    if (taping === id) {
-      taper?.stop()
-      return
-    }
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-    const held: Blob[] = []
-    const tape = new MediaRecorder(stream)
-    tape.ondataavailable = (event) => held.push(event.data)
-    tape.onstop = async () => {
-      stream.getTracks().forEach((track) => track.stop())
-      taping = null
-      taper = null
-      const sound = new File(held, `recording-${Date.now()}.webm`, { type: 'audio/webm' })
-      const asset = uploadFile ? await uploadFile(sound, 'audio').catch(() => null) : null
-      const target = tree.nodes[id]
-      if (!asset || !target) return
-      dispatch(() => {
-        target.options.src = asset.url
-        return undefined
-      })
-    }
-    taper = tape
-    taping = id
-    tape.start()
-  }
-
-  async function pick(id: string, kind: MediaKind) {
+  async function pick(id: string, kind: PickedKind) {
     const held = tree.nodes[id]
     if (!held || !requestMedia) return
     const current = kind === 'file' ? held.options.url : held.options.src
@@ -2425,8 +2393,6 @@
         return 'The question, then one choice per line'
       case 'bookmark':
         return 'What the link is called'
-      case 'audio':
-        return 'What the recording is'
       case 'video':
         return 'What the video shows'
       case 'pdf':
@@ -2507,7 +2473,7 @@
   ></svelte:element>
 {/snippet}
 
-{#snippet vacant(held: BlockNode, kind: MediaKind, title: string, hintText: string, glyph: GlyphName, row: boolean)}
+{#snippet vacant(held: BlockNode, kind: PickedKind, title: string, hintText: string, glyph: GlyphName, row: boolean)}
   <button type="button" class="dnd-write-empty" class:dnd-write-empty-row={row} disabled={!requestMedia} onclick={() => pick(held.id, kind)}>
     <span class="dnd-write-empty-art" aria-hidden="true"><Glyph name={glyph} size={row ? 'md' : 'lg'} /></span>
     <span class="dnd-write-empty-text">
@@ -2720,15 +2686,15 @@
           {/if}
         {/await}
       {/if}
-      {#if UPLOADED.includes(held.kind) && !held.options.src && taping !== held.id}
+      {#if UPLOADED.includes(held.kind) && !held.options.src}
         {@const name = MEDIA_NAMES[held.kind] ?? held.kind}
         {@render vacant(
           held,
-          held.kind as MediaKind,
+          held.kind as PickedKind,
           `Add ${held.kind === 'image' ? 'an' : 'a'} ${name}`,
-          held.kind === 'audio' ? 'Press to upload or pick one, or record from the block menu' : `Press to upload or pick ${held.kind === 'image' ? 'an' : 'a'} ${name}`,
-          held.kind === 'image' ? 'picture' : held.kind === 'video' ? 'play' : held.kind === 'audio' ? 'sound' : 'scroll',
-          held.kind === 'audio'
+          `Press to upload or pick ${held.kind === 'image' ? 'an' : 'a'} ${name}`,
+          held.kind === 'image' ? 'picture' : held.kind === 'video' ? 'play' : 'scroll',
+          false
         )}
       {/if}
       {#if held.kind === 'bookmark' && !held.options.url}
@@ -2749,18 +2715,8 @@
       {#if held.kind === 'poll' || held.kind === 'meeting'}
         <span class="dnd-write-card-sign" aria-hidden="true">{held.kind === 'poll' ? '?' : '◷'}</span>
       {/if}
-      {#if held.kind === 'audio'}
-        <button
-          type="button"
-          class="dnd-write-record"
-          aria-pressed={taping === held.id}
-          aria-label={taping === held.id ? 'Stop the recording' : 'Record'}
-          title={taping === held.id ? 'Stop the recording' : 'Record'}
-          onclick={() => recordSound(held.id)}
-        ><Glyph name={taping === held.id ? 'stop' : 'record'} size="sm" /></button>
-      {/if}
       {@render text(held, isRawKind(held.kind) && !LINED.includes(held.kind) ? 'pre' : 'p', '')}
-      {#if (held.kind === 'bookmark' || held.kind === 'pdf' || held.kind === 'audio') && address(held)}
+      {#if (held.kind === 'bookmark' || held.kind === 'pdf') && address(held)}
         <span class="dnd-write-where">{address(held)}</span>
       {/if}
       {#if held.kind === 'bookmark' && held.options.description}
@@ -3466,18 +3422,6 @@
   .dnd-write-figure-hero :global(img) {
     height: 100%;
     object-fit: cover;
-  }
-
-  .dnd-write-record {
-    flex: none;
-    display: flex;
-    align-items: center;
-    height: 1.6em;
-    padding: 0;
-    border: none;
-    background: none;
-    color: var(--metal);
-    cursor: pointer;
   }
 
   .dnd-write-where {
