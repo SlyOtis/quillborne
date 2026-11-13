@@ -15,6 +15,7 @@
     backdrop = true,
     closeOnBackdropClick = true,
     closeOnEscape = true,
+    place = 'center',
     zIndex = 1000,
     children
   }: {
@@ -28,6 +29,7 @@
     backdrop?: boolean;
     closeOnBackdropClick?: boolean;
     closeOnEscape?: boolean;
+    place?: 'center' | 'top';
     zIndex?: number;
     children?: Snippet;
   } = $props();
@@ -88,6 +90,7 @@
   <div
     bind:this={dialogElement}
     class="dialog"
+    class:dialog-top={place === 'top'}
     style="width: {width}; max-width: {maxWidth}; max-height: {maxHeight}; z-index: {zIndex + 1};"
     tabindex="-1"
     role="dialog"
@@ -173,6 +176,11 @@
       0 0 0 1px var(--keyline);
     outline: none;
     animation: dialog-enter 0.22s ease-out;
+  }
+
+  .dialog-top {
+    top: 10vh;
+    transform: translateX(-50%);
   }
 
   .dialog::before {

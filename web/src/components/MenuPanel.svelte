@@ -3,8 +3,8 @@
   import { uiStore, menuView, soundBoard } from '$lib/stores/ui.store'
   import { currentCampaignId, userCampaigns } from '$lib/stores/campaign.store'
   import { openLibrary } from '$lib/music'
-  import Button from '$components/ui/Button.svelte'
   import Glyph from '$components/ui/Glyph.svelte'
+  import Sigil from '$components/ui/Sigil.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
   import MainMenu from '$components/MainMenu.svelte'
   import SoundBoardComponent from '$components/soundboard/SoundBoard.svelte'
@@ -65,10 +65,9 @@
 </div>
 
 {#snippet back()}
-  <Button variant="ghost" size="sm" title="Back to the navigator" onclick={uiStore.openMenu}>
+  <Sigil title="Back to the navigator" size="sm" onclick={uiStore.openMenu}>
     <Glyph name="back" size="sm" />
-    Navigator
-  </Button>
+  </Sigil>
 {/snippet}
 
 {#snippet head()}

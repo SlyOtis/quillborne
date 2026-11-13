@@ -10,11 +10,9 @@
   import Tree, { type TreeRow } from '$components/ui/Tree.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
   import Glyph from '$components/ui/Glyph.svelte'
-  import ShortcutDialog from '$components/ShortcutDialog.svelte'
   import { actionBlocks, getAction, shortcuts } from '$lib/actions'
   import { uiStore } from '$lib/stores/ui.store'
 
-  let addOpen = $state(false)
   let campaign = $state<Campaign | null>(null)
   let characters = $state<Character[]>([])
   let places = $state<Place[]>([])
@@ -167,6 +165,12 @@
   </div>
 
   <footer class="dnd-menu-foot" aria-label="Actions">
+    <span class="dnd-menu-foot-cell">
+      <IconBtn title="Scribe" active={$currentRoute.path === '/main/scribe'} onclick={() => navigate('/main/scribe')}>
+        <Glyph name="edit" size="sm" />
+      </IconBtn>
+      <span class="dnd-menu-foot-word">Scribe</span>
+    </span>
     {#each $shortcuts as pin (pin.action)}
       {@const action = getAction(pin.action)}
       {#if action}
@@ -178,13 +182,15 @@
           >
             <Glyph name={action.glyph} size="sm" />
           </IconBtn>
+          <span class="dnd-menu-foot-word">{action.title}</span>
         </span>
       {/if}
     {/each}
     <span class="dnd-menu-foot-cell">
-      <IconBtn title="Pin an action" tone="ink" onclick={() => (addOpen = true)}>
+      <IconBtn title="Pin an action" tone="ink" onclick={() => uiStore.openSearchDialog()}>
         <Glyph name="add" size="sm" />
       </IconBtn>
+      <span class="dnd-menu-foot-word">Pin</span>
     </span>
   </footer>
 
@@ -203,10 +209,6 @@
     <span class="dnd-menu-user-bell"><Glyph name="bell" size="sm" /></span>
   </div>
 </nav>
-
-{#if addOpen}
-  <ShortcutDialog bind:isOpen={addOpen} />
-{/if}
 
 {#snippet section(id: string, title: string, count: number, body: Snippet)}
   <Fold {title} {count} variant="row" open={open.includes(id)} ontoggle={() => toggle(id)}>
@@ -250,7 +252,7 @@
     <p class="dnd-menu-empty">No NPC has been written down.</p>
   {:else}
     <div class="dnd-scroll dnd-menu-tree">
-      <Tree rows={twigs(npcs, 'npcs')} on={openId} onopen={(id) => openResource('npcs', id)} />
+      <Tree rows={npcs.map((entry) => ({ id: entry.id, title: entry.metadata.name, mark: `${entry.metadata.race} ${entry.metadata.class}`, kids: [] }))} on={steps[0] === 'character' ? (steps[1] ?? '') : ''} onopen={openCharacter} />
     </div>
   {/if}
 {/snippet}
@@ -350,10 +352,11 @@
   }
 
   .dnd-menu-foot {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, var(--menu-row));
+    display: flex;
+    flex-wrap: wrap;
     justify-content: center;
-    gap: var(--space-2);
+    align-items: center;
+    gap: var(--space-3);
     margin: 0 calc(var(--menu-pad) * -1) 0;
     padding: var(--space-3) var(--menu-pad);
     background: var(--menu-stone);
@@ -361,10 +364,10 @@
   }
 
   .dnd-menu-search {
+    position: relative;
     display: flex;
     flex: none;
     align-items: center;
-    gap: var(--space-1);
     padding: var(--space-1);
     border: none;
     border-radius: var(--radius-sm);
@@ -384,11 +387,18 @@
   }
 
   .dnd-menu-search-key {
-    padding: var(--space-0) var(--space-2);
+    position: absolute;
+    inset-block-start: 100%;
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+    padding: 0 var(--space-1);
     border: var(--border-hair) solid var(--menu-line);
     border-radius: var(--radius-sm);
     font-family: var(--font-figures);
-    font-size: var(--text-xs);
+    font-size: calc(var(--text-xs) * 0.8);
+    line-height: 1.4;
+    white-space: nowrap;
+    pointer-events: none;
     font-weight: 400;
     color: var(--menu-text-muted);
   }
@@ -475,13 +485,40 @@
   .dnd-menu-foot-cell {
     position: relative;
     display: flex;
-    height: var(--menu-row);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-0);
+    min-inline-size: var(--menu-row);
+    padding-inline: var(--space-1);
+  }
+
+  .dnd-menu-foot-word {
+    max-inline-size: calc(var(--menu-row) * 1.6);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-display);
+    font-size: calc(var(--text-xs) * 0.85);
+    letter-spacing: var(--tracking-wide);
+    color: var(--menu-text-muted);
+  }
+
+  .dnd-menu-foot-cell > :global(.dnd-iconbtn) {
+    inline-size: calc(var(--menu-row) - var(--space-2));
+    block-size: calc(var(--menu-row) - var(--space-2));
+    color: var(--menu-text-muted);
+  }
+
+  .dnd-menu-foot-cell > :global(.dnd-iconbtn:hover:not(:disabled)) {
+    color: var(--menu-accent);
+    background: color-mix(in srgb, var(--menu-accent) 14%, transparent);
   }
 
   .dnd-menu-foot-cell + .dnd-menu-foot-cell::before {
     content: '';
     position: absolute;
-    inset-inline-start: calc((var(--space-2) + var(--border-hair)) / -2);
+    inset-inline-start: calc((var(--space-3) + var(--border-hair)) / -2);
     top: 50%;
     width: var(--border-hair);
     height: var(--size-split);

@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as api from '$lib/api'
-  import { getCampaign, getCharacter, postCharacterCopy, postFile, putCharacterLayout, putCharacterPlayed, putProfileRecentCharacters } from '$lib/api'
+  import { getAssets, getCampaign, getCharacter, postCharacterCopy, postFile, putCharacterLayout, putCharacterPlayed, putProfileRecentCharacters } from '$lib/api'
   import type { Character } from '$lib/api/types'
   import { getTheme, setTheme } from "$lib/dialogs/theme";
   import Senses from "$character-sheet/Senses.svelte";
@@ -27,19 +27,20 @@
   import { setContext, onDestroy, onMount, untrack, type Snippet } from "svelte";
   import Fold from "$components/ui/Fold.svelte";
   import DynamicGrid from "$components/ui/DynamicGrid.svelte";
-  import type { DynamicGridItem, DynamicGridPlacement } from "$lib/dynamic-grid";
+  import type { DynamicGridItem, DynamicGridMode, DynamicGridPlacement } from "$lib/dynamic-grid";
   import Overlay from "$components/Overlay.svelte";
   import { sidebarStore } from "$lib/navigation";
   import { uiStore, anyDialogOpen, menuView, soundBoard } from "$lib/stores/ui.store";
   import { navigate } from "sly-svelte-location-router";
   import Shell from "$components/ui/Shell.svelte";
   import Portrait, { type PortraitFrame } from "$components/ui/Portrait.svelte";
-  import Sigil from "$components/ui/Sigil.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
   import IconBtn from "$components/ui/IconBtn.svelte";
   import Field from "$components/ui/Field.svelte";
   import Button from "$components/ui/Button.svelte";
   import BaseDialog from "$components/BaseDialog.svelte";
+  import MediaDialog from "$components/MediaDialog.svelte";
+  import type { MediaAsset } from "$lib/blocks";
   import { postUIAction } from "$lib/chat";
   import { user, userProfile } from "$lib/stores/auth.store";
   import { currentCharacterId, getRecentCharacters } from "$lib/stores/character.store";
@@ -233,47 +234,71 @@
       .finally(() => (working = false))
   }
 
-  let portraitInput = $state<HTMLInputElement>()
   let room = $state(0)
   let shut = $state<Record<string, boolean>>({})
 
   const tight = $derived(room > 0 && room < 760)
 
+  const ROW = 24
+  const GAP = 12
+  let natural = $state<Record<string, number>>({})
+
+  function grow(node: HTMLElement, id: string) {
+    const watcher = new ResizeObserver(() => {
+      const rows = Math.ceil((node.offsetHeight + GAP) / (ROW + GAP))
+      if (natural[id] !== rows) natural = { ...natural, [id]: rows }
+    })
+    watcher.observe(node)
+    return { destroy: () => watcher.disconnect() }
+  }
+
   const sheetPlaces: DynamicGridItem[] = [
-    { id: 'saves', x: 0, y: 0, w: 4, h: 9, minW: 2, minH: 3 },
-    { id: 'senses', x: 4, y: 0, w: 4, h: 9, minW: 2, minH: 3 },
-    { id: 'proficiencies', x: 8, y: 0, w: 4, h: 9, minW: 2, minH: 3 },
-    { id: 'skills', x: 0, y: 9, w: 3, h: 22, minW: 2, minH: 6 },
-    { id: 'actions', x: 3, y: 9, w: 9, h: 22, minW: 4, minH: 8 },
-    { id: 'defences', x: 0, y: 31, w: 6, h: 9, minW: 3, minH: 3 },
-    { id: 'rules', x: 6, y: 31, w: 6, h: 9, minW: 3, minH: 3 }
+    { id: 'saves', x: 0, y: 0, w: 3, h: 4, minW: 2, minH: 3 },
+    { id: 'senses', x: 0, y: 4, w: 3, h: 7, minW: 2, minH: 3 },
+    { id: 'proficiencies', x: 0, y: 11, w: 3, h: 8, minW: 2, minH: 3 },
+    { id: 'defences', x: 0, y: 19, w: 3, h: 7, minW: 2, minH: 3 },
+    { id: 'skills', x: 3, y: 0, w: 3, h: 26, minW: 2, minH: 6 },
+    { id: 'actions', x: 6, y: 4, w: 6, h: 22, minW: 4, minH: 8 },
+    { id: 'rules', x: 3, y: 26, w: 9, h: 7, minW: 3, minH: 3 }
   ]
   let layout = $state<Record<string, { x: number; y: number; w: number; h: number }>>({})
   let arranging = $state(false)
+  let gridMode = $state<DynamicGridMode>('fixed')
   const rulePanels = $derived($rules.resolved?.panels.filter((panel) => !['abilities', 'defence', 'saves', 'senses'].includes(panel.id)) ?? [])
-  const places = $derived(sheetPlaces.filter((place) => place.id !== 'rules' || rulePanels.length > 0).map((place) => ({ ...place, ...layout[place.id] })))
+  let sized = $state<string[]>([])
 
-  function putLayout(placements: DynamicGridPlacement[]) {
+  function putLayout(placements: DynamicGridPlacement[], resized = false) {
     const next = { ...layout }
-    for (const { id, x, y, w, h } of placements) next[id] = { x, y, w, h }
+    for (const { id, x, y, w, h } of placements) {
+      const before = places.find((one) => one.id === id)
+      if (resized && before && (before.h !== h || before.w !== w) && !sized.includes(id)) sized = [...sized, id]
+      next[id] = { x, y, w, h: sized.includes(id) ? h : 0 }
+    }
     layout = next
     putCharacterLayout(characterId, next)
       .catch((reason) => characterWriteError.set(reason instanceof Error ? reason.message : String(reason)))
   }
 
-  async function postPortrait(event: Event) {
-    const input = event.currentTarget as HTMLInputElement
-    const file = input.files?.[0]
-    input.value = ''
-    if (!file) return
+  let picking = $state(false)
 
-    const { url: address } = await postFile(file, { kind: 'user' })
-    info.update((state) => ({...state, imageUrl: address}))
+  function putPortrait(asset: MediaAsset | null) {
+    picking = false
+    if (!asset) return
+    info.update((state) => ({...state, imageUrl: asset.url}))
   }
 
   const bespokeSlots = ['initiative', 'armorClass', 'speed', 'maxHitPoints']
 
   const slots = $derived($rules.resolved?.derived.filter((entry) => !bespokeSlots.includes(entry.id)) ?? [])
+  const slotPlaces = $derived<DynamicGridItem[]>(
+    ['initiative', 'armor', ...slots.map((slot) => slot.id)].map((id, at) => ({ id: `slot/${id}`, x: 6 + at, y: 0, w: 1, h: 4, minW: 1, minH: 3 }))
+  )
+  const places = $derived([...sheetPlaces, ...slotPlaces].filter((place) => place.id !== 'rules' || rulePanels.length > 0).map((place) => {
+    const own = layout[place.id]
+    const grown = natural[place.id]
+    const h = own && own.h > 0 ? Math.max(own.h, grown ?? 1) : (grown ?? place.h)
+    return { ...place, ...own, h }
+  }))
 
   let imageUrl = $derived.by(() => {
     if ($info.state?.image?.overlay === false) {
@@ -338,27 +363,63 @@
 >
   {#snippet tools()}
     {#if owned}
-      <Sigil title="Soundboard" size="sm" active={$menuView === 'soundboard'} onclick={uiStore.openSoundboard}>
-        <Glyph name="sound" size="sm" />
-      </Sigil>
+      <button type="button" class="sheet-tool" onclick={openName}>
+        <span class="sheet-tool-glyph"><Glyph name="edit" size="sm" /></span>
+        <span class="sheet-tool-word">Rename this character</span>
+      </button>
     {/if}
-    <Sigil title="Export this character" size="sm" onclick={() => postUIAction('exportCharacter')}>
-      <Glyph name="export" size="sm" />
-    </Sigil>
     {#if owned}
-      <Sigil title="Level up" size="sm" onclick={() => postUIAction('openLevelUpDialog')}>
-        <Glyph name="levelup" size="sm" />
-      </Sigil>
-      <Sigil title="Import sources" size="sm" onclick={() => postUIAction('openSourceImport')}>
-        <Glyph name="sources" size="sm" />
-      </Sigil>
-      <Sigil title="Lay out the sheet" size="sm" active={arranging} onclick={() => (arranging = !arranging)}>
-        <Glyph name="blocks" size="sm" />
-      </Sigil>
+      <button type="button" class="sheet-tool" aria-pressed={$menuView === 'soundboard'} onclick={uiStore.openSoundboard}>
+        <span class="sheet-tool-glyph"><Glyph name="sound" size="sm" /></span>
+        <span class="sheet-tool-word">Soundboard</span>
+      </button>
     {/if}
-    <Sigil title="Change theme" size="sm" onclick={() => postUIAction('openThemeDialog')}>
-      <Glyph name="theme" size="sm" />
-    </Sigil>
+    <button type="button" class="sheet-tool" onclick={() => postUIAction('exportCharacter')}>
+      <span class="sheet-tool-glyph"><Glyph name="export" size="sm" /></span>
+      <span class="sheet-tool-word">Export this character</span>
+    </button>
+    {#if owned}
+      <button type="button" class="sheet-tool" onclick={() => postUIAction('openLevelUpDialog')}>
+        <span class="sheet-tool-glyph"><Glyph name="levelup" size="sm" /></span>
+        <span class="sheet-tool-word">Level up</span>
+      </button>
+      <button type="button" class="sheet-tool" onclick={() => postUIAction('openSourceImport')}>
+        <span class="sheet-tool-glyph"><Glyph name="sources" size="sm" /></span>
+        <span class="sheet-tool-word">Import sources</span>
+      </button>
+      <button type="button" class="sheet-tool" aria-pressed={arranging} onclick={() => (arranging = !arranging)}>
+        <span class="sheet-tool-glyph"><Glyph name="blocks" size="sm" /></span>
+        <span class="sheet-tool-word">Lay out the sheet</span>
+      </button>
+      {#if arranging}
+        <button type="button" class="sheet-tool sheet-tool-under" aria-pressed={gridMode === 'fixed'} onclick={() => (gridMode = 'fixed')}>
+          <span class="sheet-tool-glyph"><Glyph name="rectangle" size="sm" /></span>
+          <span class="sheet-tool-word">Fixed grid</span>
+        </button>
+        <button type="button" class="sheet-tool sheet-tool-under" aria-pressed={gridMode === 'flow'} onclick={() => (gridMode = 'flow')}>
+          <span class="sheet-tool-glyph"><Glyph name="lines" size="sm" /></span>
+          <span class="sheet-tool-word">Flowing grid</span>
+        </button>
+      {/if}
+      <button type="button" class="sheet-tool" onclick={() => postUIAction('openFrameDialog')}>
+        <span class="sheet-tool-glyph"><Glyph name="gear" size="sm" /></span>
+        <span class="sheet-tool-word">Choose the portrait frame</span>
+      </button>
+    {/if}
+    <button type="button" class="sheet-tool" onclick={() => postUIAction('openThemeDialog')}>
+      <span class="sheet-tool-glyph"><Glyph name="theme" size="sm" /></span>
+      <span class="sheet-tool-word">Change theme</span>
+    </button>
+    <button type="button" class="sheet-tool" disabled={working} onclick={postCopy}>
+      <span class="sheet-tool-glyph"><Glyph name="copy" size="sm" /></span>
+      <span class="sheet-tool-word">Copy this character</span>
+    </button>
+    {#if owned}
+      <button type="button" class="sheet-tool" disabled={working} onclick={() => (deleting = true)}>
+        <span class="sheet-tool-glyph"><Glyph name="remove" size="sm" /></span>
+        <span class="sheet-tool-word">Delete this character</span>
+      </button>
+    {/if}
   {/snippet}
 
   {#snippet backdrop()}
@@ -373,13 +434,13 @@
           class="sheet-face"
           title={owned ? 'Choose the portrait picture' : $info.name || 'Character'}
           disabled={!owned}
-          onclick={() => portraitInput?.click()}
+          onclick={() => (picking = true)}
         >
           <Portrait
-            src={imageUrl}
+            src={$info.imageUrl}
             alt={$info.name || 'Character'}
-            frame={($info.imageFrame as PortraitFrame) ?? 'lancet'}
-            size="sm"
+            frame={($info.imageFrame as PortraitFrame) ?? 'arch'}
+            size="md"
           />
         </button>
 
@@ -398,54 +459,24 @@
           {:else}
             <span class="sheet-title">
               <h1 class="dnd-heading sheet-name">{$info.name || 'Unnamed Character'}</h1>
-              {#if owned}
-                <IconBtn title="Rename this character" onclick={openName}>
-                  <Glyph name="edit" size="sm" />
-                </IconBtn>
-              {/if}
             </span>
           {/if}
           <span class="sheet-meta">
-            <span class="sheet-level">Level {$info.level || 1}</span>
             <span class="sheet-kin">{$info.race?.name || 'Unknown'} {$info.class?.name || 'Unknown'}</span>
+            {#if campaign}
+              <a class="sheet-campaign" href="/main/campaign/{campaign.id}">{campaign.name}</a>
+            {:else}
+              <span class="sheet-campaign">No campaign</span>
+            {/if}
           </span>
-          {#if campaign}
-            <a class="sheet-campaign" href="/main/campaign/{campaign.id}">
-              <span class="sheet-campaign-word">Campaign</span>
-              <span class="sheet-campaign-name">{campaign.name}</span>
-            </a>
-          {:else}
-            <span class="sheet-campaign">
-              <span class="sheet-campaign-word">Campaign</span>
-              <span class="sheet-campaign-name">None</span>
-            </span>
-          {/if}
         </span>
 
-        <span class="sheet-gear">
-          {#if owned}
-            <Sigil title="Choose the portrait frame" size="md" onclick={() => postUIAction('openFrameDialog')}>
-              <Glyph name="gear" size="md" />
-            </Sigil>
-          {/if}
-          <Sigil title="Copy this character" size="md" disabled={working} onclick={postCopy}>
-            <Glyph name="copy" size="md" />
-          </Sigil>
-          {#if owned}
-            <Sigil title="Delete this character" size="md" disabled={working} onclick={() => (deleting = true)}>
-              <Glyph name="remove" size="md" />
-            </Sigil>
-          {/if}
+        <span class="sheet-level">
+          <span class="sheet-level-word">Level</span>
+          <span class="sheet-level-figure">{$info.level || 1}</span>
         </span>
+        <span class="sheet-spark"><Inspiration /></span>
 
-        <input
-          bind:this={portraitInput}
-          class="sheet-pick"
-          type="file"
-          accept="image/*"
-          aria-label="Choose the portrait picture"
-          onchange={postPortrait}
-        />
       </header>
 
       <div class="sheet-still" class:sheet-still-on={reading} use:still={reading}>
@@ -474,24 +505,24 @@
                 title="Walking"
                 subTitle="speed"
       />
-      <Inspiration />
     </div>
 
     <div class="sheet-grid" class:sheet-grid-arranging={arranging} bind:clientWidth={room}>
       <DynamicGrid
         items={places}
         columns={12}
-        mode={arranging ? 'fixed' : 'flow'}
+        mode={gridMode}
         minColWidth={60}
-        rowHeight={24}
-        margin={[12, 12]}
+        rowHeight={ROW}
+        margin={[GAP, GAP]}
         padding={[0, 0]}
         draggable={arranging}
         resizable={arranging}
-        onmove={putLayout}
-        onresize={putLayout}
+        onmove={(placements) => putLayout(placements)}
+        onresize={(placements) => putLayout(placements, true)}
       >
         {#snippet item(placed)}
+          <div class="sheet-cell" use:grow={placed.id}>
           {#if placed.id === 'saves'}
             {@render group('saves', 'Saving throws', saves)}
           {:else if placed.id === 'senses'}
@@ -504,27 +535,37 @@
             {@render group('skills', 'Skills', skills)}
           {:else if placed.id === 'defences'}
             {@render group('defences', 'Defences and conditions', defences)}
+          {:else if placed.id === 'slot/initiative'}
+            <Initiative bind:initiative={$info.initiative}/>
+          {:else if placed.id === 'slot/armor'}
+            <PlainBox bind:value={$info.ac} title="Armor" subTitle="class" />
+          {:else if placed.id.startsWith('slot/')}
+            {@const slot = slots.find((one) => `slot/${one.id}` === placed.id)}
+            {#if slot}
+              <PlainBox value={slot.value} title={slot.title} subTitle={slot.unit}/>
+            {/if}
           {:else if placed.id === 'actions'}
             <div class="sheet-tabs">
-              <div class="sheet-slots">
-                <Initiative bind:initiative={$info.initiative}/>
-                <PlainBox bind:value={$info.ac}
-                          title="Armor"
-                          subTitle="class"
-                />
-                {#each slots as slot (slot.id)}
-                  <PlainBox value={slot.value} title={slot.title} subTitle={slot.unit}/>
-                {/each}
-              </div>
               {@render group('actions', 'Actions and inventory', tabs)}
             </div>
           {/if}
+          </div>
         {/snippet}
       </DynamicGrid>
     </div>
     </div>
   {/if}
 </Shell>
+
+{#if picking}
+  <MediaDialog
+    kind="image"
+    current={$info.imageUrl}
+    getAssets={(query, wanted) => getAssets(query, wanted, { kind: 'user' })}
+    uploadFile={(file) => postFile(file, { kind: 'user' })}
+    onclose={putPortrait}
+  />
+{/if}
 
 <BaseDialog isOpen={deleting} onClose={() => (deleting = false)} title="Delete {$info.name || 'this character'}?" width="32rem">
   <div class="sheet-doom">
@@ -569,32 +610,108 @@
   }
 
   .sheet-band {
-    display: grid;
-    grid-template-columns: minmax(min(30rem, 100%), 1fr) minmax(0, 36rem);
+    display: flex;
     align-items: stretch;
     gap: var(--space-3);
     min-width: 0;
   }
 
+  .sheet-band > .sheet-crown {
+    flex: 1 1 auto;
+  }
+
+  .sheet-band > :global(.vitals) {
+    flex: none;
+  }
+
   .sheet-crown {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      'face name level spark'
+      'face meta level spark'
+      'rule rule level spark';
+    align-items: center;
+    align-content: center;
+    column-gap: var(--space-4);
+    row-gap: 0;
+    min-width: 0;
+    padding-block: 0;
+  }
+
+  .sheet-crown::after {
+    content: '';
+    grid-area: rule;
+    display: block;
+    block-size: var(--border-hair);
+    margin-block-start: var(--space-2);
+    background: linear-gradient(90deg, var(--metal) 0%, color-mix(in srgb, var(--metal) 45%, transparent) 70%, transparent 100%);
+  }
+
+  .sheet-tool {
     display: flex;
     align-items: center;
-    min-width: 0;
-    gap: var(--space-4);
-    padding: var(--space-3) var(--space-4);
-    background:
-      radial-gradient(ellipse 45% 90% at 0% 50%, color-mix(in srgb, var(--ember) 16%, transparent) 0%, transparent 70%),
-      linear-gradient(180deg, color-mix(in srgb, var(--ground-raised) 78%, transparent) 0%, color-mix(in srgb, var(--ground-deep) 90%, transparent) 100%),
-      var(--texture-noise),
-      var(--stone-dark);
+    gap: var(--space-3);
+    inline-size: 100%;
+    padding: var(--space-2) var(--space-3);
     border: none;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--rim), inset 0 0 28px 6px var(--shade-hard), var(--shadow-md);
+    border-radius: var(--radius-sm);
+    background: none;
+    text-align: start;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .sheet-tool:hover:not(:disabled),
+  .sheet-tool:focus-visible {
+    background: color-mix(in srgb, var(--metal) 14%, transparent);
+  }
+
+  .sheet-tool:hover:not(:disabled) .sheet-tool-word,
+  .sheet-tool[aria-pressed='true'] .sheet-tool-word {
+    color: var(--metal-bright);
+  }
+
+  .sheet-tool:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  .sheet-tool:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .sheet-tool-under {
+    padding-inline-start: var(--space-6);
+  }
+
+  .sheet-tool-glyph {
+    display: flex;
+    flex: none;
+    color: var(--metal);
+  }
+
+  .sheet-tool[aria-pressed='true'] .sheet-tool-glyph {
+    color: var(--metal-bright);
+    filter: drop-shadow(0 0 0.3rem var(--ember-glow));
+  }
+
+  .sheet-tool-word {
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    letter-spacing: var(--tracking-wide);
+    color: var(--ink);
+    white-space: nowrap;
   }
 
   .sheet-face {
+    grid-area: face;
     display: flex;
     flex: none;
+    align-self: end;
+    margin-block-end: calc(var(--space-4) * -1);
     padding: 0;
     border: none;
     border-radius: var(--radius-md);
@@ -618,19 +735,23 @@
   }
 
   .sheet-lines {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    gap: var(--space-1);
-    min-width: 0;
+    display: contents;
   }
 
-  .sheet-gear {
+  .sheet-lines > .sheet-title,
+  .sheet-lines > :global(.dnd-field) {
+    grid-area: name;
+  }
+
+  .sheet-lines > .sheet-meta {
+    grid-area: meta;
     display: flex;
-    flex: none;
-    align-items: center;
-    align-self: flex-start;
+    flex-wrap: wrap;
+    align-items: baseline;
     gap: var(--space-2);
+    min-width: 0;
+    margin-block-start: calc(var(--space-1) * -1);
+    line-height: 1;
   }
 
   .sheet-title {
@@ -659,76 +780,82 @@
     gap: var(--space-3);
   }
 
-  .sheet-pick {
-    display: none;
-  }
-
   .sheet-name {
     margin: 0;
     font-family: var(--font-display);
-    font-size: var(--text-2xl);
+    font-size: var(--text-xl);
     font-weight: 700;
     letter-spacing: var(--tracking-wide);
-    line-height: 1.1;
+    line-height: 1;
     color: var(--metal-bright);
     text-shadow: 0 1px 0 #000, 0 0 0.6rem var(--ember-glow), 0 0 1.4rem var(--ember-glow);
     min-width: 0;
     overflow-wrap: break-word;
   }
 
-  .sheet-meta {
+  .sheet-level {
+    grid-area: level;
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: row;
     align-items: baseline;
-    gap: var(--space-1) var(--space-4);
-    padding-top: var(--space-2);
-    border-top: var(--border-hair) solid color-mix(in srgb, var(--metal-dim) 70%, transparent);
-    font-family: var(--font-display);
-    font-size: var(--text-sm);
-    letter-spacing: var(--tracking-wide);
-    color: var(--ink-dim);
+    justify-content: center;
+    align-self: center;
+    gap: var(--space-2);
+    padding-inline: var(--space-3);
+    color: var(--metal);
     text-shadow: 0 1px 0 #000;
   }
 
-  .sheet-level {
-    font-family: var(--font-figures);
+  .sheet-spark {
+    grid-area: spark;
+    display: flex;
+    align-items: center;
+    align-self: stretch;
+  }
+
+  .sheet-level-word {
+    font-family: var(--font-display);
+    font-size: var(--text-xs);
     font-weight: 700;
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
-    color: var(--metal);
+  }
+
+  .sheet-level-figure {
+    font-family: var(--font-figures);
+    font-size: var(--text-xl);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--metal-bright);
   }
 
   .sheet-kin {
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
     font-style: italic;
-  }
-
-  .sheet-campaign {
-    display: inline-flex;
-    align-items: baseline;
-    align-self: flex-start;
-    gap: var(--space-2);
-    min-width: 0;
-    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wide);
     color: var(--ink-dim);
-    text-decoration: none;
     text-shadow: 0 1px 0 #000;
   }
 
-  .sheet-campaign-word {
+  .sheet-campaign {
+    min-width: 0;
     font-family: var(--font-display);
-    font-weight: 700;
-    letter-spacing: var(--tracking-caps);
-    text-transform: uppercase;
-    color: var(--metal);
-  }
-
-  .sheet-campaign-name {
-    font-family: var(--font-display);
+    font-size: var(--text-sm);
     letter-spacing: var(--tracking-wide);
+    color: var(--metal);
+    text-decoration: none;
+    text-shadow: 0 1px 0 #000;
     overflow-wrap: anywhere;
   }
 
-  .sheet-campaign:hover .sheet-campaign-name {
+  .sheet-campaign::before {
+    content: '\00B7';
+    margin-inline-end: var(--space-2);
+    color: var(--ink-faint);
+  }
+
+  a.sheet-campaign:hover {
     color: var(--metal-bright);
   }
 
@@ -745,21 +872,28 @@
     min-width: 0;
   }
 
-  .sheet-slots {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, min(6rem, 100%));
-    justify-content: start;
-    align-items: stretch;
-    gap: var(--space-5) var(--space-2);
-    min-width: 0;
-  }
-
   .sheet-grid {
     min-width: 0;
   }
 
   .sheet-grid :global(.dnd-grid-item) {
-    overflow: auto;
+    overflow: visible;
+  }
+
+  .sheet-cell {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-block-size: 100%;
+  }
+
+  .sheet-cell > :global(*) {
+    flex: 1 1 auto;
+    min-block-size: 0;
+  }
+
+  .sheet-grid-arranging :global(.dnd-grid-item) {
+    overflow: hidden;
   }
 
   .sheet-grid-arranging :global(.dnd-grid-item) {
@@ -783,17 +917,19 @@
     }
 
     .sheet-crown {
-      flex-wrap: wrap;
-      padding: var(--space-3) var(--space-4);
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        'face name name'
+        'face meta meta'
+        'rule rule rule'
+        'level level spark';
     }
 
-    .sheet-lines {
-      order: 1;
-      flex-basis: 100%;
-    }
-
-    .sheet-gear {
-      margin-inline-start: auto;
+    .sheet-level {
+      flex-direction: row;
+      gap: var(--space-2);
+      padding-inline: 0;
+      border-inline-start: none;
     }
   }
 </style>

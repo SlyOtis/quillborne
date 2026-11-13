@@ -1,13 +1,13 @@
 <script lang="ts">
   import { getTags, postSearch, type SearchHit } from '$lib/api'
   import BaseDialog from "../BaseDialog.svelte";
-  import Field from "$components/ui/Field.svelte";
   import Glyph, { type GlyphName } from "$components/ui/Glyph.svelte";
-  import IconBtn from "$components/ui/IconBtn.svelte";
   import { navigate } from "sly-svelte-location-router";
   import { uiStore, isSearchDialogOpen, searchSeed } from "$lib/stores/ui.store";
   import { user } from "$lib/stores/auth.store";
-  import { ACTIONS, actionBlocks, shortcuts } from "$lib/actions";
+  import { currentCampaignId, userCampaigns } from "$lib/stores/campaign.store";
+  import { ACTIONS, actionBlocks, putShortcuts, shortcuts } from "$lib/actions";
+  import IconBtn from "$components/ui/IconBtn.svelte";
   import { RESOURCES, type ResourceKind } from "$lib/resources";
 
   interface Hit {
@@ -41,10 +41,23 @@
   };
 
   const KEYS = [
-    { cap: 'Up Down', does: 'walk' },
-    { cap: 'Enter', does: 'open' },
-    { cap: 'Tab', does: 'tag' },
-    { cap: 'Esc', does: 'close' }
+    { caps: ['\u2191', '\u2193'], does: 'navigate' },
+    { caps: ['\u21B5'], does: 'select' },
+    { caps: ['Tab'], does: 'filter' },
+    { caps: ['Esc'], does: 'close' }
+  ];
+
+  const SIGILS: Record<string, { type: string; label: string; glyph: GlyphName }> = {
+    '@': { type: 'character', label: 'Characters', glyph: 'character' },
+    '!': { type: 'campaign', label: 'Campaigns', glyph: 'campaign' },
+    '*': { type: 'resource', label: 'Lore and items', glyph: 'scroll' },
+    '&': { type: 'vehicle', label: 'Vessels', glyph: 'gear' }
+  };
+
+  const SYNTAX = [
+    ...Object.entries(SIGILS).map(([cap, one]) => ({ cap, does: one.label.toLowerCase() })),
+    { cap: '#', does: 'tag' },
+    { cap: '-', does: 'exclude' }
   ];
 
   let isOpen = $derived($isSearchDialogOpen);
@@ -83,8 +96,31 @@
   );
 
   const tokens = $derived(searchQuery.trim().toLowerCase().split(/\s+/).filter(Boolean));
-  const tagged = $derived(tokens.filter((one) => one.startsWith('#') && one.length > 1).map((one) => one.slice(1)));
-  const words = $derived(tokens.filter((one) => !one.startsWith('#')));
+  const sigil = $derived(tokens[0] && tokens[0].charAt(0) in SIGILS ? tokens[0].charAt(0) : '');
+  const typeScope = $derived(sigil ? SIGILS[sigil].type : '');
+  const plain = $derived(sigil ? [tokens[0].slice(1), ...tokens.slice(1)].filter(Boolean) : tokens);
+  const tagged = $derived(plain.filter((one) => one.startsWith('#') && one.length > 1).map((one) => one.slice(1)));
+  const excluded = $derived(plain.filter((one) => one.startsWith('-') && one.length > 1).map((one) => one.slice(1)));
+  const words = $derived(plain.filter((one) => !one.startsWith('#') && !one.startsWith('-')));
+  let scoped = $state(true);
+  const campaign = $derived($userCampaigns.find((one) => one.id === $currentCampaignId) ?? null);
+  const table = $derived(scoped ? campaign : null);
+
+  const browse = $derived<Hit[]>(
+    Object.entries(SIGILS).map(([cap, one]) => ({
+      id: `scope/${cap}`,
+      title: one.label,
+      sub: `Search only ${one.label.toLowerCase()}`,
+      group: 'Browse',
+      place: cap,
+      glyph: one.glyph,
+      key: '',
+      tags: [],
+      token: '',
+      hay: one.label.toLowerCase(),
+      run: () => putChips([], `${cap} `)
+    }))
+  );
   const chips = $derived(getChips(searchQuery));
   const typed = $derived(searchQuery.slice(chips.join(' ').length).replace(/^ /, ''));
 
@@ -113,9 +149,10 @@
 
   let found = $derived(
     tokens.length === 0
-      ? rites
-      : [...rites, ...pages]
+      ? [...rites, ...browse]
+      : [...(typeScope ? [] : rites), ...pages]
           .filter((hit) => hit.group === 'Actions' ? isTagged(hit) && words.every((word) => hit.hay.includes(word)) : true)
+          .filter((hit) => !excluded.some((word) => hit.hay.includes(word)))
           .map((hit, index) => ({ hit, index, rank: getRank(hit) }))
           .sort((a, b) => a.rank - b.rank || a.index - b.index)
           .slice(0, 60)
@@ -198,8 +235,15 @@
       tagIds.push(found.id);
     }
     const q = words.join(' ');
-    if (q.length < SEARCH_MIN && tagIds.length === 0) return [];
-    const hits = await postSearch({ q: q || undefined, object_types: SEARCH_TYPES, tag_ids: tagIds.length ? tagIds : undefined, limit: SEARCH_LIMIT });
+    if (q.length < SEARCH_MIN && tagIds.length === 0 && !typeScope) return [];
+    const hits = await postSearch({
+      q: q || undefined,
+      object_types: typeScope ? [typeScope] : SEARCH_TYPES,
+      tag_ids: tagIds.length ? tagIds : undefined,
+      parent_id: table?.id,
+      parent_type: table ? 'campaign' : undefined,
+      limit: SEARCH_LIMIT
+    });
     return hits.map(getHit);
   }
 
@@ -222,6 +266,12 @@
 
   function handleKeydown(event: KeyboardEvent) {
     if (!isOpen) return;
+
+    if (event.key === 'Backspace' && scoped && campaign && !searchQuery && event.target === searchInput) {
+      event.preventDefault();
+      scoped = false;
+      return;
+    }
 
     if (event.key === 'Backspace' && chips.length && event.target === searchInput && searchInput.selectionStart === chips.join(' ').length + 1 && searchInput.selectionEnd === searchInput.selectionStart) {
       event.preventDefault();
@@ -256,8 +306,19 @@
     }
   }
 
+  function togglePin(event: MouseEvent, hit: Hit) {
+    event.stopPropagation();
+    const action = hit.id.slice('action/'.length);
+    const held = $shortcuts.some((pin) => pin.action === action);
+    void putShortcuts(held ? $shortcuts.filter((pin) => pin.action !== action) : [...$shortcuts, { action, key: '' }]);
+  }
+
   function invoke(hit: Hit) {
     if (hit.block) return;
+    if (hit.id.startsWith('scope/')) {
+      hit.run();
+      return;
+    }
     uiStore.closeSearchDialog();
     searchQuery = '';
     selectedIndex = 0;
@@ -272,7 +333,7 @@
 
   $effect(() => {
     const open = isOpen && Boolean($user?.user_id);
-    const key = `${words.join(' ')}|${tagged.join(' ')}`;
+    const key = `${words.join(' ')}|${tagged.join(' ')}|${typeScope}|${table?.id ?? ''}`;
     clearTimeout(timer);
     if (!open) return;
     const mine = ++asked;
@@ -305,34 +366,43 @@
   $effect(() => {
     searchQuery = isOpen ? seed : '';
     selectedIndex = 0;
+    scoped = true;
   });
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
-<BaseDialog isOpen={isOpen} onClose={uiStore.closeSearchDialog} width="640px" showCloseButton={false} closeOnEscape={false}>
+<BaseDialog isOpen={isOpen} onClose={uiStore.closeSearchDialog} width="min(40rem, 92vw)" place="top" showCloseButton={false} closeOnEscape={false}>
   <div class="head">
-    {#if chips.length}
-      <div class="chips" aria-label="Tags the search is held to">
-        {#each chips as chip, at (chip)}
-          <span class="chip">
-            <span class="chip-name">{chip}</span>
-            <IconBtn title="Drop {chip.slice(1)}" onclick={() => deleteChip(at)}><Glyph name="close" size="sm" /></IconBtn>
-          </span>
-        {/each}
-      </div>
+    <span class="head-glyph"><Glyph name="search" size="sm" /></span>
+    {#if scoped && campaign}
+      <span class="chip" title={campaign.name}>
+        <span class="chip-glyph"><Glyph name="campaign" size="sm" /></span>
+        <span class="chip-name">{campaign.name}</span>
+        <button type="button" class="chip-drop" aria-label="Search every table" onclick={() => (scoped = false)}><Glyph name="close" size="sm" /></button>
+      </span>
     {/if}
-    <Field label="Search" id="search-command" help="A word finds it, #tag holds the list to a tag">
-      <input
-        id="search-command"
-        bind:this={searchInput}
-        bind:value={searchQuery}
-        type="text"
-        autocomplete="off"
-        spellcheck="false"
-        placeholder="Actions, sheets, campaigns, and every page you can read..."
-      />
-    </Field>
+    {#each chips as chip, at (chip)}
+      <span class="chip" title={chip}>
+        <span class="chip-glyph"><Glyph name="key" size="sm" /></span>
+        <span class="chip-name">{chip.slice(1)}</span>
+        <button type="button" class="chip-drop" aria-label="Drop {chip.slice(1)}" onclick={() => deleteChip(at)}><Glyph name="close" size="sm" /></button>
+      </span>
+    {/each}
+    <input
+      class="field"
+      bind:this={searchInput}
+      bind:value={searchQuery}
+      type="text"
+      autocomplete="off"
+      spellcheck="false"
+      aria-label="Search"
+      placeholder="Where would you like to go?"
+    />
+    {#if loading && tokens.length > 0}
+      <span class="dnd-spinner head-spinner"></span>
+    {/if}
+    <button type="button" class="cap head-esc" onclick={uiStore.closeSearchDialog}>Esc</button>
   </div>
 
   <div class="rites dnd-scroll" bind:this={list} role="listbox" aria-label="What was found">
@@ -370,69 +440,148 @@
           {#if hit.key}
             <kbd class="cap">{hit.key}</kbd>
           {/if}
+          {#if hit.group === 'Actions'}
+            <span class="rite-pin" class:rite-pin-held={$shortcuts.some((pin) => pin.action === hit.id.slice('action/'.length))}>
+              <IconBtn title={$shortcuts.some((pin) => pin.action === hit.id.slice('action/'.length)) ? 'Unpin from the navigator' : 'Pin to the navigator'} onclick={(event) => togglePin(event, hit)}><Glyph name="key" size="sm" /></IconBtn>
+            </span>
+          {/if}
         </button>
       {/each}
     {/each}
 
-    {#if loading && tokens.length > 0}
-      <div class="dnd-loading"><span class="dnd-spinner"></span></div>
-    {:else if error}
+    {#if error}
       <p class="hollow" role="alert">{error}</p>
-    {:else if found.length === 0}
-      <p class="hollow">Nothing found</p>
+    {:else if found.length === 0 && !loading}
+      <p class="hollow">{tokens.length ? 'No matches' : 'Start typing to search'}</p>
     {/if}
   </div>
 
   <div class="foot">
-    <span class="keys"><kbd class="cap">#</kbd> tag</span>
-    {#each KEYS as key (key.cap)}
-      <span class="keys"><kbd class="cap">{key.cap}</kbd> {key.does}</span>
-    {/each}
+    <span class="syntax">
+      {#each SYNTAX as one (one.cap)}
+        <span class="keys"><kbd class="cap">{one.cap}</kbd> {one.does}</span>
+      {/each}
+    </span>
+    <span class="foot-keys">
+      {#each KEYS as key (key.does)}
+        <span class="keys">{#each key.caps as cap (cap)}<kbd class="cap">{cap}</kbd>{/each} {key.does}</span>
+      {/each}
+    </span>
   </div>
 </BaseDialog>
 
 <style>
   .head {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    padding: var(--space-5) var(--space-5) var(--space-3);
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: var(--border-hair) solid color-mix(in srgb, var(--metal-dim) 50%, transparent);
   }
 
-  .chips {
+  .head-glyph {
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
+    flex: none;
+    color: var(--metal);
+  }
+
+  .head-spinner {
+    flex: none;
+  }
+
+  .head-esc {
+    cursor: pointer;
+    background: var(--ground-deep);
+    transition: color 0.15s ease;
+  }
+
+  .head-esc:hover {
+    color: var(--ink);
   }
 
   .chip {
     display: inline-flex;
+    flex: 0 1 auto;
     align-items: center;
     gap: var(--space-1);
-    padding: 0 var(--space-1) 0 var(--space-2);
-    border: var(--border-hair) solid var(--metal-dim);
-    border-radius: var(--radius-sm);
-    color: var(--metal);
+    min-width: 0;
+    max-width: 40%;
+    padding: var(--space-0) var(--space-0) var(--space-0) var(--space-2);
+    border: var(--border-hair) solid color-mix(in srgb, var(--metal) 45%, transparent);
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--metal) 12%, transparent);
+    color: var(--ink);
     font-size: var(--text-xs);
+    white-space: nowrap;
+  }
+
+  .chip-glyph {
+    display: flex;
+    flex: none;
+    color: var(--metal);
   }
 
   .chip-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
     font-family: var(--font-display);
     letter-spacing: var(--tracking-wide);
+  }
+
+  .chip-drop {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--space-5);
+    block-size: var(--space-5);
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--ink-dim);
+    cursor: pointer;
+  }
+
+  .chip-drop:hover {
+    background: color-mix(in srgb, var(--metal) 20%, transparent);
+    color: var(--ink);
+  }
+
+  .field {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: var(--space-1) 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: var(--text-md);
+  }
+
+  .field:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  .field::placeholder {
+    color: var(--ink-faint);
   }
 
   .rites {
     display: flex;
     flex-direction: column;
-    max-height: min(25rem, 55vh);
+    max-height: min(32rem, 60vh);
     overflow-y: auto;
-    margin: 0 var(--space-4);
-    border-top: var(--border-hair) solid color-mix(in srgb, var(--metal-dim) 50%, transparent);
+    padding: var(--space-1) 0;
   }
 
   .group {
     margin: 0;
-    padding: var(--space-3) var(--space-3) var(--space-1);
+    padding: var(--space-3) var(--space-4) var(--space-1);
     font-family: var(--font-display);
     font-size: var(--text-xs);
     letter-spacing: var(--tracking-caps);
@@ -443,21 +592,26 @@
   .rite {
     position: relative;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--space-3);
     width: 100%;
-    padding: var(--space-2) var(--space-3);
+    padding: var(--space-2) var(--space-4);
     background: transparent;
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: 0;
     color: var(--ink);
     text-align: left;
     cursor: pointer;
     transition: background 0.15s ease;
   }
 
-  .rite-lit {
-    background: color-mix(in srgb, var(--metal) 12%, transparent);
+  .rite:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--metal) 8%, transparent);
+  }
+
+  .rite-lit,
+  .rite-lit:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--metal) 16%, transparent);
     box-shadow: inset var(--space-0) 0 0 var(--metal);
   }
 
@@ -478,6 +632,7 @@
   .rite-glyph {
     display: flex;
     flex: none;
+    margin-block-start: var(--space-0);
     color: var(--metal);
   }
 
@@ -502,18 +657,22 @@
   }
 
   .rite-sub {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     font-size: var(--text-xs);
+    line-height: 1.45;
     color: var(--ink-dim);
   }
 
   .rite-mark {
+    padding: 0 var(--space-0);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--metal) 24%, transparent);
     color: var(--metal-bright);
-    text-decoration: underline;
-    text-decoration-color: var(--metal-dim);
-    text-underline-offset: 0.15em;
+    font-weight: 600;
   }
 
   .rite-tags {
@@ -530,8 +689,27 @@
     color: var(--ink-dim);
   }
 
+  .rite-pin {
+    display: flex;
+    flex: none;
+    align-self: center;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .rite-pin-held,
+  .rite:hover .rite-pin,
+  .rite-lit .rite-pin {
+    opacity: 1;
+  }
+
+  .rite-pin-held {
+    color: var(--metal-bright);
+  }
+
   .rite-place {
     flex: none;
+    align-self: center;
     max-width: 30%;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -541,10 +719,17 @@
   }
 
   .cap {
+    display: inline-flex;
     flex: none;
-    padding: var(--space-0) var(--space-2);
+    align-items: center;
+    justify-content: center;
+    min-inline-size: 2em;
+    block-size: 2em;
+    padding: 0 var(--space-2);
     border: var(--border-hair) solid var(--metal-dim);
+    border-block-end-width: calc(var(--border-hair) * 2);
     border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--ground-deep) 60%, transparent);
     color: var(--ink-dim);
     font-family: var(--font-figures);
     font-size: var(--text-xs);
@@ -553,11 +738,26 @@
   .foot {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2) var(--space-4);
-    padding: var(--space-3) var(--space-5) var(--space-4);
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-5);
+    padding: var(--space-2) var(--space-4);
     border-top: var(--border-hair) solid color-mix(in srgb, var(--metal-dim) 50%, transparent);
+    background: color-mix(in srgb, var(--ground-deep) 50%, transparent);
     font-size: var(--text-xs);
     color: var(--ink-faint);
+  }
+
+  .syntax,
+  .foot-keys {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-5);
+  }
+
+  .foot-keys {
+    margin-inline-start: auto;
   }
 
   .keys {

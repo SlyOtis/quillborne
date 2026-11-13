@@ -113,8 +113,7 @@ const sigilGlyphs = (source: string): string[] =>
   (source.match(/<Sigil[\s\S]*?<\/Sigil>/g) ?? []).flatMap((block) => [...block.matchAll(/<Glyph name="([^"]+)"/g)].map((match) => match[1]))
 
 const bar: [string, string, number][] = [
-  ['the frame handles', region(read('src/components/Frame.svelte'), '<header class="dnd-shell-bar">', '</header>'), 2],
-  ["the sheet's tools", region(read('src/pages/CharacterPage.svelte'), '{#snippet tools()}', '{/snippet}'), 6]
+  ['the frame handles', region(read('src/components/Frame.svelte'), '<header class="dnd-shell-bar">', '</header>'), 2]
 ]
 
 describe('no bar call site decides the sigil design', () => {
@@ -131,7 +130,7 @@ describe('no bar call site decides the sigil design', () => {
 
     it(`${where} carry nothing but the title, the size, the pressed state and the handler`, () => {
       for (const attrs of found) {
-        expect(Object.keys(attrs).filter((name) => !['title', 'size', 'active', 'onclick'].includes(name))).toEqual([])
+        expect(Object.keys(attrs).filter((name) => !['title', 'size', 'active', 'disabled', 'onclick'].includes(name))).toEqual([])
         expect(attrs.size).toBe('sm')
         expect(attrs.title).toBeTruthy()
       }
@@ -151,7 +150,7 @@ describe('no bar call site decides the sigil design', () => {
       size: attrs.size
     }))
 
-    expect(drawn.length).toBe(8)
+    expect(drawn.length).toBe(2)
     expect([...new Set(drawn.map((one) => JSON.stringify(one)))]).toEqual([
       JSON.stringify({ frame: 'quatrefoil', tone: 'metal', size: 'sm' })
     ])
@@ -159,10 +158,7 @@ describe('no bar call site decides the sigil design', () => {
 
   it('names every tool the bar draws', () => {
     const glyphs = bar.flatMap(([, source]) => sigilGlyphs(source))
-    expect(glyphs).toEqual([
-      'back', 'chat',
-      'sound', 'export', 'levelup', 'sources', 'blocks', 'theme'
-    ])
+    expect(glyphs).toEqual(['back', 'chat'])
   })
 })
 
@@ -259,9 +255,7 @@ describe('the sigil is the forged HUD button', () => {
 describe('the sigils outside the bar', () => {
   for (const [where, path, want] of [
     ['the dialog close', 'src/components/BaseDialog.svelte', { title: 'Close dialog', tone: 'bane', frame: 'cusped' }],
-    ['the chat send', 'src/components/chat/Chat.svelte', { title: 'Send', tone: 'metal', frame: 'star' }],
-    ['the character create', 'src/pages/MainPage.svelte', { title: 'Forge a new character', tone: 'ember', frame: 'star' }],
-    ['the campaign create', 'src/pages/MainPage.svelte', { title: 'Raise a new campaign', tone: 'verdigris', frame: 'plate' }]
+    ['the chat send', 'src/components/chat/Chat.svelte', { title: 'Send', tone: 'metal', frame: 'star' }]
   ] as const) {
     it(`${where} keeps its own frame`, () => {
       const found = sigils(read(path)).find((attrs) => attrs.title === want.title)

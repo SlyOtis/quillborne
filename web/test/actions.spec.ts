@@ -121,20 +121,10 @@ describe('the No ammo badge sits in its own cell', () => {
     expect(placed(row.style('.ammo-warning') ?? {})).toEqual([])
   })
 
-  it('is a span inside the hit cell and the damage cell, one each', () => {
-    const item = row.elements('li')[0]
-
-    for (const name of ['hit', 'attack']) {
-      const badges = row.nodes(
-        row.cell(item, name),
-        (node) => node.type === 'RegularElement' && row.classes(node).includes('ammo-warning')
-      )
-
-      expect(badges).toHaveLength(1)
-      expect(badges[0].name).toBe('span')
-    }
-
-    expect(row.listed('span', 'ammo-warning')).toHaveLength(2)
+  it('is no badge at all: the hit and damage cells carry the dry class and the button says No ammo', () => {
+    expect(row.listed('span', 'ammo-warning')).toEqual([])
+    expect(row.source).toContain('class:attack-dry={isRanged && buttonsDisabled}')
+    expect(row.source).toContain("'No ammo'")
   })
 
   it('stacks under the button it belongs to', () => {

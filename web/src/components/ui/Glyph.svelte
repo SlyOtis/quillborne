@@ -12,6 +12,7 @@
 
 <script lang="ts" module>
   export type GlyphName =
+    | 'dice'
     | 'menu'
     | 'chat'
     | 'bell'
@@ -32,6 +33,8 @@
     | 'unfold'
     | 'add'
     | 'minus'
+    | 'shortrest'
+    | 'longrest'
     | 'edit'
     | 'copy'
     | 'remove'
@@ -301,6 +304,17 @@
 
   {:else if name === 'minus'}
     <path d="M5 12h14" />
+
+  {:else if name === 'shortrest'}
+    <path d="M7 3h10M7 21h10" />
+    <path d="M8 3c0 5 4 6 4 9s-4 4-4 9M16 3c0 5-4 6-4 9s4 4 4 9" />
+
+  {:else if name === 'longrest'}
+    <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" />
+
+  {:else if name === 'dice'}
+    <path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7Z" />
+    <path d="M12 2.5 7 15h10ZM3.5 7 7 15l5 6.5 5-6.5 3.5-8M7 15l-3.5 2M17 15l3.5 2" opacity="0.7" />
 
   {:else if name === 'copy'}
     <path d="M9 9h10v10H9Z" />

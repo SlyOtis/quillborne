@@ -26,10 +26,9 @@
         justify-content: start;
         align-items: start;
         flex-direction: column;
-        gap: var(--space-1);
-        margin-bottom: var(--space-4);
-        padding-left: var(--space-3);
-        border: var(--border-hair) solid var(--metal-dim);
+        gap: var(--space-0);
+        margin-bottom: var(--space-2);
+        padding-left: var(--space-2);
     }
 
     h4, p {

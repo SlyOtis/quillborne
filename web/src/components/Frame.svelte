@@ -32,6 +32,9 @@ import Toast from '$components/ui/Toast.svelte'
   const campaign = $derived($userCampaigns.find((one) => one.id === ($currentCampaignId ?? character?.campaign_id)) ?? null)
   const onSheet = $derived(Boolean(character) && $resolvedRoute.path === `/main/character/${character?.id}`)
   let toolsOpen = $state(false)
+  let stackEl = $state<HTMLElement | null>(null)
+  let shellEl = $state<HTMLElement | null>(null)
+  let dropLeft = $state(0)
 
   $effect(() => {
     $resolvedRoute.path
@@ -44,6 +47,7 @@ import Toast from '$components/ui/Toast.svelte'
       return
     }
     if (onSheet && $shell.tools) {
+      dropLeft = stackEl && shellEl ? stackEl.getBoundingClientRect().left - shellEl.getBoundingClientRect().left : 0
       toolsOpen = !toolsOpen
       return
     }
@@ -109,6 +113,7 @@ import Toast from '$components/ui/Toast.svelte'
 
 <main
   class="dnd-shell"
+  bind:this={shellEl}
   class:dnd-shell-menu-open={$shell.drawers && $menuOpen}
   class:dnd-shell-chat-open={$shell.drawers && $chatOpen}
 >
@@ -156,16 +161,15 @@ import Toast from '$components/ui/Toast.svelte'
       </Sigil>
     {/if}
 
-    <span class="dnd-shell-mark">{$shell.title}</span>
-
     {#if $shell.nav}
       <nav class="dnd-shell-nav" aria-label="Page">{@render $shell.nav()}</nav>
     {/if}
 
     <span class="dnd-shell-run" aria-hidden="true"></span>
 
-    <span class="dnd-shell-stack">
-      <button type="button" class="dnd-shell-chip dnd-shell-chip-round" title={character ? (onSheet ? "The sheet's tools" : 'Open the sheet') : 'Forge a character'} aria-expanded={onSheet ? toolsOpen : undefined} onclick={openCharacter}>
+    <span class="dnd-shell-stack" bind:this={stackEl}>
+      <button type="button" class="dnd-shell-chip dnd-shell-chip-round" title={character ? (onSheet ? "Open the sheet's tools" : `Open ${character.metadata.name}`) : 'Forge a character'} aria-expanded={onSheet ? toolsOpen : undefined} onclick={openCharacter}>
+        <span class="dnd-shell-chip-plate"></span>
         <span class="dnd-shell-chip-face">
           {#if character?.character?.info?.imageUrl}
             <StoredImage src={character.character.info.imageUrl} alt="" />
@@ -180,7 +184,8 @@ import Toast from '$components/ui/Toast.svelte'
           <span class="dnd-shell-chip-mail">{character ? `Level ${character.metadata.level} ${character.metadata.race} ${character.metadata.class}` : 'Character'}</span>
         </span>
       </button>
-      <button type="button" class="dnd-shell-chip" title={campaign ? 'Open the campaign' : 'Raise a campaign'} onclick={() => navigate(campaign ? `/main/campaign/${campaign.id}` : '/main/create/campaign')}>
+      <button type="button" class="dnd-shell-chip" title={campaign ? `Open ${campaign.name}` : 'Raise a campaign'} onclick={() => navigate(campaign ? `/main/campaign/${campaign.id}` : '/main/create/campaign')}>
+        <span class="dnd-shell-chip-plate"></span>
         <span class="dnd-shell-chip-face">
           {#if campaign}
             <span class="dnd-shell-chip-initial">{campaign.name.charAt(0).toUpperCase()}</span>
@@ -193,11 +198,8 @@ import Toast from '$components/ui/Toast.svelte'
           <span class="dnd-shell-chip-mail">Campaign</span>
         </span>
       </button>
-    </span>
 
-    {#if toolsOpen && $shell.tools}
-      <div class="dnd-shell-drop" role="group" aria-label="The sheet's tools">{@render $shell.tools()}</div>
-    {/if}
+    </span>
 
     {#if $shell.drawers}
       <span class="dnd-shell-handle">
@@ -207,6 +209,10 @@ import Toast from '$components/ui/Toast.svelte'
       </span>
     {/if}
   </header>
+
+  {#if toolsOpen && $shell.tools}
+    <div class="dnd-shell-drop" role="group" aria-label="The sheet's tools" style:--drop-left="{dropLeft}px">{@render $shell.tools()}</div>
+  {/if}
 
   {#if $track}
     <div class="dnd-shell-player" aria-label="Now playing">
@@ -471,28 +477,45 @@ import Toast from '$components/ui/Toast.svelte'
   .dnd-shell-drop {
     --drop-tail: var(--space-5);
     position: absolute;
-    inset-block-start: 100%;
-    inset-inline-end: calc(var(--space-8) + var(--space-5));
-    z-index: 30;
+    inset-block-start: var(--size-bar);
+    inset-inline-start: var(--drop-left);
+    z-index: 19;
+    transform-origin: top center;
+    animation: drop-roll 220ms cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: var(--space-1);
+    gap: 0;
     min-inline-size: calc(var(--space-8) * 3);
-    padding: var(--space-3) var(--space-4) calc(var(--drop-tail) + var(--space-3));
+    padding: var(--space-2) var(--space-2) calc(var(--drop-tail) + var(--space-2));
     background:
       linear-gradient(var(--metal), var(--metal)) 0 100% / 100% var(--border-hair) no-repeat,
+      linear-gradient(90deg, var(--metal-dim), var(--metal) 50%, var(--metal-dim)) 0 0 / 100% var(--border-hair) no-repeat,
+      var(--texture-weave),
       var(--texture-noise),
-      linear-gradient(180deg, var(--ground) 0%, var(--ground-deep) 100%);
-    border-inline: var(--border-hair) solid var(--metal-dim);
+      radial-gradient(ellipse 80% 40% at 50% 0%, color-mix(in srgb, var(--ember-glow) 25%, transparent) 0%, transparent 70%),
+      linear-gradient(180deg, color-mix(in srgb, var(--state-bad) 38%, var(--ground)) 0%, color-mix(in srgb, var(--state-bad) 26%, var(--ground-deep)) 100%);
+    border-inline: var(--border-hair) solid var(--metal);
     clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--drop-tail)), 50% 100%, 0 calc(100% - var(--drop-tail)));
-    filter: drop-shadow(0 var(--space-2) var(--space-3) var(--shade-hard));
+    filter: drop-shadow(0 var(--space-4) var(--space-5) var(--shade-hard)) drop-shadow(0 var(--space-2) var(--space-3) var(--shade-hard)) drop-shadow(0 0 var(--space-1) var(--shade-hard));
+  }
+
+  @keyframes drop-roll {
+    from {
+      scale: 1 0;
+      opacity: 0.6;
+    }
+    to {
+      scale: 1 1;
+      opacity: 1;
+    }
   }
 
   .dnd-shell-drop > :global(*) {
     display: flex;
     align-items: center;
     gap: var(--space-3);
+    padding-block: var(--space-1);
   }
 
   .dnd-shell-tools {
@@ -532,24 +555,6 @@ import Toast from '$components/ui/Toast.svelte'
 
   .dnd-shell-handle[aria-pressed='true'] .dnd-shell-glow-core {
     stop-opacity: 0.6;
-  }
-
-  .dnd-shell-mark {
-    flex: none;
-    max-width: 40vw;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-family: var(--font-display);
-    font-size: var(--text-md);
-    font-weight: 600;
-    letter-spacing: calc(var(--tracking-caps) * 2);
-    text-transform: uppercase;
-    background: linear-gradient(180deg, var(--metal-bright) 0%, var(--metal) 55%, var(--metal-dim) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    filter: drop-shadow(0 1px 0 var(--shade-hard));
   }
 
   .dnd-shell-nav {
@@ -593,7 +598,7 @@ import Toast from '$components/ui/Toast.svelte'
   }
 
   .dnd-shell-stack > .dnd-shell-chip-round::before,
-  .dnd-shell-stack > .dnd-shell-chip-round::after {
+  .dnd-shell-stack > .dnd-shell-chip-round > .dnd-shell-chip-plate {
     clip-path: inset(0 round var(--radius-md) 0 0 var(--radius-md));
   }
 
@@ -616,7 +621,7 @@ import Toast from '$components/ui/Toast.svelte'
   }
 
   .dnd-shell-chip::before,
-  .dnd-shell-chip::after {
+  .dnd-shell-chip-plate {
     content: '';
     position: absolute;
     z-index: -1;
@@ -629,7 +634,7 @@ import Toast from '$components/ui/Toast.svelte'
     background: linear-gradient(180deg, var(--metal-bright) 0%, var(--metal) 55%, var(--metal-dim) 100%);
   }
 
-  .dnd-shell-chip::after {
+  .dnd-shell-chip-plate {
     inset: var(--border-hair) var(--border-hair) var(--border-hair) calc(var(--size-face) / 2 + var(--border-hair));
     background:
       linear-gradient(var(--metal-dim), var(--metal-dim)) 0 0.22em / calc(100% - var(--chip-tail)) var(--border-hair) no-repeat,
@@ -639,6 +644,10 @@ import Toast from '$components/ui/Toast.svelte'
 
   .dnd-shell-chip:hover {
     filter: drop-shadow(0 0 0.35rem var(--ember-glow));
+  }
+
+  .dnd-shell-chip:hover .dnd-shell-chip-name {
+    color: var(--metal-bright);
   }
 
   .dnd-shell-chip:focus-visible {
@@ -932,6 +941,8 @@ import Toast from '$components/ui/Toast.svelte'
     grid-area: chat;
   }
 
+  .dnd-shell-bar .dnd-shell-chip[title]:hover::after,
+  .dnd-shell-bar .dnd-shell-chip[title]:focus-visible::after,
   .dnd-shell-bar :global(.dnd-sigil[title]:hover::after),
   .dnd-shell-bar :global(.dnd-sigil[title]:focus-visible::after) {
     top: calc(100% + var(--space-1));
@@ -941,7 +952,7 @@ import Toast from '$components/ui/Toast.svelte'
   @media (max-width: 1100px) {
     .dnd-shell-chip-lines,
     .dnd-shell-chip::before,
-    .dnd-shell-chip::after {
+    .dnd-shell-chip-plate {
       display: none;
     }
 
@@ -957,7 +968,6 @@ import Toast from '$components/ui/Toast.svelte'
   }
 
   @media (max-width: 860px) {
-    .dnd-shell-mark,
     .dnd-shell-player-lines {
       display: none;
     }

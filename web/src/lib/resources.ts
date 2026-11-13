@@ -452,7 +452,7 @@ Threads to pick up next time.
 }
 
 export const RESOURCES: Record<ResourceKind, ResourceShape> = {
-  entries: { part: 'entries', one: 'Entry', many: 'Entries', word: 'entry', words: 'entries', fields: [], mark: () => '', example: EXAMPLES.entries },
+  entries: { part: 'entries', one: 'Entry', many: 'Lore', word: 'entry', words: 'entries', fields: [], mark: () => '', example: EXAMPLES.entries },
   items: {
     part: 'items',
     one: 'Item',
