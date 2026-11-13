@@ -87,7 +87,7 @@ build and the migrations pull are public.
 ```
 
 The service serves `web/dist`, and `just dev` builds it when it is missing. That build removes
-`web/node_modules/.vite` while Vite is starting, so build it here first.
+`web/.vite` while Vite is starting, so build it here first.
 
 ## 4. Database image
 
