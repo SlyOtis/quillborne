@@ -91,7 +91,7 @@ jobs:
           GOPRIVATE: github.com/nimling/*
         run: |
           git config --global url."https://${GH_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go install github.com/nimling/samna-auth/cmd/sauth@v1.0.0-alpha0320
+          go install github.com/nimling/samna-auth/cmd/sauth@v1.0.0-alpha0364
 
       - name: Upload the login page
         run: sauth app page replace login --app dndcs --data "$(jq -n --rawfile t deploy/sauth/pages/login.html '{kind:"login",template:$t}')" --yes
