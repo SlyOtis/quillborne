@@ -4,17 +4,13 @@
   import { getRecentFirst, userCharacters } from "$lib/stores/character.store";
   import { userProfile } from "$lib/stores/auth.store";
   import Card from "$components/ui/Card.svelte";
-  import Button from "$components/ui/Button.svelte";
-  import { unfold } from "$lib/unfold";
 
   let {
     loading = false,
-    search = '',
-    open = $bindable(true)
+    search = ''
   }: {
     loading?: boolean
     search?: string
-    open?: boolean
   } = $props();
 
   let shown = $derived(getRecentFirst($userCharacters, $userProfile?.preferences?.recent_characters ?? []).filter((entry) =>
@@ -36,7 +32,6 @@
     <span>No character carries your name yet</span>
   </div>
 {:else}
-  <div class="roll-fold" class:roll-fold-shut={!open} use:unfold={open}>
   <div class="roll-grid">
     {#each shown as entry (entry.id)}
       <Card
@@ -58,32 +53,12 @@
       </Card>
     {/each}
   </div>
-  </div>
-  {#if !open}
-    <Button variant="plain" size="sm" fill onclick={() => (open = true)}>
-      Show the {shown.length} {shown.length === 1 ? 'character' : 'characters'}
-    </Button>
-  {/if}
 {/if}
 
 <style>
-  .roll-fold {
+  .roll-grid {
     --roll-seat: 11.4rem;
     --roll-row: calc(var(--roll-seat) * 1.9);
-    --roll-bleed: var(--space-6);
-    position: relative;
-    margin: calc(var(--roll-bleed) * -1) calc(var(--roll-bleed) * -1) 0;
-    padding: var(--roll-bleed) var(--roll-bleed) 0;
-    --unfold-rest: calc(var(--roll-bleed) + var(--space-8) * 2.25);
-    --unfold-time: 0.48s;
-  }
-
-  .roll-fold-shut {
-    -webkit-mask-image: linear-gradient(180deg, var(--ground-deep) calc(100% - var(--space-8) * 2), transparent 100%);
-    mask-image: linear-gradient(180deg, var(--ground-deep) calc(100% - var(--space-8) * 2), transparent 100%);
-  }
-
-  .roll-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(var(--roll-seat), 100%), 1fr));
     gap: var(--space-6);
