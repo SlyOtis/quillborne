@@ -64,11 +64,6 @@
 
   const seated = $derived(characters.filter((entry) => !isNpc(entry)))
   const npcs = $derived(characters.filter(isNpc))
-  const averageLevel = $derived(
-    seated.length === 0
-      ? 0
-      : Math.round(seated.reduce((sum, entry) => sum + entry.metadata.level, 0) / seated.length)
-  )
   const pins = $derived(maps.reduce((sum, entry) => sum + entry.markers.length, 0))
   const revealed = $derived(maps.filter((entry) => entry.is_visible).length)
   const party = $derived(
@@ -287,7 +282,7 @@
         <section class="camp-plot camp-plot-roll" aria-label="Party">
           <header class="camp-divide">
             <h2 class="dnd-label camp-divide-name">Party</h2>
-            <span class="camp-divide-note">{seated.length} at the table, {yours} yours, average level {averageLevel}</span>
+            <span class="camp-divide-note">{seated.length} at the table, {yours} yours</span>
             <span class="camp-divide-run"></span>
             <Button variant="secondary" size="sm" onclick={() => navigate(`/main/create/character?campaign=${campaignId}`)}>New</Button>
           </header>
