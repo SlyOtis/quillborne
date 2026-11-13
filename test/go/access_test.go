@@ -258,7 +258,7 @@ func TestASheetIsReadByTheTableOnlyOnceItJoins(t *testing.T) {
 func TestAPageIsReadByThoseItIsSharedWith(t *testing.T) {
 	requireStack(t)
 	ensureProfile(t, player, "pip@quillborne.local")
-	status, made := call(t, dungeonMaster, http.MethodPost, "/api/resource", `{"kind":"entries","title":"Secret lore","body":"{}"}`, nil, handler.PostResource)
+	status, made := call(t, dungeonMaster, http.MethodPost, "/api/resource", `{"kind":"entries","name":"Secret lore","body":"{}"}`, nil, handler.PostResource)
 	if status != http.StatusCreated {
 		t.Fatalf("PostResource: %d %+v", status, made.Error)
 	}
@@ -288,7 +288,7 @@ func TestAPageIsReadByThoseItIsSharedWith(t *testing.T) {
 func TestALiveEditNeedsWriteOnItsPage(t *testing.T) {
 	requireStack(t)
 	ensureProfile(t, player, "pip@quillborne.local")
-	status, made := call(t, dungeonMaster, http.MethodPost, "/api/resource", `{"kind":"entries","title":"Shared draft"}`, nil, handler.PostResource)
+	status, made := call(t, dungeonMaster, http.MethodPost, "/api/resource", `{"kind":"entries","name":"Shared draft"}`, nil, handler.PostResource)
 	if status != http.StatusCreated {
 		t.Fatalf("PostResource: %d %+v", status, made.Error)
 	}
@@ -335,7 +335,7 @@ func TestAPageSharedWithACampaignReachesItsTable(t *testing.T) {
 	requireStack(t)
 	campaignID := postCampaign(t)
 	seatPlayer(t, campaignID)
-	status, made := call(t, dungeonMaster, http.MethodPost, "/api/resource", `{"kind":"npcs","title":"Old Moss","campaign_id":"`+campaignID+`"}`, nil, handler.PostResource)
+	status, made := call(t, dungeonMaster, http.MethodPost, "/api/resource", `{"kind":"npcs","name":"Old Moss","campaign_id":"`+campaignID+`"}`, nil, handler.PostResource)
 	if status != http.StatusCreated {
 		t.Fatalf("PostResource: %d %+v", status, made.Error)
 	}

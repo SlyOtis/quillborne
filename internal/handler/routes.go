@@ -115,6 +115,9 @@ func PutRoutes(api *echo.Group, userAuth echo.MiddlewareFunc) {
 	catalog.GET("/:kind/:slug", GetCatalogEntry)
 	catalog.PUT("/:kind/:slug", PutCatalogEntry)
 
+	api.GET("/search", GetSearch, userAuth)
+	api.POST("/search", GetSearch, userAuth)
+
 	claim := api.Group("/claim", userAuth)
 	claim.POST("", PostClaim)
 	claim.GET("/:id", GetClaim)

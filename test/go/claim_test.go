@@ -63,7 +63,7 @@ func TestAGrantAndABindingAreRevokedByTheClaimsMakerAlone(t *testing.T) {
 	requireStack(t)
 	ensureProfile(t, dungeonMaster, "testy@quillborne.local")
 	ensureProfile(t, player, "pip@quillborne.local")
-	resourceID := postResource(t, player, `{"kind":"entries","title":"Pip's secret"}`)
+	resourceID := postResource(t, player, `{"kind":"entries","name":"Pip's secret"}`)
 	resourceParams := map[string]string{"id": resourceID}
 	claimID := postClaim(t, player, "Secret readers")
 	params := map[string]string{"id": claimID}

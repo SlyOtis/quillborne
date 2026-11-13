@@ -55,7 +55,7 @@ func TestATagIsReadByEveryMemberAndChangedByItsMaker(t *testing.T) {
 func TestARowIsTaggedByThoseWhoWriteIt(t *testing.T) {
 	requireStack(t)
 	ensureProfile(t, player, "pip@quillborne.local")
-	resourceID := postResource(t, dungeonMaster, `{"kind":"entries","title":"Tagged lore","share_users":["`+player.String()+`"]}`)
+	resourceID := postResource(t, dungeonMaster, `{"kind":"entries","name":"Tagged lore","share_users":["`+player.String()+`"]}`)
 	status, made := call(t, dungeonMaster, http.MethodPost, "/api/tag", `{"name":"tagged `+uuid.NewString()[:8]+`"}`, nil, handler.PostTag)
 	if status != http.StatusCreated {
 		t.Fatalf("PostTag: %d %+v", status, made.Error)
@@ -103,7 +103,7 @@ func TestAnAttachmentIsPlacedByThoseWhoWriteTheRow(t *testing.T) {
 	if status != http.StatusCreated {
 		t.Fatalf("PostAsset: %d", status)
 	}
-	resourceID := postResource(t, dungeonMaster, `{"kind":"entries","title":"Bannered lore","share_users":["`+player.String()+`"]}`)
+	resourceID := postResource(t, dungeonMaster, `{"kind":"entries","name":"Bannered lore","share_users":["`+player.String()+`"]}`)
 	params := map[string]string{"id": stored.ID}
 	body := `{"object_type":"resource","object_id":"` + resourceID + `","properties":{"role":"banner"}}`
 	if status, _ := call(t, player, http.MethodPut, "/", body, params, handler.PutObjectAsset); status != http.StatusNotFound {

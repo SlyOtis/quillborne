@@ -300,7 +300,7 @@ func TestAnAttachmentNeedsReadOnTheAssetAndWriteOnTheRow(t *testing.T) {
 		t.Fatalf("a player removed an attachment from a row they cannot write: %d", status)
 	}
 
-	status, answer = call(t, player, http.MethodPost, "/api/resource", `{"kind":"entries","title":"Pip's notes"}`, nil, handler.PostResource)
+	status, answer = call(t, player, http.MethodPost, "/api/resource", `{"kind":"entries","name":"Pip's notes"}`, nil, handler.PostResource)
 	if status != http.StatusCreated {
 		t.Fatalf("PostResource: %d %+v", status, answer.Error)
 	}
@@ -446,7 +446,7 @@ func TestAPageSharedWithACampaignSharesTheImageItHolds(t *testing.T) {
 		if status != http.StatusCreated {
 			t.Fatalf("PostAsset: %d", status)
 		}
-		status, made := call(t, side.owner, http.MethodPost, "/api/resource", `{"kind":"locations","title":"The vale"}`, nil, handler.PostResource)
+		status, made := call(t, side.owner, http.MethodPost, "/api/resource", `{"kind":"locations","name":"The vale"}`, nil, handler.PostResource)
 		if status != http.StatusCreated {
 			t.Fatalf("PostResource: %d %+v", status, made.Error)
 		}
@@ -512,7 +512,7 @@ func TestAnImageTakenOffAPageIsNoLongerSharedWithIt(t *testing.T) {
 	if status != http.StatusCreated {
 		t.Fatalf("PostAsset: %d", status)
 	}
-	status, made := call(t, dungeonMaster, http.MethodPost, "/api/resource", `{"kind":"locations","title":"The keep"}`, nil, handler.PostResource)
+	status, made := call(t, dungeonMaster, http.MethodPost, "/api/resource", `{"kind":"locations","name":"The keep"}`, nil, handler.PostResource)
 	if status != http.StatusCreated {
 		t.Fatalf("PostResource: %d %+v", status, made.Error)
 	}
