@@ -1,6 +1,7 @@
 ---
 name: run
 description: Start Quillborne locally (the database, the blob store, the Go service and the Vite dev server), signed in as the debug user and without anyone else's secrets. Use when the user says "start local dev", "run it locally", "start the app" or "spin it up", or when a local run does not come up.
+allowed-tools: Bash(bash .claude/skills/run/scripts/*), Bash(just *), Bash(docker *), Bash(git *), Bash(lsof *), Bash(curl *), Bash(pgrep *), Bash(ps *), Bash(kill *), Read, Grep, Glob
 ---
 
 # Start local dev
@@ -11,10 +12,9 @@ has run this before, every step through 5 is a check that passes.
 
 Never print `.env`, because it holds the seed. Check a key by its name and length only.
 
-Every worktree runs a stack of its own, side by side with the others, on its own slot: slot `n` holds the service
-on `4290 + n`, Postgres on `5490 + n`, Azurite on `10000 + n` and Vite on `5173 + n`. Step 2 picks the slot when it
-writes `.env`, and the containers, the volume and the database image are named after the worktree's folder,
-`<folder>-db` and `<folder>-blob`. Below, `$name` is `$(basename "$PWD")`.
+Every worktree runs a stack of its own on its own slot, `setup.md` Several checkouts at once; step 2 picks the slot
+when it writes `.env`. Below, `$name` is `$(basename "$PWD")`, the folder the containers and the database image are
+named after.
 
 The commands are for macOS. On Linux, install with the package manager, and use `sed -i` for `sed -i ''` and
 `xdg-open` for `open`.
@@ -46,8 +46,8 @@ brew install go node pnpm just
 go install github.com/air-verse/air@latest
 ```
 
-Do not run `just install` for this. It also installs the Azure CLI, playwright-cli and the private `sauth` CLI, which
-a local run never uses, and `sauth` installs only with read access to it.
+Do not run `just install` for this: it also installs the Azure CLI, playwright-cli and the private `sauth` cli, which
+a local run never uses.
 
 ## 2. Keys
 
@@ -70,9 +70,9 @@ grep -q '^SAUTH_DEBUG_PRIVATE_SEED=$' .env && sed -i '' "s/^SAUTH_DEBUG_PRIVATE_
 just env
 ```
 
-A fresh `.env` in the main checkout keeps slot 0, the values of `.env.example`. One in a worktree takes the lowest
-slot from 1 that no other worktree's `.env` holds and nothing listens on. A worktree keeps its `.env`, and with it
-its slot, until it is removed. Never copy another checkout's `.env`.
+The main checkout runs on slot 2, written by `scripts/latest.sh` below. A fresh `.env` in a worktree takes the lowest
+slot from 1 that no other worktree's `.env` holds and nothing listens on, and keeps it until the worktree is removed.
+Never copy another checkout's `.env`.
 
 The seed belongs to this machine: 64 hex characters that encrypt the keys players save in the local database. When
 it is empty, saving a key answers 500. `SAUTH_APP_SECRET` and `SERVER_VERSION` stay empty.
@@ -162,3 +162,13 @@ Tell the user:
 - Saving a key answers 500: the seed is empty. Go back to step 2, then restart `just dev`.
 - `pnpm dev` opens Brave on this worktree's Vite port when Brave is not already running. Without Brave it prints
   `Unable to find application named 'Brave Browser'`, which is harmless.
+
+## The latest server
+
+The main checkout is the one server on http://localhost:5175, slot 2, and it always runs the newest `main`. After every merge to `main`, and whenever the user asks for the latest, run from any checkout:
+
+```sh
+bash .claude/skills/run/scripts/latest.sh
+```
+
+It pulls `main` on the main checkout, writes slot 2 into its `.env`, stops this checkout's earlier run and anything else listening on its four ports, removes a container bound to them, rebuilds the database image when `database/` changed after it was built or its baked `PGPORT` differs, starts `just dev` detached with its log in `/tmp/<folder>-dev.log`, waits for the seed, and prints the address with the commit it serves. It exits 3 when a port stays held and names the holder, and 4 when the service does not answer within two minutes.
