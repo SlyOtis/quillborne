@@ -3,7 +3,7 @@
   import type { Campaign } from '$lib/api/types'
   import type { Snippet } from 'svelte'
   import { navigate, currentRoute, resolvedRoute } from 'sly-svelte-location-router'
-  import { getAll, getChildren, getRoots, isResourceKind, RESOURCES, type Place, type Resource, type ResourceKind } from '$lib/resources'
+  import { getAll, getChildren, getRoots, isResourceKind, RESOURCES, type Resource, type ResourceKind } from '$lib/resources'
   import { user, userDetails, userProfile } from '$lib/stores/auth.store'
   import { userCampaigns } from '$lib/stores/campaign.store'
   import { userCharacters } from '$lib/stores/character.store'
@@ -15,7 +15,6 @@
   import { uiStore } from '$lib/stores/ui.store'
 
   let campaign = $state<Campaign | null>(null)
-  let places = $state<Place[]>([])
   let loading = $state(false)
   let error = $state<string | null>(null)
   let open = $state(['characters', 'campaigns'])
@@ -57,7 +56,6 @@
 
     if (!id) {
       campaign = null
-      places = []
       error = null
       loading = false
       return
@@ -68,13 +66,9 @@
 
     void (async () => {
       try {
-        const [record, sites] = await Promise.all([
-          getCampaign(id),
-          getAll({ at: 'campaign', id }, 'places') as Promise<Place[]>
-        ])
+        const record = await getCampaign(id)
         if (!live) return
         campaign = record
-        places = sites
 
         const [entries, ...gear] = await Promise.all(['entries' as ResourceKind, ...GEAR].map((roll) => getAll({ at: 'campaign', id }, roll)))
         if (!live) return
@@ -128,7 +122,6 @@
 
     {@render section('characters', 'Characters', mine.length, roster)}
     {@render section('campaigns', 'Campaigns', $userCampaigns.length, tables)}
-    {@render section('places', 'Places', places.length, sites)}
     {#each ROLLS as roll (roll)}
       <Fold
         title={RESOURCES[roll].many}
@@ -225,20 +218,6 @@
         onopen={(id) => navigate(`/main/campaign/${id}`)}
       />
     </div>
-  {/if}
-{/snippet}
-
-{#snippet sites()}
-  {#if !campaign}
-    <p class="dnd-menu-empty">No campaign is in scope.</p>
-  {:else}
-    {#if places.length === 0}
-      <p class="dnd-menu-empty">No place has been revealed.</p>
-    {:else}
-      <div class="dnd-scroll dnd-menu-tree">
-        <Tree rows={twigs(places, 'places')} on={openId} onopen={(id) => openResource('places', id)} />
-      </div>
-    {/if}
   {/if}
 {/snippet}
 
