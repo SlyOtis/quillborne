@@ -351,6 +351,11 @@
               <span class="sheet-campaign-word">Campaign</span>
               <span class="sheet-campaign-name">{campaign.name}</span>
             </a>
+          {:else}
+            <span class="sheet-campaign">
+              <span class="sheet-campaign-word">Campaign</span>
+              <span class="sheet-campaign-name">None</span>
+            </span>
           {/if}
         </span>
 
