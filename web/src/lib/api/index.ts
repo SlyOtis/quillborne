@@ -22,6 +22,8 @@ import type {
   CharacterStatus,
   ChatEntry,
   Encounter,
+  Monster,
+  MonsterFields,
   ObjectAsset,
   Owner,
   Profile,
@@ -261,6 +263,17 @@ export const postVehicle = (fields: VehicleFields) => apiPost<Vehicle>('vehicle'
 export const putVehicle = (vehicleId: string, updates: VehicleFields) => apiPut<Vehicle>(`vehicle/${vehicleId}`, updates)
 
 export const deleteVehicle = (vehicleId: string) => apiDelete(`vehicle/${vehicleId}`)
+
+export const getMonsters = () => apiGet<Monster[]>('monster')
+
+export const getMonster = (monsterId: string) =>
+  apiGet<Monster>(`monster/${monsterId}`).catch((error) => getAbsent(error, null))
+
+export const postMonster = (fields: MonsterFields) => apiPost<Monster>('monster', fields)
+
+export const putMonster = (monsterId: string, updates: MonsterFields) => apiPut<Monster>(`monster/${monsterId}`, updates)
+
+export const deleteMonster = (monsterId: string) => apiDelete(`monster/${monsterId}`)
 
 export async function postCampaign(fields: Omit<Campaign, 'id' | 'created_at' | 'updated_at'>): Promise<string> {
   const created = await apiPost<Campaign>('campaign', {
@@ -638,3 +651,13 @@ export interface SearchBody {
 export const postSearch = (body: SearchBody) => apiPost<SearchHit[]>('search', body)
 
 export const getTags = (q: string) => apiGet<Tag[]>(path('tag', { q, limit: '10' }))
+
+export const getObjectTags = (objectType: string) => apiGet<Tag[]>(path('tag', { object_type: objectType }))
+
+export const postTag = (name: string) => apiPost<Tag>('tag', { name })
+
+export const postTagObject = (tagId: string, objectType: string, objectId: string) =>
+  apiPost(`tag/${tagId}/object`, { object_type: objectType, object_id: objectId })
+
+export const deleteTagObject = (tagId: string, objectType: string, objectId: string) =>
+  apiDelete(path(`tag/${tagId}/object`, { object_type: objectType, object_id: objectId }))

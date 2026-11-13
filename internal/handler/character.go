@@ -83,12 +83,12 @@ func putCharacterName(character *db.Character) {
 	character.Description = sheet.Info.Description
 }
 
-func putPublicBinding(ctx context.Context, tx bun.Tx, w *Writer, characterID uuid.UUID, public bool) error {
+func putPublicBinding(ctx context.Context, tx bun.Tx, w *Writer, objectType string, objectID uuid.UUID, public bool) error {
 	access := sdb.ACCESS_MEMBER
 	if public {
 		access = sdb.ACCESS_MEMBER | sdb.ACCESS_READ
 	}
-	return putBindings(ctx, tx, w, db.OBJECT_TYPE_CHARACTER, characterID, map[uuid.UUID]sdb.ClaimAccess{*w.Access.ClaimID: access}, []uuid.UUID{*w.Access.ClaimID})
+	return putBindings(ctx, tx, w, objectType, objectID, map[uuid.UUID]sdb.ClaimAccess{*w.Access.ClaimID: access}, []uuid.UUID{*w.Access.ClaimID})
 }
 
 func GetCharacters(ctx echo.Context) error {
@@ -197,7 +197,7 @@ func PostCharacter(ctx echo.Context) error {
 		if err := sdb.Write(tctx, tx, "PostCharacter", "create", db.OBJECT_TYPE_CHARACTER, character.ID, character.OwnerID, w.Access.UserClaimID, "Created a character"); err != nil {
 			return err
 		}
-		if err := putPublicBinding(tctx, tx, w, character.ID, character.IsPublic); err != nil {
+		if err := putPublicBinding(tctx, tx, w, db.OBJECT_TYPE_CHARACTER, character.ID, character.IsPublic); err != nil {
 			return err
 		}
 		if campaign == nil {
@@ -284,7 +284,7 @@ func PutCharacter(ctx echo.Context) error {
 			if err != nil {
 				return err
 			}
-			if err := putPublicBinding(tctx, tx, w, character.ID, *public); err != nil {
+			if err := putPublicBinding(tctx, tx, w, db.OBJECT_TYPE_CHARACTER, character.ID, *public); err != nil {
 				return err
 			}
 		}
