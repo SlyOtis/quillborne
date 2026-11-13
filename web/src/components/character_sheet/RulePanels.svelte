@@ -46,19 +46,19 @@
 {:else if $rules.resolved}
   {#each panels as panel (panel.id)}
     <section class="dnd-rule-panel dnd-panel dnd-keyline">
-      <h3 class="dnd-rule-panel-title">{panel.title}</h3>
       <div class="dnd-rule-panel-body dnd-rule-panel-{panel.layout}">
         {#each panel.fields as field (field.source + field.id)}
           {@const entry = getEntry($rules.resolved, field)}
           {#if entry}
             <div class="dnd-rule-panel-entry dnd-panel dnd-keyline">
               <span class="dnd-rule-panel-value">{entry.value}</span>
-              <span class="dnd-rule-panel-label">{entry.title}</span>
               {#if entry.note}<span class="dnd-rule-panel-note">{entry.note}</span>{/if}
+              <span class="dnd-rule-panel-label">{entry.title}</span>
             </div>
           {/if}
         {/each}
       </div>
+      <h3 class="dnd-rule-panel-title">{panel.title}</h3>
     </section>
   {/each}
 {/if}
@@ -74,13 +74,13 @@
   }
 
   .dnd-rule-panel-title {
-    margin: calc(var(--space-1) - var(--space-3)) calc(var(--space-1) - var(--space-3)) 0;
+    margin: auto calc(var(--space-1) - var(--space-3)) calc(var(--space-1) - var(--space-3));
     padding: var(--space-1) var(--space-3);
     background:
       linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
       var(--texture-noise),
       var(--stone);
-    box-shadow: var(--bevel-up), inset 0 -1px 0 var(--metal-dim), inset 0 -2px 0 var(--keyline);
+    box-shadow: var(--bevel-up), inset 0 1px 0 var(--metal-dim), inset 0 2px 0 var(--keyline);
     font-family: var(--font-display);
     font-size: var(--text-xs);
     font-weight: 700;

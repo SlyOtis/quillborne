@@ -61,7 +61,7 @@
         {/each}
     </div>
     <div class="adder">
-        <Field label="Defence" id="defence-kind">
+        <Field label="Defence" id="defence-kind" inline>
             <select id="defence-kind" bind:value={kindId} onchange={addDefence}>
                 <option value="">Kind</option>
                 {#each defenceKinds as kind (kind.id)}
@@ -69,7 +69,7 @@
                 {/each}
             </select>
         </Field>
-        <Field label="Damage" id="defence-damage">
+        <Field label="Damage" id="defence-damage" inline>
             <select id="defence-damage" bind:value={damageId} onchange={addDefence}>
                 <option value="">Type</option>
                 {#each damageTypes as damage (damage.id)}
@@ -105,7 +105,7 @@
         {/each}
     </div>
     <div class="adder">
-        <Field label="Condition" id="condition-pick">
+        <Field label="Condition" id="condition-pick" inline>
             <select id="condition-pick" bind:value={conditionId} onchange={addCondition}>
                 <option value="">Choose</option>
                 {#each conditionList as condition (condition.id)}
@@ -114,6 +114,7 @@
             </select>
         </Field>
     </div>
+    <span class="dnd-caption">Defences and conditions</span>
 </div>
 
 <style>
@@ -124,7 +125,7 @@
         align-items: stretch;
         min-width: 0;
         gap: var(--space-2);
-        padding: 0 0 var(--space-2);
+        padding: 0;
         z-index: 1;
         color: var(--ink);
         background: var(--texture-noise), linear-gradient(180deg, var(--ground-raised), var(--ground-deep));
@@ -185,9 +186,9 @@
     }
 
     .adder {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: flex-end;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+        align-items: center;
         gap: var(--space-2);
         min-width: 0;
         padding-inline: var(--space-3);
@@ -195,6 +196,18 @@
 
     .adder :global(select) {
         padding-block: var(--space-1);
+    }
+
+    .root > .dnd-caption {
+        margin-block-start: auto;
+        padding: var(--space-1) var(--space-3);
+        background:
+            linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
+            var(--texture-noise),
+            var(--stone);
+        box-shadow: var(--bevel-up), inset 0 1px 0 var(--metal-dim), inset 0 2px 0 var(--keyline);
+        color: var(--metal-bright);
+        text-shadow: 0 1px 0 #000;
     }
 
     .divider {

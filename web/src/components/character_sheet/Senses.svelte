@@ -51,7 +51,7 @@
         position: relative;
         gap: var(--space-3);
         display: flex;
-        justify-content: center;
+        justify-content: flex-start;
         align-items: center;
         flex-direction: column;
         width: auto;
@@ -109,7 +109,7 @@
 
     .root > .dnd-caption {
         align-self: stretch;
-        margin: 0 calc(var(--space-1) - var(--space-3)) calc(var(--space-1) - var(--space-3));
+        margin: auto calc(var(--space-1) - var(--space-3)) calc(var(--space-1) - var(--space-3));
         padding: var(--space-1) var(--space-3);
         background:
             linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
