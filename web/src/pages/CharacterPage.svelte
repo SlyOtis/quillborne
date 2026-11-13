@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as api from '$lib/api'
-  import { getAssets, getCampaign, getCharacter, postCharacterCopy, postFile, putCharacterLayout, putCharacterPlayed, putProfileRecentCharacters } from '$lib/api'
+  import { getAssets, getCampaign, getCampaignVehiclesStream, getCharacter, postCharacterCopy, postFile, putCharacterLayout, putCharacterPlayed, putProfileRecentCharacters } from '$lib/api'
   import type { Character } from '$lib/api/types'
   import { getTheme, setTheme } from "$lib/dialogs/theme";
   import Senses from "$character-sheet/Senses.svelte";
@@ -31,8 +31,10 @@
   import Overlay from "$components/Overlay.svelte";
   import { sidebarStore } from "$lib/navigation";
   import { uiStore, anyDialogOpen, menuView, soundBoard } from "$lib/stores/ui.store";
-  import { navigate } from "sly-svelte-location-router";
+  import { navigate, resolvedRoute } from "sly-svelte-location-router";
   import Shell from "$components/ui/Shell.svelte";
+  import Stops from "$components/ui/Stops.svelte";
+  import VehiclesPage from "./VehiclesPage.svelte";
   import Portrait, { type PortraitFrame } from "$components/ui/Portrait.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
   import IconBtn from "$components/ui/IconBtn.svelte";
@@ -45,10 +47,26 @@
   import { user, userProfile } from "$lib/stores/auth.store";
   import { currentCharacterId, getRecentCharacters } from "$lib/stores/character.store";
 
-  const { route }: { route?: { params?: Record<string, string> } } = $props();
-  const characterId = untrack(() => route?.params?.id) ?? "local";
+  const characterId = untrack(() => $resolvedRoute.path.split('/')[3]) || "local";
 
   let campaign = $state<{ id: string, name: string } | null>(null);
+  let fleet = $state<number | null>(null);
+
+  const VIEWS = [{ id: 'sheet', label: 'Character' }, { id: 'dock', label: 'Dock' }];
+  const view = $derived($resolvedRoute.path.endsWith('/dock') ? 'dock' : 'sheet');
+
+  function openView(next: string) {
+    navigate(`/main/character/${characterId}${next === 'dock' ? '/dock' : ''}`);
+  }
+
+  $effect(() => {
+    if (!campaign) return;
+    return getCampaignVehiclesStream(campaign.id, (vehicles) => (fleet = vehicles.length));
+  });
+
+  $effect(() => {
+    if (view === 'dock' && fleet === 0) openView('sheet');
+  });
   const {unsubscribe, ...chStore} = getCharacterStore(characterId)
   const unsubscribeSidebar = sidebarStore.subscribe(() => {});
 
@@ -94,8 +112,16 @@
 
         if (document.campaign_id) {
           getCampaign(document.campaign_id)
-            .then((found) => (campaign = found && { id: found.id, name: found.name }))
-            .catch(() => (campaign = null));
+            .then((found) => {
+              campaign = found && { id: found.id, name: found.name };
+              if (!found) fleet = 0;
+            })
+            .catch(() => {
+              campaign = null;
+              fleet = 0;
+            });
+        } else {
+          fleet = 0;
         }
       })
       .catch((reason) => (missing = reason instanceof Error ? reason.message : String(reason)))
@@ -357,11 +383,21 @@
   {/if}
 {/snippet}
 
+{#snippet views()}
+  {#if fleet}
+    <Stops stops={VIEWS} stop={view} onopen={openView} />
+  {/if}
+{/snippet}
+
+{#if view === 'dock' && campaign && fleet}
+<VehiclesPage dock={{ campaignId: campaign.id, nav: views, back: () => openView('sheet') }} />
+{:else}
 <Shell
   title={$info.name || 'Character'}
   width="full"
   back={() => navigate('/main')}
   drawers
+  nav={views}
 >
   {#snippet tools()}
     {#if owned}
@@ -560,6 +596,7 @@
     </div>
   {/if}
 </Shell>
+{/if}
 
 {#if picking}
   <MediaDialog

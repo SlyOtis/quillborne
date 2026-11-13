@@ -83,6 +83,11 @@
       component: page("ScribePage", () => import("./pages/ScribePage.svelte")),
       guard: requireSignIn
     },
+    "/main/character/:id/dock": {
+      name: "character-dock",
+      component: page("CharacterPage", () => import("./pages/CharacterPage.svelte")),
+      guard: requireSignIn
+    },
     "/main/user": {
       name: "user",
       component: page("UserPage", () => import("./pages/UserPage.svelte")),

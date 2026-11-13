@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getCampaigns, getCampaignVehiclesStream, getVehicles, postVehicle } from '$lib/api'
   import type { Campaign, Vehicle } from '$lib/api/types'
-  import { onMount, setContext } from 'svelte'
+  import { onMount, setContext, type Snippet } from 'svelte'
   import { navigate, resolvedRoute } from 'sly-svelte-location-router'
   import { getTheme, setTheme } from '$lib/dialogs/theme'
   import {
@@ -32,6 +32,8 @@
   import ComponentBrowser from '$components/vehicle/ComponentBrowser.svelte'
   import VehicleRulings from '$components/vehicle/VehicleRulings.svelte'
 
+  const { dock }: { dock?: { campaignId: string; nav: Snippet; back: () => void } } = $props()
+
   setContext('dialogState', {
     get isAnyDialogOpen() {
       return $anyDialogOpen
@@ -47,7 +49,7 @@
   ]
 
   const steps = $derived($resolvedRoute.path.split('/').filter(Boolean))
-  const campaignId = $derived(steps[1] === 'campaign' ? (steps[2] ?? '') : '')
+  const campaignId = $derived(dock?.campaignId ?? (steps[1] === 'campaign' ? (steps[2] ?? '') : ''))
 
   let stop = $state('vessels')
   let vehicles = $state<Vehicle[]>([])
@@ -214,9 +216,11 @@
   }
 </script>
 
-<Shell drawers title={campaign ? `${campaign.name} · Vehicles` : 'The Dock'} width="wide" back={() => navigate(campaignId ? `/main/campaign/${campaignId}` : '/main')}>
+<Shell drawers title={campaign ? `${campaign.name} · Vehicles` : 'The Dock'} width="wide" back={dock?.back ?? (() => navigate(campaignId ? `/main/campaign/${campaignId}` : '/main'))}>
   {#snippet nav()}
-    {#if campaignId}
+    {#if dock}
+      {@render dock.nav()}
+    {:else if campaignId}
       <Stops stops={SECTIONS} stop={getSection('vehicles')} onopen={openSection} />
     {:else}
       <Stops stops={STOPS} {stop} onopen={(next) => (stop = next)} />
@@ -224,7 +228,7 @@
   {/snippet}
 
   {#snippet band()}
-    {#if campaignId}
+    {#if campaignId && !dock}
       <CampaignBar stop="vehicles" onopen={openStop} />
     {/if}
   {/snippet}
