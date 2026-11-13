@@ -145,15 +145,8 @@
 
 <Shell title="Choose a Race" back={() => navigate('/main/create/character/class')}>
   <header class="pick-crown">
-    <span class="pick-crest">
-      <span class="pick-plate dnd-shield"></span>
-      <Ornament name="crest" size="md" tone="metal" />
-    </span>
+    <span class="pick-crest"><Ornament name="tree" size="lg" tone="metal" /></span>
     <h1 class="dnd-heading dnd-heading-hero pick-name">Choose Your Race</h1>
-    <span class="pick-rule"><Ornament name="divider" tone="metal" /></span>
-    {#if characterData}
-      <p class="pick-lede">The blood {characterData.name} carries.</p>
-    {/if}
   </header>
 
   {#if isAnalyzing}
@@ -202,8 +195,6 @@
 
 <style>
   .pick-crown {
-    --pick-rule-run: calc(var(--space-8) * 6);
-    --pick-rule-share: 70%;
     --pick-crest-lift: drop-shadow(0 var(--space-1) var(--space-3) var(--shade-hard));
     display: flex;
     flex-direction: column;
@@ -223,33 +214,9 @@
     filter: var(--pick-crest-lift);
   }
 
-  .pick-plate {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, var(--ground-deep) 45%, transparent) 60%, color-mix(in srgb, var(--ground-deep) 65%, transparent) 100%),
-      var(--texture-noise),
-      var(--stone);
-    box-shadow: var(--rim-thin), var(--bevel-up);
-  }
-
   .pick-name {
     font-size: var(--text-2xl);
     overflow-wrap: anywhere;
-  }
-
-  .pick-rule {
-    display: block;
-    width: min(var(--pick-rule-run), var(--pick-rule-share));
-  }
-
-  .pick-lede {
-    margin: 0;
-    font-family: var(--font-body);
-    font-size: var(--text-sm);
-    font-style: italic;
-    color: var(--ink-dim);
   }
 
   .pick-wait {
