@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as api from '$lib/api'
-  import { getCampaign, getCharacter, postCharacterCopy, postFile, putCharacterPlayed, putProfileRecentCharacters } from '$lib/api'
+  import { getCampaign, getCharacter, postCharacterCopy, postFile, putCharacterLayout, putCharacterPlayed, putProfileRecentCharacters } from '$lib/api'
   import type { Character } from '$lib/api/types'
   import { getTheme, setTheme } from "$lib/dialogs/theme";
   import Senses from "$character-sheet/Senses.svelte";
@@ -26,6 +26,8 @@
   import { getRulesStore } from "$lib/rules/store";
   import { setContext, onDestroy, onMount, untrack, type Snippet } from "svelte";
   import Fold from "$components/ui/Fold.svelte";
+  import DynamicGrid from "$components/ui/DynamicGrid.svelte";
+  import type { DynamicGridItem, DynamicGridPlacement } from "$lib/dynamic-grid";
   import Overlay from "$components/Overlay.svelte";
   import { sidebarStore } from "$lib/navigation";
   import { uiStore, anyDialogOpen, menuView, soundBoard } from "$lib/stores/ui.store";
@@ -77,6 +79,7 @@
 
         setCharacterReadOnly(document.owner_id !== $user?.user_id);
         applyStateToCharacter(document.character, true);
+        layout = document.metadata.layout ?? {};
         ownerId = document.owner_id;
         currentCharacterId.set(characterId);
         putProfileRecentCharacters(getRecentCharacters($userProfile?.preferences?.recent_characters ?? [], characterId))
@@ -236,6 +239,28 @@
 
   const tight = $derived(room > 0 && room < 760)
 
+  const sheetPlaces: DynamicGridItem[] = [
+    { id: 'saves', x: 0, y: 0, w: 4, h: 9, minW: 2, minH: 3 },
+    { id: 'senses', x: 4, y: 0, w: 4, h: 9, minW: 2, minH: 3 },
+    { id: 'proficiencies', x: 8, y: 0, w: 4, h: 9, minW: 2, minH: 3 },
+    { id: 'skills', x: 0, y: 9, w: 3, h: 22, minW: 2, minH: 6 },
+    { id: 'actions', x: 3, y: 9, w: 9, h: 22, minW: 4, minH: 8 },
+    { id: 'defences', x: 0, y: 31, w: 6, h: 9, minW: 3, minH: 3 },
+    { id: 'rules', x: 6, y: 31, w: 6, h: 9, minW: 3, minH: 3 }
+  ]
+  let layout = $state<Record<string, { x: number; y: number; w: number; h: number }>>({})
+  let arranging = $state(false)
+  const rulePanels = $derived($rules.resolved?.panels.filter((panel) => !['abilities', 'defence', 'saves', 'senses'].includes(panel.id)) ?? [])
+  const places = $derived(sheetPlaces.filter((place) => place.id !== 'rules' || rulePanels.length > 0).map((place) => ({ ...place, ...layout[place.id] })))
+
+  function putLayout(placements: DynamicGridPlacement[]) {
+    const next = { ...layout }
+    for (const { id, x, y, w, h } of placements) next[id] = { x, y, w, h }
+    layout = next
+    putCharacterLayout(characterId, next)
+      .catch((reason) => characterWriteError.set(reason instanceof Error ? reason.message : String(reason)))
+  }
+
   async function postPortrait(event: Event) {
     const input = event.currentTarget as HTMLInputElement
     const file = input.files?.[0]
@@ -326,6 +351,9 @@
       </Sigil>
       <Sigil title="Import sources" size="sm" onclick={() => postUIAction('openSourceImport')}>
         <Glyph name="sources" size="sm" />
+      </Sigil>
+      <Sigil title="Lay out the sheet" size="sm" active={arranging} onclick={() => (arranging = !arranging)}>
+        <Glyph name="blocks" size="sm" />
       </Sigil>
     {/if}
     <Sigil title="Change theme" size="sm" onclick={() => postUIAction('openThemeDialog')}>
@@ -449,30 +477,50 @@
       <Inspiration />
     </div>
 
-    <div class="sheet-grid" bind:clientWidth={room}>
-      <div class="sheet-column">
-        {@render group('saves', 'Saving throws', saves)}
-        {@render group('senses', 'Senses', senses)}
-        {@render group('proficiencies', 'Proficiencies', proficiencies)}
-        {@render group('rules', 'Rules', ruleBlocks)}
-        {@render group('defences', 'Defences and conditions', defences)}
-      </div>
-
-      {@render group('skills', 'Skills', skills)}
-
-      <div class="sheet-tabs">
-        <div class="sheet-slots">
-          <Initiative bind:initiative={$info.initiative}/>
-          <PlainBox bind:value={$info.ac}
-                    title="Armor"
-                    subTitle="class"
-          />
-          {#each slots as slot (slot.id)}
-            <PlainBox value={slot.value} title={slot.title} subTitle={slot.unit}/>
-          {/each}
-        </div>
-        {@render group('actions', 'Actions and inventory', tabs)}
-      </div>
+    <div class="sheet-grid" class:sheet-grid-arranging={arranging} bind:clientWidth={room}>
+      <DynamicGrid
+        items={places}
+        columns={12}
+        mode={arranging ? 'fixed' : 'flow'}
+        minColWidth={60}
+        rowHeight={24}
+        margin={[12, 12]}
+        padding={[0, 0]}
+        draggable={arranging}
+        resizable={arranging}
+        onmove={putLayout}
+        onresize={putLayout}
+      >
+        {#snippet item(placed)}
+          {#if placed.id === 'saves'}
+            {@render group('saves', 'Saving throws', saves)}
+          {:else if placed.id === 'senses'}
+            {@render group('senses', 'Senses', senses)}
+          {:else if placed.id === 'proficiencies'}
+            {@render group('proficiencies', 'Proficiencies', proficiencies)}
+          {:else if placed.id === 'rules'}
+            {@render group('rules', 'Rules', ruleBlocks)}
+          {:else if placed.id === 'skills'}
+            {@render group('skills', 'Skills', skills)}
+          {:else if placed.id === 'defences'}
+            {@render group('defences', 'Defences and conditions', defences)}
+          {:else if placed.id === 'actions'}
+            <div class="sheet-tabs">
+              <div class="sheet-slots">
+                <Initiative bind:initiative={$info.initiative}/>
+                <PlainBox bind:value={$info.ac}
+                          title="Armor"
+                          subTitle="class"
+                />
+                {#each slots as slot (slot.id)}
+                  <PlainBox value={slot.value} title={slot.title} subTitle={slot.unit}/>
+                {/each}
+              </div>
+              {@render group('actions', 'Actions and inventory', tabs)}
+            </div>
+          {/if}
+        {/snippet}
+      </DynamicGrid>
     </div>
     </div>
   {/if}
@@ -707,46 +755,30 @@
   }
 
   .sheet-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 2fr);
-    align-items: start;
-    gap: var(--space-3);
     min-width: 0;
+  }
+
+  .sheet-grid :global(.dnd-grid-item) {
+    overflow: auto;
+  }
+
+  .sheet-grid-arranging :global(.dnd-grid-item) {
+    outline: var(--border-hair) dashed color-mix(in srgb, var(--metal-dim) 60%, transparent);
+    outline-offset: calc(-1 * var(--border-hair));
+    border-radius: var(--radius-sm);
   }
 
   .sheet-tabs {
     display: flex;
     flex-direction: column;
-    align-self: stretch;
     gap: var(--space-3);
     min-width: 0;
     min-height: 0;
     contain: inline-size;
   }
 
-  .sheet-column {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
-    grid-auto-rows: min-content;
-    align-items: stretch;
-    gap: var(--space-3);
-    min-width: 0;
-  }
-
-  @container page (max-width: 1200px) {
-    .sheet-grid {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
-    }
-
-    .sheet-tabs {
-      grid-column: 1 / -1;
-      min-height: 60vh;
-    }
-  }
-
   @container page (max-width: 760px) {
-    .sheet-band,
-    .sheet-grid {
+    .sheet-band {
       grid-template-columns: minmax(0, 1fr);
     }
 

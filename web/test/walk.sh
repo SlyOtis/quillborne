@@ -188,8 +188,8 @@ if visit "$sheet" "document.querySelector('.sheet-name')?.textContent.trim() ===
   [ "$crown_names" = "false" ] || fail "the crown names a frame"
   boxes="$(js "document.querySelectorAll('.sheet-slots > *').length")"
   [ "$boxes" -ge 5 ] || fail "the stat slots carry only $boxes boxes"
-  strip="$(js "/defen[cs]es/i.test(document.querySelector('.sheet-column')?.textContent ?? '')")"
-  [ "$strip" = "true" ] || fail "the defences block does not stand in the sheet column"
+  strip="$(js "/defen[cs]es/i.test(document.querySelector('.sheet-grid')?.textContent ?? '')")"
+  [ "$strip" = "true" ] || fail "the defences block does not stand in the sheet grid"
   for w in 1280 1600 2000; do
     pw resize "$w" 900 >/dev/null
     spill="$(js "[...document.querySelectorAll('.sheet-slots *')].filter((e) => e.children.length === 0 && e.textContent.trim() && (() => { const b = e.closest('.sheet-slots > *').getBoundingClientRect(), r = e.getBoundingClientRect(); return r.left < b.left - 1 || r.right > b.right + 1 })()).map((e) => e.textContent.trim()).join(', ')")"

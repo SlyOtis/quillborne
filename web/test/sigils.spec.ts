@@ -114,7 +114,7 @@ const sigilGlyphs = (source: string): string[] =>
 
 const bar: [string, string, number][] = [
   ['the frame handles', region(read('src/components/Frame.svelte'), '<header class="dnd-shell-bar">', '</header>'), 2],
-  ["the sheet's tools", region(read('src/pages/CharacterPage.svelte'), '{#snippet tools()}', '{/snippet}'), 5]
+  ["the sheet's tools", region(read('src/pages/CharacterPage.svelte'), '{#snippet tools()}', '{/snippet}'), 6]
 ]
 
 describe('no bar call site decides the sigil design', () => {
@@ -151,7 +151,7 @@ describe('no bar call site decides the sigil design', () => {
       size: attrs.size
     }))
 
-    expect(drawn.length).toBe(7)
+    expect(drawn.length).toBe(8)
     expect([...new Set(drawn.map((one) => JSON.stringify(one)))]).toEqual([
       JSON.stringify({ frame: 'quatrefoil', tone: 'metal', size: 'sm' })
     ])
@@ -161,7 +161,7 @@ describe('no bar call site decides the sigil design', () => {
     const glyphs = bar.flatMap(([, source]) => sigilGlyphs(source))
     expect(glyphs).toEqual([
       'back', 'chat',
-      'sound', 'export', 'levelup', 'sources', 'theme'
+      'sound', 'export', 'levelup', 'sources', 'blocks', 'theme'
     ])
   })
 })

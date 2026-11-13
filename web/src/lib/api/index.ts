@@ -183,6 +183,9 @@ export const getCharacterStream = (characterId: string, onChange: (character: Ch
 
 export const putCharacterPlayed = (characterId: string) => apiPut(`character/${characterId}/played`)
 
+export const putCharacterLayout = (characterId: string, layout: CharacterMetadata['layout']) =>
+  apiPut(`character/${characterId}`, { metadata: { layout } })
+
 export const putCharacter = (characterId: string, sheet: CharacterSheet) =>
   apiPut(`character/${characterId}`, { character: sheet, metadata: getCharacterMetadata(sheet) })
 
