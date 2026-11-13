@@ -27,6 +27,7 @@
     attributes?: unknown[];
     systems: string[];
     overlay: RuleSystemOverlay | null;
+    campaignId?: string;
   }
 
   let characterData = $state<CharacterData | null>(null);
@@ -129,7 +130,7 @@
 
       const characterId = await postCharacter(getStartingCharacter(character, system, entry), {
         tags: characterData.sources.length > 0 ? ["ai-generated", "sources-uploaded"] : ["manually-created"]
-      });
+      }, characterData.campaignId);
 
       if (characterData.sources?.length) {
         await putCharacterSources(characterId, characterData.sources);

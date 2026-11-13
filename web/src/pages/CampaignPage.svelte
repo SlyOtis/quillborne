@@ -194,6 +194,13 @@
   />
 {/snippet}
 
+{#snippet create()}
+  <div class="camp-acts">
+    <Button variant="secondary" size="sm" onclick={() => navigate(`/main/create/character?campaign=${campaignId}`)}>New character</Button>
+    <Button variant="secondary" size="sm" onclick={addNpc}>New NPC</Button>
+  </div>
+{/snippet}
+
 {#snippet fold(id: string, total: number)}
   {#if total > CAP}
     <IconBtn
@@ -281,6 +288,7 @@
               {/each}
             </div>
           {/if}
+          {@render create()}
         </section>
 
         <section class="camp-plot camp-plot-npcs" aria-label="NPCs">
@@ -316,6 +324,7 @@
             {/each}
           </div>
         {/if}
+        {@render create()}
       </Panel>
     {:else if tab === 'npcs'}
       <Panel title="NPCs">
@@ -450,6 +459,12 @@
     flex-direction: column;
     gap: var(--space-2);
     min-width: 0;
+  }
+
+  .camp-acts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
   }
 
   .camp-cards {

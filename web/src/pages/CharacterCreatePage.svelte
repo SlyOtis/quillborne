@@ -2,7 +2,7 @@
   import { postFile } from '$lib/api'
   import type { Character } from '$lib/api/types'
   import { onMount } from "svelte";
-  import { navigate } from "sly-svelte-location-router";
+  import { navigate, resolvedRoute } from "sly-svelte-location-router";
   import { getSystems } from "$lib/rules/system";
   import { getExpressionValue } from "$lib/rules/expression";
   import type { AttributeSpec, RuleSystem, RuleSystemOverlay } from "$lib/rules/spec.types";
@@ -28,6 +28,7 @@
     suggestedRace?: string;
     systems: string[];
     overlay: RuleSystemOverlay | null;
+    campaignId?: string;
   }
 
   const KINDS: Record<Source['kind'], string> = {
@@ -44,7 +45,8 @@
     attributes: [],
     sources: [],
     systems: [],
-    overlay: null
+    overlay: null,
+    campaignId: new URLSearchParams($resolvedRoute.search).get('campaign') ?? undefined
   });
 
   let adding = $state(false);
@@ -284,7 +286,7 @@
   }
 </script>
 
-<Shell title="New Character" width="narrow" back={() => navigate('/main')}>
+<Shell title="New Character" width="narrow" back={() => navigate(creationData.campaignId ? `/main/campaign/${creationData.campaignId}` : '/main')}>
   <header class="make-crown">
     <span class="make-crest">
       <span class="make-plate dnd-shield"></span>
