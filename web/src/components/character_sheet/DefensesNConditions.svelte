@@ -62,7 +62,7 @@
     </div>
     <div class="adder">
         <Field label="Defence" id="defence-kind">
-            <select id="defence-kind" bind:value={kindId}>
+            <select id="defence-kind" bind:value={kindId} onchange={addDefence}>
                 <option value="">Kind</option>
                 {#each defenceKinds as kind (kind.id)}
                     <option value={kind.id}>{kind.title}</option>
@@ -70,16 +70,13 @@
             </select>
         </Field>
         <Field label="Damage" id="defence-damage">
-            <select id="defence-damage" bind:value={damageId}>
+            <select id="defence-damage" bind:value={damageId} onchange={addDefence}>
                 <option value="">Type</option>
                 {#each damageTypes as damage (damage.id)}
                     <option value={damage.id}>{damage.title}</option>
                 {/each}
             </select>
         </Field>
-        <IconBtn title="Add the defence" disabled={!kindId || !damageId} onclick={addDefence}>
-            <Glyph name="add" size="sm" />
-        </IconBtn>
     </div>
     <div class="divider"></div>
     <div class="box conditions">
@@ -109,16 +106,13 @@
     </div>
     <div class="adder">
         <Field label="Condition" id="condition-pick">
-            <select id="condition-pick" bind:value={conditionId}>
+            <select id="condition-pick" bind:value={conditionId} onchange={addCondition}>
                 <option value="">Choose</option>
                 {#each conditionList as condition (condition.id)}
                     <option value={condition.id}>{condition.title}</option>
                 {/each}
             </select>
         </Field>
-        <IconBtn title="Add the condition" disabled={!conditionId} onclick={addCondition}>
-            <Glyph name="add" size="sm" />
-        </IconBtn>
     </div>
 </div>
 
@@ -130,7 +124,7 @@
         align-items: stretch;
         min-width: 0;
         gap: var(--space-2);
-        padding: var(--space-3);
+        padding: 0 0 var(--space-2);
         z-index: 1;
         color: var(--ink);
         background: var(--texture-noise), linear-gradient(180deg, var(--ground-raised), var(--ground-deep));
@@ -146,23 +140,20 @@
         flex-direction: row;
         gap: var(--space-1) var(--space-2);
         min-width: 0;
+        padding-inline: var(--space-3);
     }
 
     .title {
         flex: 1 0 100%;
+        margin-inline: calc(var(--space-3) * -1);
         padding: var(--space-1) var(--space-3);
-        background:
-            linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
-            var(--texture-noise),
-            var(--stone);
-        box-shadow: var(--bevel-up), inset 0 0 0 1px var(--metal-dim), inset 0 -1px 0 1px var(--keyline);
+        border-block-end: var(--border-hair) solid var(--metal-dim);
         font-family: var(--font-display);
         font-size: var(--text-xs);
         font-weight: 700;
         letter-spacing: var(--tracking-caps);
         text-transform: uppercase;
         color: var(--metal-bright);
-        text-shadow: 0 1px 0 #000;
     }
 
     .chip {
@@ -171,13 +162,7 @@
         gap: var(--space-0);
         min-width: 0;
         max-width: 100%;
-        padding: 0 0 0 var(--space-2);
-        background:
-            linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 16%, transparent) 0%, color-mix(in srgb, #000 55%, transparent) 100%),
-            var(--texture-noise),
-            var(--stone-dark);
-        border-radius: var(--radius-sm);
-        box-shadow: var(--rim-thin), var(--bevel-up);
+        padding: 0;
     }
 
     .chip > span {
@@ -205,11 +190,11 @@
         align-items: flex-end;
         gap: var(--space-2);
         min-width: 0;
+        padding-inline: var(--space-3);
     }
 
-    .adder > :global(.dnd-iconbtn) {
-        width: 2.6rem;
-        height: auto;
+    .adder :global(select) {
+        padding-block: var(--space-1);
     }
 
     .divider {

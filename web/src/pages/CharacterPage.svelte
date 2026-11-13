@@ -96,6 +96,41 @@
       .finally(() => (loaded = true));
   });
 
+  function stepNumber(input: HTMLInputElement, delta: number) {
+    const min = input.min === '' ? -Infinity : Number(input.min);
+    const max = input.max === '' ? Infinity : Number(input.max);
+    input.value = String(Math.min(max, Math.max(min, (Number(input.value) || 0) + delta)));
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function isNumberField(target: EventTarget | null): target is HTMLInputElement {
+    return target instanceof HTMLInputElement && target.type === 'number' && target.classList.contains('dnd-num');
+  }
+
+  function wheelNumber(event: WheelEvent) {
+    if (!isNumberField(event.target) || event.deltaY === 0) return;
+    event.preventDefault();
+    stepNumber(event.target, event.deltaY < 0 ? 1 : -1);
+  }
+
+  function keyNumber(event: KeyboardEvent) {
+    if (!isNumberField(event.target)) return;
+    if (event.key === 'ArrowRight') stepNumber(event.target, 1);
+    else if (event.key === 'ArrowLeft') stepNumber(event.target, -1);
+    else return;
+    event.preventDefault();
+  }
+
+  $effect(() => {
+    window.addEventListener('wheel', wheelNumber, { passive: false });
+    window.addEventListener('keydown', keyNumber);
+    return () => {
+      window.removeEventListener('wheel', wheelNumber);
+      window.removeEventListener('keydown', keyNumber);
+    };
+  });
+
   onDestroy(() => {
     currentCharacterId.set(null);
     soundBoard.set(null);
@@ -361,17 +396,17 @@
 
         <span class="sheet-gear">
           {#if owned}
-            <Sigil title="Choose the portrait frame" frame="ring" size="sm" onclick={() => postUIAction('openFrameDialog')}>
-              <Glyph name="gear" size="sm" />
+            <Sigil title="Choose the portrait frame" size="md" onclick={() => postUIAction('openFrameDialog')}>
+              <Glyph name="gear" size="md" />
             </Sigil>
           {/if}
-          <IconBtn title="Copy this character" disabled={working} onclick={postCopy}>
-            <Glyph name="copy" size="sm" />
-          </IconBtn>
+          <Sigil title="Copy this character" size="md" disabled={working} onclick={postCopy}>
+            <Glyph name="copy" size="md" />
+          </Sigil>
           {#if owned}
-            <IconBtn title="Delete this character" disabled={working} onclick={() => (deleting = true)}>
-              <Glyph name="remove" size="sm" />
-            </IconBtn>
+            <Sigil title="Delete this character" size="md" disabled={working} onclick={() => (deleting = true)}>
+              <Glyph name="remove" size="md" />
+            </Sigil>
           {/if}
         </span>
 
@@ -487,7 +522,7 @@
 
   .sheet-band {
     display: grid;
-    grid-template-columns: minmax(min(30rem, 100%), 1fr) minmax(0, 48rem);
+    grid-template-columns: minmax(min(30rem, 100%), 1fr) minmax(0, 36rem);
     align-items: stretch;
     gap: var(--space-3);
     min-width: 0;
@@ -547,7 +582,7 @@
     flex: none;
     align-items: center;
     align-self: flex-start;
-    gap: var(--space-1);
+    gap: var(--space-2);
   }
 
   .sheet-title {
@@ -664,9 +699,10 @@
 
   .sheet-slots {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(6.5rem, 100%), 1fr));
+    grid-template-columns: repeat(auto-fill, min(6rem, 100%));
+    justify-content: start;
     align-items: stretch;
-    gap: var(--space-2);
+    gap: var(--space-5) var(--space-2);
     min-width: 0;
   }
 

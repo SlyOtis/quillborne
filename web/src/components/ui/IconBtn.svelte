@@ -52,19 +52,8 @@
     padding: 0;
     border: none;
     border-radius: var(--radius-sm);
-    background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
-      var(--texture-noise),
-      var(--stone);
-    box-shadow:
-      inset 0 0 0 1px var(--keyline),
-      inset 0 0 0 2px var(--metal-dim),
-      inset 0 0 0 3px var(--keyline),
-      inset 0 0.25rem 0 -1px var(--sheen),
-      inset 0 -0.25rem 0 -1px var(--shade-hard),
-      0 1px 2px var(--shade-hard);
+    background: none;
     color: var(--icon-tone);
-    filter: drop-shadow(0 1px 0 #000);
     cursor: pointer;
     --icon-tone: var(--metal);
     transition: color 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
@@ -88,15 +77,7 @@
 
   .dnd-iconbtn:hover:not(:disabled) {
     color: var(--metal-bright);
-    box-shadow:
-      inset 0 0 0 1px var(--keyline),
-      inset 0 0 0 2px var(--metal),
-      inset 0 0 0 3px var(--keyline),
-      inset 0 0.25rem 0 -1px var(--sheen),
-      inset 0 -0.25rem 0 -1px var(--shade-hard),
-      inset 0 0 10px var(--ember-glow),
-      0 1px 2px var(--shade-hard);
-    filter: drop-shadow(0 0 4px var(--ember-glow));
+    background: color-mix(in srgb, var(--metal) 12%, transparent);
   }
 
   .dnd-iconbtn:active:not(:disabled) {

@@ -97,10 +97,7 @@
         gap: var(--space-1);
         padding: var(--space-1) var(--space-2) 0;
         margin-bottom: calc(var(--border-heavy) * -1);
-        background:
-            linear-gradient(180deg, color-mix(in srgb, #000 20%, transparent) 0%, color-mix(in srgb, #000 55%, transparent) 100%),
-            var(--texture-grain),
-            var(--wood);
+        background: none;
         border-radius: var(--radius-sm) var(--radius-sm) 0 0;
         box-shadow: inset 0 1px 0 var(--sheen), inset 0 0 0 1px var(--keyline);
     }

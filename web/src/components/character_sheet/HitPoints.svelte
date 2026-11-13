@@ -41,6 +41,20 @@
     )
   }
 
+  function putCurrent(event: Event) {
+    const current = Math.max(0, Math.min(hp.max, parseInt((event.target as HTMLInputElement).value) || 0))
+    updateCharacterWithChangeLog(
+      'info',
+      state => ({...state, hp: {...state.hp, current}}),
+      ChangeActions.HP_CHANGE,
+      `Set current HP to ${current}`
+    )
+  }
+
+  function putTemp(event: Event) {
+    putTemporaryHitPoints(Math.max(0, parseInt((event.target as HTMLInputElement).value) || 0))
+  }
+
   function damage() {
     putDamage(amount)
     window.dispatchEvent(new CustomEvent('playSwordHit'))
@@ -75,24 +89,24 @@
     <span class="dnd-label">Hit Points</span>
 
     <div class="vitals-fields">
-      <span class="vitals-field">
+      <label class="vitals-field">
         <span>Current</span>
-        <span class="vitals-figure">{hp.current}</span>
-      </span>
+        <input class="dnd-num" type="number" value={hp.current} onchange={putCurrent} min="0" max={hp.max} />
+      </label>
 
       <label class="vitals-field">
         <span>Max</span>
         <input class="dnd-num" type="number" value={hp.max} onchange={putMax} min="1" />
       </label>
 
-      <span class="vitals-field">
+      <label class="vitals-field">
         <span>Temp</span>
-        <span class="vitals-figure">{hp.temporary || '--'}</span>
-      </span>
+        <input class="dnd-num" type="number" value={hp.temporary} onchange={putTemp} min="0" />
+      </label>
 
       <span class="vitals-field">
         <span>Hit dice</span>
-        <span class="vitals-figure">{hitDice?.remaining ?? '--'}/{hitDice?.max ?? '--'} d{$info.class?.hitDice?.die || 8}</span>
+        <span class="dnd-num vitals-figure">{hitDice?.remaining ?? '--'}/{hitDice?.max ?? '--'} d{$info.class?.hitDice?.die || 8}</span>
       </span>
     </div>
 
@@ -143,7 +157,7 @@
     align-items: center;
     gap: var(--space-3);
     min-width: 0;
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-2) var(--space-3);
     background:
       radial-gradient(ellipse 60% 70% at 0% 50%, color-mix(in srgb, var(--state-bad) 10%, transparent) 0%, transparent 70%),
       var(--texture-noise),
@@ -156,7 +170,7 @@
   .vitals-body {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--space-1);
     flex: 1;
     min-width: 0;
   }
@@ -186,19 +200,9 @@
   .vitals-figure {
     display: flex;
     align-items: center;
-    min-height: 2.4rem;
-    padding: 0 var(--space-2);
-    background: var(--texture-noise), linear-gradient(180deg, var(--ground-deep) 0%, var(--ground) 100%);
-    border: var(--border-hair) solid color-mix(in srgb, var(--metal-dim) 60%, transparent);
-    border-radius: var(--radius-sm);
-    box-shadow: var(--bevel-down);
-    font-family: var(--font-figures);
-    font-size: var(--text-sm);
-    font-weight: 700;
-    font-variant-numeric: lining-nums tabular-nums;
+    justify-content: center;
     letter-spacing: 0;
     text-transform: none;
-    color: var(--ink);
     white-space: nowrap;
   }
 
