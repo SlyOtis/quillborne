@@ -170,7 +170,7 @@ describe('no text character stands in for an icon', () => {
     }
 
     expect(at('CharacterCreatePage').source).toMatch(
-      /<span class="make-plate dnd-shield"><\/span>\s*<Ornament name="forge" size="md" tone="metal" \/>/
+      /<span class="make-plate dnd-shield"><\/span>\s*<Ornament name="forge" size="lg" tone="metal" \/>/
     )
 
     expect(at('UserPage').source).toMatch(

@@ -290,7 +290,7 @@
   <header class="make-crown">
     <span class="make-crest">
       <span class="make-plate dnd-shield"></span>
-      <Ornament name="forge" size="md" tone="metal" />
+      <Ornament name="forge" size="lg" tone="metal" />
     </span>
     <h1 class="dnd-heading dnd-heading-hero make-name">Forge a Character</h1>
     <span class="make-rule"><Ornament name="divider" tone="metal" /></span>
@@ -502,7 +502,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: var(--space-3) var(--space-6) var(--space-5);
+    padding: var(--space-4) var(--space-4) var(--space-5);
     filter: var(--make-crest-lift);
   }
 
