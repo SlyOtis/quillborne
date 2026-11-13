@@ -14,6 +14,7 @@
   import Proficiencies from "$character-sheet/Proficiencies.svelte";
   import RulePanels from "$character-sheet/RulePanels.svelte";
   import HitPoints from "$character-sheet/HitPoints.svelte";
+  import ShortRestDialog from "$components/ShortRestDialog.svelte";
   import type {CharacterContext} from "$lib/types";
   import InventoryTab from "$character-sheet/main_tabs/InventoryTab.svelte";
   import FeaturesTab from "$character-sheet/main_tabs/FeaturesTab.svelte";
@@ -22,7 +23,7 @@
   import ActionsTab from "$character-sheet/main_tabs/ActionsTab.svelte";
   import SpellsTab from "$character-sheet/main_tabs/SpellsTab.svelte";
   import Background from "$components/Background.svelte";
-  import { applyStateToCharacter, characterWriteError, getCharacterStore, setCharacterReadOnly } from "$lib/engine";
+  import { applyStateToCharacter, characterWriteError, getCharacterStore, postLongRest, setCharacterReadOnly } from "$lib/engine";
   import { getRulesStore } from "$lib/rules/store";
   import { setContext, onDestroy, onMount, untrack, type Snippet } from "svelte";
   import Fold from "$components/ui/Fold.svelte";
@@ -311,6 +312,12 @@
   }
 
   let picking = $state(false)
+  let shortResting = $state(false)
+
+  function longRest() {
+    if (!$rules.resolved) return
+    postLongRest($rules.resolved)
+  }
 
   function putPortrait(asset: MediaAsset | null) {
     picking = false
@@ -535,8 +542,22 @@
           <span class="sheet-level-figure">{$info.level || 1}</span>
         </span>
         <span class="sheet-spark"><Inspiration /></span>
+        <span class="sheet-still" class:sheet-still-on={reading} use:still={reading}>
+          <span class="sheet-rests">
+            <span class="sheet-rest">
+              <IconBtn title="Short rest" disabled={!$rules.resolved} onclick={() => (shortResting = true)}><Glyph name="bonfire" /></IconBtn>
+              <span class="sheet-rest-word">Short rest</span>
+            </span>
+            <span class="sheet-rest sheet-rest-long">
+              <IconBtn title="Long rest" disabled={!$rules.resolved} onclick={longRest}><Glyph name="tent" /></IconBtn>
+              <span class="sheet-rest-word">Long rest</span>
+            </span>
+          </span>
+        </span>
 
       </header>
+
+      <ShortRestDialog bind:isOpen={shortResting} />
 
       <div class="sheet-still" class:sheet-still-on={reading} use:still={reading}>
         <HitPoints/>
@@ -581,7 +602,7 @@
         onresize={(placements) => putLayout(placements, true)}
       >
         {#snippet item(placed)}
-          <div class="sheet-cell" use:grow={placed.id}>
+          <div class="sheet-cell" class:sheet-cell-fill={(layout[placed.id]?.h ?? 0) > 0 || placed.id === 'actions'} use:grow={placed.id}>
           {#if placed.id === 'saves'}
             {@render group('saves', 'Saving throws', saves)}
           {:else if placed.id === 'senses'}
@@ -767,12 +788,12 @@
 
   .sheet-crown {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-columns: auto minmax(0, 1fr) auto auto auto;
     grid-template-rows: auto auto auto;
     grid-template-areas:
-      'face name level spark'
-      'face meta level spark'
-      'rule rule level spark';
+      'face name level spark rest'
+      'face meta level spark rest'
+      'rule rule level spark rest';
     align-items: center;
     align-content: center;
     column-gap: var(--space-4);
@@ -954,6 +975,43 @@
     align-self: stretch;
   }
 
+  .sheet-rests {
+    grid-area: rest;
+    display: flex;
+    align-items: center;
+    align-self: stretch;
+    gap: var(--space-2);
+    padding-inline-end: var(--space-3);
+  }
+
+  .sheet-rest {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-0);
+    color: var(--metal);
+  }
+
+  .sheet-rest > :global(.dnd-iconbtn) {
+    inline-size: var(--space-6);
+    block-size: var(--space-6);
+  }
+
+  .sheet-rest-long > :global(.dnd-iconbtn) {
+    inline-size: var(--space-7);
+    block-size: var(--space-7);
+  }
+
+  .sheet-rest-word {
+    font-family: var(--font-display);
+    font-size: calc(var(--text-xs) * 0.85);
+    font-weight: 700;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    white-space: nowrap;
+    text-shadow: 0 1px 0 #000;
+  }
+
   .sheet-level-word {
     font-family: var(--font-display);
     font-size: var(--text-xs);
@@ -1025,7 +1083,10 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
-    min-block-size: 100%;
+  }
+
+  .sheet-cell-fill {
+    block-size: 100%;
   }
 
   .sheet-cell > :global(*) {
@@ -1058,12 +1119,12 @@
     }
 
     .sheet-crown {
-      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-columns: auto minmax(0, 1fr) auto auto;
       grid-template-areas:
-        'face name name'
-        'face meta meta'
-        'rule rule rule'
-        'level level spark';
+        'face name name name'
+        'face meta meta meta'
+        'rule rule rule rule'
+        'level level spark rest';
     }
 
     .sheet-level {

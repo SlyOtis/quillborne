@@ -2,7 +2,7 @@
   import type {CharacterContext} from "$lib/types";
   import {getContext} from "svelte";
   import Ornament from "$components/ui/Ornament.svelte";
-  import Sigil from "$components/ui/Sigil.svelte";
+  import IconBtn from "$components/ui/IconBtn.svelte";
 
   const {special} = getContext<CharacterContext>('character')
 
@@ -28,16 +28,14 @@
 
   <div class="pool-pips">
     {#each Array.from({ length: $special.max }, (_, i) => i) as index (index)}
-      <Sigil
-        frame="ring"
-        size="sm"
+      <IconBtn
         tone="ember"
         active={index < $special.current}
         title={`Toggle ${$special.name} point ${index + 1}`}
         onclick={() => togglePoint(index)}
       >
         <Ornament name="quatrefoil" size="xs" tone={index >= $special.current ? 'ink' : 'ember'} />
-      </Sigil>
+      </IconBtn>
     {/each}
   </div>
 </div>
@@ -49,15 +47,8 @@
     flex-direction: column;
     justify-content: space-between;
     gap: var(--space-3);
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-1) var(--space-2);
     min-width: 0;
-    background:
-      radial-gradient(ellipse 80% 60% at 50% 100%, color-mix(in srgb, var(--ember) 10%, transparent) 0%, transparent 70%),
-      var(--texture-noise),
-      linear-gradient(180deg, var(--ground-raised) 0%, var(--ground-deep) 100%);
-    border: none;
-    border-radius: var(--radius-sm);
-    box-shadow: var(--rim-thin), inset 0 0 16px 2px var(--shade-hard), var(--shadow-md);
   }
 
   .pool-head {

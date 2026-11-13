@@ -37,6 +37,8 @@
     | 'minus'
     | 'shortrest'
     | 'longrest'
+    | 'bonfire'
+    | 'tent'
     | 'edit'
     | 'copy'
     | 'remove'
@@ -322,6 +324,14 @@
 
   {:else if name === 'longrest'}
     <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" />
+
+  {:else if name === 'bonfire'}
+    <path d="M12 3c1.5 3 4.5 4.5 4.5 8.5a4.5 4.5 0 0 1-9 0c0-2 .8-3.3 1.8-4.5.4 1.6 1.2 2.4 2.4 3 .2-2.6-.7-4.6.3-7Z" />
+    <path d="M5 21l14-4M5 17l14 4" opacity="0.7" />
+
+  {:else if name === 'tent'}
+    <path d="M12 4 2.5 20h19Z" />
+    <path d="M12 11l-3.5 9h7Z" opacity="0.7" />
 
   {:else if name === 'dice'}
     <path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7Z" />

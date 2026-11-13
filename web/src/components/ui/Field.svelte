@@ -7,12 +7,15 @@
     error,
     valid = false,
     required = false,
+    inline = false,
     id,
     children,
     action
   }: {
     /** Text shown above the control. */
     label: string
+    /** Sets the label beside the control when the row has room, above it when it does not. */
+    inline?: boolean
     /** Guidance shown under the control when there is no error. */
     help?: string
     /** Replaces the help line and marks the field as invalid. */
@@ -32,6 +35,7 @@
 
 <div
   class="dnd-field"
+  class:dnd-field-inline={inline}
   class:dnd-field-invalid={Boolean(error)}
   class:dnd-field-valid={valid && !error}
 >
@@ -67,6 +71,24 @@
     --field-light: transparent;
     --field-line: color-mix(in srgb, var(--metal-edge) 55%, transparent);
     --field-cusp: 0.7rem;
+  }
+
+  .dnd-field-inline {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .dnd-field-inline > .dnd-field-label {
+    flex: none;
+  }
+
+  .dnd-field-inline > .dnd-field-row {
+    flex: 1 1 8rem;
+  }
+
+  .dnd-field-inline > .dnd-field-message {
+    flex-basis: 100%;
   }
 
   .dnd-field-label {

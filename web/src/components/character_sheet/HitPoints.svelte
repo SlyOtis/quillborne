@@ -5,8 +5,6 @@
   import type {RulesState} from "$lib/rules/store";
   import {ChangeActions} from "$lib/changelog";
   import {
-    postLongRest,
-    postShortRest,
     putDamage,
     putHealing,
     putTemporaryHitPoints,
@@ -16,13 +14,13 @@
   import IconBtn from "$components/ui/IconBtn.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
   import Ornament from "$components/ui/Ornament.svelte";
+  import Stat from "$components/ui/Stat.svelte";
 
   const {info} = getContext<CharacterContext>('character')
   const rules = getContext<Readable<RulesState>>('rules')
 
   let amount = $state(1)
   let dice = $state(1)
-  let resting = $state(false)
 
   const hp = $derived($info.hp)
   const percent = $derived(hp.max > 0 ? Math.max(0, Math.min(100, (hp.current / hp.max) * 100)) : 0)
@@ -83,22 +81,6 @@
     writeRollLog('roll', `Rolled ${count} hit dice`, `${count}d${die}`, res.sum, res.sum, res.rolls.join(','))
   }
 
-  function putDice(event: Event) {
-    const left = Math.max(0, Math.min(Number((event.currentTarget as HTMLInputElement).value) || 0, hitDice?.max ?? 0))
-    info.update((state) => ({ ...state, hp: { ...state.hp, hitDiceSpent: (hitDice?.max ?? 0) - left } }))
-  }
-
-  async function shortRest() {
-    if (!$rules.resolved) return
-    resting = true
-    await postShortRest(dice, $rules.resolved).finally(() => (resting = false))
-  }
-
-  function longRest() {
-    if (!$rules.resolved) return
-    postLongRest($rules.resolved)
-  }
-
   async function deathSave() {
     if (!scope) return
     await rollDeathSave(scope)
@@ -131,33 +113,21 @@
         <span>Temp</span>
         <input class="dnd-num vitals-inline" type="number" value={hp.temporary} onchange={putTemp} min="0" title="Temporary hit points" />
       </label>
-
-      <span class="vitals-step vitals-step-tall" role="group" aria-label="Damage and healing">
-        <IconBtn title="Heal {amount}, up to the maximum" tone="verdigris" onclick={heal}><Glyph name="add" size="sm" /></IconBtn>
-        <span class="vitals-cell" title="How many hit points the damage or healing is">
-          <input class="dnd-num vitals-amount" type="number" min="1" bind:value={amount} aria-label="Hit point amount" />
-        </span>
-        <IconBtn title="Take {amount} damage, temporary hit points first" tone="ember" onclick={damage}><Glyph name="minus" size="sm" /></IconBtn>
-      </span>
-
-      <span class="vitals-field vitals-field-dice">
-        <span>Hit dice</span>
-        <span class="vitals-pair">
-          <input class="dnd-num vitals-inline" type="number" value={hitDice?.remaining ?? 0} onchange={putDice} min="0" max={hitDice?.max ?? 0} aria-label="Hit dice left" title="Hit dice left to spend" />
-          <span class="vitals-slash" aria-hidden="true">/</span>
-          <span class="dnd-num vitals-inline vitals-figure">{hitDice?.max ?? '--'} d{$info.class?.hitDice?.die || 8}</span>
-        </span>
-      </span>
     </div>
 
     <div class="vitals-acts">
-      <span class="vitals-step" role="group" aria-label="Rest">
-        <span class="vitals-cell" title="How many hit dice to roll or spend">
-          <input class="dnd-num vitals-amount" type="number" min="0" max={hitDice?.remaining ?? 0} bind:value={dice} aria-label="Hit dice to roll or spend" />
+      <span class="vitals-step" role="group" aria-label="Damage and healing">
+        <span class="vitals-cell" title="How many hit points the damage or healing is">
+          <input class="dnd-num vitals-amount" type="number" min="1" bind:value={amount} aria-label="Hit point amount" />
+        </span>
+        <IconBtn title="Heal {amount}, up to the maximum" tone="verdigris" onclick={heal}><Glyph name="add" size="sm" /></IconBtn>
+        <IconBtn title="Take {amount} damage, temporary hit points first" tone="ember" onclick={damage}><Glyph name="minus" size="sm" /></IconBtn>
+      </span>
+      <span class="vitals-step" role="group" aria-label="Hit dice">
+        <span class="vitals-cell" title="How many hit dice to roll">
+          <input class="dnd-num vitals-amount" type="number" min="0" max={hitDice?.remaining ?? 0} bind:value={dice} aria-label="Hit dice to roll" />
         </span>
         <IconBtn title="Roll {dice} hit dice" disabled={!$rules.resolved} onclick={rollHitDice}><Glyph name="dice" size="sm" /></IconBtn>
-        <IconBtn title="Short rest, spending {dice} hit dice" disabled={resting || !$rules.resolved} onclick={shortRest}><Glyph name="shortrest" size="sm" /></IconBtn>
-        <IconBtn title="Long rest" disabled={!$rules.resolved} onclick={longRest}><Glyph name="longrest" size="sm" /></IconBtn>
       </span>
     </div>
 
@@ -183,6 +153,8 @@
     {/if}
   </div>
 </div>
+
+<Stat label="Hit dice" value="{hitDice?.remaining ?? 0}/{hitDice?.max ?? '--'}" sub="d{$info.class?.hitDice?.die || 8}" title="Hit dice left to spend" />
 
 <style>
   .vitals {
@@ -393,22 +365,6 @@
     font-size: var(--text-2xl);
   }
 
-  .vitals-field-dice {
-    text-align: end;
-  }
-
-  .vitals-field-dice .vitals-figure {
-    justify-content: flex-end;
-  }
-
-  .vitals-field .vitals-figure {
-    display: inline-flex;
-    align-items: center;
-    inline-size: auto;
-    block-size: auto;
-    white-space: nowrap;
-  }
-
   .vitals-field {
     display: flex;
     min-width: 0;
@@ -424,16 +380,15 @@
     text-shadow: 0 1px 0 #000;
   }
 
-  .vitals-figure {
+  .vitals-acts {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    justify-content: center;
-    letter-spacing: 0;
-    text-transform: none;
-    white-space: nowrap;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-2);
+    min-width: 0;
   }
 
-  .vitals-acts,
   .vitals-death {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -479,7 +434,7 @@
   }
 
   .vitals-amount {
-    inline-size: var(--step-h);
+    inline-size: calc(var(--step-h) * 1.5);
     block-size: var(--step-h);
     padding: 0;
     border: none;
@@ -495,26 +450,6 @@
 
   .vitals-cell {
     display: flex;
-  }
-
-  .vitals-step-tall {
-    grid-auto-flow: row;
-    align-self: center;
-    inline-size: var(--step-h);
-    block-size: auto;
-  }
-
-  .vitals-step-tall .vitals-amount {
-    border-inline: none;
-    border-block: var(--border-hair) solid var(--metal-dim);
-  }
-
-  .vitals-field-dice {
-    margin-inline-start: auto;
-  }
-
-  .vitals-field-dice .vitals-figure {
-    font-size: var(--text-md);
   }
 
   .vitals-divider {
