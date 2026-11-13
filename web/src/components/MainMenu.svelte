@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { getCampaign, getCampaignCharacters, getCampaignVehiclesStream, isNpc } from '$lib/api'
-  import type { Campaign, Character, Vehicle } from '$lib/api/types'
+  import { getCampaign, isNpc } from '$lib/api'
+  import type { Campaign } from '$lib/api/types'
   import type { Snippet } from 'svelte'
   import { navigate, currentRoute, resolvedRoute } from 'sly-svelte-location-router'
-  import { getAll, getChildren, getRoots, isResourceKind, RESOURCES, type Place, type Resource, type ResourceKind } from '$lib/resources'
+  import { getAll, getChildren, getRoots, isResourceKind, RESOURCES, type Resource, type ResourceKind } from '$lib/resources'
   import { user, userDetails, userProfile } from '$lib/stores/auth.store'
   import { userCampaigns } from '$lib/stores/campaign.store'
+  import { userCharacters } from '$lib/stores/character.store'
   import Fold from '$components/ui/Fold.svelte'
   import Tree, { type TreeRow } from '$components/ui/Tree.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
@@ -14,18 +15,15 @@
   import { uiStore } from '$lib/stores/ui.store'
 
   let campaign = $state<Campaign | null>(null)
-  let characters = $state<Character[]>([])
-  let places = $state<Place[]>([])
-  let vehicles = $state<Vehicle[]>([])
   let loading = $state(false)
   let error = $state<string | null>(null)
-  let open = $state(['party'])
+  let open = $state(['characters', 'campaigns'])
   let reached = $state('')
 
   const steps = $derived($resolvedRoute.path.split('/').filter(Boolean).slice(1))
   const asked = $derived(steps[0] === 'campaign' ? steps[2] ?? '' : steps[0] ?? '')
 
-  const here = $derived(isResourceKind(asked) ? asked : 'campaign')
+  const here = $derived(steps[0] === 'character' ? 'characters' : isResourceKind(asked) ? asked : 'campaigns')
 
   const openId = $derived(steps[0] === 'campaign' ? steps[3] ?? '' : steps[1] ?? '')
 
@@ -47,16 +45,10 @@
 
   let more = $state<Record<string, Resource[]>>({})
 
-  const isDm = $derived(Boolean(campaign && $user && campaign.dm_id === $user.user_id))
-  const seated = $derived(characters.filter((entry) => !isNpc(entry)))
-  const npcs = $derived(characters.filter(isNpc))
+  const mine = $derived($userCharacters.filter((entry) => entry.owner_id === $user?.user_id && !isNpc(entry)))
   const searchKey = navigator.userAgent.includes('Mac') ? 'Cmd K' : 'Ctrl K'
   const name = $derived($userDetails?.display_name || $userProfile?.display_name || 'Adventurer')
   const initial = $derived(name.charAt(0).toUpperCase())
-  const party = $derived(
-    [...seated].sort((a, b) => Number(b.owner_id === $user?.user_id) - Number(a.owner_id === $user?.user_id))
-  )
-  const lore = $derived(npcs.length + places.length)
 
   $effect(() => {
     const id = campaignId
@@ -64,31 +56,19 @@
 
     if (!id) {
       campaign = null
-      characters = []
-      places = []
-      vehicles = []
       error = null
       loading = false
       return
     }
 
     loading = true
-    const releaseVehicles = getCampaignVehiclesStream(id, (entries) => {
-      if (live) vehicles = entries
-    })
     error = null
 
     void (async () => {
       try {
-        const [record, sheets, sites] = await Promise.all([
-          getCampaign(id),
-          getCampaignCharacters(id),
-          getAll({ at: 'campaign', id }, 'places') as Promise<Place[]>
-        ])
+        const record = await getCampaign(id)
         if (!live) return
         campaign = record
-        characters = sheets
-        places = sites
 
         const [entries, ...gear] = await Promise.all(['entries' as ResourceKind, ...GEAR].map((roll) => getAll({ at: 'campaign', id }, roll)))
         if (!live) return
@@ -104,7 +84,6 @@
 
     return () => {
       live = false
-      releaseVehicles()
     }
   })
 
@@ -141,10 +120,8 @@
       <p class="dnd-menu-note" role="alert">{error}</p>
     {/if}
 
-    {@render section('party', 'Party', seated.length, roster)}
-    {@render section('npcs', 'NPCs', npcs.length, people)}
-    {@render section('places', 'Places', places.length, sites)}
-    {@render section('vehicles', 'Vehicles', vehicles.length, fleet)}
+    {@render section('characters', 'Characters', mine.length, roster)}
+    {@render section('campaigns', 'Campaigns', $userCampaigns.length, tables)}
     {#each ROLLS as roll (roll)}
       <Fold
         title={RESOURCES[roll].many}
@@ -217,12 +194,12 @@
 {/snippet}
 
 {#snippet roster()}
-  {#if party.length === 0}
-    <p class="dnd-menu-empty">No character sits at the table yet.</p>
+  {#if mine.length === 0}
+    <p class="dnd-menu-empty">You have no character yet.</p>
   {:else}
     <div class="dnd-scroll dnd-menu-tree">
       <Tree
-        rows={party.map((entry) => ({ id: entry.id, title: entry.metadata.name, mark: `${entry.owner_id === $user?.user_id ? 'Yours, ' : ''}Lv ${entry.metadata.level} ${entry.metadata.race} ${entry.metadata.class}`, kids: [] }))}
+        rows={mine.map((entry) => ({ id: entry.id, title: entry.metadata.name, mark: `Lv ${entry.metadata.level} ${entry.metadata.race} ${entry.metadata.class}`, kids: [] }))}
         on={steps[0] === 'character' ? (steps[1] ?? '') : ''}
         onopen={openCharacter}
       />
@@ -230,48 +207,17 @@
   {/if}
 {/snippet}
 
-{#snippet fleet()}
-  {#if vehicles.length === 0}
-    <p class="dnd-menu-empty">No vessel sails with this table.</p>
+{#snippet tables()}
+  {#if $userCampaigns.length === 0}
+    <p class="dnd-menu-empty">You sit at no campaign yet.</p>
   {:else}
     <div class="dnd-scroll dnd-menu-tree">
       <Tree
-        rows={vehicles.map((entry) => ({ id: entry.id, title: entry.name, mark: `${entry.crew.length} crew`, kids: [] }))}
-        on={steps[0] === 'vehicles' ? (steps[1] ?? '') : ''}
-        onopen={(id) => navigate(`/main/vehicles/${id}`)}
+        rows={$userCampaigns.map((entry) => ({ id: entry.id, title: entry.name, mark: entry.dm_id === $user?.user_id ? 'DM' : '', kids: [] }))}
+        on={steps[0] === 'campaign' ? (steps[1] ?? '') : ''}
+        onopen={(id) => navigate(`/main/campaign/${id}`)}
       />
     </div>
-  {/if}
-  {#if campaign}
-    <button type="button" class="dnd-menu-link" onclick={() => openCampaign('/vehicles')}>The campaign’s dock</button>
-  {/if}
-{/snippet}
-
-{#snippet people()}
-  {#if npcs.length === 0}
-    <p class="dnd-menu-empty">No NPC has been written down.</p>
-  {:else}
-    <div class="dnd-scroll dnd-menu-tree">
-      <Tree
-        rows={npcs.map((entry) => ({ id: entry.id, title: entry.metadata.name, mark: [entry.metadata.race, entry.metadata.class].filter(Boolean).join(' '), kids: [] }))}
-        on={steps[0] === 'character' ? (steps[1] ?? '') : ''}
-        onopen={openCharacter}
-      />
-    </div>
-  {/if}
-{/snippet}
-
-{#snippet sites()}
-  {#if !campaign}
-    <p class="dnd-menu-empty">No campaign is in scope.</p>
-  {:else}
-    {#if places.length === 0}
-      <p class="dnd-menu-empty">No place has been revealed.</p>
-    {:else}
-      <div class="dnd-scroll dnd-menu-tree">
-        <Tree rows={twigs(places, 'places')} on={openId} onopen={(id) => openResource('places', id)} />
-      </div>
-    {/if}
   {/if}
 {/snippet}
 
@@ -311,26 +257,6 @@
     min-height: 0;
     margin-inline: calc(var(--menu-pad) * -1);
   }
-
-  .dnd-menu-link {
-    margin: var(--space-2) 0 0;
-    padding: 0;
-    border: none;
-    background: none;
-    font-family: var(--font-display);
-    font-size: var(--text-xs);
-    letter-spacing: var(--tracking-caps);
-    text-transform: uppercase;
-    color: var(--metal);
-    cursor: pointer;
-  }
-
-  .dnd-menu-link:hover,
-  .dnd-menu-link:focus-visible {
-    color: var(--metal-bright);
-    text-shadow: var(--glow-text);
-  }
-
 
   .dnd-menu-tree {
     max-height: calc(var(--menu-row) * var(--menu-rows));

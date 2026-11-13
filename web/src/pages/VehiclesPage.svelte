@@ -32,6 +32,9 @@
   import ComponentBrowser from '$components/vehicle/ComponentBrowser.svelte'
   import VehicleRulings from '$components/vehicle/VehicleRulings.svelte'
 
+  const { dock }: { dock?: { campaignId: string; base: string } } = $props()
+  const vessels = $derived(dock?.base ?? '/main/vehicles')
+
   setContext('dialogState', {
     get isAnyDialogOpen() {
       return $anyDialogOpen
@@ -47,7 +50,7 @@
   ]
 
   const steps = $derived($resolvedRoute.path.split('/').filter(Boolean))
-  const campaignId = $derived(steps[1] === 'campaign' ? (steps[2] ?? '') : '')
+  const campaignId = $derived(dock?.campaignId ?? (steps[1] === 'campaign' ? (steps[2] ?? '') : ''))
 
   let stop = $state('vessels')
   let vehicles = $state<Vehicle[]>([])
@@ -154,7 +157,7 @@
         stats: chosen.template?.stats ?? {}
       })
       building = false
-      navigate(`/main/vehicles/${made.id}`)
+      navigate(`${vessels}/${made.id}`)
     } catch (reason) {
       error = reason instanceof Error ? reason.message : String(reason)
     } finally {
@@ -188,7 +191,7 @@
         rulings: pkg.rulings,
         overlay: pkg.overlay
       })
-      navigate(`/main/vehicles/${made.id}`)
+      navigate(`${vessels}/${made.id}`)
     } catch (reason) {
       error = reason instanceof SyntaxError ? 'That file is not JSON.' : reason instanceof Error ? reason.message : String(reason)
     } finally {
@@ -214,6 +217,9 @@
   }
 </script>
 
+{#if dock}
+  {@render body()}
+{:else}
 <Shell drawers title={campaign ? `${campaign.name} · Vehicles` : 'The Dock'} width="wide" back={() => navigate(campaignId ? `/main/campaign/${campaignId}` : '/main')}>
   {#snippet nav()}
     {#if campaignId}
@@ -229,6 +235,11 @@
     {/if}
   {/snippet}
 
+  {@render body()}
+</Shell>
+{/if}
+
+{#snippet body()}
   <div class="dock">
     <header class="dock-crown">
       <p class="dnd-label dock-eyebrow">{campaign ? campaign.name : 'Every vessel you sail with'}</p>
@@ -271,7 +282,7 @@
                   sub={summary(entry)}
                   badge={entry.crew.length ? `${entry.crew.length} crew` : undefined}
                   tone={entry.owner_id === $user?.user_id ? 'ember' : 'verdigris'}
-                  onclick={() => navigate(`/main/vehicles/${entry.id}`)}
+                  onclick={() => navigate(`${vessels}/${entry.id}`)}
                 />
               {/each}
             </div>
@@ -313,7 +324,7 @@
       <VehicleRulings {system} rulings={{}} />
     {/if}
   </div>
-</Shell>
+{/snippet}
 
 {#if building}
   <BaseDialog bind:isOpen={building} title="Build a vessel" zIndex={9999}>

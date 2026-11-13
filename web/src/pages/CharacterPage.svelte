@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as api from '$lib/api'
-  import { getAssets, getCampaign, getCharacter, postCharacterCopy, postFile, putCharacterLayout, putCharacterPlayed, putProfileRecentCharacters } from '$lib/api'
+  import { getAssets, getCampaign, getCampaignVehiclesStream, getCharacter, postCharacterCopy, postFile, putCharacterLayout, putCharacterPlayed, putProfileRecentCharacters } from '$lib/api'
   import type { Character } from '$lib/api/types'
   import { getTheme, setTheme } from "$lib/dialogs/theme";
   import Senses from "$character-sheet/Senses.svelte";
@@ -31,8 +31,10 @@
   import Overlay from "$components/Overlay.svelte";
   import { sidebarStore } from "$lib/navigation";
   import { uiStore, anyDialogOpen, menuView, soundBoard } from "$lib/stores/ui.store";
-  import { navigate } from "sly-svelte-location-router";
+  import { navigate, resolvedRoute } from "sly-svelte-location-router";
   import Shell from "$components/ui/Shell.svelte";
+  import VehiclesPage from "./VehiclesPage.svelte";
+  import VehiclePage from "./VehiclePage.svelte";
   import Portrait, { type PortraitFrame } from "$components/ui/Portrait.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
   import IconBtn from "$components/ui/IconBtn.svelte";
@@ -45,10 +47,29 @@
   import { user, userProfile } from "$lib/stores/auth.store";
   import { currentCharacterId, getRecentCharacters } from "$lib/stores/character.store";
 
-  const { route }: { route?: { params?: Record<string, string> } } = $props();
-  const characterId = untrack(() => route?.params?.id) ?? "local";
+  const characterId = untrack(() => $resolvedRoute.path.split('/')[3]) || "local";
 
   let campaign = $state<{ id: string, name: string } | null>(null);
+  let fleet = $state<number | null>(null);
+
+  const VIEWS = [{ id: 'sheet', label: 'Character', glyph: 'character' }, { id: 'dock', label: 'Dock', glyph: 'anchor' }] as const;
+  const dockPath = `/main/character/${characterId}/dock`;
+  const tail = $derived($resolvedRoute.path.split('/').filter(Boolean).slice(3));
+  const view = $derived(tail[0] === 'dock' ? 'dock' : 'sheet');
+  const vessel = $derived(tail[1] ?? '');
+
+  function openView(next: string) {
+    if (next !== view || vessel) navigate(next === 'dock' ? dockPath : `/main/character/${characterId}`);
+  }
+
+  $effect(() => {
+    if (!campaign) return;
+    return getCampaignVehiclesStream(campaign.id, (vehicles) => (fleet = vehicles.length));
+  });
+
+  $effect(() => {
+    if (view === 'dock' && fleet === 0) openView('sheet');
+  });
   const {unsubscribe, ...chStore} = getCharacterStore(characterId)
   const unsubscribeSidebar = sidebarStore.subscribe(() => {});
 
@@ -94,8 +115,16 @@
 
         if (document.campaign_id) {
           getCampaign(document.campaign_id)
-            .then((found) => (campaign = found && { id: found.id, name: found.name }))
-            .catch(() => (campaign = null));
+            .then((found) => {
+              campaign = found && { id: found.id, name: found.name };
+              if (!found) fleet = 0;
+            })
+            .catch(() => {
+              campaign = null;
+              fleet = 0;
+            });
+        } else {
+          fleet = 0;
         }
       })
       .catch((reason) => (missing = reason instanceof Error ? reason.message : String(reason)))
@@ -428,8 +457,34 @@
     <Background />
   {/snippet}
 
+  {#if loaded && fleet}
+    <nav class="sheet-marks" aria-label="Character views">
+      {#each VIEWS as one (one.id)}
+        <button
+          type="button"
+          class="sheet-mark"
+          class:sheet-mark-on={view === one.id}
+          aria-current={view === one.id ? 'page' : undefined}
+          title={one.label}
+          onclick={() => openView(one.id)}
+        >
+          <Glyph name={one.glyph} size="sm" />
+          <span class="sheet-mark-word">{one.label}</span>
+        </button>
+      {/each}
+    </nav>
+  {/if}
+
   {#if missing}
     <p class="sheet-alarm" role="alert">{missing}</p>
+  {:else if loaded && view === 'dock' && campaign && fleet}
+    <div class="sheet-dock">
+      {#if vessel}
+        <VehiclePage dock={{ base: dockPath, aboard: characterId }} />
+      {:else}
+        <VehiclesPage dock={{ campaignId: campaign.id, base: dockPath }} />
+      {/if}
+    </div>
   {:else if loaded}
     <div class="sheet-band">
       <header class="sheet-crown">
@@ -611,6 +666,88 @@
     box-shadow: var(--bevel-down);
     font-size: var(--text-sm);
     color: var(--ink);
+  }
+
+  .sheet-marks {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-end: var(--space-6);
+    z-index: 3;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    pointer-events: none;
+  }
+
+  .sheet-mark {
+    --mark-notch: 0.55rem;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-1);
+    inline-size: 2.2rem;
+    block-size: 2.8rem;
+    padding: 0 0 calc(var(--mark-notch) + var(--space-1));
+    border: none;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - var(--mark-notch)), 0 100%);
+    background:
+      linear-gradient(90deg, color-mix(in srgb, #000 35%, transparent), transparent 30%, transparent 70%, color-mix(in srgb, #000 35%, transparent)),
+      var(--texture-grain),
+      var(--wood);
+    box-shadow: inset 0 0 0 1px var(--keyline), inset 0 0 0 2px var(--metal-dim);
+    color: var(--metal);
+    font-family: var(--font-display);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    text-shadow: 0 1px 0 #000;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: block-size 0.22s ease, inline-size 0.22s ease, color 0.18s ease;
+  }
+
+  .sheet-mark-word {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    transition: max-height 0.22s ease, opacity 0.18s ease;
+  }
+
+  .sheet-mark:hover,
+  .sheet-mark:focus-visible {
+    inline-size: 2.6rem;
+    block-size: 8rem;
+    color: var(--metal-bright);
+    text-shadow: var(--glow-text);
+  }
+
+  .sheet-mark:hover .sheet-mark-word,
+  .sheet-mark:focus-visible .sheet-mark-word {
+    max-height: 6rem;
+    opacity: 1;
+  }
+
+  .sheet-mark-on {
+    background:
+      radial-gradient(ellipse 90% 60% at 50% 100%, var(--ember-glow) 0%, transparent 70%),
+      linear-gradient(90deg, color-mix(in srgb, #000 30%, transparent), transparent 30%, transparent 70%, color-mix(in srgb, #000 30%, transparent)),
+      var(--texture-noise),
+      var(--stone);
+    box-shadow: inset 0 0 0 1px var(--keyline), inset 0 0 0 2px var(--metal-bright);
+    color: var(--metal-bright);
+  }
+
+  .sheet-mark:focus-visible {
+    outline: none;
+  }
+
+  .sheet-dock {
+    min-width: 0;
   }
 
   .sheet-band {

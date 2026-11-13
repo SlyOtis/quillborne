@@ -117,6 +117,14 @@
     }
   }
 
+  for (const tail of ["dock", "dock/:vehicle", "dock/:vehicle/:stop"]) {
+    routes[`/main/character/:id/${tail}`] = {
+      name: "character-view",
+      component: page("CharacterPage", () => import("./pages/CharacterPage.svelte")),
+      guard: requireSignIn
+    }
+  }
+
   for (const stop of ["design", "crew", "history", "rules", "papers"]) {
     routes[`/main/vehicles/:id/${stop}`] = {
       name: `vehicle-${stop}`,
