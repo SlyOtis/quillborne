@@ -3,10 +3,23 @@ set -euo pipefail
 
 main="$(git worktree list --porcelain | sed -n '1s/^worktree //p')"
 cd "$main"
-name="$(basename "$main")"
+board="$main/.claude/tasks/features"
 
-echo "features"
-gh issue list --state open --label feature --json number,title,assignees,labels --jq '.[] | "  #\(.number)\t\(.title)\t\(if (.assignees | length) > 0 then (.assignees | map(.login) | join(",")) else "unclaimed" end)\t\([.labels[].name | select(test("priority"))] | join(","))"' 2> /dev/null || echo "  gh issue list failed"
+echo "tasks"
+if [ -d "$board" ] && ls "$board"/*.md > /dev/null 2>&1; then
+    for name in $(ls "$board" | grep -E '^[0-9]+-.*\.md$' | sort -n); do
+        file="$board/$name"
+        number="${name%%-*}"
+        title="$(sed -n 's/^title: //p' "$file")"
+        state="$(sed -n 's/^state: //p' "$file")"
+        branch="$(sed -n 's/^branch: //p' "$file")"
+        pr="$(sed -n 's/^pr: //p' "$file")"
+        [ "$state" = "done" ] && continue
+        echo "  $number	$state	$title	$branch	${pr:-no PR}"
+    done
+else
+    echo "  none"
+fi
 
 echo "trees"
 git worktree list --porcelain | awk '/^worktree /{tree=$2} /^branch /{sub("refs/heads/","",$2); print tree "\t" $2}' | while IFS=$'\t' read -r tree branch; do

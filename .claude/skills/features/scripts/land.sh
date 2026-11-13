@@ -38,6 +38,9 @@ git worktree remove "$tree"
 git branch -d "$branch"
 git push -q origin --delete "$branch" 2> /dev/null || true
 echo "landed: $branch, $tree removed"
+for task in "$main"/.claude/tasks/features/*-"$slug".md; do
+    [ -f "$task" ] && sed -i '' "s/^state: .*/state: done/" "$task" && echo "task $(basename "$task" .md): done"
+done
 
 git checkout -q main && git pull -q --ff-only origin main
 echo "main: $(git log --oneline -1)"
