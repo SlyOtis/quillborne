@@ -70,7 +70,7 @@ grep -q '^SAUTH_DEBUG_PRIVATE_SEED=$' .env && sed -i '' "s/^SAUTH_DEBUG_PRIVATE_
 just env
 ```
 
-A fresh `.env` in the main checkout keeps slot 0, the values of `.env.example`. One in a worktree takes the lowest
+The main checkout runs on slot 2, http://localhost:5175, written by `scripts/latest.sh` below. A fresh `.env` in a worktree takes the lowest
 slot from 1 that no other worktree's `.env` holds and nothing listens on. A worktree keeps its `.env`, and with it
 its slot, until it is removed. Never copy another checkout's `.env`.
 
@@ -162,3 +162,13 @@ Tell the user:
 - Saving a key answers 500: the seed is empty. Go back to step 2, then restart `just dev`.
 - `pnpm dev` opens Brave on this worktree's Vite port when Brave is not already running. Without Brave it prints
   `Unable to find application named 'Brave Browser'`, which is harmless.
+
+## The latest server
+
+The main checkout is the one server on http://localhost:5175, slot 2, and it always runs the newest `main`. After every merge to `main`, and whenever the user asks for the latest, run from any checkout:
+
+```sh
+bash .claude/skills/run/scripts/latest.sh
+```
+
+It pulls `main` on the main checkout, writes slot 2 into its `.env`, stops this checkout's earlier run and anything else listening on its four ports, removes a container bound to them, rebuilds the database image when `database/` changed after it was built or its baked `PGPORT` differs, starts `just dev` detached with its log in `/tmp/<folder>-dev.log`, waits for the seed, and prints the address with the commit it serves. It exits 3 when a port stays held and names the holder, and 4 when the service does not answer within two minutes. A worktree never takes slot 2; step 2 skips it because the main checkout's `.env` holds it.

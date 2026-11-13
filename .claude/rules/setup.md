@@ -52,11 +52,12 @@ Never hand roll a step the justfile owns.
 
 ## Several checkouts at once
 
-Every worktree runs a local stack of its own, side by side with the others, so each one can open and test its own changes. A checkout's slot `n` sets its ports: the service on `4290 + n`, Postgres on `5490 + n`, Azurite on `10000 + n`, and Vite on `5173 + n`. The main checkout is slot 0, the values of `.env.example`.
+Every worktree runs a local stack of its own, side by side with the others, so each one can open and test its own changes. A checkout's slot `n` sets its ports: the service on `4290 + n`, Postgres on `5490 + n`, Azurite on `10000 + n`, and Vite on `5173 + n`. `.env.example` carries slot 0; the main checkout runs on slot 2.
 
 - The ports live in the checkout's own `.env`: `SERVER_PORT`, `PGPORT` and the port of the `BlobEndpoint`. The service reads `.env` itself and over the environment, so a port is changed there and nowhere else. Vite takes `5173 + SERVER_PORT - 4290` and holds it strictly, failing rather than moving to a port that belongs to another checkout.
 - The containers, the volume and the database image are named after the checkout's folder: `<folder>-db`, `<folder>-db-data` and `<folder>-blob`. `just build-db` builds the image with this checkout's migrations and its `PGPORT`, and `just dev` and `just clean` touch only this checkout's.
-- A new worktree takes its slot when step 2 of the `run` skill writes its `.env`: the lowest from 1 that no other worktree's `.env` holds and on which nothing listens. It keeps that `.env` until the worktree is removed.
+- The main checkout is the latest server: slot 2, http://localhost:5175, always the newest `main`, and the only run on that address. `bash .claude/skills/run/scripts/latest.sh` pulls `main`, stops whatever holds its ports, rebuilds the database image when `database/` or the port changed, starts `just dev` and reseeds; it is run after every merge to `main`. A worktree never takes slot 2.
+- A new worktree takes its slot when step 2 of the `run` skill writes its `.env`: the lowest from 1 that no other worktree's `.env` holds and on which nothing listens, so slot 2 is skipped while the main checkout's `.env` holds it. It keeps that `.env` until the worktree is removed.
 - Stop a run by the `just dev` whose working directory is this checkout, never by the first one found.
 
 ## Local test data
