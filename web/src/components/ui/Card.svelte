@@ -10,6 +10,7 @@
     badge,
     tone = 'metal',
     layout = 'row',
+    frame = 'thin',
     on = false,
     onclick,
     children
@@ -26,6 +27,8 @@
     tone?: 'metal' | 'ember' | 'verdigris'
     /** Row fills the width of a column. Tile is a fixed width portrait for a rail. */
     layout?: 'row' | 'tile'
+    /** Heavy rings the card in the full gilt rim and lights its keyline, the mark of the reader's own. */
+    frame?: 'thin' | 'heavy'
     /** Marks the card as the one being read. */
     on?: boolean
     /** Runs when the card is pressed. */
@@ -39,7 +42,7 @@
 
 <button
   type="button"
-  class="dnd-card dnd-card-{tone} dnd-card-{layout}"
+  class="dnd-card dnd-card-{tone} dnd-card-{layout} dnd-card-{frame}"
   class:dnd-card-on={on}
   aria-current={on ? 'page' : undefined}
   {onclick}
@@ -86,6 +89,14 @@
     border-radius: var(--radius-md);
     box-shadow: var(--rim-thin), inset 0 0 18px 2px var(--shade-hard), var(--shadow-sm);
     transition: box-shadow 0.18s ease, filter 0.18s ease;
+  }
+
+  .dnd-card-heavy {
+    box-shadow: var(--rim), inset 0 0 18px 2px var(--shade-hard), var(--shadow-sm), 0 0 10px color-mix(in srgb, var(--card-light) 35%, transparent);
+  }
+
+  .dnd-card.dnd-card-heavy::after {
+    border-color: var(--card-light);
   }
 
   .dnd-card-on {
