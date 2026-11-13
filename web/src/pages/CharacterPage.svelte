@@ -37,6 +37,7 @@
   import VehiclesPage from "./VehiclesPage.svelte";
   import VehiclePage from "./VehiclePage.svelte";
   import Portrait, { type PortraitFrame } from "$components/ui/Portrait.svelte";
+  import Stat from "$components/ui/Stat.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
   import Field from "$components/ui/Field.svelte";
   import Button from "$components/ui/Button.svelte";
@@ -327,8 +328,9 @@
   const bespokeSlots = ['initiative', 'armorClass', 'speed', 'maxHitPoints']
 
   const slots = $derived($rules.resolved?.derived.filter((entry) => !bespokeSlots.includes(entry.id)) ?? [])
+  const hitDice = $derived($rules.resolved?.pools.find((pool) => pool.id === 'hitDice'))
   const slotPlaces = $derived<DynamicGridItem[]>(
-    ['initiative', 'armor', ...slots.map((slot) => slot.id)].map((id, at) => ({ id: `slot/${id}`, x: 6 + at, y: 0, w: 1, h: 4, minW: 1, minH: 3 }))
+    ['initiative', 'armor', 'hitDice', ...slots.map((slot) => slot.id)].map((id, at) => ({ id: `slot/${id}`, x: 6 + at, y: 0, w: 1, h: 4, minW: 1, minH: 3 }))
   )
   const places = $derived([...sheetPlaces, ...slotPlaces].filter((place) => place.id !== 'rules' || rulePanels.length > 0).map((place) => {
     const own = layout[place.id]
@@ -618,6 +620,8 @@
             <Initiative bind:initiative={$info.initiative}/>
           {:else if placed.id === 'slot/armor'}
             <PlainBox bind:value={$info.ac} title="Armor" subTitle="class" />
+          {:else if placed.id === 'slot/hitDice'}
+            <Stat label="Hit dice" value="{hitDice?.remaining ?? 0}/{hitDice?.max ?? '--'}" sub="d{$info.class?.hitDice?.die || 8}" title="Hit dice left to spend" />
           {:else if placed.id.startsWith('slot/')}
             {@const slot = slots.find((one) => `slot/${one.id}` === placed.id)}
             {#if slot}

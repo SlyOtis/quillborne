@@ -14,7 +14,6 @@
   import IconBtn from "$components/ui/IconBtn.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
   import Ornament from "$components/ui/Ornament.svelte";
-  import Stat from "$components/ui/Stat.svelte";
 
   const {info} = getContext<CharacterContext>('character')
   const rules = getContext<Readable<RulesState>>('rules')
@@ -153,8 +152,6 @@
     {/if}
   </div>
 </div>
-
-<Stat label="Hit dice" value="{hitDice?.remaining ?? 0}/{hitDice?.max ?? '--'}" sub="d{$info.class?.hitDice?.die || 8}" title="Hit dice left to spend" />
 
 <style>
   .vitals {
