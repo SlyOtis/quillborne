@@ -4,12 +4,13 @@
   import { getRecentFirst, userCharacters } from "$lib/stores/character.store";
   import { userProfile } from "$lib/stores/auth.store";
   import Card from "$components/ui/Card.svelte";
+  import Button from "$components/ui/Button.svelte";
   import { unfold } from "$lib/unfold";
 
   let {
     loading = false,
     search = '',
-    open = true
+    open = $bindable(true)
   }: {
     loading?: boolean
     search?: string
@@ -58,6 +59,13 @@
     {/each}
   </div>
   </div>
+  {#if !open}
+    <div class="roll-foot">
+      <Button variant="ghost" size="sm" onclick={() => (open = true)}>
+        Show the {shown.length} {shown.length === 1 ? 'character' : 'characters'}
+      </Button>
+    </div>
+  {/if}
 {/if}
 
 <style>
@@ -68,11 +76,32 @@
     position: relative;
     margin: calc(var(--roll-bleed) * -1) calc(var(--roll-bleed) * -1) 0;
     padding: var(--roll-bleed) var(--roll-bleed) 0;
+    --unfold-rest: calc(var(--roll-bleed) + var(--space-8) * 2.25);
+    --unfold-time: 0.48s;
   }
 
   .roll-fold-shut {
-    margin-block-start: 0;
-    padding-block-start: 0;
+    -webkit-mask-image: linear-gradient(180deg, var(--ground-deep) calc(100% - var(--space-8) * 2), transparent 100%);
+    mask-image: linear-gradient(180deg, var(--ground-deep) calc(100% - var(--space-8) * 2), transparent 100%);
+  }
+
+  .roll-foot {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-block-start: calc(var(--space-7) * -1);
+  }
+
+  .roll-foot::before,
+  .roll-foot::after {
+    content: '';
+    flex: 1;
+    block-size: var(--border-hair);
+    background: linear-gradient(90deg, transparent, var(--metal-dim));
+  }
+
+  .roll-foot::after {
+    background: linear-gradient(90deg, var(--metal-dim), transparent);
   }
 
   .roll-grid {

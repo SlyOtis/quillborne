@@ -113,7 +113,7 @@
         <IconBtn title={campaignsOpen ? 'Collapse the campaigns' : 'Expand the campaigns'} onclick={() => (campaignsOpen = !campaignsOpen)}><Glyph name={campaignsOpen ? 'fold' : 'unfold'} size="sm" /></IconBtn>
         <IconBtn title="Raise a new campaign" onclick={createCampaign}><Glyph name="campaign" size="sm" /></IconBtn>
       </header>
-      <CampaignsPanel {loading} open={campaignsOpen} />
+      <CampaignsPanel {loading} bind:open={campaignsOpen} />
     </section>
 
     <section class="hall-plot hall-plot-roll" aria-label="Characters">
@@ -124,7 +124,7 @@
         <IconBtn title={charactersOpen ? 'Collapse the characters' : 'Expand the characters'} onclick={() => (charactersOpen = !charactersOpen)}><Glyph name={charactersOpen ? 'fold' : 'unfold'} size="sm" /></IconBtn>
         <IconBtn title="Forge a new character" onclick={createCharacter}><Glyph name="character" size="sm" /></IconBtn>
       </header>
-      <CharactersPanel {loading} open={charactersOpen} />
+      <CharactersPanel {loading} bind:open={charactersOpen} />
     </section>
   </div>
 </Shell>

@@ -4,9 +4,10 @@
   import { userCampaigns } from "$lib/stores/campaign.store";
   import { user } from "$lib/stores/auth.store";
   import Card from "$components/ui/Card.svelte";
+  import Button from "$components/ui/Button.svelte";
   import { unfold } from "$lib/unfold";
 
-  let { loading = false, search = '', open = true }: { loading?: boolean; search?: string; open?: boolean } = $props();
+  let { loading = false, search = '', open = $bindable(true) }: { loading?: boolean; search?: string; open?: boolean } = $props();
 
   let shown = $derived($userCampaigns.filter((entry) =>
     entry.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -26,7 +27,7 @@
     <span>No chronicle has been opened</span>
   </div>
 {:else}
-  <div class="camps-band" use:unfold={open}>
+  <div class="camps-band" class:camps-band-shut={!open} use:unfold={open}>
     {#each shown as entry (entry.id)}
       <Card
         title={entry.name}
@@ -43,15 +44,48 @@
       </Card>
     {/each}
   </div>
+  {#if !open}
+    <div class="camps-foot">
+      <Button variant="ghost" size="sm" onclick={() => (open = true)}>
+        Show the {shown.length} {shown.length === 1 ? 'campaign' : 'campaigns'}
+      </Button>
+    </div>
+  {/if}
 {/if}
 
 <style>
   .camps-band {
     --camps-seat: calc(var(--space-8) * 4);
+    --unfold-rest: calc(var(--space-8) * 1.25);
+    --unfold-time: 0.48s;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(var(--camps-seat), 100%), 1fr));
     gap: var(--space-3);
     min-width: 0;
+  }
+
+  .camps-band-shut {
+    -webkit-mask-image: linear-gradient(180deg, var(--ground-deep) calc(100% - var(--unfold-rest)), transparent 100%);
+    mask-image: linear-gradient(180deg, var(--ground-deep) calc(100% - var(--unfold-rest)), transparent 100%);
+  }
+
+  .camps-foot {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-block-start: calc(var(--space-6) * -1);
+  }
+
+  .camps-foot::before,
+  .camps-foot::after {
+    content: '';
+    flex: 1;
+    block-size: var(--border-hair);
+    background: linear-gradient(90deg, transparent, var(--metal-dim));
+  }
+
+  .camps-foot::after {
+    background: linear-gradient(90deg, var(--metal-dim), transparent);
   }
 
   .camps-count {
