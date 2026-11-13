@@ -6,11 +6,12 @@
   import { userProfile } from "$lib/stores/auth.store";
   import type { Profile } from "$lib/api/types";
   import Card from "$components/ui/Card.svelte";
+  import { unfold } from "$lib/unfold";
 
   let {
     loading = false,
     search = '',
-    open = $bindable(false),
+    open = true,
     profiles = {} as Record<string, Profile>
   }: {
     loading?: boolean
@@ -26,8 +27,6 @@
     entry.metadata.class.toLowerCase().includes(search.toLowerCase()) ||
     entry.metadata.race.toLowerCase().includes(search.toLowerCase())
   ));
-
-  const folded = $derived(shown.length > 6);
 
   function getRim(campaignId: string | undefined, ownerId: string) {
     const campaign = $userCampaigns.find((one) => one.id === campaignId);
@@ -56,7 +55,7 @@
     <span>No character carries your name yet</span>
   </div>
 {:else}
-  <div class="roll-fold" class:roll-fold-closed={folded && !open}>
+  <div class="roll-fold" class:roll-fold-shut={!open} use:unfold={open}>
   <div class="roll-grid">
     {#each shown as entry (entry.id)}
       <Card
@@ -81,12 +80,6 @@
     {/each}
   </div>
   </div>
-  {#if folded}
-    <button type="button" class="roll-more" aria-expanded={open} onclick={() => (open = !open)}>
-      <span class="dnd-label roll-more-word">{open ? 'Fold the roll' : `See all ${shown.length}`}</span>
-      <span class="roll-more-glyph"><Glyph name={open ? 'fold' : 'unfold'} size="sm" /></span>
-    </button>
-  {/if}
 {/if}
 
 <style>
@@ -97,54 +90,11 @@
     position: relative;
     margin: calc(var(--roll-bleed) * -1) calc(var(--roll-bleed) * -1) 0;
     padding: var(--roll-bleed) var(--roll-bleed) 0;
-    max-block-size: calc(var(--roll-row) * 60);
-    overflow: hidden;
-    transition: max-block-size 600ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .roll-fold-closed {
-    max-block-size: calc(var(--roll-row) * 3 + var(--space-6) * 2 + var(--roll-bleed));
-  }
-
-  .roll-fold-closed {
-    -webkit-mask-image: linear-gradient(180deg, var(--ground-deep) calc(100% - var(--roll-row) * 0.8), transparent 100%);
-    mask-image: linear-gradient(180deg, var(--ground-deep) calc(100% - var(--roll-row) * 0.8), transparent 100%);
-  }
-
-  .roll-more {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    inline-size: 100%;
-    margin-block-start: calc(var(--roll-bleed) * -1);
-    padding: var(--space-2) 0;
-    border: none;
-    background: none;
-    color: var(--metal);
-    cursor: pointer;
-  }
-
-  .roll-more:hover .roll-more-word,
-  .roll-more:focus-visible .roll-more-word {
-    color: var(--metal-bright);
-  }
-
-  .roll-more:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
-  }
-
-  .roll-more-word {
-    margin: 0;
-  }
-
-  .roll-more-glyph {
-    display: flex;
-    color: var(--metal);
-  }
-
-  .roll-more {
-    gap: var(--space-2);
+  .roll-fold-shut {
+    margin-block-start: 0;
+    padding-block-start: 0;
   }
 
   .roll-grid {

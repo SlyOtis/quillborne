@@ -36,8 +36,8 @@
   let loading = $state(true);
   let campaignSearch = $state('');
   let characterSearch = $state('');
-  let campaignsOpen = $state(false);
-  let charactersOpen = $state(false);
+  let campaignsOpen = $state(true);
+  let charactersOpen = $state(true);
   let profiles = $state<Record<string, Profile>>({});
   let lore = $state<{ entry: Resource; campaign: Campaign | null }[]>([]);
 
@@ -120,10 +120,10 @@
         <h2 class="dnd-label hall-divide-name">Campaigns</h2>
         <span class="hall-divide-note">{$userCampaigns.length} under way</span>
         <span class="hall-divide-run"></span>
-        <IconBtn title={campaignsOpen ? 'Collapse the campaigns' : 'Expand all campaigns'} onclick={() => (campaignsOpen = !campaignsOpen)}><Glyph name={campaignsOpen ? 'fold' : 'unfold'} size="sm" /></IconBtn>
+        <IconBtn title={campaignsOpen ? 'Collapse the campaigns' : 'Expand the campaigns'} onclick={() => (campaignsOpen = !campaignsOpen)}><Glyph name={campaignsOpen ? 'fold' : 'unfold'} size="sm" /></IconBtn>
         <IconBtn title="Raise a new campaign" onclick={createCampaign}><Glyph name="campaign" size="sm" /></IconBtn>
       </header>
-      <CampaignsPanel {loading} bind:open={campaignsOpen} />
+      <CampaignsPanel {loading} open={campaignsOpen} />
     </section>
 
     <section class="hall-plot hall-plot-roll" aria-label="Characters">
@@ -131,10 +131,10 @@
         <h2 class="dnd-label hall-divide-name">Characters</h2>
         <span class="hall-divide-note">{$userCharacters.length} on the roll</span>
         <span class="hall-divide-run"></span>
-        <IconBtn title={charactersOpen ? 'Collapse the characters' : 'Expand all characters'} onclick={() => (charactersOpen = !charactersOpen)}><Glyph name={charactersOpen ? 'fold' : 'unfold'} size="sm" /></IconBtn>
+        <IconBtn title={charactersOpen ? 'Collapse the characters' : 'Expand the characters'} onclick={() => (charactersOpen = !charactersOpen)}><Glyph name={charactersOpen ? 'fold' : 'unfold'} size="sm" /></IconBtn>
         <IconBtn title="Forge a new character" onclick={createCharacter}><Glyph name="character" size="sm" /></IconBtn>
       </header>
-      <CharactersPanel {loading} bind:open={charactersOpen} {profiles} />
+      <CharactersPanel {loading} open={charactersOpen} {profiles} />
     </section>
 
     <section class="hall-plot hall-plot-lore" aria-label="Lore">

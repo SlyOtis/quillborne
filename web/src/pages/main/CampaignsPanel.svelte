@@ -4,15 +4,14 @@
   import { userCampaigns } from "$lib/stores/campaign.store";
   import { user } from "$lib/stores/auth.store";
   import Card from "$components/ui/Card.svelte";
+  import { unfold } from "$lib/unfold";
 
-  let { loading = false, search = '', open = $bindable(false) }: { loading?: boolean; search?: string; open?: boolean } = $props();
+  let { loading = false, search = '', open = true }: { loading?: boolean; search?: string; open?: boolean } = $props();
 
   let shown = $derived($userCampaigns.filter((entry) =>
     entry.name.toLowerCase().includes(search.toLowerCase()) ||
     entry.description.toLowerCase().includes(search.toLowerCase())
   ));
-
-  const folded = $derived(shown.length > 6);
 
   function openCampaign(campaignId: string) {
     navigate(`/main/campaign/${campaignId}`);
@@ -27,8 +26,7 @@
     <span>No chronicle has been opened</span>
   </div>
 {:else}
-  <div class="camps-fold" class:camps-fold-closed={folded && !open}>
-  <div class="camps-band">
+  <div class="camps-band" use:unfold={open}>
     {#each shown as entry (entry.id)}
       <Card
         title={entry.name}
@@ -45,65 +43,9 @@
       </Card>
     {/each}
   </div>
-  </div>
-  {#if folded}
-    <button type="button" class="camps-more" aria-expanded={open} onclick={() => (open = !open)}>
-      <span class="dnd-label camps-more-word">{open ? 'Fold the chronicles' : `See all ${shown.length}`}</span>
-      <span class="camps-more-glyph"><Glyph name={open ? 'fold' : 'unfold'} size="sm" /></span>
-    </button>
-  {/if}
 {/if}
 
 <style>
-  .camps-fold {
-    --camps-row: calc(var(--space-8) * 1.8);
-    position: relative;
-    max-block-size: calc(var(--camps-row) * 60);
-    overflow: hidden;
-    transition: max-block-size 600ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .camps-fold-closed {
-    max-block-size: calc(var(--camps-row) * 3 + var(--space-3) * 2);
-  }
-
-  .camps-fold-closed {
-    -webkit-mask-image: linear-gradient(180deg, var(--ground-deep) calc(100% - var(--camps-row) * 0.8), transparent 100%);
-    mask-image: linear-gradient(180deg, var(--ground-deep) calc(100% - var(--camps-row) * 0.8), transparent 100%);
-  }
-
-  .camps-more {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-2);
-    inline-size: 100%;
-    padding: var(--space-2) 0;
-    border: none;
-    background: none;
-    color: var(--metal);
-    cursor: pointer;
-  }
-
-  .camps-more:hover .camps-more-word,
-  .camps-more:focus-visible .camps-more-word {
-    color: var(--metal-bright);
-  }
-
-  .camps-more-glyph {
-    display: flex;
-    color: var(--metal);
-  }
-
-  .camps-more:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
-  }
-
-  .camps-more-word {
-    margin: 0;
-  }
-
   .camps-band {
     --camps-seat: calc(var(--space-8) * 4);
     display: grid;
