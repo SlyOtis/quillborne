@@ -18,7 +18,6 @@
   import ResourceCard from '$components/campaign/ResourceCard.svelte'
   import Glyph from '$components/ui/Glyph.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
-  import Ornament from '$components/ui/Ornament.svelte'
   import Panel from '$components/ui/Panel.svelte'
   import BaseDialog from '$components/BaseDialog.svelte'
   import Shell from '$components/ui/Shell.svelte'
@@ -87,43 +86,6 @@
   }
   let tocOpen = $state(true)
   let chartsOpen = $state(false)
-
-  const feed = $derived(
-    [
-      ...sessions.map((entry) => ({
-        at: entry.created_at,
-        tone: 'metal' as const,
-        word: `Session ${entry.number}, ${entry.title}`,
-        where: `/main/campaign/${campaignId}/sessions/${entry.id}`
-      })),
-      ...npcs.map((entry) => ({
-        at: entry.created_at,
-        tone: 'ember' as const,
-        word: `Met ${entry.title}`,
-        where: `/main/campaign/${campaignId}/npcs/${entry.id}`
-      })),
-      ...places.map((entry) => ({
-        at: entry.created_at,
-        tone: 'verdigris' as const,
-        word: `Found ${entry.title}`,
-        where: `/main/campaign/${campaignId}/places/${entry.id}`
-      })),
-      ...maps.map((entry) => ({
-        at: entry.created_at,
-        tone: 'verdigris' as const,
-        word: `Charted ${entry.title}`,
-        where: `/main/campaign/${campaignId}/maps/${entry.id}`
-      }))
-    ]
-      .sort((a, b) => (Date.parse(b.at ?? '') || 0) - (Date.parse(a.at ?? '') || 0))
-      .map((entry, index) => ({
-        id: `${index}-${entry.word}`,
-        tone: entry.tone,
-        word: entry.word,
-        where: entry.where,
-        when: entry.at ? new Date(entry.at).toLocaleDateString() : ''
-      }))
-  )
 
   const visibleMaps = $derived(isDm ? maps : maps.filter((entry) => entry.is_visible))
 
@@ -375,29 +337,6 @@
             </div>
           {/if}
         </section>
-
-        <aside class="camp-plot camp-plot-feed" aria-label="What has happened">
-          <header class="camp-divide">
-            <h2 class="dnd-label camp-divide-name">What happened</h2>
-            <span class="camp-divide-note">{feed.length} entries</span>
-            <span class="camp-divide-run"></span>
-          </header>
-          {#if feed.length === 0}
-            <p class="camp-note">Nothing has happened yet.</p>
-          {:else}
-            <ol class="camp-feed">
-              {#each feed as entry (entry.id)}
-                <li>
-                  <button type="button" class="camp-feed-line" onclick={() => navigate(entry.where)}>
-                    <span class="camp-feed-mark" aria-hidden="true"><Ornament name="quatrefoil" size="xs" tone={entry.tone} /></span>
-                    <span class="camp-feed-word">{entry.word}</span>
-                    <span class="camp-feed-when">{entry.when}</span>
-                  </button>
-                </li>
-              {/each}
-            </ol>
-          {/if}
-        </aside>
       </div>
     {:else if tab === 'party'}
       <Panel title="Party">
@@ -479,14 +418,12 @@
 
   .camp-grid {
     display: grid;
-    --camp-side: calc(var(--space-8) * 3);
-    --camp-side-share: 24%;
-    grid-template-columns: minmax(0, 1fr) minmax(min(var(--camp-side), 100%), var(--camp-side-share));
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
-      'roll feed'
-      'intro feed'
-      'npcs feed'
-      'places feed';
+      'roll'
+      'intro'
+      'npcs'
+      'places';
     align-content: start;
     column-gap: var(--space-6);
     row-gap: var(--space-6);
@@ -516,37 +453,12 @@
     grid-area: places;
   }
 
-  .camp-plot-feed {
-    grid-area: feed;
-    align-self: stretch;
-    padding: var(--space-4) var(--space-4) var(--space-5);
-    border-radius: var(--radius-lg);
-    background:
-      radial-gradient(ellipse 90% 30% at 50% 0%, color-mix(in srgb, var(--ember) 7%, transparent) 0%, transparent 70%),
-      var(--texture-noise),
-      linear-gradient(180deg, var(--ground-raised), var(--ground-deep));
-    box-shadow: var(--rim), inset 0 0 1rem 0.125rem var(--shade-hard), var(--shadow-md);
-  }
-
   .camp-divide {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-3);
     min-width: 0;
-  }
-
-  .camp-plot-feed .camp-divide {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) 0;
-    padding: var(--space-3) var(--space-4);
-    background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent), color-mix(in srgb, var(--ground-deep) 45%, transparent) 60%, color-mix(in srgb, var(--ground-deep) 65%, transparent)),
-      var(--texture-noise),
-      var(--stone);
-    box-shadow: var(--rim-thin), var(--bevel-up), 0 0.1875rem 0.375rem var(--shade);
   }
 
   .camp-divide-name {
@@ -617,81 +529,6 @@
     grid-template-columns: repeat(auto-fill, minmax(min(var(--camp-card), 100%), 1fr));
     gap: var(--space-4);
     min-width: 0;
-  }
-
-  .camp-feed {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .camp-feed-line {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: baseline;
-    gap: var(--space-2);
-    width: 100%;
-    padding: var(--space-1) var(--space-2);
-    border: none;
-    border-radius: var(--radius-sm);
-    background: none;
-    font-size: var(--text-xs);
-    text-align: start;
-    cursor: pointer;
-    transition: background 0.15s ease, box-shadow 0.15s ease;
-  }
-
-  .camp-feed-line:hover {
-    background: linear-gradient(90deg, color-mix(in srgb, var(--ember) 14%, transparent), transparent);
-    box-shadow: inset 0 0 0 0.0625rem color-mix(in srgb, var(--metal-dim) 70%, transparent);
-  }
-
-  .camp-feed-line:hover .camp-feed-word {
-    color: var(--metal-bright);
-    text-shadow: var(--glow-text);
-  }
-
-  .camp-feed-line:active {
-    filter: brightness(0.85);
-  }
-
-  .camp-feed-line:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
-  }
-
-  .camp-feed-mark {
-    color: var(--metal);
-  }
-
-  .camp-feed-word {
-    min-width: 0;
-    color: var(--ink);
-  }
-
-  .camp-feed-when {
-    font-family: var(--font-figures);
-    font-variant-numeric: lining-nums tabular-nums;
-    color: var(--ink-faint);
-  }
-
-  @container page (max-width: 900px) {
-    .camp-grid {
-      grid-template-columns: minmax(0, 1fr);
-      grid-template-areas:
-        'roll'
-        'intro'
-        'feed'
-        'npcs'
-        'places';
-    }
-
-    .camp-plot-feed {
-      align-self: start;
-    }
   }
 
   .camp-charts {
