@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
   import Ornament from './Ornament.svelte'
+  import Presence, { type PresenceUser } from './Presence.svelte'
   import StoredImage from './StoredImage.svelte'
 
   const {
@@ -8,6 +9,8 @@
     sub,
     image,
     badge,
+    tags,
+    members,
     tone = 'metal',
     layout = 'row',
     frame = 'thin',
@@ -19,14 +22,18 @@
     title: string
     /** A smaller line written under the name. */
     sub?: string
-    /** Portrait shown in the medallion. The first letter of the title stands in when it is missing. */
+    /** Portrait shown in the medallion, or the ground of a square. The first letter of the title stands in when it is missing. */
     image?: string
     /** Short mark drawn in the upper right of the card. */
     badge?: string
+    /** Hash words written under the name. */
+    tags?: string[]
+    /** The people seated at the card, stacked on its top left corner. */
+    members?: PresenceUser[]
     /** Colours the rim against the active theme. */
     tone?: 'metal' | 'ember' | 'verdigris'
-    /** Row fills the width of a column. Tile is a fixed width portrait for a rail. Face centres the words and the stat column with no medallion. */
-    layout?: 'row' | 'tile' | 'face'
+    /** Row fills the width of a column. Tile is a fixed width portrait for a rail. Face centres the words and the stat column with no medallion. Square lays the words over the picture and cuts the sub line where the square ends. */
+    layout?: 'row' | 'tile' | 'face' | 'square'
     /** Heavy rings the card in the full gilt rim and lights its keyline, the mark of the reader's own. */
     frame?: 'thin' | 'heavy'
     /** Marks the card as the one being read. */
@@ -47,11 +54,15 @@
   aria-current={on ? 'page' : undefined}
   {onclick}
 >
+  {#if layout === 'square' && image}
+    <span class="dnd-card-ground"><StoredImage src={image} alt="" /></span>
+  {/if}
+
   {#if layout === 'tile'}
     <span class="dnd-card-finial"><Ornament name="finial" size="xs" tone="metal" /></span>
   {/if}
 
-  {#if layout !== 'face'}
+  {#if layout === 'row' || layout === 'tile'}
     <span class="dnd-card-medallion">
       {#if image}
         <span class="dnd-card-portrait"><StoredImage src={image} alt="" /></span>
@@ -64,12 +75,21 @@
 
   <span class="dnd-card-body">
     <span class="dnd-card-title">{title}</span>
+    {#if tags && tags.length > 0}
+      <span class="dnd-card-tags">
+        {#each tags as tag (tag)}<span class="dnd-card-tag">#{tag}</span>{/each}
+      </span>
+    {/if}
     {#if sub}<span class="dnd-card-sub">{sub}</span>{/if}
     {#if children}<span class="dnd-card-stats">{@render children()}</span>{/if}
   </span>
 
   {#if badge}
     <span class="dnd-card-badge">{badge}</span>
+  {/if}
+
+  {#if members && members.length > 0}
+    <span class="dnd-card-members"><Presence users={members} /></span>
   {/if}
 </button>
 
@@ -142,6 +162,15 @@
     padding: var(--space-3);
   }
 
+  .dnd-card-members {
+    position: absolute;
+    top: 0;
+    left: var(--space-3);
+    z-index: 3;
+    display: flex;
+    transform: translateY(-50%);
+  }
+
   .dnd-card-face {
     flex-direction: column;
     padding: var(--space-5) var(--space-4);
@@ -163,6 +192,88 @@
     align-items: center;
     gap: var(--space-3);
     margin-top: var(--space-3);
+  }
+
+  .dnd-card-square {
+    flex-direction: column;
+    aspect-ratio: 1;
+    padding: var(--space-4);
+    overflow: hidden;
+    isolation: isolate;
+    container-type: inline-size;
+  }
+
+  .dnd-card-ground {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .dnd-card-ground :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .dnd-card-ground::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--ground-deep) 30%, transparent) 0%, color-mix(in srgb, var(--ground-deep) 72%, transparent) 50%, var(--ground-deep) 100%);
+  }
+
+  .dnd-card-square .dnd-card-body {
+    position: relative;
+    z-index: 1;
+    min-block-size: 0;
+    gap: var(--space-2);
+  }
+
+  .dnd-card-square .dnd-card-title {
+    display: block;
+    max-block-size: calc(2 * 1.2em);
+    font-size: var(--text-lg);
+    font-weight: 700;
+    line-height: 1.2;
+    text-shadow: 0 1px 0 var(--keyline), 0 0 0.5rem color-mix(in srgb, var(--card-light) 35%, transparent);
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .dnd-card-square .dnd-card-sub {
+    --card-head: calc(var(--space-4) * 2 + var(--text-lg) * 2.4 + var(--text-xs) * 1.4 + var(--space-2) * 2);
+    --card-line: calc(var(--text-sm) * 1.4);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: calc(round(down, (100cqi - var(--card-head)) / var(--card-line), 1));
+    line-clamp: calc(round(down, (100cqi - var(--card-head)) / var(--card-line), 1));
+    min-block-size: 0;
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    line-height: 1.4;
+    color: var(--ink);
+    text-shadow: 0 1px 0 var(--keyline);
+    white-space: normal;
+  }
+
+  .dnd-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-2);
+    min-width: 0;
+  }
+
+  .dnd-card-tag {
+    font-family: var(--font-display);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: var(--tracking-wide);
+    color: var(--verdigris);
+    text-shadow: 0 1px 0 var(--keyline);
+    white-space: nowrap;
   }
 
   .dnd-card-ember {

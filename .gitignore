@@ -51,3 +51,4 @@ build-errors.log
 tmp/
 .lcp_inspect/
 .vite/
+.claude/skills/impeccable/scripts/bin/
