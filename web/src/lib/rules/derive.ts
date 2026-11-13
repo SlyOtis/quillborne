@@ -182,7 +182,8 @@ export function getResolvedCharacter(system: RuleSystem, sheet: CharacterSheet):
       max,
       spent,
       remaining: max - spent,
-      regain: pool.regainAmount ? getExpressionValue(pool.regainAmount, scope) : max
+      regain: pool.regainAmount ? getExpressionValue(pool.regainAmount, scope) : max,
+      view: pool.view ?? 'plate'
     }
   })
 
