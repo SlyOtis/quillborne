@@ -140,7 +140,7 @@ export interface CampaignMap extends Omit<generated.CampaignMap, 'layers' | 'mar
   plan?: MapDocument | null
 }
 
-export type CampaignRecordKind = 'place' | 'npc' | 'item' | 'session'
+export type CampaignRecordKind = 'place' | 'character' | 'item' | 'session'
 
 export type ChatKind = 'message' | 'roll'
 
@@ -159,7 +159,6 @@ export interface EncounterCombatant {
   name: string
   kind: CombatantKind
   character_id?: string
-  npc_id?: string
   modifier: number
   initiative: number
   hit_points: number

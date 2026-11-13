@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { getCampaign, getCampaignCharacters, getCampaignEncountersStream, getCampaignMaps, getCampaignVehiclesStream, getProfile } from '$lib/api'
+  import { getCampaign, getCampaignCharacters, getCampaignEncountersStream, getCampaignMaps, getCampaignVehiclesStream, getProfile, isNpc } from '$lib/api'
   import type { Campaign, CampaignMap, Character, Encounter, EncounterCombatant, Vehicle } from '$lib/api/types'
   import type { Snippet } from 'svelte'
   import { navigate, currentRoute, resolvedRoute } from 'sly-svelte-location-router'
-  import { getAll, getChildren, getRoots, isResourceKind, RESOURCES, type Npc, type Place, type Resource, type ResourceKind } from '$lib/resources'
+  import { getAll, getChildren, getRoots, isResourceKind, RESOURCES, type Place, type Resource, type ResourceKind } from '$lib/resources'
   import { user } from '$lib/stores/auth.store'
   import { userCampaigns } from '$lib/stores/campaign.store'
   import Card from '$components/ui/Card.svelte'
@@ -17,7 +17,6 @@
   let addOpen = $state(false)
   let campaign = $state<Campaign | null>(null)
   let characters = $state<Character[]>([])
-  let npcs = $state<Npc[]>([])
   let places = $state<Place[]>([])
   let maps = $state<CampaignMap[]>([])
   let encounters = $state<Encounter[]>([])
@@ -58,8 +57,10 @@
   let more = $state<Record<string, Resource[]>>({})
 
   const isDm = $derived(Boolean(campaign && $user && campaign.dm_id === $user.user_id))
+  const seated = $derived(characters.filter((entry) => !isNpc(entry)))
+  const npcs = $derived(characters.filter(isNpc))
   const party = $derived(
-    [...characters].sort((a, b) => Number(b.owner_id === $user?.user_id) - Number(a.owner_id === $user?.user_id))
+    [...seated].sort((a, b) => Number(b.owner_id === $user?.user_id) - Number(a.owner_id === $user?.user_id))
   )
   const lore = $derived(npcs.length + places.length)
   const knownEncounters = $derived(
@@ -76,7 +77,6 @@
     if (!id) {
       campaign = null
       characters = []
-      npcs = []
       places = []
       maps = []
       encounters = []
@@ -98,17 +98,15 @@
 
     void (async () => {
       try {
-        const [record, seated, cast, sites, charts] = await Promise.all([
+        const [record, sheets, sites, charts] = await Promise.all([
           getCampaign(id),
           getCampaignCharacters(id),
-          getAll({ at: 'campaign', id }, 'npcs') as Promise<Npc[]>,
           getAll({ at: 'campaign', id }, 'places') as Promise<Place[]>,
           getCampaignMaps(id)
         ])
         if (!live) return
         campaign = record
-        characters = seated
-        npcs = cast
+        characters = sheets
         places = sites
         maps = charts
 
@@ -187,7 +185,7 @@
     {/if}
 
     {@render section('campaign', 'Campaign details', players.length, details)}
-    {@render section('party', 'Party', characters.length, roster)}
+    {@render section('party', 'Party', seated.length, roster)}
     {@render section('players', 'Players', players.length, table)}
     {@render section('npcs', 'NPCs', npcs.length, people)}
     {@render section('places', 'Places', places.length, sites)}
@@ -257,7 +255,7 @@
       </div>
       <div class="dnd-menu-fact">
         <dt>Characters</dt>
-        <dd>{characters.length}</dd>
+        <dd>{seated.length}</dd>
       </div>
       <div class="dnd-menu-fact">
         <dt>Encounters</dt>
@@ -304,7 +302,7 @@
           sub={campaign?.dm_id === player.id ? 'Dungeon Master' : 'Player'}
           badge={campaign?.dm_id === player.id
             ? 'DM'
-            : `${characters.filter((entry) => entry.owner_id === player.id).length} characters`}
+            : `${seated.filter((entry) => entry.owner_id === player.id).length} characters`}
           onclick={() => openCampaign('?tab=party')}
         />
       {/each}
@@ -334,7 +332,11 @@
     <p class="dnd-menu-empty">No NPC has been written down.</p>
   {:else}
     <div class="dnd-scroll dnd-menu-tree">
-      <Tree rows={twigs(npcs, 'npcs')} on={openId} onopen={(id) => openResource('npcs', id)} />
+      <Tree
+        rows={npcs.map((entry) => ({ id: entry.id, title: entry.metadata.name, mark: entry.metadata.race, kids: [] }))}
+        on={steps[0] === 'character' ? (steps[1] ?? '') : ''}
+        onopen={openCharacter}
+      />
     </div>
   {/if}
 {/snippet}

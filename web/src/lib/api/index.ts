@@ -133,6 +133,13 @@ export function getCharacterStatus(sheet: CharacterSheet): CharacterStatus {
   return named && classed && raced ? 'ready' : 'draft'
 }
 
+/** The tag that makes a character an NPC. */
+export const NPC_TAG = 'npc'
+
+export function isNpc(character: Character): boolean {
+  return (character.metadata.tags ?? []).some((tag) => tag.toLowerCase() === NPC_TAG)
+}
+
 export type DerivedMetadata = Pick<CharacterMetadata, 'name' | 'level' | 'class' | 'race' | 'status'>
 
 export function getCharacterMetadata(sheet: CharacterSheet): DerivedMetadata {

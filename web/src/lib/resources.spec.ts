@@ -44,15 +44,15 @@ beforeEach(() => {
 
 describe('deleteOne', () => {
   it('drops the shared document first, then the stored pictures, then the resource, at the stored collection', async () => {
-    const held = one({ id: 'npc-1', image: 'file:a', images: ['file:a', 'file:b', 'https://example.test/c.png'] })
+    const held = one({ id: 'entry-1', image: 'file:a', images: ['file:a', 'file:b', 'https://example.test/c.png'] })
 
-    await deleteOne({ at: 'campaign', id: 'camp-1' }, 'npcs', held)
+    await deleteOne({ at: 'campaign', id: 'camp-1' }, 'entries', held)
 
     expect(wire.steps).toEqual([
-      'drop campaign/camp-1/npcs/npc-1',
+      'drop campaign/camp-1/entries/entry-1',
       'file file:a',
       'file file:b',
-      'delete npc-1'
+      'delete entry-1'
     ])
   })
 })
