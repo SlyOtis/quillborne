@@ -19,6 +19,7 @@
   import { SECTIONS, getSection } from '$components/campaign/CampaignBar.svelte'
   import BlockReader from '$components/ui/BlockReader.svelte'
   import Button from '$components/ui/Button.svelte'
+  import Chip from '$components/ui/Chip.svelte'
   import Glyph from '$components/ui/Glyph.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
   import Shell from '$components/ui/Shell.svelte'
@@ -302,15 +303,7 @@
       {#if allTags.length > 0}
         <span class="roll-bar-tags">
           {#each allTags as tag (tag)}
-            <button
-              type="button"
-              class="roll-chip"
-              class:roll-chip-on={picked.includes(tag)}
-              aria-pressed={picked.includes(tag)}
-              onclick={() => toggleTag(tag)}
-            >
-              #{tag}
-            </button>
+            <Chip on={picked.includes(tag)} onclick={() => toggleTag(tag)}>#{tag}</Chip>
           {/each}
         </span>
       {/if}
@@ -375,7 +368,7 @@
 
         {#if peeked.tags.length > 0}
           <div class="roll-peek-tags">
-            {#each peeked.tags as tag (tag)}<span class="roll-chip roll-chip-still">#{tag}</span>{/each}
+            {#each peeked.tags as tag (tag)}<Chip still>#{tag}</Chip>{/each}
           </div>
         {/if}
 
@@ -519,45 +512,6 @@
     flex-wrap: wrap;
     gap: var(--space-2);
     min-width: 0;
-  }
-
-  .roll-chip {
-    padding: var(--space-0) var(--space-3);
-    border: none;
-    border-radius: var(--radius-sm);
-    background: var(--texture-noise), linear-gradient(180deg, var(--ground-lift) 0%, var(--ground-deep) 100%);
-    box-shadow: var(--rim-thin);
-    font-family: var(--font-display);
-    font-size: var(--text-xs);
-    letter-spacing: var(--tracking-wide);
-    color: var(--ink-dim);
-    text-shadow: 0 1px 0 #000;
-    cursor: pointer;
-    transition: color 0.15s ease, text-shadow 0.15s ease, box-shadow 0.15s ease;
-  }
-
-  .roll-chip:hover {
-    color: var(--metal-bright);
-    text-shadow: var(--glow-text);
-  }
-
-  .roll-chip:active {
-    filter: brightness(0.85);
-  }
-
-  .roll-chip-on {
-    color: var(--metal-bright);
-    box-shadow: var(--rim-thin), inset 0 0 8px var(--ember-glow), 0 0 12px var(--ember-glow);
-  }
-
-  .roll-chip-still {
-    cursor: default;
-    color: var(--metal);
-  }
-
-  .roll-chip:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
   }
 
   .roll-hold {

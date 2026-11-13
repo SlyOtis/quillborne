@@ -15,8 +15,10 @@
   import CampaignsPanel from "./main/CampaignsPanel.svelte";
   import Portrait from "$components/ui/Portrait.svelte";
   import Card from "$components/ui/Card.svelte";
+  import Section from "$components/ui/Section.svelte";
   import Sigil from "$components/ui/Sigil.svelte";
   import { getAll, type Resource } from "$lib/resources";
+  import { getDocument, getDocumentText } from "$lib/blocks";
   import Shell from "$components/ui/Shell.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
   import IconBtn from "$components/ui/IconBtn.svelte";
@@ -36,7 +38,6 @@
   let loading = $state(true);
   let campaignSearch = $state('');
   let characterSearch = $state('');
-  let campaignsOpen = $state(false);
   let charactersOpen = $state(false);
   let profiles = $state<Record<string, Profile>>({});
   let lore = $state<{ entry: Resource; campaign: Campaign | null }[]>([]);
@@ -55,7 +56,10 @@
       ]);
       userCharacters.set(characters);
       userCampaigns.set(campaigns);
-      const holders = await getProfiles(characters.filter((one) => one.campaign_id).map((one) => one.owner_id));
+      const holders = await getProfiles([
+        ...characters.filter((one) => one.campaign_id).map((one) => one.owner_id),
+        ...campaigns.flatMap((one) => [one.dm_id, ...one.player_ids])
+      ]);
       profiles = Object.fromEntries(holders.map((one) => [one.user_id, one]));
       const shelves = await Promise.all(campaigns.map(async (campaign) => (await getAll({ at: 'campaign', id: campaign.id }, 'entries')).map((entry) => ({ entry, campaign }))));
       lore = shelves.flat().sort((a, b) => String(b.entry.created_at ?? '').localeCompare(String(a.entry.created_at ?? ''))).slice(0, 6);
@@ -115,55 +119,46 @@
       </div>
     </section>
 
-    <section class="hall-plot hall-plot-camps" aria-label="Campaigns">
-      <header class="hall-divide">
-        <h2 class="dnd-label hall-divide-name">Campaigns</h2>
-        <span class="hall-divide-note">{$userCampaigns.length} under way</span>
-        <span class="hall-divide-run"></span>
-        <IconBtn title={campaignsOpen ? 'Collapse the campaigns' : 'Expand all campaigns'} onclick={() => (campaignsOpen = !campaignsOpen)}><Glyph name={campaignsOpen ? 'fold' : 'unfold'} size="sm" /></IconBtn>
+    <Section title="Campaigns" note="{$userCampaigns.length} under way" count={$userCampaigns.length}>
+      {#snippet actions()}
         <IconBtn title="Raise a new campaign" onclick={createCampaign}><Glyph name="campaign" size="sm" /></IconBtn>
-      </header>
-      <CampaignsPanel {loading} bind:open={campaignsOpen} />
-    </section>
+      {/snippet}
+      <CampaignsPanel {loading} search={campaignSearch} {profiles} />
+    </Section>
 
-    <section class="hall-plot hall-plot-roll" aria-label="Characters">
-      <header class="hall-divide">
-        <h2 class="dnd-label hall-divide-name">Characters</h2>
-        <span class="hall-divide-note">{$userCharacters.length} on the roll</span>
-        <span class="hall-divide-run"></span>
+    <Section title="Characters" note="{$userCharacters.length} on the roll">
+      {#snippet actions()}
         <IconBtn title={charactersOpen ? 'Collapse the characters' : 'Expand all characters'} onclick={() => (charactersOpen = !charactersOpen)}><Glyph name={charactersOpen ? 'fold' : 'unfold'} size="sm" /></IconBtn>
         <IconBtn title="Forge a new character" onclick={createCharacter}><Glyph name="character" size="sm" /></IconBtn>
-      </header>
-      <CharactersPanel {loading} bind:open={charactersOpen} {profiles} />
-    </section>
+      {/snippet}
+      <CharactersPanel {loading} search={characterSearch} bind:open={charactersOpen} {profiles} />
+    </Section>
 
-    <section class="hall-plot hall-plot-lore" aria-label="Lore">
-      <header class="hall-divide">
-        <h2 class="dnd-label hall-divide-name">Lore</h2>
-        <span class="hall-divide-note">{lore.length === 0 ? 'Nothing written yet' : 'The latest entries'}</span>
-        <span class="hall-divide-run"></span>
+    <Section title="Lore" note={lore.length === 0 ? 'Nothing written yet' : 'The latest entries'} count={lore.length}>
+      {#snippet actions()}
         <IconBtn title="Write lore" onclick={() => navigate('/main/scribe')}><Glyph name="edit" size="sm" /></IconBtn>
-      </header>
+      {/snippet}
       {#if lore.length > 0}
         <div class="hall-lore">
           {#each lore as { entry, campaign } (entry.id)}
             <Card
+              layout="square"
               title={entry.title}
-              sub={entry.description}
-              badge={campaign?.name}
+              sub={getDocumentText(getDocument(entry.content))}
+              tags={entry.tags}
+              image={entry.image}
               tone="metal"
               onclick={() => navigate(`/main/campaign/${campaign?.id}/entries/${entry.id}`)}
             />
           {/each}
         </div>
       {/if}
-    </section>
+    </Section>
   </div>
 </Shell>
 
 <style>
   .hall-hero {
-    grid-area: hero;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
@@ -180,7 +175,8 @@
     align-items: center;
     justify-content: end;
     min-width: 0;
-    block-size: calc(var(--space-8) * 3);
+    block-size: calc(var(--space-8) * 4);
+    margin-block-end: var(--space-5);
   }
 
   .hall-hero-portrait {
@@ -330,71 +326,14 @@
   .hall-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto auto minmax(0, 1fr);
-    grid-template-areas:
-      'hero'
-      'camps'
-      'roll'
-      'lore';
-    column-gap: var(--space-6);
     row-gap: var(--space-6);
     min-width: 0;
-  }
-
-  .hall-plot {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-    min-width: 0;
-  }
-
-  .hall-plot-camps {
-    grid-area: camps;
-  }
-
-  .hall-plot-roll {
-    grid-area: roll;
-  }
-
-  .hall-plot-lore {
-    grid-area: lore;
   }
 
   .hall-lore {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
     gap: var(--space-4);
-    min-width: 0;
-  }
-
-  .hall-divide {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-3);
-    min-width: 0;
-    padding-block: 0.5em;
-    border-bottom: var(--border-hair) solid color-mix(in srgb, var(--metal) 55%, transparent);
-  }
-
-  .hall-divide-name {
-    margin: 0;
-    font-size: var(--text-sm);
-    font-weight: 700;
-    color: var(--metal-bright);
-    text-shadow: 0 0.0625rem 0 var(--ground-deep), 0 0 0.5rem var(--ember-glow);
-  }
-
-  .hall-divide-note {
-    font-family: var(--font-body);
-    font-size: var(--text-xs);
-    font-style: italic;
-    color: var(--ink);
-    text-shadow: 0 0.0625rem 0 var(--ground-deep);
-  }
-
-  .hall-divide-run {
-    flex: 1;
     min-width: 0;
   }
 </style>
