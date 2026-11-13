@@ -56,7 +56,7 @@ Quillborne is the table's character sheets, campaigns, maps and vessels as a hos
 
 - A map is a picture with pins and, beside it, a drawn plan shown in 3D. The plan is nimling/nimap, copied into the repo with its editor rewritten in Svelte: `maps.md`.
 - The look is a dark fantasy game UI: a midnight ground, thin gold double rules, diamond studs, and the page raised between its drawers and bending into them. Tokens only, five themes: `components.md` and `DESIGN.md`.
-- Work reaches `main` through a pull request only the owner merges, cut and merged as often as a feature works: `workflow.md` 11.
+- Work reaches `main` through a pull request, cut and merged as often as a feature works: `workflow.md` 11.
 
 ## Index
 
