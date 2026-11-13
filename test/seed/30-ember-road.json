@@ -204,54 +204,266 @@
   },
   {
     "as": "testy",
-    "call": "POST /api/resource",
+    "call": "POST /api/character",
     "body": {
-      "kind": "npcs",
       "campaign_id": "${ember}",
-      "title": "Reeve Halda Morrow",
-      "description": "Hollowmere's tired reeve, who pays in coin she does not quite have.",
-      "role": "Reeve of Hollowmere",
-      "disposition": "friendly",
-      "species": "Human",
-      "image_url": "/sources/art/races/human.svg",
-      "share_campaigns": [
-        "${ember}"
-      ]
+      "character": {
+        "info": {
+          "name": "Reeve Halda Morrow",
+          "description": "Hollowmere's tired reeve, who pays in coin she does not quite have.",
+          "gender": "",
+          "imageUrl": "/sources/art/races/human.svg",
+          "infoUrl": "",
+          "level": 1,
+          "inspiration": false,
+          "hp": {
+            "current": 9,
+            "max": 9,
+            "temporary": 0
+          },
+          "ac": 10,
+          "initiative": 0,
+          "speed": "30 ft",
+          "proficiencyBonus": 2,
+          "weight": 0,
+          "carry_capacity": 0,
+          "race": {
+            "name": "Human",
+            "type": "Humanoid"
+          },
+          "class": {
+            "name": "Reeve of Hollowmere",
+            "hitDice": {
+              "amount": 1,
+              "die": 8
+            }
+          },
+          "conditions": [],
+          "defences": [],
+          "state": {
+            "type": "normal"
+          }
+        },
+        "feats": [],
+        "abilities": [
+          {
+            "id": "str",
+            "title": "Strength",
+            "score": 10,
+            "modifier": 0
+          },
+          {
+            "id": "dex",
+            "title": "Dexterity",
+            "score": 10,
+            "modifier": 0
+          },
+          {
+            "id": "con",
+            "title": "Constitution",
+            "score": 11,
+            "modifier": 0
+          },
+          {
+            "id": "int",
+            "title": "Intelligence",
+            "score": 13,
+            "modifier": 1
+          },
+          {
+            "id": "wis",
+            "title": "Wisdom",
+            "score": 14,
+            "modifier": 2
+          },
+          {
+            "id": "cha",
+            "title": "Charisma",
+            "score": 12,
+            "modifier": 1
+          }
+        ],
+        "savingThrows": [],
+        "skills": [],
+        "senses": [],
+        "actions": [],
+        "spells": [],
+        "proficients": [],
+        "inventory": [],
+        "currency": {},
+        "background": {
+          "title": "Reeve of Hollowmere",
+          "description": "Holds Hollowmere together with promises and a ledger she keeps too close."
+        },
+        "special": {
+          "name": "",
+          "regain": "",
+          "current": 0,
+          "max": 0
+        },
+        "equipped": [],
+        "soundBoard": {
+          "id": "default_soundboard",
+          "name": "Sound Board",
+          "clips": []
+        },
+        "systems": [
+          "dnd5e"
+        ],
+        "overlay": null
+      },
+      "metadata": {
+        "name": "Reeve Halda Morrow",
+        "level": 1,
+        "class": "Reeve of Hollowmere",
+        "race": "Human",
+        "tags": [
+          "npc"
+        ],
+        "status": "ready",
+        "version": "1.0.0",
+        "is_template": false,
+        "is_public": false
+      }
     }
   },
   {
     "as": "testy",
     "call": "POST /api/resource",
     "body": {
-      "kind": "npcs",
+      "kind": "entries",
       "campaign_id": "${ember}",
       "title": "The Ashen Hand",
       "description": "The cult leader behind the fog. Kept from the players until they earn the name.",
       "tags": [
         "secret"
       ],
-      "role": "Cult leader",
-      "disposition": "hostile",
-      "species": "Tiefling",
-      "image_url": "/sources/art/races/tiefling.svg",
       "body": "{\"blocks\":[{\"id\":\"ena1\",\"kind\":\"heading\",\"text\":\"DM only\",\"options\":{\"level\":2}},{\"id\":\"ena2\",\"kind\":\"paragraph\",\"text\":\"Feeds the stolen lamplight to an ember spirit bound beneath Cinder Bridge. Wants Hollowmere dark by midwinter.\",\"options\":{}}]}"
     }
   },
   {
     "as": "pip",
-    "call": "POST /api/resource",
+    "call": "POST /api/character",
     "body": {
-      "kind": "npcs",
       "campaign_id": "${ember}",
-      "title": "Old Tamsin",
-      "description": "Hollowmere's last lamplighter, who swore she saw a burning hand in the fog the night before she vanished.",
-      "role": "Lamplighter",
-      "disposition": "friendly",
-      "species": "Halfling",
-      "image_url": "/sources/art/races/halfling.svg",
-      "share_campaigns": [
-        "${ember}"
-      ]
+      "character": {
+        "info": {
+          "name": "Old Tamsin",
+          "description": "Hollowmere's last lamplighter, who swore she saw a burning hand in the fog the night before she vanished.",
+          "gender": "",
+          "imageUrl": "/sources/art/races/halfling.svg",
+          "infoUrl": "",
+          "level": 1,
+          "inspiration": false,
+          "hp": {
+            "current": 6,
+            "max": 6,
+            "temporary": 0
+          },
+          "ac": 12,
+          "initiative": 2,
+          "speed": "25 ft",
+          "proficiencyBonus": 2,
+          "weight": 0,
+          "carry_capacity": 0,
+          "race": {
+            "name": "Halfling",
+            "type": "Humanoid"
+          },
+          "class": {
+            "name": "Lamplighter",
+            "hitDice": {
+              "amount": 1,
+              "die": 8
+            }
+          },
+          "conditions": [],
+          "defences": [],
+          "state": {
+            "type": "normal"
+          }
+        },
+        "feats": [],
+        "abilities": [
+          {
+            "id": "str",
+            "title": "Strength",
+            "score": 8,
+            "modifier": -1
+          },
+          {
+            "id": "dex",
+            "title": "Dexterity",
+            "score": 14,
+            "modifier": 2
+          },
+          {
+            "id": "con",
+            "title": "Constitution",
+            "score": 10,
+            "modifier": 0
+          },
+          {
+            "id": "int",
+            "title": "Intelligence",
+            "score": 11,
+            "modifier": 0
+          },
+          {
+            "id": "wis",
+            "title": "Wisdom",
+            "score": 13,
+            "modifier": 1
+          },
+          {
+            "id": "cha",
+            "title": "Charisma",
+            "score": 12,
+            "modifier": 1
+          }
+        ],
+        "savingThrows": [],
+        "skills": [],
+        "senses": [],
+        "actions": [],
+        "spells": [],
+        "proficients": [],
+        "inventory": [],
+        "currency": {},
+        "background": {
+          "title": "Lamplighter",
+          "description": "Lit every lamp in Hollowmere for forty years, until the fog came."
+        },
+        "special": {
+          "name": "",
+          "regain": "",
+          "current": 0,
+          "max": 0
+        },
+        "equipped": [],
+        "soundBoard": {
+          "id": "default_soundboard",
+          "name": "Sound Board",
+          "clips": []
+        },
+        "systems": [
+          "dnd5e"
+        ],
+        "overlay": null
+      },
+      "metadata": {
+        "name": "Old Tamsin",
+        "level": 1,
+        "class": "Lamplighter",
+        "race": "Halfling",
+        "tags": [
+          "npc"
+        ],
+        "status": "ready",
+        "version": "1.0.0",
+        "is_template": false,
+        "is_public": false
+      }
     }
   },
   {

@@ -3,7 +3,6 @@
 
   export const KINDS: ResourceKind[] = [
     'entries',
-    'npcs',
     'places',
     'maps',
     'sessions',
@@ -14,7 +13,6 @@
 
   export const TONES: Record<ResourceKind, 'metal' | 'ember' | 'verdigris'> = {
     entries: 'metal',
-    npcs: 'ember',
     places: 'verdigris',
     maps: 'verdigris',
     sessions: 'metal',

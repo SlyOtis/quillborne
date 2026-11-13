@@ -1,12 +1,14 @@
 <script lang="ts">
-  import { getCampaign, getCampaignCharacters, getCampaignCharactersStream, getCampaignMaps, getCampaignMapsStream } from '$lib/api'
+  import { getCampaign, getCampaignCharacters, getCampaignCharactersStream, getCampaignMaps, getCampaignMapsStream, isNpc, NPC_TAG, postCharacter } from '$lib/api'
   import type { Campaign, CampaignMap, Character, Encounter, MapMarkerKind } from '$lib/api/types'
   import { onDestroy, onMount, setContext } from 'svelte'
   import { navigate, resolvedRoute } from 'sly-svelte-location-router'
   import { getTheme, setTheme } from '$lib/dialogs/theme'
-  import { getAll, isResourceKind, type Npc, type Place } from '$lib/resources'
+  import { getAll, isResourceKind, type Place } from '$lib/resources'
+  import { getAbilities, getEmptyCharacter } from '$lib/engine'
+  import { getSystemStack } from '$lib/rules/system'
   import { user } from '$lib/stores/auth.store'
-  import { anyDialogOpen, uiStore } from '$lib/stores/ui.store'
+  import { anyDialogOpen, postNotice, uiStore } from '$lib/stores/ui.store'
   import Button from '$components/ui/Button.svelte'
   import Card from '$components/ui/Card.svelte'
   import Fold from '$components/ui/Fold.svelte'
@@ -14,7 +16,6 @@
   import CampaignEncounter from '$components/campaign/CampaignEncounter.svelte'
   import CampaignMaps from '$components/campaign/CampaignMaps.svelte'
   import CampaignMembers from '$components/campaign/CampaignMembers.svelte'
-  import ResourceCard from '$components/campaign/ResourceCard.svelte'
   import Glyph from '$components/ui/Glyph.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
   import Panel from '$components/ui/Panel.svelte'
@@ -34,6 +35,7 @@
   const TABS = [
     { id: 'overview', label: 'Overview' },
     { id: 'party', label: 'Party' },
+    { id: 'npcs', label: 'NPCs' },
     { id: 'maps', label: 'Maps' },
     { id: 'encounter', label: 'Encounter' },
     { id: 'members', label: 'Members' }
@@ -42,7 +44,6 @@
   let campaign = $state<Campaign | null>(null)
   let characters = $state<Character[]>([])
   let maps = $state<CampaignMap[]>([])
-  let npcs = $state<Npc[]>([])
   let places = $state<Place[]>([])
   let loading = $state(true)
   let error = $state<string | null>(null)
@@ -61,17 +62,19 @@
   const campaignId = $derived(route?.params?.id ?? '')
   const isDm = $derived(Boolean(campaign && $user && campaign.dm_id === $user.user_id))
 
+  const seated = $derived(characters.filter((entry) => !isNpc(entry)))
+  const npcs = $derived(characters.filter(isNpc))
   const averageLevel = $derived(
-    characters.length === 0
+    seated.length === 0
       ? 0
-      : Math.round(characters.reduce((sum, entry) => sum + entry.metadata.level, 0) / characters.length)
+      : Math.round(seated.reduce((sum, entry) => sum + entry.metadata.level, 0) / seated.length)
   )
   const pins = $derived(maps.reduce((sum, entry) => sum + entry.markers.length, 0))
   const revealed = $derived(maps.filter((entry) => entry.is_visible).length)
   const party = $derived(
-    [...characters].sort((a, b) => Number(b.owner_id === $user?.user_id) - Number(a.owner_id === $user?.user_id))
+    [...seated].sort((a, b) => Number(b.owner_id === $user?.user_id) - Number(a.owner_id === $user?.user_id))
   )
-  const yours = $derived(characters.filter((entry) => entry.owner_id === $user?.user_id).length)
+  const yours = $derived(seated.filter((entry) => entry.owner_id === $user?.user_id).length)
 
   const CAP = 5
 
@@ -105,6 +108,22 @@
     }
     if (TABS.some((entry) => entry.id === where)) {
       tab = where as (typeof TABS)[number]['id']
+    }
+  }
+
+  async function addNpc() {
+    try {
+      const empty = getEmptyCharacter()
+      const system = await getSystemStack(empty.systems)
+      const sheet = {
+        ...empty,
+        info: { ...empty.info, name: 'New NPC' },
+        abilities: getAbilities(Object.fromEntries(system.attributes.map((spec) => [spec.id, spec.default])))
+      }
+      const id = await postCharacter(sheet, { tags: [NPC_TAG] }, campaignId)
+      navigate(`/main/character/${id}`)
+    } catch (reason) {
+      postNotice(reason instanceof Error ? reason.message : String(reason))
     }
   }
 
@@ -151,16 +170,14 @@
   })
 
   async function reload() {
-    const [seated, board, cast, world] = await Promise.all([
+    const [held, board, world] = await Promise.all([
       getCampaignCharacters(campaignId),
       getCampaignMaps(campaignId),
-      getAll({ at: 'campaign', id: campaignId }, 'npcs') as Promise<Npc[]>,
       getAll({ at: 'campaign', id: campaignId }, 'places') as Promise<Place[]>
     ])
 
-    characters = seated
+    characters = held
     maps = board
-    npcs = cast
     places = world
   }
 </script>
@@ -252,7 +269,7 @@
         <section class="camp-plot camp-plot-roll" aria-label="Party">
           <header class="camp-divide">
             <h2 class="dnd-label camp-divide-name">Party</h2>
-            <span class="camp-divide-note">{characters.length} at the table, {yours} yours, average level {averageLevel}</span>
+            <span class="camp-divide-note">{seated.length} at the table, {yours} yours, average level {averageLevel}</span>
             <span class="camp-divide-run"></span>
           </header>
           {#if party.length === 0}
@@ -271,7 +288,7 @@
             <h2 class="dnd-label camp-divide-name">NPCs</h2>
             <span class="camp-divide-note">{npcs.length} met</span>
             <span class="camp-divide-run"></span>
-            <IconBtn title="Add an NPC" onclick={() => navigate(`/main/campaign/${campaignId}/npcs/create`)}>
+            <IconBtn title="Add an NPC" onclick={addNpc}>
               <Glyph name="add" size="sm" />
             </IconBtn>
             {@render fold('npcs', npcs.length)}
@@ -281,7 +298,7 @@
           {:else}
             <div class="camp-list">
               {#each cut(npcs, 'npcs') as npc (npc.id)}
-                <ResourceCard under="/main/campaign/{campaignId}/npcs" kind="npcs" one={npc} tone="ember" />
+                {@render seat(npc)}
               {/each}
               {@render rest('npcs', npcs.length)}
             </div>
@@ -300,10 +317,25 @@
           </div>
         {/if}
       </Panel>
+    {:else if tab === 'npcs'}
+      <Panel title="NPCs">
+        {#snippet actions()}
+          <Button variant="secondary" size="sm" onclick={addNpc}>Add an NPC</Button>
+        {/snippet}
+        {#if npcs.length === 0}
+          <p class="camp-note">Nobody has been met yet.</p>
+        {:else}
+          <div class="camp-party">
+            {#each npcs as entry (entry.id)}
+              {@render seat(entry)}
+            {/each}
+          </div>
+        {/if}
+      </Panel>
     {:else if tab === 'encounter'}
-      <CampaignEncounter {campaign} {characters} {npcs} />
+      <CampaignEncounter {campaign} characters={seated} {npcs} />
     {:else if tab === 'members'}
-      <CampaignMembers bind:campaign {characters} onchange={reload} />
+      <CampaignMembers bind:campaign characters={seated} onchange={reload} />
     {:else}
       <div class="camp-canvas">
         <CampaignMaps

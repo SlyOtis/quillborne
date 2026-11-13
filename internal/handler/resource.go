@@ -18,7 +18,7 @@ import (
 )
 
 var resourceKinds = map[string]bool{
-	"entries": true, "npcs": true, "items": true, "weapons": true,
+	"entries": true, "items": true, "weapons": true,
 	"armor": true, "locations": true, "maps": true, "sessions": true,
 }
 

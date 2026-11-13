@@ -560,10 +560,10 @@ describe('the table', () => {
 
 describe('the parts a campaign or a player keeps', () => {
   it('lists a kind under the campaign or under the player', async () => {
-    wire.replies.set('GET /resource?kind=npcs&campaign_id=camp-1', [{ id: 'b', title: 'Zed' }, { id: 'a', title: 'Ann' }])
+    wire.replies.set('GET /resource?kind=sessions&campaign_id=camp-1', [{ id: 'b', title: 'Zed' }, { id: 'a', title: 'Ann' }])
     wire.replies.set('GET /resource?kind=entries&user_id=lars', [])
 
-    const found = await getResources({ at: 'campaign', id: 'camp-1' }, 'npcs')
+    const found = await getResources({ at: 'campaign', id: 'camp-1' }, 'sessions')
     await getResources({ at: 'user', id: 'lars' }, 'entries')
 
     expect(found.map((one) => one.id)).toEqual(['a', 'b'])

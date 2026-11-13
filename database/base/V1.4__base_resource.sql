@@ -1,5 +1,5 @@
 DO $$ BEGIN
-    CREATE TYPE resource_kind AS ENUM ('entries', 'npcs', 'items', 'weapons', 'armor', 'locations', 'maps', 'sessions');
+    CREATE TYPE resource_kind AS ENUM ('entries', 'items', 'weapons', 'armor', 'locations', 'maps', 'sessions');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
@@ -27,26 +27,33 @@ ALTER TABLE resource DROP COLUMN IF EXISTS share_parties;
 DO $$ BEGIN
     IF EXISTS (
         SELECT 1 FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid
-         WHERE t.typname = 'resource_kind' AND e.enumlabel IN ('heroes', 'quests')
+         WHERE t.typname = 'resource_kind' AND e.enumlabel IN ('heroes', 'quests', 'npcs')
     ) THEN
-        UPDATE resource SET kind = 'entries' WHERE kind = 'quests';
-        UPDATE resource SET kind = 'npcs' WHERE kind = 'heroes';
+        UPDATE resource SET kind = 'entries' WHERE kind::text = 'quests';
+        DELETE FROM resource_update WHERE resource_id IN (
+            SELECT id FROM resource
+             WHERE kind::text IN ('heroes', 'npcs')
+                OR sa_root_id IN (SELECT id FROM resource WHERE kind::text IN ('heroes', 'npcs'))
+        );
+        DELETE FROM resource
+         WHERE kind::text IN ('heroes', 'npcs')
+            OR sa_root_id IN (SELECT id FROM resource WHERE kind::text IN ('heroes', 'npcs'));
         ALTER TYPE resource_kind RENAME TO resource_kind_old;
-        CREATE TYPE resource_kind AS ENUM ('entries', 'npcs', 'items', 'weapons', 'armor', 'locations', 'maps', 'sessions');
+        CREATE TYPE resource_kind AS ENUM ('entries', 'items', 'weapons', 'armor', 'locations', 'maps', 'sessions');
         ALTER TABLE resource ALTER COLUMN kind TYPE resource_kind USING kind::text::resource_kind;
         DROP TYPE resource_kind_old;
     END IF;
 END $$;
 
-COMMENT ON TYPE resource_kind IS 'The eight kinds of lore a player or a campaign keeps';
+COMMENT ON TYPE resource_kind IS 'The seven kinds of lore a player or a campaign keeps';
 
 CREATE INDEX IF NOT EXISTS idx_resource_campaign_kind ON resource (campaign_id, kind);
 CREATE INDEX IF NOT EXISTS idx_resource_user_kind ON resource (user_id, kind);
 CREATE INDEX IF NOT EXISTS idx_resource_root ON resource (sa_root_id);
 
-COMMENT ON TABLE resource IS 'A piece of lore kept by a player or a campaign, of one of the eight kinds, with its block document and pictures, nested under a parent resource';
+COMMENT ON TABLE resource IS 'A piece of lore kept by a player or a campaign, of one of the seven kinds, with its block document and pictures, nested under a parent resource';
 COMMENT ON COLUMN resource.id IS 'The resource id';
-COMMENT ON COLUMN resource.kind IS 'Which of the eight kinds the resource is';
+COMMENT ON COLUMN resource.kind IS 'Which of the seven kinds the resource is';
 COMMENT ON COLUMN resource.user_id IS 'The player who wrote it down';
 COMMENT ON COLUMN resource.campaign_id IS 'The campaign that keeps the resource, empty for a player''s own';
 COMMENT ON COLUMN resource.title IS 'The title shown at the head, what a list sorts by';
