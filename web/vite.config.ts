@@ -11,6 +11,7 @@ config({ path: resolve(here, '..', '.env') })
 
 export default defineConfig({
   plugins: [svelte()],
+  cacheDir: resolve(here, '.vite'),
   envDir: resolve(here, '..'),
   resolve: {
     alias: {
