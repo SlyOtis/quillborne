@@ -1,43 +1,34 @@
 <script lang="ts">
-  import { getCampaign, getCampaignCharacters, getCampaignEncountersStream, getCampaignMaps, getCampaignVehiclesStream, getProfile } from '$lib/api'
-  import type { Campaign, CampaignMap, Character, Encounter, EncounterCombatant, Vehicle } from '$lib/api/types'
+  import { getCampaign, getCampaignCharacters, getCampaignVehiclesStream } from '$lib/api'
+  import type { Campaign, Character, Vehicle } from '$lib/api/types'
   import type { Snippet } from 'svelte'
   import { navigate, currentRoute, resolvedRoute } from 'sly-svelte-location-router'
   import { getAll, getChildren, getRoots, isResourceKind, RESOURCES, type Npc, type Place, type Resource, type ResourceKind } from '$lib/resources'
-  import { user } from '$lib/stores/auth.store'
+  import { user, userDetails, userProfile } from '$lib/stores/auth.store'
   import { userCampaigns } from '$lib/stores/campaign.store'
-  import Card from '$components/ui/Card.svelte'
   import Fold from '$components/ui/Fold.svelte'
   import Tree, { type TreeRow } from '$components/ui/Tree.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
   import Glyph from '$components/ui/Glyph.svelte'
   import ShortcutDialog from '$components/ShortcutDialog.svelte'
   import { actionBlocks, getAction, shortcuts } from '$lib/actions'
+  import { uiStore } from '$lib/stores/ui.store'
 
   let addOpen = $state(false)
   let campaign = $state<Campaign | null>(null)
   let characters = $state<Character[]>([])
   let npcs = $state<Npc[]>([])
   let places = $state<Place[]>([])
-  let maps = $state<CampaignMap[]>([])
-  let encounters = $state<Encounter[]>([])
   let vehicles = $state<Vehicle[]>([])
-  let players = $state<{ id: string; name: string }[]>([])
   let loading = $state(false)
   let error = $state<string | null>(null)
-  let open = $state(['campaign', 'party'])
+  let open = $state(['party'])
   let reached = $state('')
 
   const steps = $derived($resolvedRoute.path.split('/').filter(Boolean).slice(1))
   const asked = $derived(steps[0] === 'campaign' ? steps[2] ?? '' : steps[0] ?? '')
 
-  const here = $derived(
-    isResourceKind(asked)
-      ? asked
-      : ($resolvedRoute.search ?? '').includes('tab=maps')
-        ? 'maps'
-        : 'campaign'
-  )
+  const here = $derived(isResourceKind(asked) ? asked : 'campaign')
 
   const openId = $derived(steps[0] === 'campaign' ? steps[3] ?? '' : steps[1] ?? '')
 
@@ -53,21 +44,20 @@
       : $userCampaigns[0]?.id ?? ''
   )
 
-  const ROLLS: ResourceKind[] = ['sessions', 'entries', 'items', 'weapons', 'armor']
+  const ROLLS: ResourceKind[] = ['entries', 'items']
+  const GEAR: ResourceKind[] = ['items', 'weapons', 'armor']
+  let kinds = $state<Record<string, ResourceKind>>({})
 
   let more = $state<Record<string, Resource[]>>({})
 
   const isDm = $derived(Boolean(campaign && $user && campaign.dm_id === $user.user_id))
+  const searchKey = navigator.userAgent.includes('Mac') ? 'Cmd K' : 'Ctrl K'
+  const name = $derived($userDetails?.display_name || $userProfile?.display_name || 'Adventurer')
+  const initial = $derived(name.charAt(0).toUpperCase())
   const party = $derived(
     [...characters].sort((a, b) => Number(b.owner_id === $user?.user_id) - Number(a.owner_id === $user?.user_id))
   )
   const lore = $derived(npcs.length + places.length)
-  const knownEncounters = $derived(
-    [...encounters].sort((a, b) => (Date.parse(b.created_at ?? '') || 0) - (Date.parse(a.created_at ?? '') || 0))
-  )
-  const encounter = $derived(knownEncounters.find((entry) => entry.is_active) ?? knownEncounters[0] ?? null)
-  const combatants = $derived(encounter ? [...encounter.combatants].sort((a, b) => b.initiative - a.initiative) : [])
-  const turn = $derived(encounter && combatants.length > 0 ? encounter.turn % combatants.length : -1)
 
   $effect(() => {
     const id = campaignId
@@ -78,19 +68,13 @@
       characters = []
       npcs = []
       places = []
-      maps = []
-      encounters = []
       vehicles = []
-      players = []
       error = null
       loading = false
       return
     }
 
     loading = true
-    const release = getCampaignEncountersStream(id, (entries) => {
-      if (live) encounters = entries
-    })
     const releaseVehicles = getCampaignVehiclesStream(id, (entries) => {
       if (live) vehicles = entries
     })
@@ -98,29 +82,22 @@
 
     void (async () => {
       try {
-        const [record, seated, cast, sites, charts] = await Promise.all([
+        const [record, seated, cast, sites] = await Promise.all([
           getCampaign(id),
           getCampaignCharacters(id),
           getAll({ at: 'campaign', id }, 'npcs') as Promise<Npc[]>,
-          getAll({ at: 'campaign', id }, 'places') as Promise<Place[]>,
-          getCampaignMaps(id)
+          getAll({ at: 'campaign', id }, 'places') as Promise<Place[]>
         ])
         if (!live) return
         campaign = record
         characters = seated
         npcs = cast
         places = sites
-        maps = charts
 
-        const held = await Promise.all(ROLLS.map((roll) => getAll({ at: 'campaign', id }, roll)))
+        const [entries, ...gear] = await Promise.all(['entries' as ResourceKind, ...GEAR].map((roll) => getAll({ at: 'campaign', id }, roll)))
         if (!live) return
-        more = Object.fromEntries(ROLLS.map((roll, index) => [roll, held[index]]))
-        players = await Promise.all(
-          record?.player_ids.map(async (userId) => ({
-            id: userId,
-            name: (await getProfile(userId).catch(() => null))?.display_name || 'Unnamed player'
-          })) ?? []
-        )
+        kinds = Object.fromEntries(GEAR.flatMap((kind, index) => gear[index].map((row) => [row.id, kind])))
+        more = { entries, items: gear.flat() }
       } catch (reason) {
         if (!live) return
         error = reason instanceof Error ? reason.message : String(reason)
@@ -131,7 +108,6 @@
 
     return () => {
       live = false
-      release()
       releaseVehicles()
     }
   })
@@ -155,44 +131,23 @@
   }
 
   function openResource(kind: ResourceKind, id: string) {
-    openCampaign(`/${kind}/${id}`)
+    openCampaign(`/${kinds[id] ?? kind}/${id}`)
   }
 
   function openCharacter(characterId: string) {
     navigate(`/main/character/${characterId}`)
   }
-
-  function openCombatant(combatant: EncounterCombatant) {
-    if (combatant.character_id) openCharacter(combatant.character_id)
-    else openCampaign()
-  }
-
-  function hitPoints(combatant: EncounterCombatant) {
-    return isDm || combatant.is_hit_points_known ? `${combatant.hit_points}/${combatant.max_hit_points}` : 'Hidden'
-  }
 </script>
 
 <nav class="dnd-menu" aria-label="Campaign navigator">
-  <header class="dnd-menu-head">
-    {#if campaign}
-      <button type="button" class="dnd-menu-name" onclick={() => openCampaign()}>{campaign.name}</button>
-    {:else}
-      <p class="dnd-menu-name dnd-menu-name-void">No campaign in scope</p>
-    {/if}
-  </header>
-
   <div class="dnd-scroll dnd-menu-body">
     {#if error}
       <p class="dnd-menu-note" role="alert">{error}</p>
     {/if}
 
-    {@render section('campaign', 'Campaign details', players.length, details)}
     {@render section('party', 'Party', characters.length, roster)}
-    {@render section('players', 'Players', players.length, table)}
     {@render section('npcs', 'NPCs', npcs.length, people)}
     {@render section('places', 'Places', places.length, sites)}
-    {@render section('maps', 'Maps', maps.length, charts)}
-    {@render section('encounters', 'Encounters', knownEncounters.length, frays)}
     {@render section('vehicles', 'Vehicles', vehicles.length, fleet)}
     {#each ROLLS as roll (roll)}
       <Fold
@@ -234,6 +189,21 @@
       </IconBtn>
     </span>
   </footer>
+
+  <div class="dnd-menu-user">
+    <a class="dnd-menu-user-link" href="/main/user" title="Your profile">
+      <span class="dnd-menu-user-initial">{initial}</span>
+      <span class="dnd-menu-user-lines">
+        <span class="dnd-menu-user-name">{name}</span>
+        <span class="dnd-menu-user-mail">{$user?.email ?? ''}</span>
+      </span>
+    </a>
+    <button type="button" class="dnd-menu-search" title="Search {searchKey}" onclick={uiStore.toggleSearchDialog}>
+      <Glyph name="search" size="sm" />
+      <kbd class="dnd-menu-search-key">{searchKey}</kbd>
+    </button>
+    <span class="dnd-menu-user-bell"><Glyph name="bell" size="sm" /></span>
+  </div>
 </nav>
 
 {#if addOpen}
@@ -246,68 +216,16 @@
   </Fold>
 {/snippet}
 
-{#snippet details()}
-  {#if !campaign}
-    <p class="dnd-menu-empty">No campaign is in scope.</p>
-  {:else}
-    <dl class="dnd-menu-facts">
-      <div class="dnd-menu-fact">
-        <dt>Players</dt>
-        <dd>{campaign.player_ids.length}</dd>
-      </div>
-      <div class="dnd-menu-fact">
-        <dt>Characters</dt>
-        <dd>{characters.length}</dd>
-      </div>
-      <div class="dnd-menu-fact">
-        <dt>Encounters</dt>
-        <dd>{knownEncounters.length}</dd>
-      </div>
-    </dl>
-
-    {#if campaign.description}
-      <p class="dnd-menu-lede">{campaign.description}</p>
-    {/if}
-
-  {/if}
-{/snippet}
-
 {#snippet roster()}
   {#if party.length === 0}
     <p class="dnd-menu-empty">No character sits at the table yet.</p>
   {:else}
-    <div class="dnd-scroll dnd-menu-cards">
-      {#each party as entry (entry.id)}
-        {@const mine = entry.owner_id === $user?.user_id}
-        <Card
-          title={entry.metadata.name}
-          sub="{mine ? 'Yours, ' : ''}{entry.metadata.race} {entry.metadata.class}"
-          image={entry.character?.info?.imageUrl}
-          badge="Lv {entry.metadata.level}"
-          tone={mine ? 'ember' : 'metal'}
-          on={steps[0] === 'character' && steps[1] === entry.id}
-          onclick={() => openCharacter(entry.id)}
-        />
-      {/each}
-    </div>
-  {/if}
-{/snippet}
-
-{#snippet table()}
-  {#if players.length === 0}
-    <p class="dnd-menu-empty">Nobody has taken a seat.</p>
-  {:else}
-    <div class="dnd-scroll dnd-menu-cards">
-      {#each players as player (player.id)}
-        <Card
-          title={player.name}
-          sub={campaign?.dm_id === player.id ? 'Dungeon Master' : 'Player'}
-          badge={campaign?.dm_id === player.id
-            ? 'DM'
-            : `${characters.filter((entry) => entry.owner_id === player.id).length} characters`}
-          onclick={() => openCampaign('?tab=party')}
-        />
-      {/each}
+    <div class="dnd-scroll dnd-menu-tree">
+      <Tree
+        rows={party.map((entry) => ({ id: entry.id, title: entry.metadata.name, mark: `${entry.owner_id === $user?.user_id ? 'Yours, ' : ''}Lv ${entry.metadata.level} ${entry.metadata.race} ${entry.metadata.class}`, kids: [] }))}
+        on={steps[0] === 'character' ? (steps[1] ?? '') : ''}
+        onopen={openCharacter}
+      />
     </div>
   {/if}
 {/snippet}
@@ -353,43 +271,6 @@
   {/if}
 {/snippet}
 
-{#snippet charts()}
-  {#if maps.length === 0}
-    <p class="dnd-menu-empty">No map has been drawn.</p>
-  {:else}
-    <div class="dnd-scroll dnd-menu-cards">
-      {#each maps as chart (chart.id)}
-        <Card
-          title={chart.title}
-          sub="{chart.layers.length} layers"
-          image={chart.image_url}
-          badge={chart.is_visible ? `${chart.markers.length} pins` : 'Hidden'}
-          tone="verdigris"
-          onclick={() => openCampaign(`?tab=maps&map=${chart.id}`)}
-        />
-      {/each}
-    </div>
-  {/if}
-{/snippet}
-
-{#snippet frays()}
-  {#if knownEncounters.length === 0}
-    <p class="dnd-menu-empty">No encounter has been set.</p>
-  {:else}
-    <div class="dnd-scroll dnd-menu-cards">
-      {#each knownEncounters as fray (fray.id)}
-        <Card
-          title={fray.title}
-          sub="{fray.combatants.length} in it"
-          badge={fray.is_active ? `Round ${fray.round}` : undefined}
-          tone="ember"
-          onclick={() => openCampaign()}
-        />
-      {/each}
-    </div>
-  {/if}
-{/snippet}
-
 <style>
   .dnd-menu {
     --menu-row: 2.6rem;
@@ -412,7 +293,7 @@
       var(--stone);
 
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr) auto auto;
     height: 100%;
     gap: var(--menu-gap);
     padding: var(--menu-pad);
@@ -420,108 +301,11 @@
     color: var(--menu-text);
   }
 
-  .dnd-menu-head {
-    display: grid;
-    margin: calc(var(--menu-pad) * -1) calc(var(--menu-pad) * -1) 0;
-    padding: var(--space-3) var(--menu-pad);
-    background: var(--menu-stone);
-    box-shadow: var(--bevel-up), inset 0 -1px 0 var(--keyline), 0 1px 0 var(--metal-dim), 0 2px 0 var(--metal), 0 3px 0 var(--keyline), 0 5px 8px var(--shade);
-  }
-
-  .dnd-menu-name {
-    display: block;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    border: none;
-    background: none;
-    color: var(--metal);
-    font-family: var(--font-display);
-    font-size: var(--text-md);
-    font-weight: 700;
-    letter-spacing: var(--tracking-caps);
-    text-transform: uppercase;
-    line-height: 1.2;
-    text-align: start;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    text-shadow: 0 1px 0 #000, 0 0 2px #000;
-    cursor: pointer;
-    transition: color 0.18s ease, text-shadow 0.18s ease;
-  }
-
-  .dnd-menu-name:hover {
-    color: var(--metal-bright);
-    text-shadow: var(--glow-text);
-  }
-
-  .dnd-menu-name:active {
-    filter: brightness(0.85);
-  }
-
-  .dnd-menu-name:focus-visible {
-    outline: none;
-    color: var(--metal-bright);
-    text-shadow: var(--glow-text);
-  }
-
-  .dnd-menu-name-void {
-    color: var(--menu-text-faint);
-    cursor: default;
-  }
-
-  .dnd-menu-name-void:hover {
-    color: var(--menu-text-faint);
-    text-shadow: 0 1px 0 #000;
-  }
-
   .dnd-menu-body {
     display: flex;
     flex-direction: column;
     min-height: 0;
     margin-inline: calc(var(--menu-pad) * -1);
-  }
-
-  .dnd-menu-facts {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-2);
-    margin: 0;
-  }
-
-  .dnd-menu-fact {
-    display: grid;
-    justify-items: center;
-    gap: var(--space-1);
-    padding: var(--space-2) var(--space-1);
-    background: var(--texture-noise), linear-gradient(180deg, var(--menu-surface-sunk) 0%, var(--ground) 100%);
-    border-radius: var(--radius-sm);
-    box-shadow: var(--rim-thin), var(--bevel-down);
-  }
-
-  .dnd-menu-fact dt {
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: var(--metal);
-    font-family: var(--font-display);
-    font-size: var(--text-xs);
-    letter-spacing: var(--tracking-caps);
-    text-transform: uppercase;
-    text-shadow: 0 1px 0 #000;
-  }
-
-  .dnd-menu-fact dd {
-    margin: 0;
-    color: var(--menu-accent);
-    font-family: var(--font-figures);
-    font-size: var(--text-lg);
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
-    text-shadow: 0 1px 0 #000, 0 0 8px var(--ember-glow);
   }
 
   .dnd-menu-link {
@@ -543,21 +327,6 @@
     text-shadow: var(--glow-text);
   }
 
-  .dnd-menu-lede {
-    margin: 0;
-    color: var(--menu-text-muted);
-    font-size: var(--text-sm);
-    line-height: 1.45;
-  }
-
-
-  .dnd-menu-cards {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    max-height: calc(var(--menu-row) * var(--menu-rows));
-    overflow-y: auto;
-  }
 
   .dnd-menu-tree {
     max-height: calc(var(--menu-row) * var(--menu-rows));
@@ -587,10 +356,122 @@
     grid-template-columns: repeat(auto-fill, var(--menu-row));
     justify-content: center;
     gap: var(--space-2);
-    margin: 0 calc(var(--menu-pad) * -1) calc(var(--menu-pad) * -1);
-    padding: var(--space-3) var(--menu-pad) var(--menu-pad);
+    margin: 0 calc(var(--menu-pad) * -1) 0;
+    padding: var(--space-3) var(--menu-pad);
     background: var(--menu-stone);
     box-shadow: var(--bevel-up), inset 0 1px 0 var(--keyline), inset 0 2px 0 var(--metal), inset 0 3px 0 var(--keyline), 0 -4px 10px var(--shade);
+  }
+
+  .dnd-menu-search {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--menu-text-muted);
+    cursor: pointer;
+  }
+
+  .dnd-menu-search:hover,
+  .dnd-menu-search:focus-visible {
+    color: var(--menu-accent);
+  }
+
+  .dnd-menu-search:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  .dnd-menu-search-key {
+    padding: var(--space-0) var(--space-2);
+    border: var(--border-hair) solid var(--menu-line);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-figures);
+    font-size: var(--text-xs);
+    font-weight: 400;
+    color: var(--menu-text-muted);
+  }
+
+  .dnd-menu-user {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    margin: calc(var(--menu-gap) * -1) calc(var(--menu-pad) * -1) calc(var(--menu-pad) * -1);
+    padding: var(--space-2) var(--menu-pad);
+    border-top: var(--border-hair) solid var(--menu-line);
+    background: var(--menu-surface-sunk);
+    color: var(--menu-text);
+  }
+
+  .dnd-menu-user-link {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+    border-radius: var(--radius-sm);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .dnd-menu-user-link:hover .dnd-menu-user-name,
+  .dnd-menu-user-link:focus-visible .dnd-menu-user-name {
+    color: var(--menu-accent);
+  }
+
+  .dnd-menu-user-link:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  .dnd-menu-user-initial {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--space-6);
+    block-size: var(--space-6);
+    border: var(--border-hair) solid var(--menu-line);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--menu-accent);
+  }
+
+  .dnd-menu-user-bell {
+    display: flex;
+    flex: none;
+    padding: var(--space-1);
+    color: var(--menu-text-muted);
+  }
+
+  .dnd-menu-user-lines {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .dnd-menu-user-name,
+  .dnd-menu-user-mail {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dnd-menu-user-name {
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .dnd-menu-user-mail {
+    font-size: var(--text-xs);
+    color: var(--menu-text-muted);
   }
 
   .dnd-menu-foot-cell {
