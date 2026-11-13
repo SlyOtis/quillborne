@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getCampaign, getCampaignCharacters, getCampaignCharactersStream, getCampaignMaps, getCampaignMapsStream, isNpc, NPC_TAG, postCharacter } from '$lib/api'
+  import { getCampaign, getCampaignCharacters, getCampaignCharactersStream, getCampaignMaps, getCampaignMapsStream, getProfiles, isNpc, NPC_TAG, postCharacter } from '$lib/api'
   import type { Campaign, CampaignMap, Character, Encounter, MapMarkerKind } from '$lib/api/types'
   import { onDestroy, onMount, setContext } from 'svelte'
   import { navigate, resolvedRoute } from 'sly-svelte-location-router'
@@ -45,6 +45,7 @@
   let characters = $state<Character[]>([])
   let maps = $state<CampaignMap[]>([])
   let places = $state<Place[]>([])
+  let owners = $state<Record<string, string>>({})
   let loading = $state(true)
   let error = $state<string | null>(null)
   const asked = $derived(new URLSearchParams($resolvedRoute.search))
@@ -170,15 +171,17 @@
   })
 
   async function reload() {
-    const [held, board, world] = await Promise.all([
+    const [held, board, world, seen] = await Promise.all([
       getCampaignCharacters(campaignId),
       getCampaignMaps(campaignId),
-      getAll({ at: 'campaign', id: campaignId }, 'places') as Promise<Place[]>
+      getAll({ at: 'campaign', id: campaignId }, 'places') as Promise<Place[]>,
+      getProfiles(campaign ? [campaign.dm_id, ...campaign.player_ids] : [])
     ])
 
     characters = held
     maps = board
     places = world
+    owners = Object.fromEntries(seen.map((one) => [one.user_id, one.display_name || one.email]))
   }
 </script>
 
@@ -192,6 +195,24 @@
     tone={mine ? 'ember' : 'metal'}
     onclick={() => navigate(`/main/character/${entry.id}`)}
   />
+{/snippet}
+
+{#snippet tile(entry: Character)}
+  {@const mine = entry.owner_id === $user?.user_id}
+  <Card
+    layout="tile"
+    frame={mine ? 'heavy' : 'thin'}
+    title={entry.metadata.name}
+    sub="Level {entry.metadata.level} {entry.metadata.race} {entry.metadata.class}"
+    image={entry.character?.info?.imageUrl}
+    badge={String(entry.metadata.level)}
+    tone={mine ? 'ember' : 'metal'}
+    onclick={() => navigate(`/main/character/${entry.id}`)}
+  >
+    {#if !mine}<span class="camp-owner">{owners[entry.owner_id] ?? 'Another player'}</span>{/if}
+    <span>HP {entry.character?.info?.hp?.current ?? 0}/{entry.character?.info?.hp?.max ?? 0}</span>
+    <span>AC {entry.character?.info?.ac ?? 10}</span>
+  </Card>
 {/snippet}
 
 {#snippet create()}
@@ -282,9 +303,9 @@
           {#if party.length === 0}
             <p class="camp-note">No character sits at the table yet.</p>
           {:else}
-            <div class="camp-cards">
+            <div class="camp-tiles">
               {#each party as entry (entry.id)}
-                {@render seat(entry)}
+                {@render tile(entry)}
               {/each}
             </div>
           {/if}
@@ -318,9 +339,9 @@
         {#if party.length === 0}
           <p class="camp-note">No character sits at the table yet. Bring one from Players.</p>
         {:else}
-          <div class="camp-party">
+          <div class="camp-tiles">
             {#each party as entry (entry.id)}
-              {@render seat(entry)}
+              {@render tile(entry)}
             {/each}
           </div>
         {/if}
@@ -467,12 +488,18 @@
     gap: var(--space-3);
   }
 
-  .camp-cards {
-    display: grid;
-    --camp-card: calc(var(--space-8) * 4);
-    grid-template-columns: repeat(auto-fill, minmax(min(var(--camp-card), 100%), 1fr));
+  .camp-tiles {
+    display: flex;
+    flex-wrap: wrap;
     gap: var(--space-4);
     min-width: 0;
+  }
+
+  .camp-owner {
+    flex-basis: 100%;
+    font-family: var(--font-body);
+    font-style: italic;
+    color: var(--ink);
   }
 
   .camp-charts {
