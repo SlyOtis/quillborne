@@ -9,7 +9,7 @@ steps:
     schemas: [claimius]
     include:
       - git: https://github.com/nimling/samna-auth-middleware.git
-        ref: v2.0.0-alpha0118
+        ref: v2.0.0-alpha0134
         path: disciple/database
 
   - name: Application Tables

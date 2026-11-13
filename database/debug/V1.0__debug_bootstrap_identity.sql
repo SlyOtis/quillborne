@@ -12,7 +12,7 @@ BEGIN
     ) VALUES (
         org_id, 'Knights of the Cauldron',
         'Debug organization standing in for the one the prophet replicates',
-        'company', org_id, org_id, 0, debug_user_id
+        'customer', org_id, org_id, 0, debug_user_id
     ) ON CONFLICT (id) DO NOTHING;
 
     PERFORM claimius.upsert_app_user(

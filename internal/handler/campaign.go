@@ -314,7 +314,7 @@ func DeleteCampaign(ctx echo.Context) error {
 		if _, err := tx.NewUpdate().Table("resource").Set("sa_deleted_at = NOW()").Where("campaign_id = ?", campaignID).Where("sa_deleted_at IS NULL").Exec(tctx); err != nil {
 			return err
 		}
-		if _, err := tx.NewUpdate().Table("file").Set("sa_deleted_at = NOW()").Where("campaign_id = ?", campaignID).Where("sa_deleted_at IS NULL").Exec(tctx); err != nil {
+		if _, err := tx.NewRaw("WITH RECURSIVE down AS (SELECT id FROM asset WHERE slug = ? AND sa_deleted_at IS NULL UNION SELECT a.id FROM asset a JOIN down ON a.sa_parent_id = down.id AND a.id <> down.id) UPDATE asset SET sa_deleted_at = NOW() WHERE id IN (SELECT id FROM down) AND sa_deleted_at IS NULL", "campaign-"+campaignID.String()).Exec(tctx); err != nil {
 			return err
 		}
 		if _, err := tx.NewUpdate().Model(&campaign).Set("sa_deleted_at = NOW()").WherePK().Exec(tctx); err != nil {

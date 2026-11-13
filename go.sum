@@ -81,8 +81,8 @@ github.com/nimling/nimbody v1.0.0 h1:go1Orv/gAIYLmxAg8xDXWB19kH4y+u98CvMBg3CJlsU
 github.com/nimling/nimbody v1.0.0/go.mod h1:GaRn1Ju777p1uEJVc/xP7fQfvUlDmbBjgoTMCLyXJus=
 github.com/nimling/nimtel v1.0.0 h1:8Kelo7FNzV+aB86gKLsagUt9xzq8ysoh1Osli/1gWB0=
 github.com/nimling/nimtel v1.0.0/go.mod h1:PYkXZN1oB/0jc38WJjxdAzklt6a/zL67HSyzMGKe950=
-github.com/nimling/samna-auth-middleware/v2 v2.0.0-alpha0118 h1:zFocGtvhbHTKypb06DhTL7zL77CNssfa7xwsuP+CYx0=
-github.com/nimling/samna-auth-middleware/v2 v2.0.0-alpha0118/go.mod h1:A42F8nZJeiB25Rc8JnO/Ijzdj7UCKYHO8bF+MrvJQJM=
+github.com/nimling/samna-auth-middleware/v2 v2.0.0-alpha0134 h1:8Hy67B61Z72RrlIvb36U30BqVS7Y8tPjg6xBG3aWOzA=
+github.com/nimling/samna-auth-middleware/v2 v2.0.0-alpha0134/go.mod h1:A42F8nZJeiB25Rc8JnO/Ijzdj7UCKYHO8bF+MrvJQJM=
 github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c h1:+mdjkGKdHQG3305AYmdv1U2eRNDiU2ErMBj1gwrq8eQ=
 github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c/go.mod h1:7rwL4CYBLnjLxUqIJNnCWiEdr3bn6IUYi15bNlnbCCU=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=

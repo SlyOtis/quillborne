@@ -11,7 +11,7 @@ require (
 	github.com/labstack/gommon v0.5.0
 	github.com/nimling/nimbody v1.0.0
 	github.com/nimling/nimtel v1.0.0
-	github.com/nimling/samna-auth-middleware/v2 v2.0.0-alpha0118
+	github.com/nimling/samna-auth-middleware/v2 v2.0.0-alpha0134
 	github.com/uptrace/bun v1.2.18
 	github.com/uptrace/bun/dialect/pgdialect v1.2.18
 	github.com/uptrace/bun/driver/pgdriver v1.2.18
