@@ -3,12 +3,15 @@
 
   const {
     users,
-    max = 5
+    max = 5,
+    onclick
   }: {
     /** The people drawn as overlapping discs, in order. */
     users: PresenceUser[]
     /** How many discs are drawn; the rest collapse into a count. */
     max?: number
+    /** Runs with the person whose disc is pressed; given, every disc is a button. */
+    onclick?: (user: PresenceUser) => void
   } = $props()
 
   const shown = $derived(users.slice(0, Math.min(users.length, max)))
@@ -36,15 +39,25 @@
   }
 </script>
 
+{#snippet face(user: PresenceUser)}
+  {#if user.image}
+    <StoredImage src={user.image} alt="" />
+  {:else}
+    <span class="dnd-presence-initials">{getInitials(user.name)}</span>
+  {/if}
+{/snippet}
+
 <span class="dnd-presence">
   {#each shown as user (user.id)}
-    <span class="dnd-presence-item" class:dnd-presence-item-self={user.self} title={user.self ? `${user.name} (you)` : user.name}>
-      {#if user.image}
-        <StoredImage src={user.image} alt="" />
-      {:else}
-        <span class="dnd-presence-initials">{getInitials(user.name)}</span>
-      {/if}
-    </span>
+    {#if onclick}
+      <button type="button" class="dnd-presence-item" class:dnd-presence-item-self={user.self} title={user.self ? `${user.name} (you)` : user.name} onclick={() => onclick(user)}>
+        {@render face(user)}
+      </button>
+    {:else}
+      <span class="dnd-presence-item" class:dnd-presence-item-self={user.self} title={user.self ? `${user.name} (you)` : user.name}>
+        {@render face(user)}
+      </span>
+    {/if}
   {/each}
   {#if rest > 0}
     <span class="dnd-presence-item dnd-presence-overflow">+{rest}</span>
@@ -67,6 +80,8 @@
     justify-content: center;
     inline-size: var(--space-5);
     block-size: var(--space-5);
+    padding: 0;
+    border: none;
     border-radius: var(--radius-pill);
     overflow: hidden;
     background: radial-gradient(circle at 38% 26%, var(--ground-lift) 0%, var(--ground-deep) 84%);
@@ -84,6 +99,22 @@
 
   .dnd-presence-item ~ .dnd-presence-item {
     margin-inline-start: calc(var(--space-2) * -1);
+  }
+
+  button.dnd-presence-item {
+    cursor: pointer;
+  }
+
+  button.dnd-presence-item:hover {
+    z-index: 3;
+    color: var(--metal-bright);
+    filter: drop-shadow(0 0 0.35rem var(--ember-glow));
+  }
+
+  button.dnd-presence-item:focus-visible {
+    z-index: 3;
+    outline: none;
+    box-shadow: var(--focus-ring);
   }
 
   .dnd-presence-item-self {
