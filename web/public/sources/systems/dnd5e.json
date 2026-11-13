@@ -52,9 +52,9 @@
     { "id": "darkvision", "title": "Darkvision", "value": "bonus.darkvision", "unit": "ft" }
   ],
   "pools": [
-    { "id": "hitDice", "title": "Hit Dice", "description": "Spent on a short rest to recover hit points.", "max": "level", "regainedAt": "long", "regainAmount": "max(1, floor(level / 2))" },
-    { "id": "hitPoints", "title": "Hit Points", "description": "Damage taken is spent against this pool.", "max": "derived.maxHitPoints", "regainedAt": "long" },
-    { "id": "inspiration", "title": "Inspiration", "max": "1", "regainedAt": "never" }
+    { "id": "hitDice", "title": "Hit Dice", "description": "Spent on a short rest to recover hit points.", "max": "level", "regainedAt": "long", "regainAmount": "max(1, floor(level / 2))", "view": "plate" },
+    { "id": "hitPoints", "title": "Hit Points", "description": "Damage taken is spent against this pool.", "max": "derived.maxHitPoints", "regainedAt": "long", "view": "plate" },
+    { "id": "inspiration", "title": "Inspiration", "max": "1", "regainedAt": "never", "view": "pips" }
   ],
   "derived": [
     { "id": "initiative", "title": "Initiative", "value": "mod.dex + bonus.initiative" },

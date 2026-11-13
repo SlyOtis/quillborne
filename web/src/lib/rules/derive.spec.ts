@@ -72,6 +72,15 @@ describe('getResolvedCharacter on the 5e core', () => {
     expect(pool('hitPoints')).toBe(10)
   })
 
+  it('resolves the view a pool declares and plate for one that declares none', () => {
+    const view = (id: string) => resolved.pools.find((entry) => entry.id === id)?.view
+    expect(view('hitDice')).toBe('plate')
+    expect(view('hitPoints')).toBe('plate')
+    expect(view('inspiration')).toBe('pips')
+    const layered = getResolvedCharacter(getMergedSystem(core, nimble as RuleSystemOverlay), { ...lars, systems: ['dnd5e', 'nimble'] })
+    expect(layered.pools.find((entry) => entry.id === 'mana')?.view).toBe('plate')
+  })
+
   it('keeps the death save thresholds and the hit die healing in the system', () => {
     expect(resolved.scope['derived.deathSaveTarget']).toBe(10)
     expect(resolved.scope['derived.deathSaveFumbleFailures']).toBe(2)
