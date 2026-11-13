@@ -78,3 +78,4 @@ Skills in `.claude/skills/`:
 - `qubo`: the cli, its state export and import and its mcp tools; installed by `just install-cli-skill`.
 - `nimon` and `nimon-pr`: drive the browser through a page or a pull request and record it; installed by `just install`.
 - `git` and `github`: the git cli and everything that talks to GitHub.
+- `impeccable`: the frontend design skill with its four agents under `.claude/agents/`; its launcher fetches the platform binary on first use, so the binary is never committed.

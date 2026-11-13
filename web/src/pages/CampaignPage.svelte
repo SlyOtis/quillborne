@@ -20,6 +20,7 @@
   import IconBtn from '$components/ui/IconBtn.svelte'
   import Panel from '$components/ui/Panel.svelte'
   import Portrait from '$components/ui/Portrait.svelte'
+  import Section from '$components/ui/Section.svelte'
   import BaseDialog from '$components/BaseDialog.svelte'
   import Shell from '$components/ui/Shell.svelte'
 
@@ -72,14 +73,6 @@
     [...seated].sort((a, b) => Number(b.owner_id === $user?.user_id) - Number(a.owner_id === $user?.user_id))
   )
   const yours = $derived(seated.filter((entry) => entry.owner_id === $user?.user_id).length)
-
-  const CAP = 5
-
-  let more = $state<Record<string, boolean>>({ npcs: false })
-
-  function cut<T>(rows: T[], id: string): T[] {
-    return more[id] ? rows : rows.slice(0, CAP)
-  }
   let tocOpen = $state(true)
   let chartsOpen = $state(false)
 
@@ -214,26 +207,6 @@
   </div>
 {/snippet}
 
-{#snippet fold(id: string, total: number)}
-  {#if total > CAP}
-    <IconBtn
-      title={more[id] ? `Show ${CAP} of ${total}` : `Show all ${total}`}
-      active={more[id]}
-      onclick={() => (more = { ...more, [id]: !more[id] })}
-    >
-      <Glyph name={more[id] ? 'fold' : 'unfold'} size="sm" />
-    </IconBtn>
-  {/if}
-{/snippet}
-
-{#snippet rest(id: string, total: number)}
-  {#if total > CAP && !more[id]}
-    <Button variant="ghost" size="sm" fill onclick={() => (more = { ...more, [id]: true })}>
-      Show {total - CAP} more
-    </Button>
-  {/if}
-{/snippet}
-
 {#snippet branch(entry: CampaignMap)}
   {@const kin = childrenOf(entry.id)}
   <button
@@ -297,13 +270,10 @@
   {:else if campaign}
     {#if tab === 'overview'}
       <div class="camp-grid">
-        <section class="camp-plot camp-plot-roll" aria-label="Party">
-          <header class="camp-divide">
-            <h2 class="dnd-label camp-divide-name">Party</h2>
-            <span class="camp-divide-note">{seated.length} at the table, {yours} yours</span>
-            <span class="camp-divide-run"></span>
-            <Button variant="secondary" size="sm" onclick={() => navigate(`/main/create/character?campaign=${campaignId}`)}>New</Button>
-          </header>
+        <Section title="Party" note="{seated.length} at the table, {yours} yours" count={party.length}>
+          {#snippet actions()}
+            <IconBtn title="Forge a new character" onclick={() => navigate(`/main/create/character?campaign=${campaignId}`)}><Glyph name="character" size="sm" /></IconBtn>
+          {/snippet}
           {#if party.length === 0}
             <p class="camp-note">No character sits at the table yet.</p>
           {:else}
@@ -313,27 +283,22 @@
               {/each}
             </div>
           {/if}
-        </section>
+        </Section>
 
-        <section class="camp-plot camp-plot-npcs" aria-label="NPCs">
-          <header class="camp-divide">
-            <h2 class="dnd-label camp-divide-name">NPCs</h2>
-            <span class="camp-divide-note">{npcs.length} met</span>
-            <span class="camp-divide-run"></span>
-            {@render fold('npcs', npcs.length)}
-            <Button variant="secondary" size="sm" onclick={addNpc}>New</Button>
-          </header>
+        <Section title="NPCs" note="{npcs.length} met" count={npcs.length}>
+          {#snippet actions()}
+            <IconBtn title="Add an NPC" onclick={addNpc}><Glyph name="add" size="sm" /></IconBtn>
+          {/snippet}
           {#if npcs.length === 0}
             <p class="camp-note">Nobody has been met yet.</p>
           {:else}
-            <div class="camp-list">
-              {#each cut(npcs, 'npcs') as npc (npc.id)}
-                {@render seat(npc)}
+            <div class="camp-tiles">
+              {#each npcs as npc (npc.id)}
+                {@render tile(npc)}
               {/each}
-              {@render rest('npcs', npcs.length)}
             </div>
           {/if}
-        </section>
+        </Section>
       </div>
     {:else if tab === 'party'}
       <Panel title="Party">
@@ -470,68 +435,8 @@
   .camp-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      'roll'
-      'npcs';
     align-content: start;
-    column-gap: var(--space-6);
     row-gap: var(--space-6);
-    min-width: 0;
-  }
-
-  .camp-plot {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    min-width: 0;
-  }
-
-  .camp-plot-roll {
-    grid-area: roll;
-  }
-
-  .camp-plot-npcs {
-    grid-area: npcs;
-  }
-
-  .camp-divide {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-3);
-    min-width: 0;
-  }
-
-  .camp-divide-name {
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: var(--text-sm);
-    font-weight: 700;
-    letter-spacing: var(--tracking-caps);
-    text-transform: uppercase;
-    color: var(--metal-bright);
-    text-shadow: 0 0.0625rem 0 var(--ground-deep), 0 0 0.625rem var(--ember-glow);
-  }
-
-  .camp-divide-note {
-    font-family: var(--font-figures);
-    letter-spacing: var(--tracking-wide);
-    font-size: var(--text-xs);
-    color: var(--ink-faint);
-  }
-
-  .camp-divide-run {
-    flex: 1;
-    min-width: 0;
-    height: var(--border-hair);
-    background: linear-gradient(90deg, var(--metal), var(--metal-dim) 40%, transparent);
-    box-shadow: 0 0.0625rem 0 var(--ground-deep);
-  }
-
-  .camp-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
     min-width: 0;
   }
 
