@@ -43,12 +43,15 @@
 
   const {
     kind,
+    line,
     facts,
     form,
     bar
   }: {
     /** Which resource the page it scaffolds is for. */
     kind: ResourceKind
+    /** The type's own line under the title, drawn while reading. */
+    line?: Snippet<[Record<string, unknown> & Resource]>
     /** The type's own facts, drawn while reading. */
     facts?: Snippet<[Record<string, unknown> & Resource]>
     /** The type's own fields, drawn while writing. */
@@ -490,11 +493,16 @@
   {@render bar?.(one, owner)}
 {/snippet}
 
+{#snippet ground()}
+  <span class="page-ground"></span>
+{/snippet}
+
 <Shell
   drawers
   title={fresh ? `New ${shape.one}` : one.title || shape.one}
   width="full"
   back={() => navigate(under)}
+  backdrop={ground}
   tools={bar && !fresh ? acts : undefined}
 >
   {#if loading}
@@ -614,6 +622,8 @@
               <h1 class="dnd-heading dnd-heading-hero page-name">{one.title}</h1>
             {/if}
           </div>
+
+          {#if !writing}{@render line?.(one)}{/if}
 
           {#if writing}
             <input
@@ -787,6 +797,12 @@
 </Shell>
 
 <style>
+  .page-ground {
+    position: absolute;
+    inset: 0;
+    background: var(--ground);
+  }
+
   .page-band-grid {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);

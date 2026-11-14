@@ -62,7 +62,7 @@
     <span class="dnd-card-finial"><Ornament name="finial" size="xs" tone="metal" /></span>
   {/if}
 
-  {#if layout === 'row' || layout === 'tile'}
+  {#if layout === 'row' || layout === 'tile' || (layout === 'face' && image)}
     <span class="dnd-card-medallion">
       {#if image}
         <span class="dnd-card-portrait"><StoredImage src={image} alt="" /></span>

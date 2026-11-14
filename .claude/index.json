@@ -635,6 +635,102 @@
       ]
     },
     {
+      "path": "internal/handler/monster.go",
+      "kind": "source",
+      "answers": "The /api/monster routes: list what the reader may read, make, read, change and delete a monster. Any player makes one; is_public decides the Member binding through putPublicBinding, and only the maker writes or deletes it.",
+      "keywords": [
+        "monster",
+        "bestiary",
+        "homebrew",
+        "api",
+        "claim",
+        "public"
+      ]
+    },
+    {
+      "path": "web/public/sources/systems/monsters/dnd5e.json",
+      "kind": "data",
+      "answers": "The fifth edition monster system: abilities, sizes with hit dice, creature types with their glyphs, alignments, damage types, conditions, senses, movement, languages, habitats, skills, challenge ratings with experience and proficiency bonus, flags, stat block sections, defaults and the formulas of every figure.",
+      "keywords": [
+        "monster",
+        "bestiary",
+        "dnd5e",
+        "system",
+        "challenge",
+        "type",
+        "size",
+        "alignment",
+        "habitat",
+        "formula"
+      ]
+    },
+    {
+      "path": "web/src/lib/rules/monster.ts",
+      "kind": "source",
+      "answers": "The monster engine. Loads a monster system, reads stored stats into their full shape, works out the stat block from the system formulas, and decides which monsters the bestiary filters show.",
+      "keywords": [
+        "monster",
+        "bestiary",
+        "engine",
+        "stat",
+        "block",
+        "filter",
+        "formula"
+      ]
+    },
+    {
+      "path": "web/src/lib/rules/monster.types.ts",
+      "kind": "source",
+      "answers": "The shape of a monster system, a monster's stored stats, the worked out stat block and the bestiary filter.",
+      "keywords": [
+        "monster",
+        "types",
+        "system",
+        "stats",
+        "block",
+        "filter"
+      ]
+    },
+    {
+      "path": "web/src/pages/MonstersPage.svelte",
+      "kind": "page",
+      "answers": "The bestiary at /main/monsters: the type row, name, challenge, size and habitat filters, the advanced filters, the sortable list with Homebrew under the reader's own private monsters, and New monster.",
+      "keywords": [
+        "monster",
+        "bestiary",
+        "list",
+        "filter",
+        "sort",
+        "homebrew",
+        "page"
+      ]
+    },
+    {
+      "path": "web/src/pages/MonsterPage.svelte",
+      "kind": "page",
+      "answers": "One monster at /main/monsters/:id: the stat block with the abilities drawn as on the sheet, the portrait beside it, the tags and flags, the lore, and for its maker editing in place, sharing and deleting.",
+      "keywords": [
+        "monster",
+        "stat",
+        "block",
+        "portrait",
+        "lore",
+        "edit",
+        "page"
+      ]
+    },
+    {
+      "path": "web/src/components/character_sheet/main_tabs/BestiaryTab.svelte",
+      "kind": "component",
+      "answers": "The Bestiary tab of the character sheet: an empty bestiary of unwritten pages until the campaign bestiary is built.",
+      "keywords": [
+        "bestiary",
+        "monster",
+        "character",
+        "tab"
+      ]
+    },
+    {
       "path": ".claude/rules/maps.md",
       "kind": "rule",
       "answers": "How a map carries a drawn plan beside its picture, where the nimap code lives, its model rules, and how its tests run.",

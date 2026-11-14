@@ -141,11 +141,9 @@ components:
 
 Every surface is a WarCraft III game menu rebuilt in CSS. Chrome is carved granite and dark oak; every container is ringed in gilt with a black keyline on both sides; every button is a beveled stone slab with gold capital lettering that lights like a torch on hover and sinks when pressed. The ground is a midnight starfield, painted once in the Frame, which stays mounted around every page: it lays `--texture-stars` and noise over a raised-to-abyss gradient, and the page is a raised plate on it, painted with `--backdrop` (a blue haze at both upper edges and a black pool at the foot in the default skin). Inside the page sits the sign-in gate's hall: the arched `Glass` window faint at its centre, two hung `Flame` lanterns at the edges (hidden below a 47.5rem shell), and `Aura` veil and ember motes over it. Nothing is flat: a control has weight, a well is sunk, a plate stands proud.
 
-The ornament is a frame for data, never a competitor to it. The character sheet is dense (stat plates in rows, a crown slab with the portrait in a gilded arch, a hit point block, tabbed actions), and it stays readable at a glance: gold labels in small tracked capitals above large Cinzel figures on dark ground. All material is procedural. Stone, grain, leather, noise and stars are inline SVG in `src/app.css`, and no raster frame or texture ships (there is no raster provenance to record).
+The ornament is a frame for data, never a competitor to it. The character sheet is dense (stat plates in rows, a crown slab with the portrait in a gilded arch, a hit point block, tabbed actions), and it stays readable at a glance: gold labels in small tracked capitals above large Cinzel figures on dark ground. All material is procedural. Stone, grain, leather, noise and stars are inline SVG in `web/src/app.css`, and no raster frame or texture ships.
 
 Five race skins exist and every one comes from tokens: Alliance (`medieval`, the default pale gold on midnight blue with an orange torch), Night Elf (`forest`, lilac silver on violet night with a teal torch), Horde (`fire`, copper on scorched brown with a red flame), Scourge (`arcane`, bone on moss black with a fel green light) and Frozen Throne (`ocean`, ice silver on deep blue with a cyan light). A skin re-declares the same token names under `:root[data-theme]`, and swaps the display and body faces; the starfield is shared by every skin. The 3D dice and the 3D map plans read the active skin live.
-
-This system was applied under a standing looks-only constraint from the user: layouts, menus and screens stayed exactly where they were. The skin re-dressed the incumbent grammar; the drawers still open where they did, and the page now bends into them rather than butting against them.
 
 **Key Characteristics:**
 - Midnight starfield ground, pale gilt trim, ember light.
@@ -182,7 +180,7 @@ A midnight palette: blue-black grounds, three-step pale gilt metal, one ember li
 - **States** (`state-good`, `state-warn`, `state-bad`): stamina and valid, tooltip lettering, life and danger and invalid.
 
 ### Named Rules
-**The Theme-Blind Rule.** A component reads tokens and never knows which skin is active. A new colour is a new token declared in `:root` and in all five `[data-theme]` blocks, or it does not exist. A canvas or WebGL surface reads the same tokens from the live document (`getToken` in `src/lib/nimap-editor/look.ts`).
+**The Theme-Blind Rule.** A component reads tokens and never knows which skin is active. A new colour is a new token declared in `:root` and in all five `[data-theme]` blocks, or it does not exist. A canvas or WebGL surface reads the same tokens from the live document (`getToken` in `web/src/lib/nimap-editor/look.ts`).
 
 **The Ember Is Light Rule.** Ember is emitted, not filled: glow, text-shadow, and radial washes at 16 percent mix or less. Its only solid uses are the ember meter and an ember-toned glyph.
 
@@ -213,7 +211,7 @@ The scale is seven fluid steps (`--text-xs` to `--text-3xl`, ratio about 1.2), e
 
 ## Layout
 
-The layout grammar is the incumbent app's, held fixed by the user's looks-only constraint. The Shell is a three-column grid: the top bar (`--size-bar`, a clamp from 3.6rem to 4.7rem) spans all three, and below it the menu drawer, the page and the chat drawer sit side by side. The menu drawer opens on the start edge; the end edge holds the chat drawer, which carries friends and chat. A closed drawer's column is 0px; an open one runs at 400px inside the Shell (the root `--size-menu-max` 320px and `--size-chat-max` 420px are overridden there), and the columns animate over 250ms. The page caps its content at `--size-page-max` 1600px, or 860px narrow and 1200px wide.
+The layout is held fixed: a restyle changes the skin, not where things are. The Shell is a three-column grid: the top bar (`--size-bar`, a clamp from 3.6rem to 4.7rem) spans all three, and below it the menu drawer, the page and the chat drawer sit side by side. The menu drawer opens on the start edge; the end edge holds the chat drawer, which carries friends and chat. A closed drawer's column is 0px; an open one runs at 400px inside the Shell (the root `--size-menu-max` 320px and `--size-chat-max` 420px are overridden there), and the columns animate over 250ms. The page caps its content at `--size-page-max` 1600px, or 860px narrow and 1200px wide.
 
 The page is raised beside its drawers. When a drawer opens, the page rounds the two corners on that side by `--shell-bend` (1.5 times `--radius-xl`), casts a black haze on the drawer (`0 0 32px` of `--shade-hard`), and draws its edge as a gold double rule: an outer `metal` hairline and an inner `metal-dim` hairline inset by 4px. A diamond stud sits on that edge at its vertical middle. Drawers do not draw their own edge inside the Shell; a free-standing drawer (the blocks drawer on a resource page) draws its own rule and stud.
 
@@ -236,7 +234,7 @@ Hybrid and heavy. Depth is carved rather than floated: stacked inset rings, beve
 - **Glow Text** (`--glow-text`): 6px and 14px ember glow over a 1px black drop. Lit lettering.
 - **Hearth** (`--shadow-hearth`): inset ember glow inside frame grounds.
 - **Drops** (`--shadow-sm/md/lg`, `--drop-frame/panel/crest/relief/haze`): black lifts from 3px to 48px blur.
-- **Bar Ledge**: the top bar's bottom edge is a pair of gilt hairlines (a `metal-dim` line fading at both ends over a `metal` line) running out from the crest to each side. `--shadow-bar` is still declared in `app.css` but nothing uses it; it is not part of the vocabulary.
+- **Bar Ledge**: the top bar's bottom edge is a pair of gilt hairlines (a `metal-dim` line fading at both ends over a `metal` line) running out from the crest to each side.
 - **Shell Bend**: the raised page's 32px `--shade-hard` haze over an open drawer.
 - **Metal Glow** (`--glow-metal`): the soft gold halo of a diamond stud.
 - **Focus** (`--focus-ring`): 2px abyss gap, 2px `metal-bright` ring, gilt glow.
@@ -306,10 +304,10 @@ A campaign map can carry a drawn plan. Icon buttons above the map switch between
 ## Do's and Don'ts
 
 ### Do:
-- **Do** take every colour, space, radius, type size, shadow and border width from the tokens in `src/app.css`.
+- **Do** take every colour, space, radius, type size, shadow and border width from the tokens in `web/src/app.css`.
 - **Do** declare a new colour token in `:root` and in all five `[data-theme]` blocks.
 - **Do** bound gilt with the black keyline, and build rings from the composed `--rim` and `--rim-thin`.
-- **Do** make a new material a procedural SVG filter in `app.css`, never a raster.
+- **Do** make a new material a procedural SVG filter in `web/src/app.css`, never a raster.
 - **Do** letter controls and labels in the display face, uppercase, tracked 0.14em, in gilt.
 - **Do** light on hover (`--glow-text`, ember sheen) and sink on press.
 - **Do** keep figures in `--font-figures` with tabular numerals.

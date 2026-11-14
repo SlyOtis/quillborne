@@ -23,6 +23,7 @@ const (
 	OBJECT_TYPE_TAG_OBJECT    = "public.tag_object"
 	OBJECT_TYPE_CATALOG_ENTRY = "public.catalog_entry"
 	OBJECT_TYPE_VEHICLE       = "public.vehicle"
+	OBJECT_TYPE_MONSTER       = "public.monster"
 )
 
 const (
@@ -142,6 +143,28 @@ type Vehicle struct {
 	CreatedAt       time.Time       `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
 	UpdatedAt       time.Time       `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
 	DeletedAt       bun.NullTime    `bun:"sa_deleted_at,soft_delete,nullzero" json:"-"`
+}
+
+type Monster struct {
+	bun.BaseModel `json:"-" bun:"table:monster"`
+
+	ID          uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
+	UserID      uuid.UUID       `bun:"user_id" json:"owner_id"`
+	IsPublic    bool            `bun:"is_public" json:"is_public"`
+	System      string          `bun:"system" json:"system"`
+	Name        string          `bun:"name" json:"name"`
+	Size        string          `bun:"size" json:"size"`
+	Type        string          `bun:"type" json:"type"`
+	Alignment   string          `bun:"alignment" json:"alignment"`
+	Challenge   float64         `bun:"challenge" json:"challenge"`
+	Stats       json.RawMessage `bun:"stats,type:jsonb" json:"stats"`
+	Description string          `bun:"description" json:"description"`
+	Image       string          `bun:"image" json:"image"`
+	OwnerID     uuid.UUID       `bun:"sa_owner_id" json:"-"`
+	CreatedBy   *uuid.UUID      `bun:"sa_created_by" json:"-"`
+	CreatedAt   time.Time       `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
+	UpdatedAt   time.Time       `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
+	DeletedAt   bun.NullTime    `bun:"sa_deleted_at,soft_delete,nullzero" json:"-"`
 }
 
 type ChatEntry struct {

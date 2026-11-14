@@ -1,11 +1,13 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
   import Glyph, { type GlyphName } from './Glyph.svelte'
+  import { getRarityInk, type Rarity } from '$lib/resources'
 
   const {
     on = false,
     still = false,
     glyph,
+    rarity,
     onclick,
     children
   }: {
@@ -15,6 +17,8 @@
     still?: boolean
     /** The glyph drawn at the start of the chip. */
     glyph?: GlyphName
+    /** Writes the word in the tone of its rarity. */
+    rarity?: Rarity
     /** Runs when the chip is pressed. */
     onclick?: (event: MouseEvent) => void
     /** The word the chip carries. */
@@ -23,12 +27,24 @@
 </script>
 
 {#if still}
-  <span class="dnd-chip dnd-chip-still">
+  <span
+    class="dnd-chip dnd-chip-still"
+    class:dnd-chip-rarity={Boolean(rarity)}
+    style:--chip-ink={rarity ? getRarityInk(rarity) : undefined}
+  >
     {#if glyph}<span class="dnd-chip-glyph"><Glyph name={glyph} size="sm" /></span>{/if}
     {@render children?.()}
   </span>
 {:else}
-  <button type="button" class="dnd-chip" class:dnd-chip-on={on} aria-pressed={on} {onclick}>
+  <button
+    type="button"
+    class="dnd-chip"
+    class:dnd-chip-on={on}
+    class:dnd-chip-rarity={Boolean(rarity)}
+    style:--chip-ink={rarity ? getRarityInk(rarity) : undefined}
+    aria-pressed={on}
+    {onclick}
+  >
     {#if glyph}<span class="dnd-chip-glyph"><Glyph name={glyph} size="sm" /></span>{/if}
     {@render children?.()}
   </button>
@@ -79,6 +95,21 @@
     border-color: color-mix(in srgb, var(--metal-dim) 80%, transparent);
     cursor: default;
     color: var(--metal);
+  }
+
+  .dnd-chip-rarity {
+    color: color-mix(in srgb, var(--chip-ink) 65%, var(--ink-faint));
+  }
+
+  .dnd-chip-rarity:hover,
+  .dnd-chip-rarity.dnd-chip-on,
+  .dnd-chip-rarity.dnd-chip-still {
+    color: var(--chip-ink);
+  }
+
+  .dnd-chip-rarity.dnd-chip-on {
+    border-color: var(--chip-ink);
+    box-shadow: inset 0 0 8px color-mix(in srgb, var(--chip-ink) 45%, transparent), 0 0 12px color-mix(in srgb, var(--chip-ink) 45%, transparent);
   }
 
   .dnd-chip:focus-visible {

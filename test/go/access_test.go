@@ -352,6 +352,42 @@ func TestAPageSharedWithACampaignReachesItsTable(t *testing.T) {
 	}
 }
 
+func TestACampaignsAttachedAssetIsReadByItsTable(t *testing.T) {
+	requireBlob(t)
+	ensureProfile(t, dungeonMaster, "testy@quillborne.local")
+	ensureProfile(t, player, "pip@quillborne.local")
+	campaignID := postCampaign(t)
+	status, picture := postStoredFile(t, dungeonMaster, map[string]string{"name": "crest.png", "mime_type": "image/png"}, "crest")
+	if status != http.StatusCreated {
+		t.Fatalf("PostAsset: %d", status)
+	}
+	params := map[string]string{"id": picture.ID}
+	status, attached := call(t, dungeonMaster, http.MethodPost, "/api/asset/"+picture.ID+"/object", `{"object_type":"campaign","object_id":"`+campaignID+`"}`, params, handler.PostObjectAsset)
+	if status != http.StatusCreated {
+		t.Fatalf("PostObjectAsset: %d %+v", status, attached.Error)
+	}
+	if rec := getData(t, player, http.MethodGet, picture.ID, nil); rec.Code != http.StatusNotFound {
+		t.Fatalf("a player away from the table read the campaign's picture: %d", rec.Code)
+	}
+	seatPlayer(t, campaignID)
+	if rec := getData(t, player, http.MethodGet, picture.ID, nil); rec.Code != http.StatusOK || rec.Body.String() != "crest" {
+		t.Fatalf("a seated player was refused the campaign's picture: %d", rec.Code)
+	}
+	if status, _ := call(t, player, http.MethodGet, "/api/asset/"+picture.ID, "", params, handler.GetAsset); status != http.StatusOK {
+		t.Fatalf("a seated player was refused the campaign's asset: %d", status)
+	}
+	linkID := id(t, attached)
+	if status, _ := call(t, dungeonMaster, http.MethodDelete, "/api/asset/"+picture.ID+"/object/"+linkID, "", map[string]string{"id": picture.ID, "object_id": linkID}, handler.DeleteObjectAsset); status != http.StatusOK {
+		t.Fatalf("DeleteObjectAsset: %d", status)
+	}
+	if rec := getData(t, player, http.MethodGet, picture.ID, nil); rec.Code != http.StatusNotFound {
+		t.Fatalf("a player still read a picture taken off the campaign: %d", rec.Code)
+	}
+	if rec := getData(t, dungeonMaster, http.MethodGet, picture.ID, nil); rec.Code != http.StatusOK {
+		t.Fatalf("the dungeon master lost their own picture: %d", rec.Code)
+	}
+}
+
 func TestIntegrationKeysAreReadByTheirOwnerAlone(t *testing.T) {
 	requireStack(t)
 	ensureProfile(t, dungeonMaster, "testy@quillborne.local")

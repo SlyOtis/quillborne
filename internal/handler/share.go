@@ -257,7 +257,7 @@ func putShare(ctx context.Context, tx bun.Tx, w *Writer, objectType string, obje
 		return err
 	}
 	for _, assetID := range attached {
-		if err := putAssetShare(ctx, tx, w, assetID, objectID, page, managed); err != nil {
+		if err := putAssetShare(ctx, tx, w, assetID, objectType, objectID, page, managed); err != nil {
 			return err
 		}
 	}
@@ -276,12 +276,27 @@ func objectTypeTable(objectType string) string {
 	return ""
 }
 
-func getPageShare(ctx context.Context, pageIDs []uuid.UUID) (map[uuid.UUID]sdb.ClaimAccess, error) {
+func getPageShare(ctx context.Context, objectType string, objectIDs []uuid.UUID) (map[uuid.UUID]sdb.ClaimAccess, error) {
 	shared := map[uuid.UUID]sdb.ClaimAccess{}
-	if len(pageIDs) == 0 {
+	if len(objectIDs) == 0 {
 		return shared, nil
 	}
-	bindings, err := sdb.Instance().GetBindings(ctx, sdb.BindingFilters{ObjectType: db.OBJECT_TYPE_RESOURCE, ObjectIDs: pageIDs})
+	if objectType == db.OBJECT_TYPE_CAMPAIGN {
+		campaigns := make([]db.Campaign, 0)
+		if err := db.Instance().NewSelect().Model(&campaigns).Column("dm_claim_id", "player_claim_id").Where("id IN (?)", bun.In(objectIDs)).Scan(ctx); err != nil {
+			return nil, err
+		}
+		for _, campaign := range campaigns {
+			if campaign.DmClaimID != nil {
+				shared[*campaign.DmClaimID] = shared[*campaign.DmClaimID] | sdb.ACCESS_ALL
+			}
+			if campaign.PlayerClaimID != nil {
+				shared[*campaign.PlayerClaimID] = shared[*campaign.PlayerClaimID] | sdb.ACCESS_READ
+			}
+		}
+		return shared, nil
+	}
+	bindings, err := sdb.Instance().GetBindings(ctx, sdb.BindingFilters{ObjectType: db.OBJECT_TYPE_RESOURCE, ObjectIDs: objectIDs})
 	if err != nil {
 		return nil, err
 	}
@@ -293,7 +308,7 @@ func getPageShare(ctx context.Context, pageIDs []uuid.UUID) (map[uuid.UUID]sdb.C
 	return shared, nil
 }
 
-func putAssetShare(ctx context.Context, tx bun.Tx, w *Writer, assetID, pageID uuid.UUID, page map[uuid.UUID]sdb.ClaimAccess, managed []uuid.UUID) error {
+func putAssetShare(ctx context.Context, tx bun.Tx, w *Writer, assetID uuid.UUID, objectType string, objectID uuid.UUID, page map[uuid.UUID]sdb.ClaimAccess, managed []uuid.UUID) error {
 	asset := db.Asset{ID: assetID}
 	if err := tx.NewSelect().Model(&asset).Column("id", "sa_parent_id", "uploaded_by").WherePK().Scan(ctx); err != nil {
 		return err
@@ -311,19 +326,27 @@ func putAssetShare(ctx context.Context, tx bun.Tx, w *Writer, assetID, pageID uu
 			want[binding.ClaimID] = *binding.Access
 		}
 	}
-	others := make([]uuid.UUID, 0)
-	if err := tx.NewSelect().Model((*db.ObjectAsset)(nil)).Column("object_id").
+	others := make([]db.ObjectAsset, 0)
+	if err := tx.NewSelect().Model(&others).Column("object_id", "object_type").
 		Where("asset_id = ?", assetID).
-		Where("object_id <> ?", pageID).
-		Where("object_type IN (?)", bun.In([]string{"resource", db.OBJECT_TYPE_RESOURCE})).
-		Scan(ctx, &others); err != nil {
+		Where("object_id <> ?", objectID).
+		Where("object_type IN (?)", bun.In([]string{"resource", db.OBJECT_TYPE_RESOURCE, "campaign", db.OBJECT_TYPE_CAMPAIGN})).
+		Scan(ctx); err != nil {
 		return err
 	}
-	elsewhere, err := getPageShare(ctx, others)
-	if err != nil {
-		return err
+	elsewhere := map[string][]uuid.UUID{}
+	for _, other := range others {
+		table, _ := getObjectTable(other.ObjectType)
+		elsewhere[table] = append(elsewhere[table], other.ObjectID)
 	}
-	for _, shared := range []map[uuid.UUID]sdb.ClaimAccess{page, elsewhere} {
+	for claimID, access := range page {
+		want[claimID] = want[claimID] | access
+	}
+	for table, ids := range elsewhere {
+		shared, err := getPageShare(ctx, table, ids)
+		if err != nil {
+			return err
+		}
 		for claimID, access := range shared {
 			want[claimID] = want[claimID] | access
 		}

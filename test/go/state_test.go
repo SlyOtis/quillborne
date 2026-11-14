@@ -41,8 +41,8 @@ func TestEveryStateGroupIsATableAndEveryRefIsAGroup(t *testing.T) {
 	for _, group := range document.Groups {
 		names[group.Name] = true
 	}
-	if len(names) != 14 {
-		t.Fatalf("state carries %d groups, not 14", len(names))
+	if len(names) != 15 {
+		t.Fatalf("state carries %d groups, not 15", len(names))
 	}
 	for _, group := range document.Groups {
 		for field, target := range group.Refs {

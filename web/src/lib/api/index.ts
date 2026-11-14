@@ -22,6 +22,9 @@ import type {
   CharacterStatus,
   ChatEntry,
   Encounter,
+  Monster,
+  MonsterFields,
+  ObjectAsset,
   Owner,
   Profile,
   ResourceUpdate,
@@ -261,6 +264,17 @@ export const putVehicle = (vehicleId: string, updates: VehicleFields) => apiPut<
 
 export const deleteVehicle = (vehicleId: string) => apiDelete(`vehicle/${vehicleId}`)
 
+export const getMonsters = () => apiGet<Monster[]>('monster')
+
+export const getMonster = (monsterId: string) =>
+  apiGet<Monster>(`monster/${monsterId}`).catch((error) => getAbsent(error, null))
+
+export const postMonster = (fields: MonsterFields) => apiPost<Monster>('monster', fields)
+
+export const putMonster = (monsterId: string, updates: MonsterFields) => apiPut<Monster>(`monster/${monsterId}`, updates)
+
+export const deleteMonster = (monsterId: string) => apiDelete(`monster/${monsterId}`)
+
 export async function postCampaign(fields: Omit<Campaign, 'id' | 'created_at' | 'updated_at'>): Promise<string> {
   const created = await apiPost<Campaign>('campaign', {
     name: fields.name,
@@ -275,6 +289,12 @@ export const getCampaign = (campaignId: string) =>
   apiGet<Campaign>(`campaign/${campaignId}`).catch((error) => getAbsent(error, null))
 
 export const getCampaigns = () => apiGet<Campaign[]>('campaign')
+
+export async function getCampaignPicture(campaignId: string): Promise<string> {
+  const held = (await getObjectAssets('campaign', campaignId)) ?? []
+  const picture = held.find((link) => link.asset?.mime_type.startsWith('image/'))
+  return picture ? getMediaUrl(picture.asset_id) : ''
+}
 
 export const putCampaign = (campaignId: string, updates: Partial<Campaign>) => apiPut(`campaign/${campaignId}`, updates)
 
@@ -582,15 +602,20 @@ function getBlockAssets(blocks: Block[]): string[] {
   })
 }
 
+export const getObjectAssets = (objectType: string, objectId: string) =>
+  apiGet<ObjectAsset[]>(path('asset/object', { object_type: objectType, object_id: objectId }))
+
+export const postObjectAsset = (assetId: string, objectType: string, objectId: string) =>
+  apiPost<ObjectAsset>(`asset/${assetId}/object`, { object_type: objectType, object_id: objectId })
+
 export async function putAttachments(resourceId: string, content: string): Promise<void> {
   const wanted = new Set(getBlockAssets(getDocument(content).blocks))
-  const held =
-    (await apiGet<{ id: string; asset_id: string }[]>(path('asset/object', { object_type: 'resource', object_id: resourceId }))) ?? []
+  const held = (await getObjectAssets('resource', resourceId)) ?? []
 
   await Promise.all([
     ...[...wanted]
       .filter((assetId) => !held.some((link) => link.asset_id === assetId))
-      .map((assetId) => apiPost(`asset/${assetId}/object`, { object_type: 'resource', object_id: resourceId })),
+      .map((assetId) => postObjectAsset(assetId, 'resource', resourceId)),
     ...held.filter((link) => !wanted.has(link.asset_id)).map((link) => apiDelete(`asset/${link.asset_id}/object/${link.id}`))
   ])
 }
@@ -626,3 +651,13 @@ export interface SearchBody {
 export const postSearch = (body: SearchBody) => apiPost<SearchHit[]>('search', body)
 
 export const getTags = (q: string) => apiGet<Tag[]>(path('tag', { q, limit: '10' }))
+
+export const getObjectTags = (objectType: string) => apiGet<Tag[]>(path('tag', { object_type: objectType }))
+
+export const postTag = (name: string) => apiPost<Tag>('tag', { name })
+
+export const postTagObject = (tagId: string, objectType: string, objectId: string) =>
+  apiPost(`tag/${tagId}/object`, { object_type: objectType, object_id: objectId })
+
+export const deleteTagObject = (tagId: string, objectType: string, objectId: string) =>
+  apiDelete(path(`tag/${tagId}/object`, { object_type: objectType, object_id: objectId }))

@@ -52,14 +52,14 @@
     { "id": "darkvision", "title": "Darkvision", "value": "bonus.darkvision", "unit": "ft" }
   ],
   "pools": [
-    { "id": "hitDice", "title": "Hit Dice", "description": "Spent on a short rest to recover hit points.", "max": "level", "regainedAt": "long", "regainAmount": "max(1, floor(level / 2))" },
-    { "id": "hitPoints", "title": "Hit Points", "description": "Damage taken is spent against this pool.", "max": "derived.maxHitPoints", "regainedAt": "long" },
-    { "id": "inspiration", "title": "Inspiration", "max": "1", "regainedAt": "never" }
+    { "id": "hitDice", "title": "Hit Dice", "description": "Spent on a short rest to recover hit points.", "max": "level", "regainedAt": "long", "regainAmount": "max(1, floor(level / 2))", "view": "plate" },
+    { "id": "hitPoints", "title": "Hit Points", "description": "Damage taken is spent against this pool.", "max": "derived.maxHitPoints", "regainedAt": "long", "view": "plate" },
+    { "id": "inspiration", "title": "Inspiration", "max": "1", "regainedAt": "never", "view": "pips" }
   ],
   "derived": [
     { "id": "initiative", "title": "Initiative", "value": "mod.dex + bonus.initiative" },
     { "id": "armorClass", "title": "Armor Class", "value": "10 + mod.dex + bonus.armorClass" },
-    { "id": "carryCapacity", "title": "Carry Capacity", "value": "attr.str * 15", "unit": "lb" },
+    { "id": "carryCapacity", "title": "Carry Capacity", "value": "attr.str * 15", "unit": "lb", "hidden": true },
     { "id": "speed", "title": "Speed", "value": "30 + bonus.speed", "unit": "ft" },
     { "id": "maxHitPoints", "title": "Maximum Hit Points", "value": "max(1, bonus.hitPoints + mod.con * level)" },
     { "id": "spellSaveDc", "title": "Spell Save DC", "value": "8 + prof + bonus.spellcasting" },

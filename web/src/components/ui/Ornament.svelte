@@ -24,6 +24,10 @@
       | 'finial'
       | 'cusp'
       | 'forge'
+      | 'banner'
+      | 'blade'
+      | 'tree'
+      | 'tome'
       | 'portrait'
     /** Scales the vector against the type scale. */
     size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
@@ -52,6 +56,10 @@
     finial: '0 0 32 72',
     cusp: '0 0 72 72',
     forge: '0 0 128 96',
+    banner: '0 0 128 96',
+    blade: '0 0 128 96',
+    tree: '0 0 128 96',
+    tome: '0 0 128 96',
     portrait: '0 0 64 64'
   }
 
@@ -395,6 +403,87 @@
       class="dnd-ornament-accent-stroke"
     />
     <circle cx="78" cy="24" r="1.6" class="dnd-ornament-accent-fill" />
+    <circle cx="64" cy="92" r="3.5" fill="currentColor" />
+
+  {:else if name === 'banner'}
+    <path d="M40 12v78" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+    <path d="M40 2 47 13H33L40 2Z" fill="currentColor" />
+    <path
+      d="M44 16c20-4 38 2 60-2l-10 22 10 22c-22-4-40 2-60-2Z"
+      fill="url(#dnd-grad-metal)"
+      stroke="currentColor"
+      stroke-width="1.6"
+      stroke-linejoin="round"
+    />
+    <path d="M62 15v42M80 15v42" stroke="var(--ground-deep)" stroke-width="1.4" opacity="0.6" />
+    <path d="M71 26 79 36 71 46 63 36 71 26Z" class="dnd-ornament-accent" opacity="0.9" />
+    <circle cx="71" cy="36" r="2.4" class="dnd-ornament-accent-fill" />
+    <path d="M36 14c-8 6-12 14-10 24" stroke="currentColor" stroke-width="1.4" opacity="0.6" stroke-linecap="round" />
+    <path d="M26 38c-3 4-3 8 0 12 3-4 3-8 0-12Z" fill="currentColor" opacity="0.8" />
+    <path d="M27 88c-8-1-13-6-14-14 8 1 13 6 14 14Z" class="dnd-ornament-accent" opacity="0.9" />
+    <path d="M53 88c8-1 13-6 14-14-8 1-13 6-14 14Z" class="dnd-ornament-accent" opacity="0.9" />
+    <path d="M24 90h32" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    <circle cx="40" cy="92" r="3.5" fill="currentColor" />
+
+  {:else if name === 'blade'}
+    <path d="M14 46c4 14 12 22 24 26" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    <path d="M114 46c-4 14-12 22-24 26" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    <path d="M30 60c-8-1-13-6-14-14 8 1 13 6 14 14Z" class="dnd-ornament-accent" opacity="0.9" />
+    <path d="M98 60c8-1 13-6 14-14-8 1-13 6-14 14Z" class="dnd-ornament-accent" opacity="0.9" />
+    <path
+      d="M64 4 71 20v44H57V20Z"
+      fill="url(#dnd-grad-metal)"
+      stroke="currentColor"
+      stroke-width="1.6"
+      stroke-linejoin="round"
+    />
+    <path d="M64 22v38" stroke="var(--ground-deep)" stroke-width="1.4" opacity="0.6" />
+    <path
+      d="M36 64h56l-4 8H40Z"
+      fill="url(#dnd-grad-metal)"
+      stroke="currentColor"
+      stroke-width="1.6"
+      stroke-linejoin="round"
+    />
+    <path d="M58 72h12v14H58Z" fill="currentColor" opacity="0.85" />
+    <path d="M58 77h12M58 82h12" stroke="var(--ground-deep)" stroke-width="1" opacity="0.6" />
+    <circle cx="64" cy="68" r="2.4" class="dnd-ornament-accent-fill" />
+    <path d="M78 30l4-7M84 40l8-3" stroke-width="1.6" stroke-linecap="round" class="dnd-ornament-accent-stroke" />
+    <circle cx="64" cy="92" r="3.5" fill="currentColor" />
+
+  {:else if name === 'tree'}
+    <path
+      d="M64 6c-8 0-14 5-16 12-8-1-16 5-16 14 0 4 2 8 5 10-5 3-7 8-7 13 0 9 8 15 17 15h34c9 0 17-6 17-15 0-5-2-10-7-13 3-2 5-6 5-10 0-9-8-15-16-14-2-7-8-12-16-12Z"
+      fill="url(#dnd-grad-metal)"
+      stroke="currentColor"
+      stroke-width="1.6"
+      stroke-linejoin="round"
+    />
+    <path d="M48 26c4-4 10-6 16-6s12 2 16 6M40 52c6-4 16-6 24-6s18 2 24 6" stroke="var(--ground-deep)" stroke-width="1.4" opacity="0.6" />
+    <path d="M64 70V40M64 54l-10-8M64 48l8-8" stroke="var(--ground-deep)" stroke-width="1.6" opacity="0.6" stroke-linecap="round" />
+    <path d="M30 34c6-6 14-6 20 0-6 6-14 6-20 0Z" class="dnd-ornament-accent" opacity="0.9" />
+    <path d="M78 60c6-6 14-6 20 0-6 6-14 6-20 0Z" class="dnd-ornament-accent" opacity="0.9" />
+    <path d="M59 70h10v20H59Z" fill="currentColor" opacity="0.85" />
+    <path d="M64 90c-10 0-16 2-26 2M64 90c10 0 16 2 26 2M64 88c-6-2-9-5-10-10M64 88c6-2 9-5 10-10" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    <circle cx="56" cy="40" r="1.8" class="dnd-ornament-accent-fill" />
+    <circle cx="74" cy="30" r="1.8" class="dnd-ornament-accent-fill" opacity="0.8" />
+    <circle cx="68" cy="58" r="1.8" class="dnd-ornament-accent-fill" opacity="0.8" />
+    <circle cx="64" cy="92" r="3.5" fill="currentColor" />
+
+  {:else if name === 'tome'}
+    <path d="M56 14l-2-6M64 12V4M72 14l2-6" stroke-width="1.6" stroke-linecap="round" class="dnd-ornament-accent-stroke" />
+    <circle cx="64" cy="20" r="2" class="dnd-ornament-accent-fill" />
+    <path
+      d="M64 30c-12-8-28-10-48-6v56c20-4 36-2 48 6 12-8 28-10 48-6V24c-20-4-36-2-48 6Z"
+      fill="url(#dnd-grad-metal)"
+      stroke="currentColor"
+      stroke-width="1.6"
+      stroke-linejoin="round"
+    />
+    <path d="M64 30v56" stroke="var(--ground-deep)" stroke-width="1.6" opacity="0.6" />
+    <path d="M26 38c12-2 22-1 32 4M26 50c12-2 22-1 32 4M26 62c12-2 22-1 32 4M70 42c10-5 20-6 32-4M70 54c10-5 20-6 32-4M70 66c10-5 20-6 32-4" stroke="var(--ground-deep)" stroke-width="1.2" opacity="0.55" />
+    <path d="M84 24v26l4-4 4 4V26Z" class="dnd-ornament-accent" opacity="0.9" />
+    <path d="M16 86c20-4 36-2 48 6 12-8 28-10 48-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
     <circle cx="64" cy="92" r="3.5" fill="currentColor" />
 
   {:else if name === 'portrait'}

@@ -34,6 +34,9 @@ export interface Resource extends Access {
 }
 
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'very rare' | 'legendary' | 'artifact'
+export type ItemType =
+  | 'adventuring gear' | 'potion' | 'ring' | 'rod' | 'scroll' | 'staff' | 'wand' | 'wondrous item' | 'tool' | 'treasure'
+export type Recharge = 'none' | 'dawn' | 'dusk' | 'short rest' | 'long rest'
 export type DamageKind =
   | 'bludgeoning' | 'piercing' | 'slashing' | 'fire' | 'cold' | 'lightning' | 'necrotic' | 'radiant'
 export type ArmorWeight = 'light' | 'medium' | 'heavy' | 'shield'
@@ -45,10 +48,18 @@ export interface Entry extends Resource {}
 
 /** Any object that is not a weapon or armor. */
 export interface Item extends Resource {
-  category: string
+  category: ItemType
+  /** What it is within its type, such as lantern, key or book. */
+  subtype: string
   rarity: Rarity
   attunement: boolean
+  /** Who may attune to it, as it reads after "requires attunement", such as "by a wizard". */
+  attuned_by: string
+  charges: number
+  recharge: Recharge
+  consumable: boolean
   weight: number
+  /** Worth in gold. */
   value: number
 }
 
@@ -144,38 +155,75 @@ export function putEntry(owner: Owner, id: string, one: Partial<Entry>): Promise
 
 // Items
 
+const ITEM: Omit<Item, keyof Resource> = {
+  category: 'adventuring gear',
+  subtype: '',
+  rarity: 'common',
+  attunement: false,
+  attuned_by: '',
+  charges: 0,
+  recharge: 'none',
+  consumable: false,
+  weight: 0,
+  value: 0
+}
+
 export async function getItems(owner: Owner): Promise<Item[]> {
   const stored = await getResources<Stored>(owner, 'items')
   return stored.map((one) => ({
     ...getShared(one),
-    category: String(one.category ?? ''),
-    rarity: (one.rarity as Rarity) ?? 'common',
-    attunement: Boolean(one.attunement),
-    weight: Number(one.weight ?? 0),
-    value: Number(one.value ?? 0)
+    category: (one.category as ItemType) ?? ITEM.category,
+    subtype: String(one.subtype ?? ITEM.subtype),
+    rarity: (one.rarity as Rarity) ?? ITEM.rarity,
+    attunement: Boolean(one.attunement ?? ITEM.attunement),
+    attuned_by: String(one.attuned_by ?? ITEM.attuned_by),
+    charges: Number(one.charges ?? ITEM.charges),
+    recharge: (one.recharge as Recharge) ?? ITEM.recharge,
+    consumable: Boolean(one.consumable ?? ITEM.consumable),
+    weight: Number(one.weight ?? ITEM.weight),
+    value: Number(one.value ?? ITEM.value)
   }))
 }
 
-export function postItem(owner: Owner, one: Partial<Item>): Promise<string> {
-  return postResource(owner, 'items', {
+function putItemFields(one: Partial<Item>): Record<string, unknown> {
+  return {
     ...putShared(one),
-    category: one.category ?? '',
-    rarity: one.rarity ?? 'common',
-    attunement: one.attunement ?? false,
-    weight: one.weight ?? 0,
-    value: one.value ?? 0
-  })
+    category: one.category ?? ITEM.category,
+    subtype: one.subtype ?? ITEM.subtype,
+    rarity: one.rarity ?? ITEM.rarity,
+    attunement: one.attunement ?? ITEM.attunement,
+    attuned_by: one.attuned_by ?? ITEM.attuned_by,
+    charges: one.charges ?? ITEM.charges,
+    recharge: one.recharge ?? ITEM.recharge,
+    consumable: one.consumable ?? ITEM.consumable,
+    weight: one.weight ?? ITEM.weight,
+    value: one.value ?? ITEM.value
+  }
+}
+
+export function postItem(owner: Owner, one: Partial<Item>): Promise<string> {
+  return postResource(owner, 'items', putItemFields(one))
 }
 
 export function putItem(owner: Owner, id: string, one: Partial<Item>): Promise<void> {
-  return putResource(id, {
-    ...putShared(one),
-    category: one.category ?? '',
-    rarity: one.rarity ?? 'common',
-    attunement: one.attunement ?? false,
-    weight: one.weight ?? 0,
-    value: one.value ?? 0
-  })
+  return putResource(id, putItemFields(one))
+}
+
+/** The type line under an item's name, "Wondrous item (lantern)". */
+export function getItemType(one: Pick<Item, 'category' | 'subtype'>): string {
+  const type = one.category.charAt(0).toUpperCase() + one.category.slice(1)
+  return one.subtype ? `${type} (${one.subtype})` : type
+}
+
+/** The line D&D Beyond writes under an item's name, "Wondrous item (lantern), uncommon (requires attunement by a wizard)". */
+export function getItemLine(one: Pick<Item, 'category' | 'subtype' | 'rarity' | 'attunement' | 'attuned_by'>): string {
+  const bond = one.attuned_by ? `requires attunement ${one.attuned_by}` : 'requires attunement'
+  return `${getItemType(one)}, ${one.rarity}${one.attunement ? ` (${bond})` : ''}`
+}
+
+/** The token a rarity is written in under the active theme. */
+export function getRarityInk(rarity: Rarity): string {
+  return `var(--rarity-${rarity.replace(' ', '-')})`
 }
 
 // Weapons
@@ -460,9 +508,14 @@ export const RESOURCES: Record<ResourceKind, ResourceShape> = {
     word: 'item',
     words: 'items',
     fields: [
-      { key: 'category', label: 'Kind', form: 'text' },
+      { key: 'category', label: 'Type', form: 'choice', choices: ['adventuring gear', 'potion', 'ring', 'rod', 'scroll', 'staff', 'wand', 'wondrous item', 'tool', 'treasure'] },
+      { key: 'subtype', label: 'Subtype', form: 'text' },
       { key: 'rarity', label: 'Rarity', form: 'choice', choices: ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact'] },
-      { key: 'attunement', label: 'Needs attunement', form: 'flag' },
+      { key: 'attunement', label: 'Requires attunement', form: 'flag' },
+      { key: 'attuned_by', label: 'Attuned by', form: 'text' },
+      { key: 'charges', label: 'Charges', form: 'number' },
+      { key: 'recharge', label: 'Recharge', form: 'choice', choices: ['none', 'dawn', 'dusk', 'short rest', 'long rest'] },
+      { key: 'consumable', label: 'Consumable', form: 'flag' },
       { key: 'weight', label: 'Weight', form: 'number' },
       { key: 'value', label: 'Worth in gold', form: 'number' }
     ],
@@ -531,6 +584,11 @@ export const RESOURCES: Record<ResourceKind, ResourceShape> = {
   }
 }
 
+/** The choices a kind's field offers, the one list its form and its filters read. */
+export function getChoices(kind: ResourceKind, key: string): readonly string[] {
+  return RESOURCES[kind].fields.find((field) => field.key === key)?.choices ?? []
+}
+
 export function isResourceKind(value: string | undefined): value is ResourceKind {
   return Boolean(value && value in RESOURCES)
 }
@@ -538,6 +596,7 @@ export function isResourceKind(value: string | undefined): value is ResourceKind
 /** A fresh resource of a kind, owned by whoever is writing it, opened on the kind's example page. */
 export function getBlank(kind: ResourceKind, ownerId: string): Record<string, unknown> & Resource {
   return {
+    ...(kind === 'items' ? ITEM : {}),
     id: '',
     title: '',
     description: '',

@@ -322,6 +322,77 @@
       }
     },
     {
+      "name": "monster",
+      "schema": {
+        "properties": {
+          "alignment": {
+            "description": "The alignment id from the monster system.",
+            "type": "string"
+          },
+          "challenge": {
+            "description": "The challenge rating as a number, a quarter as 0.25.",
+            "type": "number"
+          },
+          "description": {
+            "description": "The lore as a block document.",
+            "type": "string"
+          },
+          "image": {
+            "description": "The portrait as an asset address.",
+            "type": "string"
+          },
+          "is_public": {
+            "description": "Whether every signed in player reads it; a private monster is its maker's homebrew.",
+            "type": "boolean"
+          },
+          "name": {
+            "description": "The monster name.",
+            "type": "string"
+          },
+          "owner_id": {
+            "description": "The player who made it.",
+            "format": "uuid",
+            "type": "string",
+            "x-immutable": true
+          },
+          "size": {
+            "description": "The size id from the monster system.",
+            "type": "string"
+          },
+          "stats": {
+            "description": "The rest of the stat block: sub-types, armor class, hit dice, speeds, abilities, proficiencies, senses, languages, defences, habitats, the legendary, mythic and lair flags, traits and actions."
+          },
+          "system": {
+            "description": "The monster rule system id.",
+            "type": "string"
+          },
+          "type": {
+            "description": "The creature type id from the monster system.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_id",
+          "system",
+          "name"
+        ],
+        "type": "object"
+      },
+      "depends_on": [],
+      "refs": {},
+      "filters": [
+        "user_id"
+      ],
+      "fields": {
+        "sensitive": [],
+        "immutable": [
+          "/owner_id"
+        ],
+        "server_default": [],
+        "sensitive_by": {}
+      }
+    },
+    {
       "name": "resource",
       "schema": {
         "properties": {
@@ -864,6 +935,7 @@
         "campaign",
         "character",
         "vehicle",
+        "monster",
         "resource",
         "asset"
       ],
