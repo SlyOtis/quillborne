@@ -36,6 +36,28 @@ export type MonsterFormulas = {
   hitBonus: string
 }
 
+export type MonsterLabels = {
+  armorClass: string
+  initiative: string
+  hitPoints: string
+  speed: string
+  modifier: string
+  save: string
+  skills: string
+  vulnerabilities: string
+  resistances: string
+  immunities: string
+  conditionImmunities: string
+  senses: string
+  passivePerception: string
+  languages: string
+  none: string
+  challenge: string
+  experience: string
+  proficiency: string
+  habitats: string
+}
+
 export type MonsterDefaults = {
   size: string
   type: string
@@ -70,6 +92,7 @@ export type MonsterSystem = {
   tiers: MonsterTier[]
   flags: MonsterEntry[]
   features: MonsterFeatureKind[]
+  labels: MonsterLabels
   formulas: MonsterFormulas
 }
 

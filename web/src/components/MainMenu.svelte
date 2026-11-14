@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { getCampaign, getMonsters, isNpc, putProfilePreferences } from '$lib/api'
-  import type { Campaign, Monster, Owner } from '$lib/api/types'
+  import { getCampaign, isNpc, putProfilePreferences } from '$lib/api'
+  import type { Campaign, Owner } from '$lib/api/types'
   import type { Snippet } from 'svelte'
   import { navigate, currentRoute, resolvedRoute } from 'sly-svelte-location-router'
   import { getAll, getChildren, getRoots, isResourceKind, RESOURCES, type Resource, type ResourceKind } from '$lib/resources'
@@ -12,7 +12,6 @@
   import IconBtn from '$components/ui/IconBtn.svelte'
   import Glyph, { type GlyphName } from '$components/ui/Glyph.svelte'
   import SearchInput from '$components/ui/SearchInput.svelte'
-  import Button from '$components/ui/Button.svelte'
   import { actionBlocks, getAction, shortcuts } from '$lib/actions'
   import { postNotice, uiStore } from '$lib/stores/ui.store'
 
@@ -23,7 +22,6 @@
   let open = $state(arrived.get('folds')?.split(',').filter(Boolean) ?? ['characters', 'campaigns'])
   let reached = $state('')
   let hunt = $state('')
-  let monsters = $state<Monster[]>([])
 
   type Tab = 'table' | 'scribe'
   const TABS: { value: Tab; label: string }[] = [
@@ -79,7 +77,7 @@
   const asked = $derived(steps[0] === 'campaign' ? steps[2] ?? '' : steps[0] ?? '')
 
   const here = $derived(
-    steps[0] === 'character' ? 'characters' : steps[0] === 'monsters' ? 'monsters' : isResourceKind(asked) ? asked : 'campaigns'
+    steps[0] === 'character' ? 'characters' : isResourceKind(asked) ? asked : 'campaigns'
   )
 
   const openId = $derived(steps[0] === 'campaign' ? steps[3] ?? '' : steps[1] ?? '')
@@ -110,8 +108,6 @@
   const current = $derived(
     $userCharacters.find((one) => one.id === ($currentCharacterId ?? activeId ?? $userProfile?.preferences?.recent_characters?.[0])) ?? null
   )
-  const ownMonsters = $derived(monsters.filter((entry) => entry.owner_id === $user?.user_id))
-  const monsterPath = $derived(steps[0] === 'monsters' ? $resolvedRoute.path : '')
   const searchKey = navigator.userAgent.includes('Mac') ? 'Cmd K' : 'Ctrl K'
   const name = $derived($userDetails?.display_name || $userProfile?.display_name || 'Adventurer')
   const initial = $derived(name.charAt(0).toUpperCase())
@@ -150,18 +146,6 @@
       }
     })()
 
-    return () => {
-      live = false
-    }
-  })
-
-  $effect(() => {
-    void monsterPath
-    if (!$user) return
-    let live = true
-    getMonsters()
-      .then((found) => live && (monsters = found))
-      .catch((reason) => live && (error = reason instanceof Error ? reason.message : String(reason)))
     return () => {
       live = false
     }
@@ -260,12 +244,18 @@
 
     {#if tab === 'table'}
       {#if current}
-        <div class="dnd-menu-tree dnd-menu-current">
+        <div class="dnd-menu-tree dnd-menu-entry">
           <Tree rows={[sheetOf(current)]} on={steps[0] === 'character' ? (steps[1] ?? '') : ''} onopen={openCharacter} />
         </div>
       {/if}
       {@render section('campaigns', 'Campaigns', $userCampaigns.length, tables)}
-      {@render section('monsters', 'Monsters', ownMonsters.length, bestiary)}
+      <div class="dnd-menu-tree dnd-menu-entry">
+        <Tree
+          rows={[{ id: 'monsters', title: 'Monsters', glyph: 'claw' }]}
+          on={steps[0] === 'monsters' ? 'monsters' : ''}
+          onopen={() => navigate('/main/monsters')}
+        />
+      </div>
       {#if mine.length > 1}
         {@render section('characters', 'Characters', mine.length, roster)}
       {/if}
@@ -350,21 +340,6 @@
   <div class="dnd-scroll dnd-menu-tree">
     <Tree rows={mine.map(sheetOf)} on={current?.id ?? ''} onopen={pickCharacter} />
   </div>
-{/snippet}
-
-{#snippet bestiary()}
-  {#if ownMonsters.length === 0}
-    <p class="dnd-menu-empty">You have made no monster yet.</p>
-  {:else}
-    <div class="dnd-scroll dnd-menu-tree">
-      <Tree
-        rows={ownMonsters.map((entry) => ({ id: entry.id, title: entry.name, mark: entry.is_public ? 'Shared' : 'Homebrew', kids: [] }))}
-        on={steps[0] === 'monsters' ? (steps[1] ?? '') : ''}
-        onopen={(id) => navigate(`/main/monsters/${id}`)}
-      />
-    </div>
-  {/if}
-  <Button variant="ghost" size="sm" fill onclick={() => navigate('/main/monsters')}>Open the bestiary</Button>
 {/snippet}
 
 {#snippet tables()}
@@ -477,7 +452,7 @@
     overflow-y: auto;
   }
 
-  .dnd-menu-current {
+  .dnd-menu-entry {
     padding: var(--space-2) var(--menu-pad);
     border-bottom: var(--menu-hair);
   }

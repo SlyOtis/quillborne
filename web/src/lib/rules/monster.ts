@@ -165,6 +165,11 @@ export function getSigned(value: number): string {
   return value >= 0 ? `+${value}` : `${value}`
 }
 
+export function getHitDice(dice: number, block: Pick<MonsterBlock, 'hitDie' | 'hitBonus'>): string {
+  const roll = `${dice}d${block.hitDie}`
+  return block.hitBonus ? `${roll} ${block.hitBonus < 0 ? '-' : '+'} ${Math.abs(block.hitBonus)}` : roll
+}
+
 export function getEmptyFilter(): MonsterFilter {
   return {
     name: '',

@@ -89,12 +89,13 @@
     },
     {
       "id": "beast",
-      "name": "Beast"
+      "name": "Beast",
+      "glyph": "paw"
     },
     {
       "id": "celestial",
       "name": "Celestial",
-      "glyph": "theme"
+      "glyph": "sun"
     },
     {
       "id": "construct",
@@ -103,7 +104,8 @@
     },
     {
       "id": "dragon",
-      "name": "Dragon"
+      "name": "Dragon",
+      "glyph": "dragon"
     },
     {
       "id": "elemental",
@@ -113,37 +115,42 @@
     {
       "id": "fey",
       "name": "Fey",
-      "glyph": "gem"
+      "glyph": "sparkles"
     },
     {
       "id": "fiend",
-      "name": "Fiend"
+      "name": "Fiend",
+      "glyph": "devil"
     },
     {
       "id": "giant",
-      "name": "Giant"
+      "name": "Giant",
+      "glyph": "giant"
     },
     {
       "id": "humanoid",
       "name": "Humanoid",
-      "glyph": "character"
+      "glyph": "personstanding"
     },
     {
       "id": "monstrosity",
-      "name": "Monstrosity"
+      "name": "Monstrosity",
+      "glyph": "claw"
     },
     {
       "id": "ooze",
       "name": "Ooze",
-      "glyph": "potion"
+      "glyph": "droplet"
     },
     {
       "id": "plant",
-      "name": "Plant"
+      "name": "Plant",
+      "glyph": "leaf"
     },
     {
       "id": "undead",
-      "name": "Undead"
+      "name": "Undead",
+      "glyph": "skull"
     }
   ],
   "alignments": [
@@ -821,6 +828,27 @@
       "one": "Legendary action"
     }
   ],
+  "labels": {
+    "armorClass": "AC",
+    "initiative": "Initiative",
+    "hitPoints": "HP",
+    "speed": "Speed",
+    "modifier": "Mod",
+    "save": "Save",
+    "skills": "Skills",
+    "vulnerabilities": "Vulnerabilities",
+    "resistances": "Resistances",
+    "immunities": "Immunities",
+    "conditionImmunities": "Condition Immunities",
+    "senses": "Senses",
+    "passivePerception": "Passive Perception",
+    "languages": "Languages",
+    "none": "None",
+    "challenge": "CR",
+    "experience": "XP",
+    "proficiency": "PB",
+    "habitats": "Habitat"
+  },
   "formulas": {
     "modifier": "floor((score - 10) / 2)",
     "save": "mod + prof * tier",
