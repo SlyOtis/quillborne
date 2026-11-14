@@ -11,7 +11,21 @@ import {
   getHeadingNumbers,
   getMeeting,
   getReferences,
-  getSlug
+  getSlug,
+  getInline,
+  getInlineMarkdown,
+  getInlineText,
+  getInlineLength,
+  getTree,
+  getTreeBlocks,
+  getLook,
+  getPath,
+  getRangeIds,
+  getAdjacentId,
+  putNode,
+  getNode,
+  deleteNode,
+  getTextIds
 } from './blocks'
 
 describe('reading markdown into blocks', () => {
@@ -304,5 +318,162 @@ describe('the document as html', () => {
     expect(html).toContain('<aside class="dnd-meeting">')
     expect(html).toContain('<iframe src="https://example.org/map"')
     expect(html).toContain('<a class="dnd-page" href="id1">Sub</a>')
+  })
+})
+
+describe('the runs a text is made of', () => {
+  it('reads marks, a link, a pill and a break and writes them back the same', () => {
+    const text = 'Met **@Maelis** at _#blackwood_, see [the seal](https://x.y) and `ward`  \n~~gone~~ [@Tam](npc-2)'
+    const runs = getInline(text)
+    expect(runs).toEqual([
+      { text: 'Met ' },
+      { ref: 'mention', mark: '@', label: 'Maelis' },
+      { text: ' at ' },
+      { ref: 'mention', mark: '#', label: 'blackwood' },
+      { text: ', see ' },
+      { text: 'the seal', marks: { link: 'https://x.y' } },
+      { text: ' and ' },
+      { text: 'ward', marks: { code: true } },
+      { text: '  ' },
+      { ref: 'break' },
+      { text: 'gone', marks: { strike: true } },
+      { text: ' ' },
+      { ref: 'mention', mark: '@', label: 'Tam', id: 'npc-2' }
+    ])
+    expect(getInlineMarkdown(runs)).toBe('Met @Maelis at #blackwood, see [the seal](https://x.y) and `ward`  \n~~gone~~ [@Tam](npc-2)')
+  })
+
+  it('nests bold inside italic and keeps the whitespace outside the marks', () => {
+    const runs = getInline('a _b **c** d_ e')
+    expect(runs).toEqual([{ text: 'a ' }, { text: 'b ', marks: { italic: true } }, { text: 'c', marks: { italic: true, bold: true } }, { text: ' d', marks: { italic: true } }, { text: ' e' }])
+    expect(getInlineMarkdown([{ text: 'a ' }, { text: ' bold ', marks: { bold: true } }, { text: 'z' }])).toBe('a  **bold** z')
+  })
+
+  it('leaves an underscore inside a word and a sigil inside a word alone', () => {
+    expect(getInline('snake_case_name and mail@host')).toEqual([{ text: 'snake_case_name and mail@host' }])
+  })
+
+  it('measures a pill and a break as one step each', () => {
+    const runs = getInline('ab @Tam\ncd')
+    expect(getInlineLength(runs)).toBe(7)
+    expect(getInlineText(runs)).toBe('ab @Tam\ncd')
+  })
+})
+
+describe('a break inside a block', () => {
+  it('survives a paragraph, a list item and a quote through markdown', () => {
+    const source = 'one  \ntwo\n\n- first  \n  second\n\n> quoted  \n> on\n\n> [!note] mind  \n> this'
+    const blocks = getBlocksFromMarkdown(source)
+    expect(blocks.map((block) => block.text)).toEqual(['one\ntwo', 'first\nsecond', 'quoted\non', 'mind\nthis'])
+    expect(getDocumentMarkdown({ blocks })).toBe(source)
+  })
+
+  it('keeps a quote of two paragraphs apart from a break', () => {
+    const [quote] = getBlocksFromMarkdown('> a\n>\n> b')
+    expect(quote.text).toBe('a\n\nb')
+    expect(getBlockMarkdown(quote)).toBe('> a\n>\n> b')
+  })
+
+  it('fences a heading that holds one, since a heading has one line', () => {
+    const written = getBlockMarkdown(getBlock('heading', 'a\nb', { level: 2 }))
+    expect(written).toBe('```heading {"level":2}\na\nb\n```')
+    expect(getBlocksFromMarkdown(written)[0].text).toBe('a\nb')
+  })
+})
+
+describe('the tree the editor works on', () => {
+  const source = [
+    '# Blackwood',
+    '',
+    'The party took **the north road**.',
+    '',
+    '- a lantern',
+    '',
+    '  - its oil',
+    '',
+    '    1. a wick',
+    '',
+    '  - [x] lit',
+    '',
+    '- more',
+    '',
+    '> said so',
+    '>',
+    '> and more',
+    '',
+    '```toggle {"open":true}',
+    'What lies beneath',
+    'A **cellar**.',
+    '',
+    '- stairs',
+    '```',
+    '',
+    '```columns',
+    'Left',
+    '---',
+    '## Right',
+    '```',
+    '',
+    '![The keep](file:maps/keep.png)',
+    '',
+    '---'
+  ].join('\n')
+
+  it('nests list items by depth, holds paragraphs in a quote and blocks in a toggle and a column', () => {
+    const tree = getTree(getDocument(source).blocks)
+    const kinds = tree.root.map((id) => tree.nodes[id].kind)
+    expect(kinds).toEqual(['heading', 'paragraph', 'bullet', 'quote', 'toggle', 'columns', 'image', 'divider'])
+    const list = tree.nodes[tree.root[2]]
+    expect(list.children).toHaveLength(2)
+    const first = tree.nodes[list.children![0]]
+    expect(first.kind).toBe('item')
+    expect(first.children!.map((id) => tree.nodes[id].kind)).toEqual(['paragraph', 'bullet', 'todo'])
+    const nested = tree.nodes[first.children![1]]
+    const oil = tree.nodes[nested.children![0]]
+    expect(oil.children!.map((id) => tree.nodes[id].kind)).toEqual(['paragraph', 'number'])
+    const quote = tree.nodes[tree.root[3]]
+    expect(quote.children!.map((id) => getInlineText(tree.nodes[id].inline!))).toEqual(['said so', 'and more'])
+    const toggle = tree.nodes[tree.root[4]]
+    expect(getInlineText(toggle.inline!)).toBe('What lies beneath')
+    expect(toggle.children!.map((id) => tree.nodes[id].kind)).toEqual(['paragraph', 'bullet'])
+    const columns = tree.nodes[tree.root[5]]
+    expect(columns.children!.map((id) => tree.nodes[id].kind)).toEqual(['column', 'column'])
+    expect(tree.nodes[tree.nodes[columns.children![1]].children![0]].kind).toBe('heading')
+    expect(getInlineText(tree.nodes[tree.root[6]].inline!)).toBe('The keep')
+  })
+
+  it('flattens back to the same blocks and the same markdown', () => {
+    const blocks = getDocument(source).blocks
+    const again = getTreeBlocks(getTree(blocks))
+    expect(again.map((block) => [block.kind, block.text, block.options])).toEqual(blocks.map((block) => [block.kind, block.text, block.options]))
+    expect(getDocumentMarkdown({ blocks: again })).toBe(source)
+  })
+
+  it('keeps the item id as the block id and reads a look up through the holders', () => {
+    const blocks = getDocument('- one\n\n  - two').blocks
+    const tree = getTree(blocks)
+    expect(tree.nodes[blocks[0].id].kind).toBe('item')
+    const paragraph = tree.nodes[blocks[1].id].children![0]
+    tree.nodes[blocks[0].id].options = { own: true, font: '--font-mono', size: 'lg' }
+    expect(getLook(tree, paragraph)).toEqual({ font: '--font-mono', size: 'lg', leading: undefined })
+    expect(getPath(tree, paragraph)).toHaveLength(5)
+  })
+
+  it('puts, moves and deletes nodes and ranges them at the depth their paths part', () => {
+    const tree = getTree(getDocument('a\n\nb\n\n- c\n\n- d').blocks)
+    const [a, b, list] = tree.root
+    const items = tree.nodes[list].children!
+    expect(getRangeIds(tree, a, items[1])).toEqual([a, b, list])
+    expect(getRangeIds(tree, items[0], items[1])).toEqual(items)
+    expect(getAdjacentId(tree, items[1], 1)).toBeNull()
+    expect(getAdjacentId(tree, items[0], 1)).toBe(items[1])
+    putNode(tree, tree.nodes[b], null, 0)
+    expect(tree.root.slice(0, 2)).toEqual([b, a])
+    putNode(tree, getNode('paragraph', getInline('z')), list, 0)
+    expect(tree.nodes[list].children).toHaveLength(3)
+    deleteNode(tree, list)
+    expect(tree.root).toEqual([b, a])
+    expect(Object.keys(tree.nodes)).toHaveLength(2)
+    expect(getTextIds(getTree(getDocument('- c\n\n> q').blocks))).toHaveLength(2)
   })
 })

@@ -143,11 +143,10 @@ describe('the media contract', () => {
   const hosts = { resourceShellSource, resourceRollSource, backgroundTabSource, blockEditorSource, blockReaderSource }
   const tags = (source: string, name: string) => source.match(new RegExp(`<${name}\\b[\\s\\S]*?/>`, 'g')) ?? []
 
-  it('asks the host for media and stores a recording through it, with the kinds Mar declares', () => {
+  it('asks the host for media with the kinds Mar declares', () => {
     expect(blockEditorSource).toContain('requestMedia?: (kind: MediaKind, current?: string) => Promise<MediaAsset | null>')
     expect(blockEditorSource).toContain('uploadFile?: (file: File, kind: MediaKind) => Promise<MediaAsset>')
     expect(blockEditorSource).toContain('openAsset?: (assetId: string) => void')
-    expect(blockEditorSource).toContain("uploadFile(sound, 'audio')")
   })
 
   it('keeps no file input and no upload hook of its own in the editor', () => {
@@ -164,15 +163,14 @@ describe('the media contract', () => {
     expect(blockReaderSource).toContain("onclick={() => openAsset?.(block.options.assetId ?? '')}")
   })
 
-  it('plays a recording, a video and a pdf from what its address resolves to, so an old file: reference reaches no player', () => {
+  it('plays a video and a pdf from what its address resolves to, so an old file: reference reaches no player', () => {
     for (const source of [blockReaderSource, blockEditorSource]) {
       expect(source).not.toMatch(/<(audio|video|object)\b[^>]*(src|data)=\{block\.options\.src/)
     }
-    expect(blockReaderSource).toContain('<audio controls src={url}></audio>')
     expect(blockReaderSource).toContain('<video controls src={url}></video>')
     expect(blockReaderSource).toContain('<object data={url} type="application/pdf"')
     expect(blockEditorSource).toContain('<video controls src={url}></video>')
-    expect(blockReaderSource.match(/\{#await getFileUrl\(block\.options\.src \?\? ''\) then url\}/g)).toHaveLength(3)
+    expect(blockReaderSource.match(/\{#await getFileUrl\(block\.options\.src \?\? ''\) then url\}/g)).toHaveLength(2)
   })
 
   it('feeds the dialog its listing and its upload from the host', () => {
