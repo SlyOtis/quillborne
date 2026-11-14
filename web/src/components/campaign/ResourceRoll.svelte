@@ -554,7 +554,7 @@
     min-width: 0;
     height: var(--border-hair);
     background: linear-gradient(90deg, var(--metal), var(--metal-dim) 40%, transparent);
-    box-shadow: 0 1px 0 #000;
+    box-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .roll-group-body {

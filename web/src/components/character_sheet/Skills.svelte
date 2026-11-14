@@ -84,12 +84,12 @@
         padding: var(--space-1) var(--space-3);
         border-radius: 0 0 calc(var(--radius-lg) - var(--space-1)) calc(var(--radius-lg) - var(--space-1));
         background:
-            linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
+            linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 45%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 65%, transparent) 100%),
             var(--texture-noise),
             var(--stone);
         box-shadow: var(--bevel-up), inset 0 1px 0 var(--metal-dim), inset 0 2px 0 var(--keyline);
         color: var(--metal-bright);
-        text-shadow: 0 1px 0 #000;
+        text-shadow: 0 1px 0 var(--shadow-ink);
     }
 
     span {
@@ -122,7 +122,7 @@
         letter-spacing: var(--tracking-caps);
         text-transform: uppercase;
         color: var(--metal);
-        text-shadow: 0 1px 0 #000;
+        text-shadow: 0 1px 0 var(--shadow-ink);
     }
 
     .pip {

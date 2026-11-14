@@ -707,7 +707,7 @@
     border: none;
     clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - var(--mark-notch)), 0 100%);
     background:
-      linear-gradient(90deg, color-mix(in srgb, #000 35%, transparent), transparent 30%, transparent 70%, color-mix(in srgb, #000 35%, transparent)),
+      linear-gradient(90deg, color-mix(in srgb, var(--shadow-ink) 35%, transparent), transparent 30%, transparent 70%, color-mix(in srgb, var(--shadow-ink) 35%, transparent)),
       var(--texture-grain),
       var(--wood);
     box-shadow: inset 0 0 0 1px var(--keyline), inset 0 0 0 2px var(--metal-dim);
@@ -717,7 +717,7 @@
     font-weight: 700;
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     cursor: pointer;
     pointer-events: auto;
     transition: block-size 0.22s ease, inline-size 0.22s ease, color 0.18s ease;
@@ -749,7 +749,7 @@
   .sheet-mark-on {
     background:
       radial-gradient(ellipse 90% 60% at 50% 100%, var(--ember-glow) 0%, transparent 70%),
-      linear-gradient(90deg, color-mix(in srgb, #000 30%, transparent), transparent 30%, transparent 70%, color-mix(in srgb, #000 30%, transparent)),
+      linear-gradient(90deg, color-mix(in srgb, var(--shadow-ink) 30%, transparent), transparent 30%, transparent 70%, color-mix(in srgb, var(--shadow-ink) 30%, transparent)),
       var(--texture-noise),
       var(--stone);
     box-shadow: inset 0 0 0 1px var(--keyline), inset 0 0 0 2px var(--metal-bright);
@@ -942,7 +942,7 @@
     letter-spacing: var(--tracking-wide);
     line-height: 1;
     color: var(--metal-bright);
-    text-shadow: 0 1px 0 #000, 0 0 0.6rem var(--ember-glow), 0 0 1.4rem var(--ember-glow);
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 0.6rem var(--ember-glow), 0 0 1.4rem var(--ember-glow);
     min-width: 0;
     overflow-wrap: break-word;
   }
@@ -953,7 +953,7 @@
     align-items: baseline;
     gap: var(--space-2);
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .sheet-rests {
@@ -1038,7 +1038,7 @@
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     white-space: nowrap;
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .sheet-level-word {
@@ -1063,7 +1063,7 @@
     font-style: italic;
     letter-spacing: var(--tracking-wide);
     color: var(--ink-dim);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .sheet-campaign {
@@ -1073,7 +1073,7 @@
     letter-spacing: var(--tracking-wide);
     color: var(--metal);
     text-decoration: none;
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     overflow-wrap: anywhere;
   }
 

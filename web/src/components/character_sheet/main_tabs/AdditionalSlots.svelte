@@ -60,7 +60,7 @@
         letter-spacing: var(--tracking-caps);
         text-transform: uppercase;
         color: var(--metal);
-        text-shadow: 0 1px 0 #000;
+        text-shadow: 0 1px 0 var(--shadow-ink);
         white-space: nowrap;
     }
 
@@ -77,6 +77,6 @@
         font-weight: 700;
         font-variant-numeric: lining-nums tabular-nums;
         color: var(--metal-bright);
-        text-shadow: 0 1px 0 #000;
+        text-shadow: 0 1px 0 var(--shadow-ink);
     }
 </style>

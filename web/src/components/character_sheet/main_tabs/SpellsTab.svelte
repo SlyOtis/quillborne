@@ -301,7 +301,7 @@
         font-variant-numeric: lining-nums tabular-nums;
         line-height: 1.1;
         color: var(--metal-bright);
-        text-shadow: 0 1px 0 #000, 0 0 0.6rem var(--ember-glow);
+        text-shadow: 0 1px 0 var(--shadow-ink), 0 0 0.6rem var(--ember-glow);
     }
 
     .slots {
@@ -348,7 +348,7 @@
         margin-top: var(--space-2);
         padding: var(--space-1) var(--space-3);
         background:
-            linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
+            linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 45%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 65%, transparent) 100%),
             var(--texture-noise),
             var(--stone);
         border-radius: var(--radius-sm);
@@ -359,7 +359,7 @@
         letter-spacing: var(--tracking-caps);
         text-transform: uppercase;
         color: var(--metal-bright);
-        text-shadow: 0 1px 0 #000;
+        text-shadow: 0 1px 0 var(--shadow-ink);
     }
 
     ul {
@@ -396,7 +396,7 @@
         font-family: var(--font-display);
         font-size: var(--text-sm);
         color: var(--ink);
-        text-shadow: 0 1px 0 #000;
+        text-shadow: 0 1px 0 var(--shadow-ink);
         transition: color 0.15s ease, text-shadow 0.15s ease;
     }
 

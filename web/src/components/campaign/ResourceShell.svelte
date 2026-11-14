@@ -1060,7 +1060,7 @@
     font-size: var(--text-xs);
     letter-spacing: var(--tracking-wide);
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     cursor: pointer;
     transition: color 0.15s ease, text-shadow 0.15s ease, box-shadow 0.15s ease;
   }
@@ -1110,7 +1110,7 @@
     min-width: 0;
     height: var(--border-hair);
     background: linear-gradient(90deg, var(--metal), var(--metal-dim) 40%, transparent);
-    box-shadow: 0 1px 0 #000;
+    box-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .page-kids {
@@ -1124,11 +1124,11 @@
     border: none;
     border-radius: var(--radius-sm);
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent), color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent)),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent), color-mix(in srgb, var(--shadow-ink) 45%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 65%, transparent)),
       var(--texture-noise),
       var(--stone);
     box-shadow: var(--bevel-up), inset 0 0 0 1px var(--metal-dim);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     transition: color 0.15s ease, text-shadow 0.15s ease, box-shadow 0.15s ease;
     font-family: var(--font-display);
     font-size: var(--text-xs);
@@ -1159,7 +1159,7 @@
     margin: 0;
     font-size: var(--text-sm);
     color: var(--ember-core);
-    text-shadow: 0 0 8px var(--ember-glow), 0 1px 0 #000;
+    text-shadow: 0 0 8px var(--ember-glow), 0 1px 0 var(--shadow-ink);
   }
 
   .page-drop {

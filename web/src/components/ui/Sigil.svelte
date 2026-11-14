@@ -176,7 +176,7 @@
     font-size: calc(var(--sigil-d) * 0.42);
     line-height: 1;
     color: var(--sigil-light);
-    text-shadow: 0 1px 0 #000, 0 0 8px color-mix(in srgb, var(--sigil-light) 60%, transparent);
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 8px color-mix(in srgb, var(--sigil-light) 60%, transparent);
     transition: color 0.18s ease, text-shadow 0.18s ease, transform 0.15s ease;
   }
 

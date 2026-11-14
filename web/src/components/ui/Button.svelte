@@ -123,7 +123,7 @@
     inset: var(--button-edge);
     z-index: 1;
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 18%, transparent) 0%, color-mix(in srgb, #000 42%, transparent) 38%, color-mix(in srgb, #000 72%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 18%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 42%, transparent) 38%, color-mix(in srgb, var(--shadow-ink) 72%, transparent) 100%),
       linear-gradient(var(--button-tint), var(--button-tint)),
       var(--texture-stone),
       var(--button-stone);
@@ -163,7 +163,7 @@
     text-transform: uppercase;
     line-height: 1.1;
     color: var(--button-ink);
-    text-shadow: 0 1px 0 #000, 0 0 2px #000;
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 2px var(--shadow-ink);
     transition: color 0.18s ease, text-shadow 0.18s ease;
   }
 
@@ -220,7 +220,7 @@
 
   .dnd-button-ghost {
     --button-light: color-mix(in srgb, var(--metal) 30%, transparent);
-    --button-rim: linear-gradient(180deg, var(--metal-dim) 0%, color-mix(in srgb, var(--metal-dim) 50%, #000) 100%);
+    --button-rim: linear-gradient(180deg, var(--metal-dim) 0%, color-mix(in srgb, var(--metal-dim) 50%, var(--shadow-ink)) 100%);
     --button-stone: var(--ground-raised);
     --button-ink: var(--metal);
   }
@@ -249,14 +249,14 @@
 
   .dnd-button-danger {
     --button-light: color-mix(in srgb, var(--state-bad) 55%, transparent);
-    --button-rim: linear-gradient(180deg, color-mix(in srgb, var(--state-bad) 60%, var(--metal-bright)) 0%, color-mix(in srgb, var(--state-bad) 70%, #000) 60%, color-mix(in srgb, var(--state-bad) 40%, #000) 100%);
+    --button-rim: linear-gradient(180deg, color-mix(in srgb, var(--state-bad) 60%, var(--metal-bright)) 0%, color-mix(in srgb, var(--state-bad) 70%, var(--shadow-ink)) 60%, color-mix(in srgb, var(--state-bad) 40%, var(--shadow-ink)) 100%);
     --button-tint: color-mix(in srgb, var(--state-bad) 30%, transparent);
     --button-ink: color-mix(in srgb, var(--state-bad) 30%, var(--ink));
   }
 
   .dnd-button-danger:hover:not(:disabled) .dnd-button-inner {
     color: var(--ink);
-    text-shadow: 0 0 8px var(--state-bad), 0 1px 1px #000;
+    text-shadow: 0 0 8px var(--state-bad), 0 1px 1px var(--shadow-ink);
   }
 
   .dnd-button-spinner {

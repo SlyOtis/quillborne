@@ -106,8 +106,8 @@
     border-radius: var(--radius-pill);
     overflow: hidden;
     background:
-      radial-gradient(circle at 50% 50%, transparent 55%, color-mix(in srgb, #000 70%, transparent) 100%),
-      radial-gradient(circle at 34% 26%, var(--ground-lift) 0%, var(--ground-deep) 70%, #000 100%);
+      radial-gradient(circle at 50% 50%, transparent 55%, color-mix(in srgb, var(--shadow-ink) 70%, transparent) 100%),
+      radial-gradient(circle at 34% 26%, var(--ground-lift) 0%, var(--ground-deep) 70%, var(--shadow-ink) 100%);
     box-shadow: inset 0 0 0 1px var(--keyline), inset 0 0.25rem 0.75rem var(--shade-hard);
   }
 
@@ -163,7 +163,7 @@
     font-size: calc(var(--orb-d) * 0.26);
     font-weight: 700;
     color: var(--ink);
-    text-shadow: 0 1px 0 #000, 0 0 4px #000, 0 0 10px var(--shade-hard);
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 4px var(--shadow-ink), 0 0 10px var(--shade-hard);
   }
 
   @keyframes dnd-orb-wave {

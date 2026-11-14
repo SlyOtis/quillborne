@@ -406,7 +406,7 @@
         flex-direction: row;
         overflow: hidden;
         background:
-            linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 18%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
+            linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 18%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 45%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 65%, transparent) 100%),
             var(--texture-noise),
             var(--stone);
         box-shadow:
@@ -501,7 +501,7 @@
         border: none;
         border-radius: 0;
         background:
-            linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 16%, transparent) 0%, color-mix(in srgb, #000 50%, transparent) 60%, color-mix(in srgb, #000 70%, transparent) 100%),
+            linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 16%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 50%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 70%, transparent) 100%),
             var(--texture-noise),
             var(--stone-dark);
         box-shadow: var(--bevel-up), inset 0 0 0 1px var(--keyline);
@@ -511,7 +511,7 @@
         font-weight: 700;
         letter-spacing: var(--tracking-caps);
         text-transform: uppercase;
-        text-shadow: 0 1px 0 #000;
+        text-shadow: 0 1px 0 var(--shadow-ink);
         cursor: pointer;
         transition: color 0.18s ease, text-shadow 0.18s ease, box-shadow 0.18s ease;
     }
@@ -550,7 +550,7 @@
         text-shadow: var(--glow-text);
         background:
             radial-gradient(ellipse 90% 130% at 50% 110%, color-mix(in srgb, var(--ember) 55%, transparent) 0%, transparent 70%),
-            linear-gradient(180deg, color-mix(in srgb, #000 55%, transparent) 0%, color-mix(in srgb, #000 30%, transparent) 100%),
+            linear-gradient(180deg, color-mix(in srgb, var(--shadow-ink) 55%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 30%, transparent) 100%),
             var(--texture-noise),
             var(--stone);
         box-shadow: var(--bevel-down), inset 0 0 0 1px var(--metal-bright), inset 0 0 12px var(--ember-glow), 0 0 10px var(--ember-glow);
@@ -622,6 +622,6 @@
     .status.error {
         border-color: var(--state-bad);
         color: var(--state-bad);
-        text-shadow: 0 1px 0 #000;
+        text-shadow: 0 1px 0 var(--shadow-ink);
     }
 </style>

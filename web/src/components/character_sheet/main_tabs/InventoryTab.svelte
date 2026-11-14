@@ -326,7 +326,7 @@
         font-weight: 700;
         letter-spacing: var(--tracking-caps);
         color: var(--metal-bright);
-        text-shadow: 0 1px 0 #000, 0 0 0.5rem var(--ember-glow);
+        text-shadow: 0 1px 0 var(--shadow-ink), 0 0 0.5rem var(--ember-glow);
     }
 
     .currency {
@@ -451,7 +451,7 @@
         text-transform: uppercase;
         white-space: nowrap;
         color: var(--metal);
-        text-shadow: 0 1px 0 #000;
+        text-shadow: 0 1px 0 var(--shadow-ink);
     }
 
     .item > div {
@@ -521,7 +521,7 @@
         font-size: var(--text-sm);
         font-weight: 700;
         color: var(--ink);
-        text-shadow: 0 1px 0 #000;
+        text-shadow: 0 1px 0 var(--shadow-ink);
         transition: color 0.15s ease, text-shadow 0.15s ease;
     }
 

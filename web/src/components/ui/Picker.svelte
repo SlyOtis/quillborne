@@ -192,7 +192,7 @@
   .dnd-picker-name {
     margin: 0;
     color: var(--metal-bright);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .dnd-picker-note {
@@ -234,13 +234,13 @@
     border: var(--border-hair) solid var(--tag-rim);
     border-radius: var(--radius-sm);
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 18%, transparent) 0%, color-mix(in srgb, #000 50%, transparent) 60%, color-mix(in srgb, #000 68%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 18%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 50%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 68%, transparent) 100%),
       var(--texture-noise),
       var(--stone);
     box-shadow: var(--bevel-up), 0 0 0 1px var(--keyline);
     font-size: var(--text-xs);
     color: var(--ink);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     white-space: nowrap;
   }
 
@@ -349,7 +349,7 @@
       var(--ground-deep);
     box-shadow: inset 0 0 0 1px var(--metal), inset 0 0 10px var(--ember-glow);
     color: var(--metal-bright);
-    text-shadow: 0 1px 0 #000, 0 0 6px var(--ember-glow);
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 6px var(--ember-glow);
   }
 
   .dnd-picker-pick-more {

@@ -438,7 +438,7 @@
   .dnd-read-head {
     margin: var(--space-3) 0 0;
     color: var(--metal-bright);
-    text-shadow: 0 1px 0 #000, 0 0 10px color-mix(in srgb, var(--ember-glow) 50%, transparent);
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 10px color-mix(in srgb, var(--ember-glow) 50%, transparent);
   }
 
   .dnd-read-head-1 {
@@ -547,7 +547,7 @@
     border-radius: var(--radius-pill);
     background: radial-gradient(circle at 38% 30%, var(--stone-light) 0%, var(--stone) 45%, var(--stone-dark) 100%);
     box-shadow: 0 0 0 1px var(--keyline), inset 0 1px 0 var(--sheen), inset 0 -1px 2px var(--shade-hard);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     font-family: var(--font-display);
     font-size: var(--text-xs);
     font-style: normal;
@@ -688,13 +688,13 @@
   .dnd-read-table th {
     border-bottom: var(--border-width) solid var(--metal);
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 45%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 65%, transparent) 100%),
       var(--texture-noise),
       var(--stone);
     box-shadow: var(--bevel-up);
     font-family: var(--font-display);
     color: var(--metal-bright);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .dnd-read-table tr:nth-child(odd) > td {
@@ -919,7 +919,7 @@
     overflow: hidden;
     border: none;
     border-radius: var(--radius-sm);
-    background: var(--texture-noise), linear-gradient(180deg, var(--ground-deep) 0%, #000 100%);
+    background: var(--texture-noise), linear-gradient(180deg, var(--ground-deep) 0%, var(--shadow-ink) 100%);
     box-shadow: var(--rim-thin), var(--bevel-down), inset 0 0 18px 2px var(--shade-hard);
   }
 
@@ -952,12 +952,12 @@
     margin: 0.1875rem 0.1875rem 0;
     border-bottom: none;
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 45%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 65%, transparent) 100%),
       var(--texture-noise),
       var(--stone);
     box-shadow: var(--bevel-up), 0 1px 0 var(--metal-dim), 0 2px 0 var(--keyline);
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .dnd-read-code pre {
@@ -982,7 +982,7 @@
 
   .dnd-read-toc-name {
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .dnd-read-toc-link {

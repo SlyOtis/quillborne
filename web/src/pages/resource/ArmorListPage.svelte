@@ -40,6 +40,6 @@
     font-family: var(--font-display);
     letter-spacing: var(--tracking-wide);
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 </style>

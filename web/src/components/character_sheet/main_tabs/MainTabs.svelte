@@ -115,7 +115,7 @@
         border: none;
         border-radius: var(--radius-sm) var(--radius-sm) 0 0;
         background:
-            linear-gradient(180deg, color-mix(in srgb, var(--ember-core) 10%, transparent) 0%, color-mix(in srgb, #000 30%, transparent) 55%, color-mix(in srgb, #000 55%, transparent) 100%),
+            linear-gradient(180deg, color-mix(in srgb, var(--ember-core) 10%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 30%, transparent) 55%, color-mix(in srgb, var(--shadow-ink) 55%, transparent) 100%),
             var(--texture-grain),
             var(--wood);
         box-shadow:
@@ -132,7 +132,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         color: var(--metal);
-        text-shadow: 0 1px 0 #000, 0 0 2px #000;
+        text-shadow: 0 1px 0 var(--shadow-ink), 0 0 2px var(--shadow-ink);
         cursor: pointer;
         transition: color 0.18s ease, text-shadow 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
     }
@@ -157,7 +157,7 @@
         padding-block: var(--space-3) var(--space-2);
         background:
             radial-gradient(ellipse 80% 90% at 50% 110%, var(--ember-glow) 0%, transparent 70%),
-            linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 26%, transparent) 0%, color-mix(in srgb, #000 30%, transparent) 55%, var(--ground-raised) 100%),
+            linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 26%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 30%, transparent) 55%, var(--ground-raised) 100%),
             var(--texture-noise),
             var(--stone);
         box-shadow:

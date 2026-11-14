@@ -191,7 +191,7 @@
         font-size: var(--text-sm);
         font-weight: 700;
         color: var(--metal-bright);
-        text-shadow: 0 1px 0 #000;
+        text-shadow: 0 1px 0 var(--shadow-ink);
     }
 
     .sub {

@@ -79,8 +79,8 @@
     width: 100%;
     height: 100%;
     background:
-      radial-gradient(ellipse at 50% 40%, transparent 30%, color-mix(in srgb, #000 60%, transparent) 100%),
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 12%, transparent), color-mix(in srgb, #000 55%, transparent)),
+      radial-gradient(ellipse at 50% 40%, transparent 30%, color-mix(in srgb, var(--shadow-ink) 60%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 12%, transparent), color-mix(in srgb, var(--shadow-ink) 55%, transparent)),
       var(--texture-noise),
       var(--stone-dark);
     box-shadow: inset 0 0 0 1px var(--keyline);

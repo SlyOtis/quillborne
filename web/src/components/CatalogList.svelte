@@ -227,7 +227,7 @@
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .dnd-catalog-note {
@@ -290,7 +290,7 @@
     font-size: var(--text-2xl);
     font-weight: 700;
     color: var(--metal);
-    text-shadow: 0 1px 0 #000, 0 0 10px var(--ember-glow);
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 10px var(--ember-glow);
   }
 
   .dnd-catalog-body {
@@ -310,11 +310,11 @@
     border: none;
     border-radius: var(--radius-sm);
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 12%, transparent) 0%, color-mix(in srgb, #000 55%, transparent) 40%, color-mix(in srgb, #000 72%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 12%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 55%, transparent) 40%, color-mix(in srgb, var(--shadow-ink) 72%, transparent) 100%),
       var(--texture-noise),
       var(--stone);
     box-shadow: var(--rim-thin), var(--bevel-up), var(--shadow-sm);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     cursor: pointer;
     font-family: var(--font-display);
     font-size: var(--text-xs);
@@ -386,7 +386,7 @@
 
   .dnd-catalog-waits-drop:hover {
     color: var(--state-bad);
-    text-shadow: 0 0 8px var(--state-bad), 0 1px 1px #000;
+    text-shadow: 0 0 8px var(--state-bad), 0 1px 1px var(--shadow-ink);
   }
 
   .dnd-catalog-import {
@@ -397,7 +397,7 @@
     border-radius: var(--radius-lg);
     background:
       linear-gradient(color-mix(in srgb, var(--ember) 16%, transparent), color-mix(in srgb, var(--ember) 16%, transparent)),
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 45%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 65%, transparent) 100%),
       var(--texture-noise),
       var(--stone);
     box-shadow: var(--rim), var(--bevel-up), var(--shadow-sm);
@@ -407,7 +407,7 @@
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--metal-bright);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     cursor: pointer;
   }
 

@@ -231,7 +231,7 @@
   .medieval-button.playing:disabled {
     background:
       radial-gradient(ellipse 80% 80% at 50% 60%, var(--ember-glow) 0%, transparent 75%),
-      linear-gradient(180deg, color-mix(in srgb, #000 55%, transparent) 0%, color-mix(in srgb, #000 30%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--shadow-ink) 55%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 30%, transparent) 100%),
       var(--texture-noise),
       var(--stone);
     box-shadow: var(--rim), var(--bevel-down), inset 0 0 14px var(--ember-glow);
@@ -250,7 +250,7 @@
     border: none;
     border-radius: 50%;
     background:
-      radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--state-bad) 70%, var(--ink)) 0%, var(--state-bad) 45%, color-mix(in srgb, var(--state-bad) 45%, #000) 100%);
+      radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--state-bad) 70%, var(--ink)) 0%, var(--state-bad) 45%, color-mix(in srgb, var(--state-bad) 45%, var(--shadow-ink)) 100%);
     box-shadow: var(--rim-thin), 0 2px 4px var(--shade-hard);
     color: var(--ink);
     font-size: var(--text-sm);
@@ -276,7 +276,7 @@
     position: relative;
     cursor: pointer;
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 45%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 65%, transparent) 100%),
       var(--texture-noise),
       var(--stone);
     border: none;
@@ -287,7 +287,7 @@
     box-shadow: var(--rim-thin), var(--bevel-up), 0 2px 4px var(--shade-hard);
     font-family: var(--font-display);
     font-weight: 700;
-    text-shadow: 0 1px 0 #000, 0 0 2px #000;
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 2px var(--shadow-ink);
     color: var(--metal);
     overflow: hidden;
     display: flex;

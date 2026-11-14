@@ -85,7 +85,7 @@
     height: var(--stat-cusp);
     border: var(--border-width) solid var(--stat-brace);
     opacity: 0.95;
-    filter: drop-shadow(0 1px 0 #000);
+    filter: drop-shadow(0 1px 0 var(--shadow-ink));
     pointer-events: none;
   }
 
@@ -135,7 +135,7 @@
     color: var(--metal);
     text-align: center;
     line-height: 1.2;
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .dnd-stat-name {
@@ -166,7 +166,7 @@
     inset: var(--border-width);
     z-index: 0;
     background:
-      linear-gradient(180deg, color-mix(in srgb, #000 35%, transparent) 0%, color-mix(in srgb, #000 70%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--shadow-ink) 35%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 70%, transparent) 100%),
       var(--texture-noise),
       var(--ground-raised);
     clip-path: var(--stat-shape);
@@ -214,7 +214,7 @@
     font-variant-numeric: lining-nums tabular-nums;
     line-height: 1.1;
     color: var(--ink);
-    text-shadow: 0 1px 0 #000, 0 0 3px #000;
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 3px var(--shadow-ink);
     transition: color 0.18s ease, text-shadow 0.18s ease;
   }
 
@@ -226,7 +226,7 @@
     font-size: var(--text-xs);
     line-height: 1;
     color: var(--ink-dim);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .dnd-stat-sheen {

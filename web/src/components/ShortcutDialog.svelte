@@ -195,7 +195,7 @@
   .dnd-shortcut-row-on {
     background:
       radial-gradient(ellipse 60% 140% at 0% 50%, var(--ember-glow) 0%, transparent 70%),
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 14%, transparent) 0%, color-mix(in srgb, #000 55%, transparent) 60%, color-mix(in srgb, #000 70%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 14%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 55%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 70%, transparent) 100%),
       var(--texture-noise),
       var(--stone-dark);
     box-shadow: var(--rim-thin), var(--bevel-up);
@@ -237,7 +237,7 @@
     border: none;
     border-radius: var(--radius-sm);
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 45%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 65%, transparent) 100%),
       var(--texture-noise),
       var(--stone);
     box-shadow: var(--rim-thin), var(--bevel-up);
@@ -273,7 +273,7 @@
     border-bottom-width: var(--border-heavy);
     border-radius: var(--radius-sm);
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 55%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 55%, transparent) 100%),
       var(--texture-noise),
       var(--stone-dark);
     box-shadow: var(--bevel-up);
@@ -315,7 +315,7 @@
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     text-align: center;
     cursor: pointer;
     transition: border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease, text-shadow 0.15s ease;

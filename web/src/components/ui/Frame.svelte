@@ -177,7 +177,7 @@
   .dnd-frame-gap {
     inset: var(--frame-edge);
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 40%, transparent) 55%, color-mix(in srgb, #000 62%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 40%, transparent) 55%, color-mix(in srgb, var(--shadow-ink) 62%, transparent) 100%),
       var(--texture-stone),
       var(--stone);
     box-shadow: inset 0 0 0 1px var(--keyline), var(--bevel-up);

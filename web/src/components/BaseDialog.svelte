@@ -248,7 +248,7 @@
     gap: var(--space-4);
     padding: var(--space-3) var(--space-5);
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 22%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 22%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 45%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 65%, transparent) 100%),
       var(--texture-noise),
       var(--ground-raised);
     border-bottom: none;
@@ -271,7 +271,7 @@
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--metal);
-    text-shadow: 0 1px 0 #000, 0 0 2px #000, 0 0 12px color-mix(in srgb, var(--ember-glow) 60%, transparent);
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 2px var(--shadow-ink), 0 0 12px color-mix(in srgb, var(--ember-glow) 60%, transparent);
   }
 
   .dialog-key {

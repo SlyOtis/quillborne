@@ -159,7 +159,7 @@
     text-transform: uppercase;
     white-space: nowrap;
     color: var(--ink-dim);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     cursor: pointer;
     transition: color 0.15s ease, border-color 0.15s ease, text-shadow 0.15s ease;
   }

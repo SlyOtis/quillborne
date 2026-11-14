@@ -341,7 +341,7 @@
     text-align: center;
     line-height: 1;
     color: var(--metal-bright);
-    text-shadow: 0 1px 0 #000, 0 0 0.6rem var(--ember-glow);
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 0.6rem var(--ember-glow);
   }
 
   .vitals-field .vitals-inline:focus {
@@ -383,7 +383,7 @@
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .vitals-acts {
@@ -478,7 +478,7 @@
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   @container page (max-width: 480px) {

@@ -121,7 +121,7 @@
     min-width: 0;
     overflow: hidden;
     border-radius: var(--radius-sm);
-    background: var(--texture-noise), linear-gradient(180deg, #000 0%, var(--ground-deep) 60%, var(--ground) 100%);
+    background: var(--texture-noise), linear-gradient(180deg, var(--shadow-ink) 0%, var(--ground-deep) 60%, var(--ground) 100%);
     box-shadow: var(--bevel-down);
   }
 
@@ -143,7 +143,7 @@
     position: absolute;
     inset: 0;
     background:
-      linear-gradient(180deg, var(--meter-fill) 0%, color-mix(in srgb, var(--meter-fill-bright) 55%, var(--meter-fill)) 26%, var(--meter-fill) 48%, color-mix(in srgb, var(--meter-fill) 70%, #000) 78%, color-mix(in srgb, var(--meter-fill) 45%, #000) 100%);
+      linear-gradient(180deg, var(--meter-fill) 0%, color-mix(in srgb, var(--meter-fill-bright) 55%, var(--meter-fill)) 26%, var(--meter-fill) 48%, color-mix(in srgb, var(--meter-fill) 70%, var(--shadow-ink)) 78%, color-mix(in srgb, var(--meter-fill) 45%, var(--shadow-ink)) 100%);
     filter: saturate(1.15);
     box-shadow: inset -1px 0 0 color-mix(in srgb, var(--meter-fill-bright) 60%, transparent), 0 0 10px color-mix(in srgb, var(--meter-fill) 60%, transparent);
     transition: clip-path 320ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -186,7 +186,7 @@
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--ink);
-    text-shadow: 0 1px 0 #000, 0 0 3px #000;
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 3px var(--shadow-ink);
     pointer-events: none;
   }
 
@@ -203,7 +203,7 @@
     font-weight: 700;
     line-height: 1;
     color: var(--ink);
-    text-shadow: 0 1px 0 #000, 0 0 3px #000, 0 0 6px #000;
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 3px var(--shadow-ink), 0 0 6px var(--shadow-ink);
     pointer-events: none;
   }
 

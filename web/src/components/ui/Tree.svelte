@@ -132,7 +132,7 @@
     border-bottom: var(--tree-caret) solid transparent;
     border-inline-start: var(--tree-caret) solid var(--metal);
     background: none;
-    filter: drop-shadow(0 1px 0 #000);
+    filter: drop-shadow(0 1px 0 var(--shadow-ink));
     cursor: pointer;
     transition: transform 0.15s ease, border-color 0.15s ease;
   }
@@ -197,7 +197,7 @@
 
   .dnd-tree-row-on .dnd-tree-name {
     color: var(--metal-bright);
-    text-shadow: 0 1px 0 #000, 0 0 6px var(--ember-glow);
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 6px var(--ember-glow);
   }
 
   .dnd-tree-name:focus-visible {

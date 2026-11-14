@@ -124,7 +124,7 @@
     font-weight: 700;
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     white-space: nowrap;
     cursor: pointer;
     transition: color 0.15s ease, text-shadow 0.15s ease, box-shadow 0.15s ease;
@@ -143,7 +143,7 @@
     border-color: transparent;
     background:
       radial-gradient(ellipse 80% 90% at 50% 100%, var(--ember-glow) 0%, transparent 75%),
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 45%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 65%, transparent) 100%),
       var(--texture-noise),
       var(--stone);
     box-shadow: var(--bevel-up), inset 0 0 0 1px var(--keyline), inset 0 0 0 2px var(--metal), inset 0 0 0 3px var(--keyline);
@@ -166,7 +166,7 @@
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--metal-bright);
-    text-shadow: 0 1px 0 #000, 0 0 6px var(--ember-glow);
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 6px var(--ember-glow);
   }
 
   .dnd-stops-drop {

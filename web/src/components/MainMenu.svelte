@@ -666,7 +666,7 @@
     height: var(--size-split);
     transform: translateY(-50%);
     background: linear-gradient(180deg, transparent, var(--metal-dim) 30%, var(--metal-dim) 70%, transparent);
-    box-shadow: 1px 0 0 color-mix(in srgb, #000 70%, transparent);
+    box-shadow: 1px 0 0 color-mix(in srgb, var(--shadow-ink) 70%, transparent);
     pointer-events: none;
   }
 </style>

@@ -198,7 +198,7 @@
     font-family: var(--font-display);
     font-size: var(--text-md);
     color: var(--row-ink, var(--metal-bright));
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     transition: text-shadow 0.15s ease;
     overflow: hidden;
     text-overflow: ellipsis;

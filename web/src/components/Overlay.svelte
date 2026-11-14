@@ -628,10 +628,10 @@
     font-size: 1.4em;
     font-weight: 700;
     text-shadow: 
-      0 1px 0 #000,
-      0 -1px 0 #000,
-      1px 0 0 #000,
-      -1px 0 0 #000,
+      0 1px 0 var(--shadow-ink),
+      0 -1px 0 var(--shadow-ink),
+      1px 0 0 var(--shadow-ink),
+      -1px 0 0 var(--shadow-ink),
       0 2px 6px var(--shade-hard);
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     transform-origin: center;
@@ -644,7 +644,7 @@
   .overlay-text.criticalHit {
     color: var(--metal-bright);
     text-shadow: 
-      0 1px 0 #000, 0 -1px 0 #000, 1px 0 0 #000, -1px 0 0 #000,
+      0 1px 0 var(--shadow-ink), 0 -1px 0 var(--shadow-ink), 1px 0 0 var(--shadow-ink), -1px 0 0 var(--shadow-ink),
       0 0 10px var(--ember-glow),
       0 0 20px var(--ember),
       0 0 30px var(--ember-glow);
@@ -654,7 +654,7 @@
   .overlay-text.criticalFail {
     color: color-mix(in srgb, var(--state-bad) 70%, var(--ink));
     text-shadow: 
-      0 1px 0 #000, 0 -1px 0 #000, 1px 0 0 #000, -1px 0 0 #000,
+      0 1px 0 var(--shadow-ink), 0 -1px 0 var(--shadow-ink), 1px 0 0 var(--shadow-ink), -1px 0 0 var(--shadow-ink),
       0 0 10px var(--state-bad),
       0 0 20px var(--state-bad);
     animation: shakeFail 0.6s ease-in-out;
@@ -663,7 +663,7 @@
   .overlay-text.levelUp {
     color: var(--state-good);
     text-shadow: 
-      0 1px 0 #000, 0 -1px 0 #000, 1px 0 0 #000, -1px 0 0 #000,
+      0 1px 0 var(--shadow-ink), 0 -1px 0 var(--shadow-ink), 1px 0 0 var(--shadow-ink), -1px 0 0 var(--shadow-ink),
       0 0 15px var(--state-good),
       0 0 25px var(--state-good),
       0 0 35px var(--state-good);
@@ -674,7 +674,7 @@
   .overlay-text.healing {
     color: var(--state-good);
     text-shadow: 
-      0 1px 0 #000, 0 -1px 0 #000, 1px 0 0 #000, -1px 0 0 #000,
+      0 1px 0 var(--shadow-ink), 0 -1px 0 var(--shadow-ink), 1px 0 0 var(--shadow-ink), -1px 0 0 var(--shadow-ink),
       0 0 12px var(--state-good),
       0 0 22px var(--state-good);
     animation: healingPulse 0.8s ease-in-out;
@@ -683,7 +683,7 @@
   .overlay-text.spellCast {
     color: var(--metal-bright);
     text-shadow: 
-      0 1px 0 #000, 0 -1px 0 #000, 1px 0 0 #000, -1px 0 0 #000,
+      0 1px 0 var(--shadow-ink), 0 -1px 0 var(--shadow-ink), 1px 0 0 var(--shadow-ink), -1px 0 0 var(--shadow-ink),
       0 0 12px var(--metal-bright),
       0 0 22px var(--ember-glow),
       0 0 32px var(--ember-glow);
@@ -693,7 +693,7 @@
   .overlay-text.treasure {
     color: var(--state-warn);
     text-shadow: 
-      0 1px 0 #000, 0 -1px 0 #000, 1px 0 0 #000, -1px 0 0 #000,
+      0 1px 0 var(--shadow-ink), 0 -1px 0 var(--shadow-ink), 1px 0 0 var(--shadow-ink), -1px 0 0 var(--shadow-ink),
       0 0 12px var(--state-warn),
       0 0 22px var(--state-warn),
       0 0 32px var(--state-warn);
@@ -703,7 +703,7 @@
   .overlay-text.inspiration {
     color: var(--ember-core);
     text-shadow: 
-      0 1px 0 #000, 0 -1px 0 #000, 1px 0 0 #000, -1px 0 0 #000,
+      0 1px 0 var(--shadow-ink), 0 -1px 0 var(--shadow-ink), 1px 0 0 var(--shadow-ink), -1px 0 0 var(--shadow-ink),
       0 0 15px var(--ember-core),
       0 0 25px var(--ember-core),
       0 0 35px var(--ember-core);

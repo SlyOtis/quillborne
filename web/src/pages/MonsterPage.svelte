@@ -621,7 +621,7 @@
     font-style: italic;
     letter-spacing: var(--tracking-wide);
     color: var(--ink-dim);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .beast-rule {
@@ -708,7 +708,7 @@
   .beast-divide-name {
     margin: 0;
     color: var(--metal-bright);
-    text-shadow: 0 1px 0 #000, 0 0 10px var(--ember-glow);
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 10px var(--ember-glow);
   }
 
   .beast-divide-run {
@@ -716,7 +716,7 @@
     min-width: 0;
     height: var(--border-hair);
     background: linear-gradient(90deg, var(--metal), var(--metal-dim) 40%, transparent);
-    box-shadow: 0 1px 0 #000;
+    box-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .beast-feat {
@@ -733,7 +733,7 @@
     font-style: italic;
     letter-spacing: var(--tracking-wide);
     color: var(--metal-bright);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .beast-fields {
@@ -856,7 +856,7 @@
     font-size: var(--text-xs);
     letter-spacing: var(--tracking-wide);
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .beast-chip-lit {
