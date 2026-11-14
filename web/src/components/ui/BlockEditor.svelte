@@ -822,8 +822,6 @@
       return
     }
 
-    // The chord belongs to the editor and grows one level per press: the block,
-    // then the whole document, where it stops rather than wrapping back.
     if (key === 'a' && mod) {
       const whole = node.selectionStart === 0 && node.selectionEnd === node.value.length
       if (picked.length === blocks.length) return

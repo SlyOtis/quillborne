@@ -173,8 +173,6 @@
       return
     }
 
-    // A name is written without saying which roll it sits on, so every roll is
-    // asked until one answers. The address it opens is that roll's, not this one's.
     const base = campaignId ? `/main/campaign/${campaignId}` : '/main'
     for (const roll of Object.keys(RESOURCES) as ResourceKind[]) {
       if (roll === kind) continue
@@ -351,7 +349,6 @@
     const userId = $user?.user_id
     if (!userId) return
 
-    // A block id is made fresh on every parse, so where it sits is what identifies it.
     const document = getDocument(one.content)
     const block = document.blocks[index]
     if (!block || block.kind !== 'poll') return

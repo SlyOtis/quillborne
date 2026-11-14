@@ -13,7 +13,6 @@
 
   const {unsubscribeChat, chatStore} = getChatLog()
 
-  // Get dialog state from context to disable chat when dialogs are open
   const dialogState = getContext<{isAnyDialogOpen: boolean, setDialogState: (isOpen: boolean) => void}>('dialogState');
   let isDialogOpen = $derived(dialogState?.isAnyDialogOpen || false);
 
@@ -60,7 +59,6 @@
   const isDm = $derived(Boolean($user?.user_id) && dmOf === $user?.user_id)
   let scroller = $state<HTMLElement | null>(null)
   
-  // Audio recording state
   let isRecording = $state(false)
   let mediaRecorder: MediaRecorder | null = null
   let audioChunks: Blob[] = []
@@ -109,8 +107,6 @@
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' })
         await transcribeAudio(audioBlob)
-        
-        // Stop all tracks
         stream.getTracks().forEach(track => track.stop())
       }
 
@@ -138,7 +134,6 @@
         throw new Error("Replicate API key is missing")
       }
       
-      // Convert to data URL format that Replicate expects
       const audioDataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader()
         reader.onload = () => resolve(reader.result as string)
@@ -184,14 +179,10 @@
         throw new Error(`Invalid response - no polling URL provided`)
       }
       
-      // Use the same polling pattern as the main chat system
       const result = await pollWhisperResult(getUrl)
-      
-      // Handle the transcription result
       if (result && typeof result === 'string' && result.trim()) {
         chatInput = result.trim()
         stateThinking = undefined
-        // Auto-send the transcribed text
         setTimeout(() => {
           if (chatInput.trim()) {
             onSend(new Event('submit'))
@@ -234,7 +225,6 @@
           const response = await res.json()
 
           if (response.status === 'succeeded') {
-            // Handle different response formats for Whisper
             let transcription = ''
             if (typeof response.output === 'string') {
               transcription = response.output
@@ -256,7 +246,6 @@
           } else if (response.status === 'canceled') {
             reject(new Error('Transcription was canceled'))
           } else {
-            // Still processing, continue polling
             retries++;
             poll()
           }
