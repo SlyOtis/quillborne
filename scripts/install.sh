@@ -28,7 +28,6 @@ version() {
         az) az version | jq -r '."azure-cli"' ;;
         playwright-cli) brew list --versions playwright-cli 2>/dev/null | awk '{print $2}' ;;
         nimon) nimon version 2>/dev/null | grep -o "v[0-9.]*" | head -1 ;;
-| awk '{print $2}' ;;
     esac
 }
 
