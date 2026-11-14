@@ -75,7 +75,7 @@
     --pilltabs-radius: var(--radius-sm);
     --pilltabs-face:
       radial-gradient(ellipse 80% 90% at 50% 110%, var(--ember-glow) 0%, transparent 70%),
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 26%, transparent) 0%, color-mix(in srgb, #000 30%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 26%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 30%, transparent) 100%),
       var(--texture-noise),
       var(--stone);
     --pilltabs-ring: inset 0 0 0 1px var(--keyline), inset 0 0 0 2px var(--metal), inset 0 3px 0 2px var(--sheen);
@@ -138,7 +138,7 @@
     text-transform: uppercase;
     white-space: nowrap;
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     cursor: pointer;
     transition: color 0.2s ease, text-shadow 0.2s ease;
   }

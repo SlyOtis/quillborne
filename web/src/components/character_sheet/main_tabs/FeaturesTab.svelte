@@ -86,7 +86,7 @@
         left: 10%;
         height: var(--border-hair);
         background: linear-gradient(90deg, transparent, var(--metal-dim) 20%, var(--metal) 50%, var(--metal-dim) 80%, transparent);
-        box-shadow: 0 1px 0 #000;
+        box-shadow: 0 1px 0 var(--shadow-ink);
     }
 
     h4 {
@@ -95,7 +95,7 @@
         font-size: var(--text-md);
         font-weight: 700;
         color: var(--metal-bright);
-        text-shadow: 0 1px 0 #000, 0 0 0.6rem var(--ember-glow);
+        text-shadow: 0 1px 0 var(--shadow-ink), 0 0 0.6rem var(--ember-glow);
     }
 
     h4 i {

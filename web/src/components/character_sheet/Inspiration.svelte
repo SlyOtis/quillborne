@@ -123,13 +123,13 @@
     font-weight: 700;
     line-height: 1;
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     transition: color 300ms ease, text-shadow 300ms ease;
   }
 
   .spark-lit .spark-figure {
     color: var(--ember-core);
-    text-shadow: 0 1px 0 #000, 0 0 0.6rem var(--ember-glow);
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 0.6rem var(--ember-glow);
   }
 
   .spark-lit .spark-shield {
@@ -142,7 +142,7 @@
     font-weight: 700;
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .spark:hover .spark-shield {

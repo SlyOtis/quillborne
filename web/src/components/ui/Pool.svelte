@@ -102,7 +102,7 @@
     font-weight: 700;
     font-variant-numeric: lining-nums tabular-nums;
     color: var(--metal-bright);
-    text-shadow: 0 1px 0 #000, 0 0 0.6rem var(--ember-glow);
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 0.6rem var(--ember-glow);
   }
 
   .dnd-pool-slash {

@@ -19,6 +19,8 @@
   const FLOOR_MARGIN = 0.35
 
   let host = $state<HTMLDivElement>()
+  let hostWidth = $state(0)
+  let hostHeight = $state(0)
   let canvas = $state<HTMLCanvasElement>()
   let session = $state.raw<RenderSession | null>(null)
   let materials: ReturnType<typeof createMaterials> | null = null
@@ -57,12 +59,9 @@
     const look = getLook()
     materials = createMaterials(look)
     const made = createRenderSession(surface, { shadows: true, clear: true, lights: pieceLightsOf(look.pieceLight) })
-    const observer = new ResizeObserver(() => made.resize(el.clientWidth, el.clientHeight))
-    observer.observe(el)
     made.resize(el.clientWidth, el.clientHeight)
     session = made
     return () => {
-      observer.disconnect()
       if (object) disposeObject(object)
       object = null
       framed = null
@@ -72,6 +71,13 @@
       made.dispose()
       session = null
     }
+  })
+
+  $effect(() => {
+    const on = session
+    const w = hostWidth
+    const h = hostHeight
+    if (on && w && h) on.resize(w, h)
   })
 
   $effect(() => {
@@ -86,7 +92,7 @@
   })
 </script>
 
-<div bind:this={host} class="dnd-parts-preview">
+<div bind:this={host} bind:clientWidth={hostWidth} bind:clientHeight={hostHeight} class="dnd-parts-preview">
   <canvas bind:this={canvas}></canvas>
 </div>
 

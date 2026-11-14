@@ -946,7 +946,7 @@ Answer with JSON and nothing else: className, hitDie, primaryAbility, savingThro
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--metal);
-    text-shadow: 0 1px 0 #000, 0 0 12px color-mix(in srgb, var(--ember-glow) 60%, transparent);
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 12px color-mix(in srgb, var(--ember-glow) 60%, transparent);
   }
 
   .niche-note {
@@ -1035,7 +1035,7 @@ Answer with JSON and nothing else: className, hitDie, primaryAbility, savingThro
     font-weight: 700;
     letter-spacing: var(--tracking-wide);
     color: var(--metal-bright);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1129,7 +1129,7 @@ Answer with JSON and nothing else: className, hitDie, primaryAbility, savingThro
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .drop :global(input[type='file']) {
@@ -1187,7 +1187,7 @@ Answer with JSON and nothing else: className, hitDie, primaryAbility, savingThro
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .formats-list {

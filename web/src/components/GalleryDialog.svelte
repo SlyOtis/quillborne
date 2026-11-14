@@ -278,7 +278,7 @@
     border-radius: var(--radius-sm);
     box-shadow: var(--rim-thin), var(--bevel-up), var(--shadow-md);
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 45%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 65%, transparent) 100%),
       var(--texture-noise),
       var(--stone);
   }
@@ -287,7 +287,7 @@
   .gallery-scale {
     font-family: var(--font-figures);
     font-weight: 700;
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     font-size: var(--text-xs);
     color: var(--metal);
   }

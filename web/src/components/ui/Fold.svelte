@@ -57,7 +57,7 @@
     min-height: var(--fold-row);
     padding: 0 var(--space-3);
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 45%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 65%, transparent) 100%),
       var(--texture-noise),
       var(--ground-raised);
     border: none;
@@ -78,7 +78,7 @@
     text-transform: uppercase;
     text-align: start;
     cursor: pointer;
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     transition: filter 0.15s ease, text-shadow 0.15s ease;
   }
 
@@ -106,7 +106,7 @@
     border-top: var(--fold-caret) solid transparent;
     border-bottom: var(--fold-caret) solid transparent;
     border-inline-start: var(--fold-caret) solid var(--metal);
-    filter: drop-shadow(0 1px 0 #000);
+    filter: drop-shadow(0 1px 0 var(--shadow-ink));
     transition: transform 0.15s ease, border-color 0.15s ease, filter 0.15s ease;
   }
 

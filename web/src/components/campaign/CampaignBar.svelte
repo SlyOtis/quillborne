@@ -103,7 +103,7 @@
     padding-block: var(--space-2);
     padding-inline: var(--space-3);
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent), color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent)),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent), color-mix(in srgb, var(--shadow-ink) 45%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 65%, transparent)),
       var(--texture-noise),
       var(--stone);
     border: none;
@@ -123,7 +123,7 @@
     text-transform: uppercase;
     font-weight: 700;
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     cursor: pointer;
     transition: color 0.15s ease, text-shadow 0.15s ease, box-shadow 0.15s ease;
   }
@@ -158,6 +158,6 @@
     min-width: 0;
     height: var(--border-hair);
     background: linear-gradient(90deg, var(--metal), var(--metal-dim) 40%, transparent);
-    box-shadow: 0 1px 0 #000;
+    box-shadow: 0 1px 0 var(--shadow-ink);
   }
 </style>

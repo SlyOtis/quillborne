@@ -130,7 +130,7 @@
     justify-content: center;
     overflow: hidden;
     background:
-      radial-gradient(circle at 50% 45%, transparent 55%, color-mix(in srgb, #000 55%, transparent) 100%),
+      radial-gradient(circle at 50% 45%, transparent 55%, color-mix(in srgb, var(--shadow-ink) 55%, transparent) 100%),
       var(--texture-noise),
       radial-gradient(circle at 38% 26%, var(--ground-lift) 0%, var(--ground-deep) 84%);
   }
@@ -166,7 +166,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse 80% 70% at 50% 45%, transparent 60%, color-mix(in srgb, #000 55%, transparent) 100%);
+    background: radial-gradient(ellipse 80% 70% at 50% 45%, transparent 60%, color-mix(in srgb, var(--shadow-ink) 55%, transparent) 100%);
     pointer-events: none;
   }
 
@@ -181,7 +181,7 @@
     font-size: calc(var(--portrait-h) * 0.34);
     font-weight: 700;
     color: var(--metal);
-    text-shadow: 0 1px 0 #000, 0 0 0.6rem var(--ember-glow);
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 0.6rem var(--ember-glow);
   }
 
   .dnd-portrait-trace {

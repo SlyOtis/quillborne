@@ -135,7 +135,7 @@
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     transition: color 0.18s ease, text-shadow 0.18s ease;
   }
 

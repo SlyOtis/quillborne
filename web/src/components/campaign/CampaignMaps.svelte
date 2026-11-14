@@ -530,7 +530,7 @@
     font-weight: 600;
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .dnd-maps-pair {

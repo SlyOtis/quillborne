@@ -450,7 +450,7 @@
     text-transform: uppercase;
     text-align: center;
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .lair-filters {
@@ -528,7 +528,7 @@
     text-transform: uppercase;
     text-align: start;
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     cursor: pointer;
     transition: color 0.15s ease, text-shadow 0.15s ease;
   }
@@ -639,7 +639,7 @@
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     color: var(--metal-bright);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .lair-title {
@@ -648,7 +648,7 @@
     font-weight: 700;
     letter-spacing: var(--tracking-wide);
     color: var(--ink);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     transition: color 0.15s ease, text-shadow 0.15s ease;
   }
 
@@ -681,7 +681,7 @@
     letter-spacing: var(--tracking-wide);
     white-space: nowrap;
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   @container (max-width: 52rem) {

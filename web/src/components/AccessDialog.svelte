@@ -636,7 +636,7 @@
     font-size: var(--text-xs);
     font-weight: 700;
     color: var(--metal-bright);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .access-fold {
@@ -720,7 +720,7 @@
     border-bottom: var(--space-1) solid transparent;
     border-inline-start: var(--space-1) solid var(--metal);
     background: none;
-    filter: drop-shadow(0 1px 0 #000);
+    filter: drop-shadow(0 1px 0 var(--shadow-ink));
     cursor: pointer;
     transition: transform 0.15s ease, border-color 0.15s ease;
   }
@@ -777,7 +777,7 @@
     overflow: hidden;
     border-radius: var(--radius-sm);
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent), color-mix(in srgb, #000 45%, transparent)),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent), color-mix(in srgb, var(--shadow-ink) 45%, transparent)),
       var(--texture-noise),
       var(--stone);
     box-shadow: var(--bevel-up), 0 0 0 1px var(--keyline), inset 0 0 0 1px var(--metal-dim);
@@ -785,7 +785,7 @@
     font-size: var(--text-sm);
     font-weight: 700;
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .access-tile-round {
@@ -893,7 +893,7 @@
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--metal-dim);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .access-table-row {

@@ -10,30 +10,23 @@
 
   const {inventory, equipped} = getContext<CharacterContext>('character')
 
-  // Check if action is ranged and requires ammunition
   let isRanged = $derived(!!action.range)
-  
-  // Find equipped ammunition using the equipped store
+
   let equippedAmmo = $derived.by(() => {
     if (!isRanged) return null;
-    
-    // Ensure equipped is an array
+
     if (!$equipped || !Array.isArray($equipped)) {
       console.warn('Equipped is not an array:', $equipped);
       return null;
     }
     
-    // Find any equipped item that is ammunition (more flexible search)
     const equippedAmmoItem = $equipped.find(equippedItem => {
       if (!equippedItem) return false;
-      
-      // Check by ID (ammunition item)
+
       if (equippedItem.id === 'ammunition') return true;
-      
-      // Check by title containing "ammunition"
+
       if (equippedItem.title && equippedItem.title.toLowerCase().includes('ammunition')) return true;
-      
-      // Check by type containing "ammunition"
+
       if (equippedItem.type) {
         const types = equippedItem.type.split(',').map(t => t.trim().toLowerCase());
         if (types.includes('ammunition')) return true;
@@ -43,14 +36,12 @@
     });
     
     if (!equippedAmmoItem) return null;
-    
-    // Find the actual ammunition item in inventory
+
     const ammo = $inventory.find(item => 
       item.id === equippedAmmoItem.id && 
       item.quantity > 0
     );
-    
-    // Debug logging
+
     console.log('=== AMMO CHECK (ARRAY SYSTEM) ===', action.name, {
       isRanged,
       actionRange: action.range,
@@ -75,7 +66,6 @@
     return ammo;
   })
 
-  // Disable buttons if ranged weapon but no ammo
   let buttonsDisabled = $derived(isRanged && !equippedAmmo)
 
   let properties = $derived((action.properties || ['None']).join(', '))
@@ -201,7 +191,7 @@
         font-size: var(--text-sm);
         font-weight: 700;
         color: var(--metal-bright);
-        text-shadow: 0 1px 0 #000;
+        text-shadow: 0 1px 0 var(--shadow-ink);
     }
 
     .sub {

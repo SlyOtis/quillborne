@@ -534,7 +534,7 @@
     width: min(11.25rem, 45%);
     padding: var(--space-3);
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent), color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent)),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent), color-mix(in srgb, var(--shadow-ink) 45%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 65%, transparent)),
       var(--texture-noise),
       var(--stone);
     border: none;
@@ -577,7 +577,7 @@
     margin: 0;
     font-family: var(--font-figures);
     font-variant-numeric: lining-nums tabular-nums;
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     font-size: var(--text-xs);
     color: var(--ink-faint);
     text-align: center;

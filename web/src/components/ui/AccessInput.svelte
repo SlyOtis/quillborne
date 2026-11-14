@@ -305,7 +305,7 @@
       var(--ground-deep);
     box-shadow: inset 0 0 0 1px var(--state-bad), inset 0 0 10px color-mix(in srgb, var(--state-bad) 45%, transparent);
     color: var(--ink);
-    text-shadow: 0 1px 0 #000, 0 0 6px color-mix(in srgb, var(--state-bad) 60%, transparent);
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 6px color-mix(in srgb, var(--state-bad) 60%, transparent);
   }
 
   .dnd-accessinput-label {
@@ -371,7 +371,7 @@
     border: var(--border-hair) solid var(--tag-rim);
     border-radius: var(--radius-sm);
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 18%, transparent) 0%, color-mix(in srgb, #000 50%, transparent) 60%, color-mix(in srgb, #000 68%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 18%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 50%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 68%, transparent) 100%),
       var(--texture-noise),
       var(--stone);
     box-shadow: var(--bevel-up), 0 0 0 1px var(--keyline);
@@ -379,7 +379,7 @@
     font-size: var(--text-xs);
     letter-spacing: var(--tracking-wide);
     color: var(--ink);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
     white-space: nowrap;
   }
 

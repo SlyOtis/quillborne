@@ -152,7 +152,7 @@
         font-size: var(--text-lg);
         font-weight: 700;
         color: var(--metal-bright);
-        text-shadow: 0 1px 0 #000, 0 0 0.6rem var(--ember-glow);
+        text-shadow: 0 1px 0 var(--shadow-ink), 0 0 0.6rem var(--ember-glow);
     }
 
     h5 {
@@ -161,7 +161,7 @@
         font-weight: 700;
         letter-spacing: var(--tracking-wide);
         color: var(--metal);
-        text-shadow: 0 1px 0 #000;
+        text-shadow: 0 1px 0 var(--shadow-ink);
     }
 
     .sub-title {

@@ -91,7 +91,7 @@
         list-style: none;
         color: var(--ink);
         border-bottom: var(--border-hair) solid color-mix(in srgb, var(--metal-dim) 45%, transparent);
-        box-shadow: inset 0 -1px 0 color-mix(in srgb, #000 70%, transparent);
+        box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--shadow-ink) 70%, transparent);
     }
 
     .roll {
@@ -99,7 +99,7 @@
         padding: var(--space-2) var(--space-3);
         border-bottom: none;
         background:
-            linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 12%, transparent) 0%, color-mix(in srgb, #000 55%, transparent) 55%, color-mix(in srgb, #000 70%, transparent) 100%),
+            linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 12%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 55%, transparent) 55%, color-mix(in srgb, var(--shadow-ink) 70%, transparent) 100%),
             var(--texture-noise),
             var(--stone-dark);
         box-shadow: var(--rim-thin), var(--bevel-up), inset 0 0 14px 2px var(--shade-hard);
@@ -121,7 +121,7 @@
         letter-spacing: var(--tracking-caps);
         text-transform: uppercase;
         color: var(--metal);
-        text-shadow: 0 1px 0 #000;
+        text-shadow: 0 1px 0 var(--shadow-ink);
     }
 
     .roll-formula {
@@ -162,7 +162,7 @@
         font-family: var(--font-figures);
         font-weight: 700;
         color: var(--ink);
-        text-shadow: 0 1px 0 #000;
+        text-shadow: 0 1px 0 var(--shadow-ink);
     }
 
     .result > *:last-child {
@@ -188,7 +188,7 @@
         font-weight: 700;
         letter-spacing: var(--tracking-wide);
         color: var(--metal-bright);
-        text-shadow: 0 1px 0 #000;
+        text-shadow: 0 1px 0 var(--shadow-ink);
     }
 
     .date {
@@ -238,7 +238,7 @@
         border: var(--border-hair) solid var(--metal);
         font-weight: 500;
         color: var(--metal-bright);
-        text-shadow: 0 1px 0 #000;
+        text-shadow: 0 1px 0 var(--shadow-ink);
     }
 
     .response {
@@ -302,7 +302,7 @@
         font-weight: 700;
         letter-spacing: var(--tracking-wide);
         color: var(--metal);
-        text-shadow: 0 1px 0 #000;
+        text-shadow: 0 1px 0 var(--shadow-ink);
     }
 
     .formatted-content :global(strong) {

@@ -239,7 +239,7 @@
     box-shadow: var(--rim-thin), var(--bevel-up);
     background:
       radial-gradient(ellipse 60% 140% at 0% 50%, var(--ember-glow) 0%, transparent 70%),
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 14%, transparent) 0%, color-mix(in srgb, #000 55%, transparent) 60%, color-mix(in srgb, #000 70%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 14%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 55%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 70%, transparent) 100%),
       var(--texture-noise),
       var(--stone-dark);
   }
@@ -281,7 +281,7 @@
     padding: var(--space-3) var(--playlist-pad) var(--playlist-pad);
     border-top: none;
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 18%, transparent) 0%, color-mix(in srgb, #000 45%, transparent) 60%, color-mix(in srgb, #000 65%, transparent) 100%),
+      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 18%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 45%, transparent) 60%, color-mix(in srgb, var(--shadow-ink) 65%, transparent) 100%),
       var(--texture-noise),
       var(--stone);
     box-shadow: var(--bevel-up), inset 0 1px 0 var(--keyline), inset 0 2px 0 var(--metal), inset 0 3px 0 var(--keyline), 0 -4px 10px var(--shade);
@@ -293,7 +293,7 @@
     font-weight: 700;
     letter-spacing: var(--tracking-wide);
     color: var(--metal-bright);
-    text-shadow: 0 1px 0 #000, 0 0 10px var(--ember-glow);
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 10px var(--ember-glow);
   }
 
   .dnd-playlist-player-idle {
@@ -302,7 +302,7 @@
     font-style: italic;
     letter-spacing: normal;
     color: var(--ink-dim);
-    text-shadow: 0 1px 0 #000;
+    text-shadow: 0 1px 0 var(--shadow-ink);
   }
 
   .dnd-playlist-seek {
@@ -310,7 +310,7 @@
     height: var(--space-2);
     margin: 0;
     accent-color: var(--metal);
-    filter: drop-shadow(0 1px 0 #000);
+    filter: drop-shadow(0 1px 0 var(--shadow-ink));
     cursor: pointer;
   }
 
