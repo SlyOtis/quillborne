@@ -16,7 +16,7 @@
     run?: string
     /** Whether the drawer draws its own gilded rule on the inner edge, or leaves it to what it sits beside. */
     edge?: 'rule' | 'none'
-    /** What the drawer holds. */
+    /** What the drawer holds. Content carrying `dnd-sidebar-solid` fades the starfield out to the solid ground. */
     children?: Snippet
   } = $props()
 </script>
@@ -27,6 +27,7 @@
   style:--sidebar-run={run}
   aria-hidden={!open}
 >
+  <span class="dnd-sidebar-sky" aria-hidden="true"></span>
   <div class="dnd-sidebar-inner">{@render children?.()}</div>
 </aside>
 
@@ -36,14 +37,27 @@
     position: relative;
     overflow: hidden;
     z-index: 10;
+    background: var(--ground);
+    transform: translateX(var(--translate-x, 0));
+    transition: transform 250ms ease-in-out;
+  }
+
+  .dnd-sidebar-sky {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
     background:
       radial-gradient(ellipse 140% 45% at var(--glow-at) 0%, color-mix(in srgb, var(--verdigris) 18%, transparent) 0%, transparent 70%),
       radial-gradient(ellipse 140% 40% at var(--glow-at) 100%, color-mix(in srgb, var(--verdigris) 12%, transparent) 0%, transparent 70%),
       var(--texture-stars),
       var(--texture-noise),
       linear-gradient(180deg, var(--ground-raised) 0%, var(--ground-deep) 100%);
-    transform: translateX(var(--translate-x, 0));
-    transition: transform 250ms ease-in-out;
+    pointer-events: none;
+    transition: opacity 250ms ease-in-out;
+  }
+
+  .dnd-sidebar:has(:global(.dnd-sidebar-solid)) > .dnd-sidebar-sky {
+    opacity: 0;
   }
 
   .dnd-sidebar-edge-rule {
