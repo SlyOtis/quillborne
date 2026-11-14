@@ -90,7 +90,6 @@
     gap: var(--space-1);
     width: 100%;
     min-width: 0;
-    border-bottom: var(--border-hair) solid color-mix(in srgb, var(--metal-dim) 80%, transparent);
   }
 
   .dnd-pagetab-list {
@@ -149,7 +148,6 @@
     gap: var(--space-2);
     flex: 0 0 auto;
     min-width: 0;
-    margin-block-end: calc(var(--border-hair) * -1);
     padding: var(--space-2) var(--space-3);
     border: none;
     border-bottom: calc(var(--border-hair) * 2) solid transparent;
