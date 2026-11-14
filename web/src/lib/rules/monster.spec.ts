@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import dnd5e from '../../../public/sources/systems/monsters/dnd5e.json'
-import { getEmptyFilter, getMonsterBlock, getMonsterStats, isMonsterShown } from './monster'
+import { getEmptyFilter, getHitDice, getMonsterBlock, getMonsterStats, isMonsterShown } from './monster'
 import type { MonsterSystem } from './monster.types'
 
 const system = dnd5e as unknown as MonsterSystem
@@ -42,6 +42,12 @@ describe('a monster stat block', () => {
     expect([block.hitPoints, block.hitDie, block.hitBonus]).toEqual([137, 8, 25])
     expect([block.challenge?.name, block.challenge?.xp, block.prof]).toEqual(['8', 3900, 3])
     expect(block.senses).toEqual([{ id: 'darkvision', name: 'Darkvision', value: 90 }])
+  })
+
+  it('writes the hit dice with the constitution bonus, and without one when it is nothing', () => {
+    expect(getHitDice(cultist.stats.hit_dice, block)).toBe('25d8 + 25')
+    expect(getHitDice(4, { hitDie: 10, hitBonus: 0 })).toBe('4d10')
+    expect(getHitDice(2, { hitDie: 6, hitBonus: -2 })).toBe('2d6 - 2')
   })
 
   it('fills what a stored block leaves out from the system defaults', () => {

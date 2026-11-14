@@ -5,6 +5,7 @@
     title,
     tone = 'metal',
     active = false,
+    expanded,
     disabled = false,
     onclick,
     onpointerdown,
@@ -16,6 +17,8 @@
     tone?: 'metal' | 'ember' | 'verdigris' | 'ink'
     /** Lights the glyph to mark it as chosen. */
     active?: boolean
+    /** Says whether what the button opens is open, for a button that shows and hides a region. */
+    expanded?: boolean
     /** Blocks the press and dims the glyph. */
     disabled?: boolean
     /** Runs when the button is pressed. */
@@ -32,6 +35,7 @@
   class="dnd-iconbtn dnd-iconbtn-{tone}"
   class:dnd-iconbtn-on={active}
   aria-pressed={active || undefined}
+  aria-expanded={expanded}
   aria-label={title}
   {title}
   {disabled}

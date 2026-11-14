@@ -1,18 +1,22 @@
 <script lang="ts">
-  import { getMonsters, getObjectTags, postMonster } from '$lib/api'
+  import { getMonsters, getObjectTags } from '$lib/api'
   import { OBJECT_TYPE_MONSTER, type Monster, type Tag } from '$lib/api/types'
   import { getTheme, setTheme } from '$lib/dialogs/theme'
-  import { getEmptyFilter, getMonsterBlock, getMonsterStats, getMonsterSystems, getNewMonster, isMonsterShown } from '$lib/rules/monster'
-  import type { MonsterBlock, MonsterChoice, MonsterFilter, MonsterStats, MonsterSystem } from '$lib/rules/monster.types'
+  import { getEmptyFilter, getMonsterBlock, getMonsterStats, getMonsterSystems, isMonsterShown } from '$lib/rules/monster'
+  import type { MonsterBlock as Block, MonsterChoice, MonsterFilter, MonsterStats, MonsterSystem } from '$lib/rules/monster.types'
   import { user } from '$lib/stores/auth.store'
   import { onMount } from 'svelte'
   import { navigate } from 'sly-svelte-location-router'
+  import MonsterBlock from '$components/monster/MonsterBlock.svelte'
   import Button from '$components/ui/Button.svelte'
+  import Chip from '$components/ui/Chip.svelte'
   import Field from '$components/ui/Field.svelte'
   import FrameBtn from '$components/ui/FrameBtn.svelte'
   import Glyph, { type GlyphName } from '$components/ui/Glyph.svelte'
+  import IconBtn from '$components/ui/IconBtn.svelte'
   import Ornament from '$components/ui/Ornament.svelte'
   import Shell from '$components/ui/Shell.svelte'
+  import StoredImage from '$components/ui/StoredImage.svelte'
 
   type Column = 'challenge' | 'name' | 'type' | 'size' | 'alignment' | 'habitat' | 'tags'
 
@@ -20,8 +24,9 @@
     monster: Monster
     system: MonsterSystem
     stats: MonsterStats
-    block: MonsterBlock
+    block: Block
     tags: Tag[]
+    glyph: GlyphName
     homebrew: boolean
   }
 
@@ -41,11 +46,11 @@
   let monsters = $state<Monster[]>([])
   let tags = $state<Tag[]>([])
   let loading = $state(true)
-  let busy = $state(false)
   let error = $state<string | null>(null)
   let filter = $state<MonsterFilter>(getEmptyFilter())
   let advanced = $state(false)
   let moreTypes = $state(false)
+  let inspected = $state<string[]>([])
   let sort = $state<{ by: Column; down: boolean }>({ by: 'name', down: false })
 
   onMount(() => setTheme(getTheme()))
@@ -81,6 +86,7 @@
           stats: getMonsterStats(held, monster.stats),
           block: getMonsterBlock(held, monster),
           tags: tags.filter((tag) => tag.object_ids?.includes(monster.id)),
+          glyph: (held.types.find((one) => one.id === monster.type)?.glyph ?? held.typeGlyph) as GlyphName,
           homebrew: monster.owner_id === $user?.user_id && !monster.is_public
         }
       ]
@@ -131,18 +137,8 @@
     filter = getEmptyFilter()
   }
 
-  async function create() {
-    if (!system) return
-    busy = true
-    error = null
-    try {
-      const made = await postMonster({ ...getNewMonster(system), is_public: false })
-      navigate(`/main/monsters/${made.id}`)
-    } catch (reason) {
-      error = reason instanceof Error ? reason.message : String(reason)
-    } finally {
-      busy = false
-    }
+  function inspect(id: string) {
+    inspected = inspected.includes(id) ? inspected.filter((one) => one !== id) : [...inspected, id]
   }
 </script>
 
@@ -151,7 +147,7 @@
     <div class="dnd-band-line">
       <p class="dnd-label lair-eyebrow">The bestiary and your homebrew</p>
       <span class="dnd-band-acts">
-        <Button variant="primary" size="sm" loading={busy} disabled={!system} onclick={create}>New monster</Button>
+        <Button variant="primary" size="sm" disabled={!system} onclick={() => navigate('/main/monsters/new')}>New monster</Button>
       </span>
     </div>
 
@@ -195,15 +191,13 @@
         <Field id="lair-name" label="Monster name">
           <input id="lair-name" type="search" placeholder="Search the bestiary..." bind:value={filter.name} />
         </Field>
-        <Field id="lair-challenge-min" label="Challenge from">
-          <select id="lair-challenge-min" bind:value={filter.challengeMin}>
-            <option value={null}>Any</option>
+        <Field id="lair-challenge-min" label="Challenge range">
+          <select id="lair-challenge-min" class="lair-range" bind:value={filter.challengeMin}>
+            <option value={null}>Min</option>
             {#each system.challenges as one (one.value)}<option value={one.value}>{one.name}</option>{/each}
           </select>
-        </Field>
-        <Field id="lair-challenge-max" label="Challenge to">
-          <select id="lair-challenge-max" bind:value={filter.challengeMax}>
-            <option value={null}>Any</option>
+          <select class="lair-range" aria-label="Challenge range, highest" bind:value={filter.challengeMax}>
+            <option value={null}>Max</option>
             {#each system.challenges as one (one.value)}<option value={one.value}>{one.name}</option>{/each}
           </select>
         </Field>
@@ -221,32 +215,21 @@
         </Field>
       </div>
 
-      <div class="lair-acts">
-        <Button variant="ghost" size="sm" disabled={!narrowed} onclick={reset}>Reset all filters</Button>
-        <Button variant="secondary" size="sm" onclick={() => (advanced = !advanced)}>
-          {advanced ? 'Hide advanced filters' : 'Show advanced filters'}
-        </Button>
-      </div>
-
       {#if advanced}
-        <div class="lair-filters lair-advanced" role="group" aria-label="Advanced filters">
+        <div class="lair-filters lair-advanced" id="lair-advanced" role="group" aria-label="Advanced filters">
           <Field id="lair-alignment" label="Alignment">
             <select id="lair-alignment" bind:value={filter.alignment}>
               <option value="">Any</option>
               {#each system.alignments as one (one.id)}<option value={one.id}>{one.name}</option>{/each}
             </select>
           </Field>
-          <Field id="lair-ac-min" label="Armor class from">
-            <input id="lair-ac-min" type="number" min="0" placeholder="Any" bind:value={filter.acMin} />
+          <Field id="lair-ac-min" label="Armor class">
+            <input id="lair-ac-min" class="lair-range" type="number" min="0" placeholder="Min" bind:value={filter.acMin} />
+            <input class="lair-range" type="number" min="0" placeholder="Max" aria-label="Armor class, highest" bind:value={filter.acMax} />
           </Field>
-          <Field id="lair-ac-max" label="Armor class to">
-            <input id="lair-ac-max" type="number" min="0" placeholder="Any" bind:value={filter.acMax} />
-          </Field>
-          <Field id="lair-hp-min" label="Average hit points from">
-            <input id="lair-hp-min" type="number" min="0" placeholder="Any" bind:value={filter.hpMin} />
-          </Field>
-          <Field id="lair-hp-max" label="Average hit points to">
-            <input id="lair-hp-max" type="number" min="0" placeholder="Any" bind:value={filter.hpMax} />
+          <Field id="lair-hp-min" label="Average hit points">
+            <input id="lair-hp-min" class="lair-range" type="number" min="0" placeholder="Min" bind:value={filter.hpMin} />
+            <input class="lair-range" type="number" min="0" placeholder="Max" aria-label="Average hit points, highest" bind:value={filter.hpMax} />
           </Field>
           <Field id="lair-sense" label="Senses">
             <select id="lair-sense" bind:value={filter.sense}>
@@ -329,8 +312,20 @@
           </Field>
         </div>
       {/if}
+
+      <div class="lair-acts">
+        <Button variant="ghost" size="sm" disabled={!narrowed} onclick={reset}>Reset all filters</Button>
+      </div>
     {/if}
   </header>
+
+  {#if system}
+    <span class="lair-tab">
+      <Button variant="plain" size="sm" onclick={() => (advanced = !advanced)}>
+        {advanced ? 'Hide advanced filters' : 'Show advanced filters'}
+      </Button>
+    </span>
+  {/if}
 
   {#if error}
     <p class="lair-alarm" role="alert">{error}</p>
@@ -346,6 +341,7 @@
   {:else}
     <section class="lair-roll" aria-label="Monsters">
       <div class="lair-head">
+        <span class="lair-col-face" aria-hidden="true"></span>
         {#each COLUMNS as column (column.id)}
           <button
             type="button"
@@ -359,6 +355,7 @@
             <span class="lair-caret" class:lair-caret-down={sort.by === column.id && sort.down} aria-hidden="true"></span>
           </button>
         {/each}
+        <span class="lair-col-more" aria-hidden="true"></span>
       </div>
 
       {#if shown.length === 0}
@@ -369,24 +366,51 @@
       {:else}
         <ul class="lair-lines">
           {#each shown as line (line.monster.id)}
-            <li>
-              <button type="button" class="lair-line" onclick={() => navigate(`/main/monsters/${line.monster.id}`)}>
+            {@const open = inspected.includes(line.monster.id)}
+            <li class="lair-line" class:lair-line-open={open}>
+              <div class="lair-row">
+                <span class="lair-cell lair-col-face">
+                  <span class="lair-face">
+                    {#if line.monster.image}
+                      <StoredImage src={line.monster.image} alt="" />
+                    {:else}
+                      <Glyph name={line.glyph} />
+                    {/if}
+                  </span>
+                </span>
                 <span class="lair-cell lair-col-challenge"><span class="lair-cr">{line.block.challenge?.name ?? ''}</span></span>
                 <span class="lair-cell lair-col-name">
-                  <span class="lair-title">{line.monster.name}</span>
-                  {#if line.homebrew}<span class="lair-under lair-under-lit">Homebrew</span>{/if}
+                  <a class="lair-title" href="/main/monsters/{line.monster.id}">{line.monster.name}</a>
+                  <span class="lair-under" class:lair-under-lit={line.homebrew}>{line.homebrew ? 'Homebrew' : line.system.title}</span>
                 </span>
                 <span class="lair-cell lair-col-type">
                   <span class="lair-type">{line.block.type}</span>
-                  {#if line.stats.subtypes.length}<span class="lair-under">{line.stats.subtypes.join(', ')}</span>{/if}
+                  {#if line.stats.subtypes.length}<span class="lair-under">({line.stats.subtypes.join(', ')})</span>{/if}
                 </span>
                 <span class="lair-cell lair-col-size">{line.block.size}</span>
                 <span class="lair-cell lair-col-alignment">{line.block.alignment}</span>
-                <span class="lair-cell lair-col-habitat">{line.block.habitats.join(', ')}</span>
-                <span class="lair-cell lair-col-tags">
-                  {#each line.tags as tag (tag.id)}<span class="lair-tag">#{tag.name}</span>{/each}
+                <span class="lair-cell lair-col-habitat" title={line.block.habitats.join(', ')}>
+                  {line.block.habitats[0] ?? ''}{line.block.habitats.length > 1 ? ' (...)' : ''}
                 </span>
-              </button>
+                <span class="lair-cell lair-col-tags">
+                  {#each line.tags as tag (tag.id)}<Chip still>#{tag.name}</Chip>{/each}
+                </span>
+                <span class="lair-cell lair-col-more">
+                  <IconBtn
+                    title={open ? `Close ${line.monster.name}` : `Inspect ${line.monster.name}`}
+                    active={open}
+                    expanded={open}
+                    onclick={() => inspect(line.monster.id)}
+                  >
+                    <Glyph name={open ? 'minus' : 'add'} size="md" />
+                  </IconBtn>
+                </span>
+              </div>
+              {#if open}
+                <div class="lair-inspect">
+                  <MonsterBlock system={line.system} monster={line.monster} />
+                </div>
+              {/if}
             </li>
           {/each}
         </ul>
@@ -455,10 +479,14 @@
 
   .lair-filters {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(calc(var(--space-8) * 2.5), 100%), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(calc(var(--space-8) * 3), 100%), 1fr));
     gap: var(--space-3) var(--space-4);
     margin-top: var(--space-5);
     min-width: 0;
+  }
+
+  .lair-range + .lair-range {
+    margin-inline-start: var(--space-2);
   }
 
   .lair-advanced {
@@ -474,6 +502,19 @@
     align-items: center;
     gap: var(--space-3);
     margin-top: var(--space-4);
+  }
+
+  .lair-tab {
+    display: flex;
+    width: fit-content;
+    margin: calc(var(--space-5) * -1) auto 0;
+    padding: var(--space-1) var(--space-4);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--shadow-ink) 82%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 70%, transparent) 100%),
+      var(--texture-noise),
+      var(--ground-deep);
+    box-shadow: var(--rim-thin), 0 5px 8px var(--shade);
   }
 
   .lair-alarm {
@@ -492,21 +533,26 @@
   }
 
   .lair-roll {
-    --lair-columns: minmax(0, 0.55fr) minmax(0, 2.2fr) minmax(0, 1.5fr) minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 1.4fr);
+    --lair-columns: var(--lair-face-size) minmax(0, 0.5fr) minmax(0, 2.2fr) minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 1.4fr) var(--lair-more-size);
+    --lair-face-size: calc(var(--space-7) - var(--space-1));
+    --lair-more-size: var(--space-6);
     container-type: inline-size;
     display: grid;
     gap: var(--space-2);
-    margin-top: var(--space-5);
     min-width: 0;
   }
 
+  .lair-row {
+    position: relative;
+  }
+
   .lair-head,
-  .lair-line {
+  .lair-row {
     display: grid;
     grid-template-columns: var(--lair-columns);
     align-items: center;
     gap: var(--space-3);
-    padding: var(--space-2) var(--space-4);
+    padding: var(--space-2) var(--space-3);
   }
 
   .lair-head {
@@ -552,10 +598,11 @@
     border-left: var(--lair-caret) solid transparent;
     border-right: var(--lair-caret) solid transparent;
     border-bottom: calc(var(--lair-caret) * 1.4) solid currentColor;
-    opacity: 0;
+    opacity: 0.35;
     transition: transform 0.15s ease, opacity 0.15s ease;
   }
 
+  .lair-sort:hover .lair-caret,
   .lair-sort-on .lair-caret {
     opacity: 1;
   }
@@ -574,9 +621,7 @@
   }
 
   .lair-line {
-    width: 100%;
-    min-height: var(--space-7);
-    border: none;
+    min-width: 0;
     border-radius: var(--radius-md);
     background:
       radial-gradient(ellipse 60% 120% at 0% 50%, color-mix(in srgb, var(--ember) 5%, transparent) 0%, transparent 70%),
@@ -586,27 +631,12 @@
     color: var(--ink);
     font-family: var(--font-body);
     font-size: var(--text-sm);
-    text-align: start;
-    cursor: pointer;
-    transition: box-shadow 0.18s ease, filter 0.18s ease;
+    transition: box-shadow 0.18s ease;
   }
 
-  .lair-line:hover {
-    box-shadow: var(--rim-thin), inset 0 0 18px -6px var(--ember-glow), 0 0 12px var(--ember-glow);
-  }
-
-  .lair-line:hover .lair-title {
-    color: var(--metal-bright);
-    text-shadow: var(--glow-text);
-  }
-
-  .lair-line:active {
-    filter: brightness(0.85);
-  }
-
-  .lair-line:focus-visible {
-    outline: none;
-    box-shadow: var(--rim-thin), var(--focus-ring);
+  .lair-line:has(.lair-row:hover),
+  .lair-line-open {
+    box-shadow: var(--rim-thin), inset 0 0 18px -6px var(--ember-glow), var(--shadow-sm);
   }
 
   .lair-cell {
@@ -622,6 +652,34 @@
     flex-direction: row;
     flex-wrap: wrap;
     gap: var(--space-1);
+  }
+
+  .lair-col-more {
+    position: relative;
+    align-items: center;
+  }
+
+  .lair-face {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--lair-face-size);
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 50% 50% var(--radius-sm) var(--radius-sm) / var(--radius-md) var(--radius-md) var(--radius-sm) var(--radius-sm);
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, color-mix(in srgb, var(--ember) 10%, transparent) 0%, transparent 70%),
+      var(--texture-noise),
+      linear-gradient(180deg, var(--ground-lift) 0%, var(--ground-deep) 100%);
+    box-shadow: var(--rim-thin), inset 0 0 10px -2px var(--shade-hard);
+    color: var(--metal);
+  }
+
+  .lair-face :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .lair-cr {
@@ -643,13 +701,36 @@
   }
 
   .lair-title {
+    align-self: flex-start;
+    border-radius: var(--radius-sm);
     font-family: var(--font-display);
     font-size: var(--text-md);
     font-weight: 700;
     letter-spacing: var(--tracking-wide);
+    text-decoration: none;
     color: var(--ink);
     text-shadow: 0 1px 0 var(--shadow-ink);
     transition: color 0.15s ease, text-shadow 0.15s ease;
+  }
+
+  .lair-title::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-md);
+  }
+
+  .lair-row:hover .lair-title {
+    color: var(--metal-bright);
+    text-shadow: var(--glow-text);
+  }
+
+  .lair-title:focus-visible {
+    outline: none;
+  }
+
+  .lair-title:focus-visible::after {
+    box-shadow: var(--focus-ring);
   }
 
   .lair-type {
@@ -670,41 +751,31 @@
     color: var(--ember);
   }
 
-  .lair-tag {
-    padding: var(--space-0) var(--space-2);
-    border-radius: var(--radius-sm);
-    background: var(--texture-noise), linear-gradient(180deg, var(--ground-lift) 0%, var(--ground-deep) 100%);
-    box-shadow: var(--rim-thin);
-    font-family: var(--font-display);
-    font-size: var(--text-xs);
-    line-height: 1.55;
-    letter-spacing: var(--tracking-wide);
-    white-space: nowrap;
-    color: var(--metal);
-    text-shadow: 0 1px 0 var(--shadow-ink);
+  .lair-inspect {
+    padding: 0 var(--space-3) var(--space-3);
   }
 
-  @container (max-width: 52rem) {
+  @container (max-width: 56rem) {
     .lair-roll .lair-col-alignment,
     .lair-roll .lair-col-habitat {
       display: none;
     }
 
     .lair-head,
-    .lair-line {
-      grid-template-columns: minmax(0, 0.6fr) minmax(0, 2fr) minmax(0, 1.4fr) minmax(0, 0.9fr) minmax(0, 1.2fr);
+    .lair-row {
+      grid-template-columns: var(--lair-face-size) minmax(0, 0.6fr) minmax(0, 2fr) minmax(0, 1.4fr) minmax(0, 0.9fr) minmax(0, 1.2fr) var(--lair-more-size);
     }
   }
 
-  @container (max-width: 34rem) {
+  @container (max-width: 36rem) {
     .lair-roll .lair-col-size,
     .lair-roll .lair-col-tags {
       display: none;
     }
 
     .lair-head,
-    .lair-line {
-      grid-template-columns: minmax(0, 0.7fr) minmax(0, 2fr) minmax(0, 1.5fr);
+    .lair-row {
+      grid-template-columns: var(--lair-face-size) minmax(0, 0.7fr) minmax(0, 2fr) minmax(0, 1.4fr) var(--lair-more-size);
     }
   }
 </style>

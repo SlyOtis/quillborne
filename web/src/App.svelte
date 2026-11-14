@@ -126,9 +126,19 @@
       component: page("MonstersPage", () => import("./pages/MonstersPage.svelte")),
       guard: requireSignIn
     },
+    "/main/monsters/new": {
+      name: "monster-new",
+      component: page("MonsterBuildPage", () => import("./pages/MonsterBuildPage.svelte")),
+      guard: requireSignIn
+    },
     "/main/monsters/:id": {
       name: "monster-view",
       component: page("MonsterPage", () => import("./pages/MonsterPage.svelte")),
+      guard: requireSignIn
+    },
+    "/main/monsters/:id/build": {
+      name: "monster-build",
+      component: page("MonsterBuildPage", () => import("./pages/MonsterBuildPage.svelte")),
       guard: requireSignIn
     }
   }

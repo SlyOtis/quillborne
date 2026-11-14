@@ -28,7 +28,9 @@ const routes: any = {
   '/main/vehicles/:id/design': { name: 'vehicle-design', component: page() },
   '/main/vehicles/:id/crew': { name: 'vehicle-crew', component: page() },
   '/main/monsters': { name: 'monsters-list', component: page() },
-  '/main/monsters/:id': { name: 'monster-view', component: page() }
+  '/main/monsters/new': { name: 'monster-new', component: page() },
+  '/main/monsters/:id': { name: 'monster-view', component: page() },
+  '/main/monsters/:id/build': { name: 'monster-build', component: page() }
 }
 
 describe('every route the app can reach resolves to its own page', () => {
@@ -51,7 +53,9 @@ describe('every route the app can reach resolves to its own page', () => {
     ['/main/campaign/abc123/vehicles', 'campaign-vehicles'],
     ['/main/campaign/abc123', 'main-campaign-view'],
     ['/main/monsters', 'monsters-list'],
-    ['/main/monsters/0c6f1d2e-0000-4000-8000-000000000002', 'monster-view']
+    ['/main/monsters/0c6f1d2e-0000-4000-8000-000000000002', 'monster-view'],
+    ['/main/monsters/new', 'monster-new'],
+    ['/main/monsters/0c6f1d2e-0000-4000-8000-000000000002/build', 'monster-build']
   ] as const) {
     it(`${path} resolves to ${want}`, () => {
       const found = resolveRoute(path.split('/').filter(Boolean), routes)
