@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, tick, type Snippet } from 'svelte'
+  import { onMount, tick, untrack, type Snippet } from 'svelte'
   import {
     bottom,
     calcColWidth,
@@ -241,24 +241,17 @@
     })
   }
 
-  onMount(() => {
-    const element = surface
-    if (!element) return
-    let settleTimer: ReturnType<typeof setTimeout> | undefined
-    const observer = new ResizeObserver((entries) => {
-      width = entries[0]?.contentRect.width ?? 0
-      clearTimeout(settleTimer)
-      settleTimer = setTimeout(() => (settledWidth = width), 150)
-    })
-    observer.observe(element)
-    width = element.clientWidth
-    settledWidth = width
-    return () => {
-      observer.disconnect()
-      clearTimeout(settleTimer)
-      drag.cancel()
+  $effect(() => {
+    const next = width
+    if (untrack(() => settledWidth) === 0) {
+      settledWidth = next
+      return
     }
+    const settleTimer = setTimeout(() => (settledWidth = next), 150)
+    return () => clearTimeout(settleTimer)
   })
+
+  onMount(() => () => drag.cancel())
 
   $effect(() => {
     if (!measured || firstLaid) return
@@ -268,6 +261,7 @@
 
 <div
   bind:this={surface}
+  bind:clientWidth={width}
   class="dnd-grid"
   class:dnd-grid-pending={!measured}
   class:dnd-grid-settled={firstLaid}

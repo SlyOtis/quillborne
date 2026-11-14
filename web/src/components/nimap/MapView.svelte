@@ -42,6 +42,8 @@
   const MARGIN = 0.025
 
   let host = $state<HTMLDivElement>()
+  let hostWidth = $state(0)
+  let hostHeight = $state(0)
   let canvas = $state<HTMLCanvasElement>()
   let session = $state.raw<RenderSession | null>(null)
   let built = $state.raw<LevelObject | null>(null)
@@ -106,16 +108,10 @@
     const surface = canvas
     if (!el || !surface) return
     const made = untrack(() => createRenderSession(surface, { shadows: true, clear: true, lights: style.lights, view: style.camera }))
-    const observer = new ResizeObserver(() => {
-      made.resize(el.clientWidth, el.clientHeight)
-      fit()
-    })
-    observer.observe(el)
     made.resize(el.clientWidth, el.clientHeight)
     session = made
     return () => {
       cancelAnimationFrame(hoverFrame)
-      observer.disconnect()
       untrack(() => built)?.dispose()
       built = null
       marks = null
@@ -123,6 +119,15 @@
       made.dispose()
       session = null
     }
+  })
+
+  $effect(() => {
+    const on = session
+    const w = hostWidth
+    const h = hostHeight
+    if (!on || !w || !h) return
+    on.resize(w, h)
+    untrack(fit)
   })
 
   $effect(() => {
@@ -178,7 +183,7 @@
   })
 </script>
 
-<div bind:this={host} class="dnd-map-view dnd-map-view-{backdrop}" class:dnd-map-view-hover={!!hovered}>
+<div bind:this={host} bind:clientWidth={hostWidth} bind:clientHeight={hostHeight} class="dnd-map-view dnd-map-view-{backdrop}" class:dnd-map-view-hover={!!hovered}>
   <canvas bind:this={canvas} onpointerdown={onPress} onpointerup={onRelease} onpointermove={onMove} onpointerleave={onLeave}></canvas>
 </div>
 

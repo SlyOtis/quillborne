@@ -13,6 +13,7 @@
   } = $props()
 
   let svgEl = $state<SVGSVGElement>()
+  let viewport = $state<DOMRectReadOnly>()
   let worldEl = $state<SVGGElement>()
   let spaceHeld = $state(false)
   let panning = $state<{ x: number; y: number } | null>(null)
@@ -287,16 +288,15 @@
   $effect(() => {
     const el = svgEl
     if (!el) return
-    const observer = new ResizeObserver(entries => {
-      const r = entries[0]?.contentRect
-      if (r) editor.setViewportSize(r.width, r.height)
-    })
-    observer.observe(el)
     untrack(() => {
       editor.setViewportSize(el.clientWidth, el.clientHeight)
       editor.fitToContent()
     })
-    return () => observer.disconnect()
+  })
+
+  $effect(() => {
+    const r = viewport
+    if (r) untrack(() => editor.setViewportSize(r.width, r.height))
   })
 </script>
 
@@ -304,6 +304,7 @@
 
 <svg
   bind:this={svgEl}
+  bind:contentRect={viewport}
   class="dnd-editor-canvas"
   viewBox={viewBoxValue}
   style:cursor={cursorStyle}

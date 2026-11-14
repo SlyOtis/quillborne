@@ -95,7 +95,6 @@
   onMount(() => {
     setTheme(getTheme());
 
-    // Never navigate from here: while the next page loads, the router remounts this one with that page's params.
     getCharacter(characterId)
       .then((document) => {
         if (!document?.character) {
@@ -276,16 +275,15 @@
 
   const ROW = 24
   const GAP = 12
+  let heights = $state<Record<string, number>>({})
   let natural = $state<Record<string, number>>({})
 
-  function grow(node: HTMLElement, id: string) {
-    const watcher = new ResizeObserver(() => {
-      const rows = Math.ceil((node.offsetHeight + GAP) / (ROW + GAP))
-      if (natural[id] !== rows) natural = { ...natural, [id]: rows }
-    })
-    watcher.observe(node)
-    return { destroy: () => watcher.disconnect() }
-  }
+  $effect(() => {
+    for (const [id, height] of Object.entries(heights)) {
+      const rows = Math.ceil((height + GAP) / (ROW + GAP))
+      if (untrack(() => natural[id]) !== rows) natural = { ...untrack(() => natural), [id]: rows }
+    }
+  })
 
   const sheetPlaces: DynamicGridItem[] = [
     { id: 'saves', x: 0, y: 0, w: 3, h: 4, minW: 2, minH: 3 },
@@ -605,7 +603,7 @@
         onresize={(placements) => putLayout(placements, true)}
       >
         {#snippet item(placed)}
-          <div class="sheet-cell" class:sheet-cell-fill={(layout[placed.id]?.h ?? 0) > 0 || placed.id === 'actions'} use:grow={placed.id}>
+          <div class="sheet-cell" class:sheet-cell-fill={(layout[placed.id]?.h ?? 0) > 0 || placed.id === 'actions'} bind:offsetHeight={heights[placed.id]}>
           {#if placed.id === 'saves'}
             {@render group('saves', 'Saving throws', saves)}
           {:else if placed.id === 'senses'}
