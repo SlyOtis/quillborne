@@ -38,12 +38,12 @@
     { "id": "survival", "title": "Survival", "attribute": "wis" }
   ],
   "saves": [
-    { "id": "str", "title": "Strength", "attribute": "str" },
-    { "id": "dex", "title": "Dexterity", "attribute": "dex" },
-    { "id": "con", "title": "Constitution", "attribute": "con" },
-    { "id": "int", "title": "Intelligence", "attribute": "int" },
-    { "id": "wis", "title": "Wisdom", "attribute": "wis" },
-    { "id": "cha", "title": "Charisma", "attribute": "cha" }
+    { "id": "str", "title": "Strength", "attribute": "str", "modifier": "mod.str + prof * tier + bonus.saves" },
+    { "id": "dex", "title": "Dexterity", "attribute": "dex", "modifier": "mod.dex + prof * tier + bonus.saves" },
+    { "id": "con", "title": "Constitution", "attribute": "con", "modifier": "mod.con + prof * tier + bonus.saves" },
+    { "id": "int", "title": "Intelligence", "attribute": "int", "modifier": "mod.int + prof * tier + bonus.saves" },
+    { "id": "wis", "title": "Wisdom", "attribute": "wis", "modifier": "mod.wis + prof * tier + bonus.saves" },
+    { "id": "cha", "title": "Charisma", "attribute": "cha", "modifier": "mod.cha + prof * tier + bonus.saves" }
   ],
   "senses": [
     { "id": "passivePerception", "title": "Passive Perception", "value": "10 + skill.perception" },
@@ -109,6 +109,27 @@
     { "id": "resistance", "title": "Resistance" },
     { "id": "immunity", "title": "Immunity" },
     { "id": "vulnerability", "title": "Vulnerability" }
+  ],
+  "bonuses": [
+    { "id": "armorClass", "title": "Armor Class" },
+    { "id": "saves", "title": "Saving Throws" },
+    { "id": "initiative", "title": "Initiative" },
+    { "id": "speed", "title": "Speed" },
+    { "id": "spellcasting", "title": "Spell Attack and Save DC" },
+    { "id": "hitPoints", "title": "Hit Points" }
+  ],
+  "speeds": [
+    { "id": "walk", "title": "Walking", "unit": "ft" },
+    { "id": "burrow", "title": "Burrowing", "unit": "ft" },
+    { "id": "climb", "title": "Climbing", "unit": "ft" },
+    { "id": "fly", "title": "Flying", "unit": "ft" },
+    { "id": "swim", "title": "Swimming", "unit": "ft" }
+  ],
+  "recharges": [
+    { "id": "dawn", "title": "Dawn" },
+    { "id": "dusk", "title": "Dusk" },
+    { "id": "shortRest", "title": "Short Rest" },
+    { "id": "longRest", "title": "Long Rest" }
   ],
   "progression": {
     "maxLevel": 20,

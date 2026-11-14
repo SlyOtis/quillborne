@@ -1,27 +1,44 @@
 <script lang="ts">
   import ResourceRoll from '$components/campaign/ResourceRoll.svelte'
-  import { navigate } from 'sly-svelte-location-router'
+  import { navigate, resolvedRoute } from 'sly-svelte-location-router'
   import Button from '$components/ui/Button.svelte'
   import Chip from '$components/ui/Chip.svelte'
   import Row from '$components/ui/Row.svelte'
-  import { getChoices, getItemType, type Item, type Rarity, type Resource } from '$lib/resources'
+  import { userCampaigns } from '$lib/stores/campaign.store'
+  import { getChoices, getItemRoom, getItemType, type Item, type Rarity, type Resource } from '$lib/resources'
 
   const TYPES = getChoices('items', 'category')
   const RARITIES = getChoices('items', 'rarity') as readonly Rarity[]
 
+  const steps = $derived($resolvedRoute.path.split('/').filter(Boolean).slice(1))
+  const room = $derived(steps[0] !== 'campaign')
+  const tables = $derived(Object.fromEntries($userCampaigns.map((one) => [one.id, one.name])))
+
   let type = $state('')
   let rarities = $state<Rarity[]>([])
   let bond = $state<'' | 'required' | 'free'>('')
+  let source = $state<'' | Item['source']>('')
+  let lock = $state<'' | 'open' | 'locked'>('')
+  let table = $state('')
 
-  const narrowed = $derived(Boolean(type || rarities.length > 0 || bond))
+  const narrowed = $derived(Boolean(type || rarities.length > 0 || bond || source || lock || table))
 
   function keep(one: Resource) {
     const it = one as Item
     return (
       (!type || it.category === type) &&
       (rarities.length === 0 || rarities.includes(it.rarity)) &&
-      (!bond || it.attunement === (bond === 'required'))
+      (!bond || it.attunement === (bond === 'required')) &&
+      (!source || it.source === source) &&
+      (!lock || it.locked === (lock === 'locked')) &&
+      (!table || it.campaign_id === table)
     )
+  }
+
+  function address(one: Resource): string | null {
+    const it = one as Item
+    if (it.locked) return null
+    return it.campaign_id ? `/main/campaign/${it.campaign_id}/items/${it.id}` : `/main/items/${it.id}`
   }
 
   function toggle(rarity: Rarity) {
@@ -32,10 +49,13 @@
     type = ''
     rarities = []
     bond = ''
+    source = ''
+    lock = ''
+    table = ''
   }
 </script>
 
-<ResourceRoll kind="items" {keep}>
+<ResourceRoll kind="items" {keep} load={room ? getItemRoom : undefined} open={room ? address : undefined}>
   {#snippet tools()}
     <select class="item-pick" aria-label="Filter by type" bind:value={type}>
       <option value="">Every type</option>
@@ -56,6 +76,27 @@
       <option value="free">No attunement</option>
     </select>
 
+    {#if room}
+      <select class="item-pick" aria-label="Filter by source" bind:value={source}>
+        <option value="">General and homebrew</option>
+        <option value="general">General</option>
+        <option value="homebrew">Homebrew</option>
+      </select>
+
+      <select class="item-pick" aria-label="Filter by lock" bind:value={lock}>
+        <option value="">Locked or not</option>
+        <option value="open">Unlocked</option>
+        <option value="locked">Locked</option>
+      </select>
+
+      <select class="item-pick" aria-label="Filter by campaign" bind:value={table}>
+        <option value="">Every campaign</option>
+        {#each $userCampaigns as one (one.id)}
+          <option value={one.id}>{one.name}</option>
+        {/each}
+      </select>
+    {/if}
+
     {#if narrowed}
       <Button variant="ghost" size="sm" onclick={reset}>Reset</Button>
     {/if}
@@ -63,19 +104,25 @@
 
   {#snippet row(one, under, peek)}
     {@const it = one as unknown as Item}
+    {@const opens = room ? address(one) : `${under}/${one.id}`}
     <Row
       title={one.title}
       sub={getItemType(it)}
       rarity={it.rarity}
-      tone="metal"
+      tone={it.source === 'general' ? 'verdigris' : 'metal'}
       image={one.image}
-      onclick={() => peek(one)}
-      onopen={() => navigate(`${under}/${one.id}`)}
+      onclick={it.locked ? undefined : () => peek(one)}
+      onopen={opens ? () => navigate(opens) : undefined}
     >
+      {#if room}
+        <Chip still glyph={it.source === 'general' ? 'gem' : 'edit'}>{it.source === 'general' ? 'General' : 'Homebrew'}</Chip>
+      {/if}
+      {#if it.locked}<Chip still glyph="lock">Locked</Chip>{/if}
       <span>{it.rarity}</span>
       {#if it.attunement}<span>Requires attunement</span>{/if}
-      {#if it.charges > 0}<span>{it.charges} {it.charges === 1 ? 'charge' : 'charges'}</span>{/if}
+      {#if it.grants.charges.max > 0}<span>{it.grants.charges.max} {it.grants.charges.max === 1 ? 'charge' : 'charges'}</span>{/if}
       {#if it.value}<span>{it.value} gp</span>{/if}
+      {#if room && it.campaign_id && tables[it.campaign_id]}<span>{tables[it.campaign_id]}</span>{/if}
       {#if one.tags.length > 0}
         <span class="roll-tags">
           {#each one.tags as tag (tag)}<span class="roll-tag">#{tag}</span>{/each}

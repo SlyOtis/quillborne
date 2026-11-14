@@ -53,6 +53,13 @@ describe('getResolvedCharacter on the 5e core', () => {
     expect(resolved.senses.find((entry) => entry.id === 'passivePerception')?.value).toBe(14)
   })
 
+  it('adds the saves bonus to every save and to nothing else', () => {
+    const warded = getResolvedCharacter(core, { ...lars, bonuses: { saves: 1 } })
+    const save = (from: typeof resolved, id: string) => from.saves.find((entry) => entry.id === id)?.value
+    expect([save(warded, 'dex'), save(warded, 'str')]).toEqual([(save(resolved, 'dex') ?? 0) + 1, (save(resolved, 'str') ?? 0) + 1])
+    expect(warded.skills).toEqual(resolved.skills)
+  })
+
   it('resolves derived values that depend on modifiers', () => {
     const derived = (id: string) => resolved.derived.find((entry) => entry.id === id)?.value
     expect(derived('initiative')).toBe(4)

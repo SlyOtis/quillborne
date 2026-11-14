@@ -43,6 +43,10 @@ export type TitledSpec = {
   description?: string
 }
 
+export type MeasureSpec = TitledSpec & {
+  unit?: string
+}
+
 export type ConditionSpec = TitledSpec & {
   levels?: number
 }
@@ -125,6 +129,11 @@ export type RuleSystem = {
   conditions?: ConditionSpec[]
   damageTypes?: TitledSpec[]
   defences?: TitledSpec[]
+  /** The `bonus.<id>` names the formulas read, titled so a choice can name them. */
+  bonuses?: TitledSpec[]
+  speeds?: MeasureSpec[]
+  /** When a thing that spends charges gets them back. */
+  recharges?: TitledSpec[]
 }
 
 export type RuleSystemOverlay = Partial<Omit<RuleSystem, 'id' | 'title' | 'version'>> & {

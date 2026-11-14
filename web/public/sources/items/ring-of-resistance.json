@@ -1,0 +1,27 @@
+{
+  "name": "Ring of Resistance",
+  "description": "A gold band set with a garnet that is always warm.",
+  "category": "ring",
+  "subtype": "garnet",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Fire",
+  "tags": [
+    "defence"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nThe gem decides what the ring wards against. This one holds a garnet, and flame finds it hard to burn the hand that wears it.",
+  "grants": {
+    "defences": [
+      {
+        "id": "resistance",
+        "damage": "fire"
+      }
+    ]
+  }
+}

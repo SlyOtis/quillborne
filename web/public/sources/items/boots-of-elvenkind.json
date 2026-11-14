@@ -1,0 +1,33 @@
+{
+  "name": "Boots of Elvenkind",
+  "description": "Soft boots of grey suede that make no sound on any floor.",
+  "category": "wondrous item",
+  "subtype": "boots",
+  "rarity": "uncommon",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Stealth",
+  "tags": [
+    "stealth"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What they do\n\nWhatever you walk on, stone, gravel or dry leaves, your steps make no sound in these boots, and anyone listening for you has a hard time of it.",
+  "grants": {
+    "advantages": [
+      {
+        "id": "skill.stealth",
+        "note": "when moving silently"
+      }
+    ],
+    "features": [
+      {
+        "name": "Silent Steps",
+        "text": "Your steps make no sound, whatever the ground beneath them."
+      }
+    ]
+  }
+}

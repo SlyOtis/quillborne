@@ -1,0 +1,31 @@
+{
+  "name": "Cloak of Protection",
+  "description": "A plain travelling cloak with a ward woven into its hem.",
+  "category": "wondrous item",
+  "subtype": "cloak",
+  "rarity": "uncommon",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Armor Class, Saving Throws",
+  "tags": [
+    "defence"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nThe ward in the hem turns aside a little of every blow and every curse aimed at the one who wears it.",
+  "grants": {
+    "bonuses": [
+      {
+        "id": "armorClass",
+        "value": 1
+      },
+      {
+        "id": "saves",
+        "value": 1
+      }
+    ]
+  }
+}

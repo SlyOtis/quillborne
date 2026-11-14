@@ -36,7 +36,7 @@ func getResourceGroup() nstate.Group[ResourceData] {
 			"description":     getProperty("string", "The lede under the name."),
 			"share_users":     getList("The players it is shared with by name."),
 			"share_campaigns": getList("The campaigns whose tables read it."),
-			"fields":          getJSON("Everything else the page carries: tags, facts, pictures, frame, block document and the fields of its own kind."),
+			"fields":          getJSON("Everything else the page carries: tags, facts, pictures, frame, block document and the fields of its own kind, an item's grants among them."),
 		}, "kind", "owner_id", "name"),
 		DependsOn: []string{GroupCampaign},
 		Refs:      map[string]string{"campaign_id": GroupCampaign, "parent_id": GroupResource},

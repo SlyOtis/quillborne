@@ -31,7 +31,9 @@ vi.mock('./collab', () => ({
   }
 }))
 
-import { deleteOne, deleteResources, getBlank, getItemLine, type Resource } from './resources'
+import dnd5e from '../../public/sources/systems/dnd5e.json'
+import type { RuleSystem } from './rules/spec.types'
+import { deleteOne, deleteResources, getBlank, getGrantLines, getItemGrants, getItemLine, type Resource } from './resources'
 
 
 const one = (fields: Partial<Resource> = {}): Resource => ({ ...getBlank('entries', 'lars'), id: 'res-1', ...fields })
@@ -79,5 +81,56 @@ describe('getItemLine', () => {
     expect(getItemLine(lantern)).toBe('Wondrous item (lantern), uncommon (requires attunement by a wizard)')
     expect(getItemLine({ ...lantern, attuned_by: '' })).toBe('Wondrous item (lantern), uncommon (requires attunement)')
     expect(getItemLine({ ...lantern, subtype: '', attunement: false })).toBe('Wondrous item, uncommon')
+  })
+})
+
+describe('getItemGrants', () => {
+  it('reads every kind of grant, keeps a free named proficiency, and drops the rows that name nothing', () => {
+    const grants = getItemGrants({
+      attributes: [{ id: 'con', mode: 'bonus', value: '2', max: 20 }, { mode: 'set', value: 19 }],
+      bonuses: [{ id: 'armorClass', value: 1 }],
+      proficiencies: [{ name: 'longbow', tier: 'proficient' }, { tier: 'proficient' }],
+      advantages: [{ id: 'skill.stealth', name: 'ignored', note: 'when moving silently' }],
+      defences: [{ id: 'resistance', damage: 'poison' }, { id: 'immunity' }],
+      senses: [{ id: 'darkvision', value: 60 }],
+      speeds: [{ id: 'swim', value: 40 }],
+      damage: [{ dice: '1d6', damage: 'poison' }, { damage: 'fire' }],
+      spells: [{ name: 'Web', level: 2, charges: 2, dc: 15, attack: null }, { level: 1 }],
+      features: [{ name: 'Crumbles', text: 'On a 1 it turns to dust.' }],
+      charges: { max: 10, regain: '1d6 + 4', at: 'dusk', last: 'roll a d20' }
+    })
+
+    expect(grants).toEqual({
+      attributes: [{ id: 'con', mode: 'bonus', value: 2, max: 20 }],
+      bonuses: [{ id: 'armorClass', value: 1 }],
+      proficiencies: [{ id: '', name: 'longbow', tier: 'proficient' }],
+      advantages: [{ id: 'skill.stealth', name: '', note: 'when moving silently' }],
+      defences: [{ id: 'resistance', damage: 'poison' }],
+      senses: [{ id: 'darkvision', value: 60 }],
+      speeds: [{ id: 'swim', value: 40 }],
+      damage: [{ dice: '1d6', damage: 'poison', note: '' }],
+      spells: [{ name: 'Web', level: 2, charges: 2, dc: 15, note: '' }],
+      features: [{ name: 'Crumbles', text: 'On a 1 it turns to dust.' }],
+      charges: { max: 10, regain: '1d6 + 4', at: 'dusk', last: 'roll a d20' }
+    })
+    expect(getItemGrants('not grants')).toEqual(getItemGrants({}))
+  })
+
+  it('writes the grants out with the names the system gives its ids', () => {
+    const grants = getItemGrants({
+      attributes: [{ id: 'str', mode: 'set', value: 19 }],
+      bonuses: [{ id: 'saves', value: 1 }],
+      defences: [{ id: 'resistance', damage: 'fire' }],
+      spells: [{ name: 'Web', level: 2, charges: 2, dc: 15 }],
+      charges: { max: 10, regain: '1d6 + 4', at: 'dusk' }
+    })
+
+    expect(getGrantLines(grants, dnd5e as RuleSystem)).toEqual([
+      { label: 'Strength', value: 'Becomes 19' },
+      { label: 'Saving Throws', value: '+1' },
+      { label: 'Resistance', value: 'Fire' },
+      { label: 'Web', value: 'Level 2, 2 charges, save DC 15' },
+      { label: 'Charges', value: '10, regains 1d6 + 4 at dusk' }
+    ])
   })
 })

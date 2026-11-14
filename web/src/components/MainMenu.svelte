@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { getCampaign, isNpc, putProfilePreferences } from '$lib/api'
-  import type { Campaign, Owner } from '$lib/api/types'
+  import { isNpc, putProfilePreferences } from '$lib/api'
+  import type { Owner } from '$lib/api/types'
   import type { Snippet } from 'svelte'
   import { navigate, currentRoute, resolvedRoute } from 'sly-svelte-location-router'
   import { getAll, getChildren, getRoots, isResourceKind, RESOURCES, type Resource, type ResourceKind } from '$lib/resources'
@@ -15,7 +15,6 @@
   import { actionBlocks, getAction, shortcuts } from '$lib/actions'
   import { postNotice, uiStore } from '$lib/stores/ui.store'
 
-  let campaign = $state<Campaign | null>(null)
   let loading = $state(false)
   let error = $state<string | null>(null)
   const arrived = new URLSearchParams(location.search)
@@ -80,8 +79,6 @@
     steps[0] === 'character' ? 'characters' : isResourceKind(asked) ? asked : 'campaigns'
   )
 
-  const openId = $derived(steps[0] === 'campaign' ? steps[3] ?? '' : steps[1] ?? '')
-
   const scribeOpen = $derived(steps[0] === 'scribe' ? steps[1] ?? '' : '')
 
   $effect(() => {
@@ -98,9 +95,6 @@
 
   const owner = $derived<Owner | null>(campaignId ? { at: 'campaign', id: campaignId } : $user ? { at: 'user', id: $user.user_id } : null)
 
-  const GEAR: ResourceKind[] = ['items', 'weapons', 'armor']
-  let kinds = $state<Record<string, ResourceKind>>({})
-
   let more = $state<Record<string, Resource[]>>({})
 
   const mine = $derived($userCharacters.filter((entry) => entry.owner_id === $user?.user_id && !isNpc(entry) && entry.campaign_id === campaignId))
@@ -113,12 +107,10 @@
   const initial = $derived(name.charAt(0).toUpperCase())
 
   $effect(() => {
-    const id = campaignId
     const at = owner
     let live = true
 
     if (!at) {
-      campaign = null
       error = null
       loading = false
       return
@@ -129,15 +121,9 @@
 
     void (async () => {
       try {
-        const [record, entries, ...gear] = await Promise.all([
-          id ? getCampaign(id) : Promise.resolve(null),
-          getAll(at, 'entries'),
-          ...(id ? GEAR.map((roll) => getAll(at, roll)) : [])
-        ])
+        const entries = await getAll(at, 'entries')
         if (!live) return
-        campaign = record
-        kinds = Object.fromEntries(GEAR.flatMap((kind, index) => (gear[index] ?? []).map((row) => [row.id, kind])))
-        more = { entries, items: gear.flat() }
+        more = { entries }
       } catch (reason) {
         if (!live) return
         error = reason instanceof Error ? reason.message : String(reason)
@@ -156,10 +142,6 @@
     putQuery({ folds: open.join(',') || null })
   }
 
-  function openCampaign(where = '') {
-    if (campaign) navigate(`/main/campaign/${campaign.id}${where}`)
-  }
-
   function twigs(rows: Resource[], kind: ResourceKind, glyph?: GlyphName): TreeRow[] {
     const limb = (row: Resource): TreeRow => ({
       id: row.id,
@@ -172,10 +154,6 @@
   }
 
   const pages = $derived<TreeRow[]>(twigs(more.entries ?? [], 'entries', 'scroll'))
-
-  function openResource(kind: ResourceKind, id: string) {
-    openCampaign(`/${kinds[id] ?? kind}/${id}`)
-  }
 
   function openPage(id: string) {
     navigate(`/main/scribe/${id}`)
@@ -259,7 +237,9 @@
       {#if mine.length > 1}
         {@render section('characters', 'Characters', mine.length, roster)}
       {/if}
-      {@render roll('items')}
+      <div class="dnd-menu-tree dnd-menu-entry">
+        <Tree rows={[{ id: 'items', title: 'Items', glyph: 'chest' }]} on={steps[0] === 'items' ? 'items' : ''} onopen={() => navigate('/main/items')} />
+      </div>
     {:else}
       <SearchInput bind:value={hunt} placeholder="Search the pages..." variant="band" />
       <div class="dnd-menu-pages">
@@ -317,22 +297,6 @@
 {#snippet section(id: string, title: string, count: number, body: Snippet)}
   <Fold {title} {count} variant="row" open={open.includes(id)} ontoggle={() => toggle(id)}>
     {@render body()}
-  </Fold>
-{/snippet}
-
-{#snippet roll(kind: ResourceKind)}
-  <Fold
-    title={RESOURCES[kind].many}
-    count={(more[kind] ?? []).length}
-    variant="row"
-    open={open.includes(kind)}
-    ontoggle={() => toggle(kind)}
-  >
-    {#if (more[kind] ?? []).length > 0}
-      <div class="dnd-scroll dnd-menu-tree">
-        <Tree rows={twigs(more[kind], kind)} on={openId} onopen={(id) => openResource(kind, id)} />
-      </div>
-    {/if}
   </Fold>
 {/snippet}
 

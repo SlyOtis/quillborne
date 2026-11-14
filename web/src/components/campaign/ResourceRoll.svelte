@@ -33,7 +33,9 @@
     row,
     tools,
     order,
-    keep
+    keep,
+    load,
+    open
   }: {
     /** Which resource the roll is for. */
     kind: ResourceKind
@@ -45,6 +47,10 @@
     order?: (a: Resource, b: Resource) => number
     /** What this type filters its own by, on top of the search and the tags. */
     keep?: (one: Resource) => boolean
+    /** Where the roll reads its rows from in place of the owner's own, gathering no groups. */
+    load?: () => Promise<Resource[]>
+    /** Where a row opens in place of the address under the roll, or nothing when it has no page. */
+    open?: (one: Resource) => string | null
   } = $props()
 
   setContext('dialogState', {
@@ -84,6 +90,7 @@
   let busy = $state(false)
 
   let peeked = $state<Resource | null>(null)
+  const opening = $derived(peeked ? (open ? open(peeked) : `${under}/${peeked.id}`) : null)
 
   $effect(() => {
     const asked = new URLSearchParams($resolvedRoute.search).get('tag') ?? ''
@@ -141,7 +148,12 @@
     loading = true
     try {
       campaign = campaignId ? await getCampaign(campaignId) : null
-      ;[rows, groups] = await Promise.all([getAll(owner, kind), getAll(owner, kind, true)])
+      if (load) {
+        rows = (await load()).filter((one) => !one.group)
+        groups = []
+      } else {
+        ;[rows, groups] = await Promise.all([getAll(owner, kind), getAll(owner, kind, true)])
+      }
       if (peeked) peeked = rows.find((one) => one.id === peeked?.id) ?? null
     } catch (reason) {
       error = reason instanceof Error ? reason.message : String(reason)
@@ -260,7 +272,7 @@
   <PageHead
     title={shape.many}
     count="{shown.length} of {rows.length}{groups.length > 0 ? `, in ${groups.length} groups` : ''}"
-    crumbs={[{ id: '', title: campaign ? campaign.name : 'Your own' }]}
+    crumbs={[{ id: '', title: campaign ? campaign.name : load ? 'All you reach' : 'Your own' }]}
     {tools}
   >
     {#snippet actions()}
@@ -322,9 +334,11 @@
           <h2 class="dnd-label roll-peek-name">{shape.one}</h2>
           <span class="roll-peek-note">{shape.mark(peeked)}</span>
           <span class="roll-peek-run"></span>
-          <IconBtn title="Open" onclick={() => navigate(`${under}/${peeked?.id}`)}>
-            <Glyph name="forward" size="sm" />
-          </IconBtn>
+          {#if opening}
+            <IconBtn title="Open" onclick={() => opening && navigate(opening)}>
+              <Glyph name="forward" size="sm" />
+            </IconBtn>
+          {/if}
           <IconBtn title="Close" onclick={() => (peeked = null)}>
             <Glyph name="close" size="sm" />
           </IconBtn>

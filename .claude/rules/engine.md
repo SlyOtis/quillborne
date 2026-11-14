@@ -44,6 +44,10 @@ A character can therefore add an attribute, a skill or a point pool nobody else 
 
 A JSON file plus a case in `web/src/lib/rules/derive.spec.ts`. Never a branch in a component.
 
+## Items
+
+An item's `grants` are a layer over a character, the way an overlay is a layer over a system: `ItemGrants` in `web/src/lib/rules/item.types.ts` names, per entry, the id of the item's `system` and the scope it lands on, `attr.<id>`, `bonus.<id>`, `skill.<id>`, `save.<id>` and `sense.<id>`. A system lists what a grant may name beside its attributes, skills, saves, senses, `damageTypes` and `defences`: `bonuses`, the `bonus.<id>` names its formulas read, `speeds` and `recharges`. `getItemGrants` in `web/src/lib/resources.ts` reads the grants of a general document and of a homebrew page alike, and `getGrantLines` writes them out with the system's titles. No grant is applied to a character yet.
+
 ## Vehicles
 
 A vehicle system is a JSON document under `web/public/sources/systems/vehicles/`, listed in its `index.json`. It declares the catalogue of `components` and their `categories`, the `sizes`, the deck `layouts` and their slots, the `templates` a vessel is built from, the crew `perks` and `perkTrees`, the open `rulings` with their provisional answers, the `qualities`, the `installHours`, the `text` of every condition and property, and `rules`: every threshold and penalty, and which ruling switches which rule. `web/src/lib/rules/vehicle.types.ts` is the shape.

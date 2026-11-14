@@ -1,0 +1,58 @@
+{
+  "name": "Belt of Dwarvenkind",
+  "description": "A broad belt of riveted leather, warm as a forge to the touch.",
+  "category": "wondrous item",
+  "subtype": "belt",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Constitution, Darkvision, Poison",
+  "tags": [
+    "defence",
+    "senses"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nThe belt lends its wearer the hardiness of the mountain folk. Your constitution toughens, your eyes learn the dark of the deep halls, poison finds less purchase in you, and dwarves take you for kin.\n\n## While you wear it\n\n- Your Constitution rises by 2, to no more than 20\n- You see in darkness out to 60 feet\n- Poison damage bites less, and you shrug off poison more easily\n- Dwarves warm to you, and you speak, read and write their tongue",
+  "grants": {
+    "attributes": [
+      {
+        "id": "con",
+        "mode": "bonus",
+        "value": 2,
+        "max": 20
+      }
+    ],
+    "advantages": [
+      {
+        "id": "skill.persuasion",
+        "note": "with dwarves"
+      },
+      {
+        "id": "save.con",
+        "note": "against poison"
+      }
+    ],
+    "defences": [
+      {
+        "id": "resistance",
+        "damage": "poison"
+      }
+    ],
+    "senses": [
+      {
+        "id": "darkvision",
+        "value": 60
+      }
+    ],
+    "features": [
+      {
+        "name": "Dwarvish",
+        "text": "You can speak, read and write Dwarvish."
+      }
+    ]
+  }
+}

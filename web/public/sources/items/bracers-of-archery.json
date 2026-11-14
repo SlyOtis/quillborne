@@ -1,0 +1,39 @@
+{
+  "name": "Bracers of Archery",
+  "description": "Leather bracers stitched with fletching patterns that steady a bow arm.",
+  "category": "wondrous item",
+  "subtype": "bracers",
+  "rarity": "uncommon",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Ranged, Damage",
+  "tags": [
+    "combat",
+    "ranged"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What they do\n\nWhile you wear these bracers you handle the longbow and the shortbow as if you had trained with them all your life, and every arrow you loose from either bites a little deeper.",
+  "grants": {
+    "proficiencies": [
+      {
+        "name": "longbow",
+        "tier": "proficient"
+      },
+      {
+        "name": "shortbow",
+        "tier": "proficient"
+      }
+    ],
+    "damage": [
+      {
+        "dice": "2",
+        "damage": "",
+        "note": "on ranged attacks with a longbow or a shortbow"
+      }
+    ]
+  }
+}
