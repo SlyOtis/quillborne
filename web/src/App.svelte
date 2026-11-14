@@ -88,6 +88,11 @@
       component: page("UserPage", () => import("./pages/UserPage.svelte")),
       guard: requireSignIn
     },
+    "/main/player/:id": {
+      name: "player-view",
+      component: page("PlayerPage", () => import("./pages/PlayerPage.svelte")),
+      guard: requireSignIn
+    },
     "/main/campaign": "/main/campaigns",
     "/main/campaigns": {
       name: "campaigns-list",

@@ -146,7 +146,7 @@
   }
 </script>
 
-<Shell drawers title="Monsters" width="full" back={() => navigate('/main')}>
+<Shell drawers title="Monsters" width="full">
   <header class="dnd-band">
     <div class="dnd-band-line">
       <p class="dnd-label lair-eyebrow">The bestiary and your homebrew</p>

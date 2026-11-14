@@ -231,7 +231,7 @@
   }
 </script>
 
-<Shell drawers title={monster?.name ?? 'Monster'} width="wide" back={() => navigate('/main/monsters')}>
+<Shell drawers title={monster?.name ?? 'Monster'} width="wide">
   {#if missing}
     <p class="beast-alarm" role="alert">{missing}</p>
   {:else if !monster || !system || !block || !stats || !shown}

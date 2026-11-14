@@ -1,7 +1,8 @@
 <script lang="ts">
   import { setContext, tick, type Snippet } from 'svelte'
   import { navigate, resolvedRoute } from 'sly-svelte-location-router'
-  import { getCampaigns, getCharacters } from '$lib/api'
+  import { getCampaigns, getCharacters, getProfiles } from '$lib/api'
+  import type { Profile } from '$lib/api/types'
 import { user, userProfile } from '$lib/stores/auth.store'
 import { currentCampaignId, userCampaigns } from '$lib/stores/campaign.store'
 import { currentCharacterId, userCharacters } from '$lib/stores/character.store'
@@ -15,6 +16,7 @@ import { currentCharacterId, userCharacters } from '$lib/stores/character.store'
   import Sidebar from '$components/ui/Sidebar.svelte'
   import Glyph from '$components/ui/Glyph.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
+  import Presence, { type PresenceUser } from '$components/ui/Presence.svelte'
   import StoredImage from '$components/ui/StoredImage.svelte'
 import Toast from '$components/ui/Toast.svelte'
   import MenuPanel from '$components/MenuPanel.svelte'
@@ -32,6 +34,18 @@ import Toast from '$components/ui/Toast.svelte'
   const character = $derived($userCharacters.find((one) => one.id === ($currentCharacterId ?? $userProfile?.preferences?.active_characters?.[$currentCampaignId ?? $userCampaigns[0]?.id ?? ''] ?? $userProfile?.preferences?.recent_characters?.[0])) ?? null)
   const campaign = $derived($userCampaigns.find((one) => one.id === ($currentCampaignId ?? character?.campaign_id)) ?? null)
   const onSheet = $derived(Boolean(character) && $resolvedRoute.path === `/main/character/${character?.id}`)
+  const seats = $derived(campaign ? [campaign.dm_id, ...campaign.player_ids.filter((id) => id !== campaign.dm_id)] : [])
+  let profiles = $state<Record<string, Profile>>({})
+  const members = $derived<PresenceUser[]>(
+    seats.map((id) => ({
+      id,
+      name: profiles[id]?.display_name || profiles[id]?.email || 'A player',
+      image: profiles[id]?.photo_url || undefined,
+      self: id === $user?.user_id
+    }))
+  )
+  let canBack = $state(true)
+  let canForward = $state(true)
   let toolsOpen = $state(false)
   let stackEl = $state<HTMLElement | null>(null)
   let shellEl = $state<HTMLElement | null>(null)
@@ -40,6 +54,27 @@ import Toast from '$components/ui/Toast.svelte'
   $effect(() => {
     $resolvedRoute.path
     toolsOpen = false
+  })
+
+  $effect(() => {
+    const ids = seats
+    if (ids.length === 0) return
+    void getProfiles(ids)
+      .then((held) => {
+        profiles = Object.fromEntries(held.map((one) => [one.user_id, one]))
+      })
+      .catch(() => {})
+  })
+
+  $effect(() => {
+    if (!('navigation' in window)) return
+    const read = () => {
+      canBack = navigation.canGoBack
+      canForward = navigation.canGoForward
+    }
+    read()
+    navigation.addEventListener('currententrychange', read)
+    return () => navigation.removeEventListener('currententrychange', read)
   })
 
   function openCharacter() {
@@ -119,29 +154,33 @@ import Toast from '$components/ui/Toast.svelte'
   class:dnd-shell-chat-open={$shell.drawers && $chatOpen}
 >
   <header class="dnd-shell-bar">
-    {#if $shell.drawers}
-      <span class="dnd-shell-handle">
+    <span class="dnd-shell-handle dnd-shell-handle-start">
+      {#if $shell.drawers}
         <Sigil title="Toggle the menu" size="sm" active={$menuOpen} onclick={uiStore.toggleMenu}>
           <Glyph name="menu" size="sm" />
         </Sigil>
-      </span>
-    {/if}
+      {/if}
+      <Sigil title="Back" size="sm" disabled={!canBack} onclick={() => history.back()}>
+        <Glyph name="back" size="sm" />
+      </Sigil>
+      <Sigil title="Forward" size="sm" disabled={!canForward} onclick={() => history.forward()}>
+        <Glyph name="forward" size="sm" />
+      </Sigil>
+    </span>
 
     <button type="button" class="dnd-shell-handle" title="Home" onclick={() => navigate('/main')}>
       <Crest lit={$resolvedRoute.path === '/main'} />
     </button>
-
-    {#if $shell.back}
-      <Sigil title="Back" size="sm" onclick={$shell.back}>
-        <Glyph name="back" size="sm" />
-      </Sigil>
-    {/if}
 
     {#if $shell.nav}
       <nav class="dnd-shell-nav" aria-label="Page">{@render $shell.nav()}</nav>
     {/if}
 
     <span class="dnd-shell-run" aria-hidden="true"></span>
+
+    {#if campaign}
+      <Presence users={members} onclick={(one) => navigate(`/main/player/${one.id}`)} />
+    {/if}
 
     <span class="dnd-shell-stack" bind:this={stackEl}>
       <button type="button" class="dnd-shell-chip dnd-shell-chip-round" title={character ? (onSheet ? "Open the sheet's tools" : `Open ${character.metadata.name}`) : 'Forge a character'} aria-expanded={onSheet ? toolsOpen : undefined} onclick={openCharacter}>
@@ -451,11 +490,20 @@ import Toast from '$components/ui/Toast.svelte'
     display: flex;
     flex: none;
     align-items: center;
+    gap: var(--space-2);
     padding: 0;
     border: none;
     border-radius: var(--radius-sm);
     background: none;
     color: inherit;
+  }
+
+  .dnd-shell-handle-start > :global(.dnd-sigil-active) {
+    animation: dnd-lit 5.5s ease-in-out infinite alternate;
+  }
+
+  .dnd-shell-handle-start > :global(.dnd-sigil-active .dnd-sigil-trace) {
+    animation: dnd-spin 9s linear infinite;
   }
 
   button.dnd-shell-handle {
@@ -815,7 +863,9 @@ import Toast from '$components/ui/Toast.svelte'
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .dnd-shell-hold > :global(*) {
+    .dnd-shell-hold > :global(*),
+    .dnd-shell-handle-start > :global(.dnd-sigil-active),
+    .dnd-shell-handle-start > :global(.dnd-sigil-active .dnd-sigil-trace) {
       animation: none;
     }
   }

@@ -63,7 +63,6 @@ export const chatOpen = derived(uiStore, $ui => $ui.chatOpen);
 /** What the page on screen asks of the frame that stays mounted around every page. */
 export interface ShellParts {
   title: string;
-  back?: () => void;
   width: 'narrow' | 'wide' | 'full';
   flush: boolean;
   drawers: boolean;

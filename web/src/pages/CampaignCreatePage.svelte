@@ -85,7 +85,7 @@
   }
 </script>
 
-<Shell title="New Campaign" width="narrow" back={() => navigate('/main')}>
+<Shell title="New Campaign" width="narrow">
   <header class="raise-crown">
     <span class="raise-crest"><Ornament name="banner" size="lg" tone="metal" /></span>
     <h1 class="dnd-heading dnd-heading-hero raise-name">Raise a Campaign</h1>

@@ -140,7 +140,7 @@
   }
 </script>
 
-<Shell title="Choose a Class" back={() => navigate('/main/create/character')}>
+<Shell title="Choose a Class">
   <header class="pick-crown">
     <span class="pick-crest"><Ornament name="blade" size="lg" tone="metal" /></span>
     <h1 class="dnd-heading dnd-heading-hero pick-name">Choose Your Class</h1>

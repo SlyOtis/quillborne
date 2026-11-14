@@ -403,7 +403,6 @@
 <Shell
   title={$info.name || 'Character'}
   width="full"
-  back={() => navigate('/main')}
   drawers
 >
   {#snippet tools()}
