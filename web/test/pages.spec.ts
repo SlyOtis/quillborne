@@ -11,7 +11,8 @@ const names = [
   'CharacterRacePage',
   'CampaignCreatePage',
   'SourcePage',
-  'UserPage'
+  'UserPage',
+  'PlayerPage'
 ] as const
 
 type Page = ReturnType<typeof component>

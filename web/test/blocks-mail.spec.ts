@@ -25,10 +25,10 @@ describe('the mail a document is written out as', () => {
     expect(html).toContain('South &mdash; 1')
   })
 
-  it('degrades a recording to a link rather than to a dead player', () => {
-    const html = getBlockEmailHtml(getBlock('audio', 'The bell', { src: 'file:sounds/bell.webm' }))
-    expect(html).toContain('<a href="file:sounds/bell.webm"')
-    expect(html).toContain('The bell')
+  it('degrades a video to a link rather than to a dead player', () => {
+    const html = getBlockEmailHtml(getBlock('video', 'The ambush', { src: 'file:clips/ambush.webm' }))
+    expect(html).toContain('<a href="file:clips/ambush.webm"')
+    expect(html).toContain('The ambush')
   })
 
   it('degrades a file to a link that carries its name', () => {

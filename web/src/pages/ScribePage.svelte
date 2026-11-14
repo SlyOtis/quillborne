@@ -393,7 +393,7 @@
   {/if}
 {/snippet}
 
-<Shell drawers title="Scribe" width="full" back={() => navigate('/main')} {backdrop}>
+<Shell drawers title="Scribe" width="full" {backdrop}>
   <div class="scribe">
     <PageHead
       title="Scribe"

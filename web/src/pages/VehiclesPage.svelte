@@ -220,7 +220,7 @@
 {#if dock}
   {@render body()}
 {:else}
-<Shell drawers title={campaign ? `${campaign.name} · Vehicles` : 'The Dock'} width="wide" back={() => navigate(campaignId ? `/main/campaign/${campaignId}` : '/main')}>
+<Shell drawers title={campaign ? `${campaign.name} · Vehicles` : 'The Dock'} width="wide">
   {#snippet nav()}
     {#if campaignId}
       <Stops stops={SECTIONS} stop={getSection('vehicles')} onopen={openSection} />

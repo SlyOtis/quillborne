@@ -39,7 +39,7 @@
   }
 </script>
 
-<Shell drawers title="Campaigns" width="wide" back={() => navigate('/main')}>
+<Shell drawers title="Campaigns" width="wide">
   <div class="camps">
     <header class="camps-crown">
       <p class="dnd-label camps-eyebrow">Chronicles</p>

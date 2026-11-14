@@ -271,7 +271,7 @@
   </div>
   {@render body()}
 {:else}
-<Shell drawers title={vehicle?.name ?? 'Vehicle'} width="full" back={() => navigate(back)}>
+<Shell drawers title={vehicle?.name ?? 'Vehicle'} width="full">
   {#snippet nav()}
     <Stops stops={STOPS} {stop} onopen={open} />
   {/snippet}

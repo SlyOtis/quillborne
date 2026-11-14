@@ -46,7 +46,7 @@
   })
 </script>
 
-<Shell title={entry?.name ?? one} back={() => history.back()}>
+<Shell title={entry?.name ?? one}>
   {#if loading}
     <div class="dnd-loading"><span class="dnd-spinner"></span></div>
   {:else if error || !entry}

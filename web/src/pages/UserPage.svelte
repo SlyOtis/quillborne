@@ -2,7 +2,6 @@
   import { deleteSession, postFile, putProfileDetails, putProfilePreferences } from '$lib/api'
   import * as api from '$lib/api'
   import { onMount } from 'svelte'
-  import { navigate } from 'sly-svelte-location-router'
   import { availableThemes, getDefaultTheme, getTheme, setTheme } from '$lib/dialogs/theme'
   import { userDetails, userProfile } from '$lib/stores/auth.store'
   import { INTEGRATIONS, type Integration } from '$lib/integrations'
@@ -174,7 +173,7 @@
   }
 </script>
 
-<Shell title="Profile" width="narrow" back={() => navigate('/main')}>
+<Shell title="Profile" width="narrow">
   <header class="user-crown">
     <Portrait
       src={$userProfile?.photo_url}

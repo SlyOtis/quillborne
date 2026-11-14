@@ -284,7 +284,7 @@
   }
 </script>
 
-<Shell drawers title="New Character" width="narrow" back={() => navigate(creationData.campaignId ? `/main/campaign/${creationData.campaignId}` : '/main')}>
+<Shell drawers title="New Character" width="narrow">
   <header class="make-crown">
     <span class="make-crest"><Ornament name="forge" size="lg" tone="metal" /></span>
     <h1 class="dnd-heading dnd-heading-hero make-name">Forge a Character</h1>
