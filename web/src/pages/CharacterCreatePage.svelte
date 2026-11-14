@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { postFile } from '$lib/api'
+  import { getAssets, postFile } from '$lib/api'
   import type { Character } from '$lib/api/types'
   import { onMount } from "svelte";
   import { navigate, resolvedRoute } from "sly-svelte-location-router";
@@ -11,9 +11,11 @@
   import Button from "$components/ui/Button.svelte";
   import Field from "$components/ui/Field.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
+  import IconBtn from "$components/ui/IconBtn.svelte";
   import Ornament from "$components/ui/Ornament.svelte";
   import Panel from "$components/ui/Panel.svelte";
   import Shell from "$components/ui/Shell.svelte";
+  import MediaDialog from "$components/MediaDialog.svelte";
   import Portrait from "$components/ui/Portrait.svelte";
 
   interface CharacterCreationData {
@@ -128,6 +130,7 @@
   let word = $state<string | null>(null);
   let dragActive = $state(false);
   let portraitDragActive = $state(false);
+  let portraitOpen = $state(false);
   let backgroundDragActive = $state(false);
 
   let canContinue = $derived(creationData.name.trim().length > 0 && Boolean(chosen));
@@ -227,11 +230,6 @@
     if (files) await postPortrait(Array.from(files));
   }
 
-  async function handlePortraitInput(event: Event) {
-    const input = event.currentTarget as HTMLInputElement;
-    if (input.files) await postPortrait(Array.from(input.files));
-  }
-
   async function postBackground(files: File[]) {
     const file = files.find((entry) => entry.type.startsWith('image/') || entry.type.startsWith('video/'));
     if (!file) return;
@@ -288,34 +286,29 @@
 
 <Shell drawers title="New Character" width="narrow">
   <header class="make-crown">
-    <span class="make-crest">
-      <span class="make-plate dnd-shield"></span>
-      <Ornament name="forge" size="lg" tone="metal" />
-    </span>
+    <span class="make-crest"><Ornament name="forge" size="lg" tone="metal" /></span>
     <h1 class="dnd-heading dnd-heading-hero make-name">Forge a Character</h1>
-    <span class="make-rule"><Ornament name="divider" tone="metal" /></span>
-    <p class="make-lede">Name them, bring what you have written, and set the scores they start with.</p>
   </header>
 
   <Panel title="The character">
     <div class="make-top">
-      <div
+      <button
+        type="button"
         class="make-drop make-face"
         class:make-drop-live={portraitDragActive}
-        role="region"
-        aria-label="Character image drop zone"
+        aria-label="Character image"
         ondragover={(event) => (portraitDragActive = drag(event, true))}
         ondragleave={() => (portraitDragActive = false)}
         ondrop={handlePortraitDrop}
+        onclick={() => (portraitOpen = true)}
       >
         {#if creationData.imageUrl}
           <span class="make-face-glass"><Portrait src={creationData.imageUrl} alt="Character" size="fill" /></span>
         {:else}
           <span class="dnd-empty-mark"><Ornament name="portrait" size="sm" tone="metal" /></span>
-          <p class="make-drop-note">Drop a portrait, or pick one</p>
+          <span class="make-drop-note">Drop a portrait, or pick one</span>
         {/if}
-        <input class="make-drop-input" type="file" accept="image/*" aria-label="Character image" onchange={handlePortraitInput} />
-      </div>
+      </button>
 
       <div class="make-lines">
         <Field label="Character name" id="character-name" required>
@@ -442,7 +435,7 @@
     {/if}
 
     {#snippet actions()}
-      <Button variant="ghost" size="sm" onclick={() => (adding = !adding)}>Add an ability</Button>
+      <IconBtn title="Add an ability" active={adding} onclick={() => (adding = !adding)}><Glyph name="add" size="sm" /></IconBtn>
     {/snippet}
   </Panel>
 
@@ -483,10 +476,21 @@
   </div>
 </Shell>
 
+{#if portraitOpen}
+  <MediaDialog
+    kind="image"
+    current={creationData.imageUrl}
+    getAssets={(query, kind) => getAssets(query, kind, { kind: 'user' })}
+    uploadFile={(file) => postFile(file, { kind: 'user' })}
+    onclose={(asset) => {
+      if (asset) creationData.imageUrl = asset.url;
+      portraitOpen = false;
+    }}
+  />
+{/if}
+
 <style>
   .make-crown {
-    --make-rule-run: calc(var(--space-8) * 6);
-    --make-rule-share: 70%;
     --make-crest-lift: drop-shadow(0 var(--space-1) var(--space-3) var(--shade-hard));
     display: flex;
     flex-direction: column;
@@ -506,35 +510,10 @@
     filter: var(--make-crest-lift);
   }
 
-  .make-plate {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: var(--radius-lg);
-    background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, var(--ground-deep) 45%, transparent) 60%, color-mix(in srgb, var(--ground-deep) 65%, transparent) 100%),
-      var(--texture-noise),
-      var(--stone);
-    box-shadow: var(--rim), var(--bevel-up), 0 0.5rem 1.2rem var(--shade);
-  }
-
   .make-name {
     font-size: var(--text-2xl);
     color: var(--metal-bright);
     text-shadow: 0 0.125rem 0 var(--ground-deep), 0 0 0.875rem var(--ember-glow), 0 0 2rem color-mix(in srgb, var(--ember-glow) 55%, transparent);
-  }
-
-  .make-rule {
-    display: block;
-    width: min(var(--make-rule-run), var(--make-rule-share));
-  }
-
-  .make-lede {
-    max-width: 60ch;
-    margin: 0;
-    font-size: var(--text-sm);
-    font-style: italic;
-    color: var(--ink-dim);
   }
 
   .make-top {
@@ -542,7 +521,7 @@
     display: grid;
     grid-template-columns: minmax(0, var(--make-portrait-col)) minmax(0, 1fr);
     gap: var(--space-4);
-    align-items: start;
+    align-items: stretch;
   }
 
   .make-lines {
@@ -594,7 +573,9 @@
 
   .make-face {
     width: 100%;
-    aspect-ratio: 1;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
   }
 
   .make-face-glass {

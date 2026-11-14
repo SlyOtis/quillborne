@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { getCampaign, isNpc, putProfilePreferences } from '$lib/api'
-  import type { Campaign, Owner } from '$lib/api/types'
+  import { getCampaign, getMonsters, isNpc, putProfilePreferences } from '$lib/api'
+  import type { Campaign, Monster, Owner } from '$lib/api/types'
   import type { Snippet } from 'svelte'
   import { navigate, currentRoute, resolvedRoute } from 'sly-svelte-location-router'
   import { getAll, getChildren, getRoots, isResourceKind, RESOURCES, type Resource, type ResourceKind } from '$lib/resources'
@@ -11,9 +11,8 @@
   import Tree, { type TreeRow } from '$components/ui/Tree.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
   import Glyph, { type GlyphName } from '$components/ui/Glyph.svelte'
-  import Crest from '$components/ui/Crest.svelte'
-  import PillTabs, { type PillTab } from '$components/ui/PillTabs.svelte'
   import SearchInput from '$components/ui/SearchInput.svelte'
+  import Button from '$components/ui/Button.svelte'
   import { actionBlocks, getAction, shortcuts } from '$lib/actions'
   import { postNotice, uiStore } from '$lib/stores/ui.store'
 
@@ -24,9 +23,10 @@
   let open = $state(arrived.get('folds')?.split(',').filter(Boolean) ?? ['characters', 'campaigns'])
   let reached = $state('')
   let hunt = $state('')
+  let monsters = $state<Monster[]>([])
 
   type Tab = 'table' | 'scribe'
-  const TABS: PillTab[] = [
+  const TABS: { value: Tab; label: string }[] = [
     { value: 'table', label: 'Table' },
     { value: 'scribe', label: 'Scribe' }
   ]
@@ -65,17 +65,26 @@
     putQuery({ menu: next })
   }
 
+  function stepTab(event: KeyboardEvent) {
+    const by = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0
+    if (!by) return
+    event.preventDefault()
+    const at = TABS.findIndex((one) => one.value === tab)
+    const next = TABS[(at + by + TABS.length) % TABS.length].value
+    pickTab(next)
+    document.getElementById(`menu-tab-${next}`)?.focus()
+  }
+
   const steps = $derived($resolvedRoute.path.split('/').filter(Boolean).slice(1))
   const asked = $derived(steps[0] === 'campaign' ? steps[2] ?? '' : steps[0] ?? '')
 
-  const here = $derived(steps[0] === 'character' ? 'characters' : isResourceKind(asked) ? asked : 'campaigns')
+  const here = $derived(
+    steps[0] === 'character' ? 'characters' : steps[0] === 'monsters' ? 'monsters' : isResourceKind(asked) ? asked : 'campaigns'
+  )
 
   const openId = $derived(steps[0] === 'campaign' ? steps[3] ?? '' : steps[1] ?? '')
 
-  const SCRIBE = 'scribe'
-  const scribeOpen = $derived(
-    $resolvedRoute.path === '/main/scribe' ? new URLSearchParams($resolvedRoute.search ?? '').get('page') || SCRIBE : ''
-  )
+  const scribeOpen = $derived(steps[0] === 'scribe' ? steps[1] ?? '' : '')
 
   $effect(() => {
     if (here === reached) return
@@ -101,6 +110,8 @@
   const current = $derived(
     $userCharacters.find((one) => one.id === ($currentCharacterId ?? activeId ?? $userProfile?.preferences?.recent_characters?.[0])) ?? null
   )
+  const ownMonsters = $derived(monsters.filter((entry) => entry.owner_id === $user?.user_id))
+  const monsterPath = $derived(steps[0] === 'monsters' ? $resolvedRoute.path : '')
   const searchKey = navigator.userAgent.includes('Mac') ? 'Cmd K' : 'Ctrl K'
   const name = $derived($userDetails?.display_name || $userProfile?.display_name || 'Adventurer')
   const initial = $derived(name.charAt(0).toUpperCase())
@@ -144,6 +155,18 @@
     }
   })
 
+  $effect(() => {
+    void monsterPath
+    if (!$user) return
+    let live = true
+    getMonsters()
+      .then((found) => live && (monsters = found))
+      .catch((reason) => live && (error = reason instanceof Error ? reason.message : String(reason)))
+    return () => {
+      live = false
+    }
+  })
+
   function toggle(id: string) {
     open = open.includes(id) ? open.filter((held) => held !== id) : [...open, id]
     putQuery({ folds: open.join(',') || null })
@@ -164,14 +187,14 @@
     return getRoots(rows).map(limb)
   }
 
-  const pages = $derived<TreeRow[]>([{ id: SCRIBE, title: 'Scribe', glyph: 'home', kids: twigs(more.entries ?? [], 'entries', 'scroll') }])
+  const pages = $derived<TreeRow[]>(twigs(more.entries ?? [], 'entries', 'scroll'))
 
   function openResource(kind: ResourceKind, id: string) {
     openCampaign(`/${kinds[id] ?? kind}/${id}`)
   }
 
   function openPage(id: string) {
-    navigate(id === SCRIBE ? '/main/scribe' : `/main/scribe?page=${id}`)
+    navigate(`/main/scribe/${id}`)
   }
 
   function openCharacter(characterId: string) {
@@ -203,14 +226,28 @@
   }
 </script>
 
-<nav class="dnd-menu" aria-label="Campaign navigator">
+<nav class="dnd-menu" class:dnd-sidebar-solid={tab === 'scribe'} aria-label="Campaign navigator">
   <div class="dnd-menu-rail">
-    <PillTabs value={tab} options={TABS} name="menu" onchange={pickTab} />
+    <div class="dnd-menu-tabs" role="tablist" aria-label="Navigator">
+      {#each TABS as one (one.value)}
+        <button
+          type="button"
+          role="tab"
+          class="dnd-menu-tab"
+          class:dnd-menu-tab-on={tab === one.value}
+          id="menu-tab-{one.value}"
+          aria-selected={tab === one.value}
+          aria-controls="menu-panel-{one.value}"
+          tabindex={tab === one.value ? 0 : -1}
+          onclick={() => pickTab(one.value)}
+          onkeydown={stepTab}
+        >
+          {one.label}
+        </button>
+      {/each}
+    </div>
     <span class="dnd-menu-rail-acts">
-      <IconBtn title="Home" active={$currentRoute.path === '/main'} onclick={() => navigate('/main')}>
-        <Crest />
-      </IconBtn>
-      <IconBtn title="Open scribe" active={$currentRoute.path === '/main/scribe'} onclick={() => navigate('/main/scribe')}>
+      <IconBtn title="Open scribe" active={steps[0] === 'scribe'} onclick={() => navigate('/main/scribe')}>
         <Glyph name="edit" size="sm" />
       </IconBtn>
     </span>
@@ -226,17 +263,16 @@
         <div class="dnd-menu-tree dnd-menu-current">
           <Tree rows={[sheetOf(current)]} on={steps[0] === 'character' ? (steps[1] ?? '') : ''} onopen={openCharacter} />
         </div>
-      {:else}
-        <p class="dnd-menu-empty dnd-menu-current">You have no character yet.</p>
       {/if}
       {@render section('campaigns', 'Campaigns', $userCampaigns.length, tables)}
+      {@render section('monsters', 'Monsters', ownMonsters.length, bestiary)}
       {#if mine.length > 1}
         {@render section('characters', 'Characters', mine.length, roster)}
       {/if}
       {@render roll('items')}
     {:else}
+      <SearchInput bind:value={hunt} placeholder="Search the pages..." variant="band" />
       <div class="dnd-menu-pages">
-        <SearchInput bind:value={hunt} placeholder="Search the pages..." />
         {#if loading}
           <div class="dnd-loading"><span class="dnd-spinner"></span></div>
         {:else}
@@ -302,9 +338,7 @@
     open={open.includes(kind)}
     ontoggle={() => toggle(kind)}
   >
-    {#if (more[kind] ?? []).length === 0}
-      <p class="dnd-menu-empty">Nothing on this roll.</p>
-    {:else}
+    {#if (more[kind] ?? []).length > 0}
       <div class="dnd-scroll dnd-menu-tree">
         <Tree rows={twigs(more[kind], kind)} on={openId} onopen={(id) => openResource(kind, id)} />
       </div>
@@ -318,10 +352,23 @@
   </div>
 {/snippet}
 
-{#snippet tables()}
-  {#if $userCampaigns.length === 0}
-    <p class="dnd-menu-empty">You sit at no campaign yet.</p>
+{#snippet bestiary()}
+  {#if ownMonsters.length === 0}
+    <p class="dnd-menu-empty">You have made no monster yet.</p>
   {:else}
+    <div class="dnd-scroll dnd-menu-tree">
+      <Tree
+        rows={ownMonsters.map((entry) => ({ id: entry.id, title: entry.name, mark: entry.is_public ? 'Shared' : 'Homebrew', kids: [] }))}
+        on={steps[0] === 'monsters' ? (steps[1] ?? '') : ''}
+        onopen={(id) => navigate(`/main/monsters/${id}`)}
+      />
+    </div>
+  {/if}
+  <Button variant="ghost" size="sm" fill onclick={() => navigate('/main/monsters')}>Open the bestiary</Button>
+{/snippet}
+
+{#snippet tables()}
+  {#if $userCampaigns.length > 0}
     <div class="dnd-scroll dnd-menu-tree">
       <Tree
         rows={$userCampaigns.map((entry) => ({ id: entry.id, title: entry.name, mark: entry.dm_id === $user?.user_id ? 'DM' : '', kids: [] }))}
@@ -340,10 +387,12 @@
     --menu-line: var(--metal-dim);
     --menu-surface: var(--ground-raised);
     --menu-surface-sunk: var(--ground-deep);
+    --menu-surface-solid: var(--ground);
     --menu-text: var(--ink);
     --menu-text-muted: var(--ink-dim);
     --menu-text-faint: var(--ink-faint);
     --menu-accent: var(--metal-bright);
+    --menu-accent-dim: var(--metal);
     --menu-hair: var(--border-hair) solid color-mix(in srgb, var(--metal-dim) 80%, transparent);
 
     display: grid;
@@ -357,20 +406,57 @@
   .dnd-menu-rail {
     position: relative;
     z-index: 2;
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: stretch;
+    min-width: 0;
+    background: var(--menu-surface-sunk);
+    border-bottom: var(--menu-hair);
+  }
+
+  .dnd-menu-tabs {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    min-width: 0;
+  }
+
+  .dnd-menu-tab {
     min-width: 0;
     padding: var(--space-2) var(--menu-pad);
-    border-bottom: var(--menu-hair);
+    border: none;
+    background: transparent;
+    font-family: var(--font-display);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--menu-accent-dim);
+    cursor: pointer;
+    transition: background-color 250ms ease-in-out, color 0.2s ease;
+  }
+
+  .dnd-menu-tab:hover {
+    color: var(--menu-accent);
+  }
+
+  .dnd-menu-tab-on {
+    background: var(--menu-surface-solid);
+  }
+
+  .dnd-menu-tab:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--menu-accent);
   }
 
   .dnd-menu-rail-acts {
     display: flex;
-    flex: none;
     align-items: center;
     gap: var(--space-1);
-    margin-inline-start: auto;
+    padding-inline: var(--space-2);
   }
 
   .dnd-menu-rail :global(.dnd-iconbtn[title]:hover::after),
@@ -411,13 +497,6 @@
     overflow-y: auto;
   }
 
-  .dnd-menu-empty {
-    margin: 0;
-    color: var(--menu-text-faint);
-    font-size: var(--text-sm);
-    font-style: italic;
-  }
-
   .dnd-menu-note {
     margin: var(--space-2) var(--menu-pad);
     padding: var(--space-3);
@@ -436,7 +515,7 @@
     align-items: center;
     gap: var(--space-2);
     min-width: 0;
-    padding: var(--space-1) var(--menu-pad);
+    padding: var(--space-1) var(--space-2);
     border-top: var(--menu-hair);
   }
 

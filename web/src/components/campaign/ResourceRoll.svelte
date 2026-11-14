@@ -22,6 +22,8 @@
   import Chip from '$components/ui/Chip.svelte'
   import Glyph from '$components/ui/Glyph.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
+  import PageHead from '$components/ui/PageHead.svelte'
+  import SearchInput from '$components/ui/SearchInput.svelte'
   import Shell from '$components/ui/Shell.svelte'
   import Stops from '$components/ui/Stops.svelte'
   import StoredImage from '$components/ui/StoredImage.svelte'
@@ -110,10 +112,6 @@
       .filter((limb) => arranging || limb.kids.length > 0)
   )
   const loose = $derived(shown.filter((one) => !groups.some((group) => group.id === one.group_id)))
-
-  function toggleTag(tag: string) {
-    picked = picked.includes(tag) ? picked.filter((one) => one !== tag) : [...picked, tag]
-  }
 
   onMount(() => setTheme(getTheme()))
 
@@ -259,60 +257,35 @@
     />
   {/snippet}
 
-  <header class="dnd-band">
-    <div class="dnd-band-line">
-      <p class="dnd-label roll-eyebrow">{campaign ? campaign.name : 'Your own'}</p>
-
-      <span class="dnd-band-acts">
-        {#if arranging}
-          <IconBtn title="New group" disabled={busy} onclick={() => (naming = true)}>
-            <Glyph name="group" size="md" />
+  <PageHead
+    title={shape.many}
+    count="{shown.length} of {rows.length}{groups.length > 0 ? `, in ${groups.length} groups` : ''}"
+    crumbs={[{ id: '', title: campaign ? campaign.name : 'Your own' }]}
+    {tools}
+  >
+    {#snippet actions()}
+      {#if arranging}
+        <IconBtn title="New group" disabled={busy} onclick={() => (naming = true)}>
+          <Glyph name="group" size="md" />
+        </IconBtn>
+        <IconBtn title="Done arranging" tone="verdigris" active onclick={() => (arranging = false)}>
+          <Glyph name="save" size="md" />
+        </IconBtn>
+      {:else}
+        <IconBtn title="Add {shape.word}" onclick={() => navigate(`${under}/create`)}>
+          <Glyph name="add" size="md" />
+        </IconBtn>
+        {#if canArrange}
+          <IconBtn title="Arrange into groups" onclick={() => (arranging = true)}>
+            <Glyph name="edit" size="md" />
           </IconBtn>
-          <IconBtn title="Done arranging" tone="verdigris" active onclick={() => (arranging = false)}>
-            <Glyph name="save" size="md" />
-          </IconBtn>
-        {:else}
-          <IconBtn title="Add {shape.word}" onclick={() => navigate(`${under}/create`)}>
-            <Glyph name="add" size="md" />
-          </IconBtn>
-          {#if canArrange}
-            <IconBtn title="Arrange into groups" onclick={() => (arranging = true)}>
-              <Glyph name="edit" size="md" />
-            </IconBtn>
-          {/if}
         {/if}
-      </span>
-    </div>
-
-    <div class="roll-crown">
-      <h1 class="dnd-heading dnd-heading-hero roll-name">{shape.many}</h1>
-      <p class="roll-lede">{shown.length} of {rows.length}{groups.length > 0 ? `, in ${groups.length} groups` : ''}</p>
-    </div>
-
-    <div class="roll-bar" role="group" aria-label="Filter the {shape.words}">
-      <input
-        type="text"
-        class="dnd-search roll-hunt"
-        placeholder="Search the {shape.words}..."
-        aria-label="Search {shape.many}"
-        bind:value={hunt}
-      />
-
-      {@render tools?.()}
-
-      {#if allTags.length > 0}
-        <span class="roll-bar-tags">
-          {#each allTags as tag (tag)}
-            <Chip on={picked.includes(tag)} onclick={() => toggleTag(tag)}>#{tag}</Chip>
-          {/each}
-        </span>
       {/if}
-
-      {#if picked.length > 0}
-        <Button variant="ghost" size="sm" onclick={() => (picked = [])}>Clear</Button>
-      {/if}
-    </div>
-  </header>
+    {/snippet}
+    {#snippet center()}
+      <SearchInput bind:value={hunt} bind:tags={picked} options={allTags} placeholder="Search the {shape.words}..." label="Search {shape.many}" />
+    {/snippet}
+  </PageHead>
 
   <div class="roll-hold" class:roll-hold-peeking={Boolean(peeked)}>
     <div class="roll-tree" class:roll-tree-arranging={arranging}>
@@ -368,7 +341,7 @@
 
         {#if peeked.tags.length > 0}
           <div class="roll-peek-tags">
-            {#each peeked.tags as tag (tag)}<Chip still>#{tag}</Chip>{/each}
+            {#each peeked.tags as tag (tag)}<Chip still glyph="tag">#{tag}</Chip>{/each}
           </div>
         {/if}
 
@@ -465,55 +438,6 @@
 {/snippet}
 
 <style>
-  .roll-eyebrow {
-    margin: 0;
-    color: var(--metal);
-  }
-
-  .roll-crown {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    margin-top: var(--space-4);
-    min-width: 0;
-  }
-
-  .roll-name {
-    margin: 0;
-    min-width: 0;
-  }
-
-  .roll-lede {
-    margin: 0;
-    font-family: var(--font-figures);
-    letter-spacing: var(--tracking-wide);
-    font-size: var(--text-xs);
-    color: var(--ink-faint);
-  }
-
-  .roll-hunt {
-    flex: 0 1 var(--roll-hunt);
-    --roll-hunt: calc(var(--space-8) * 3);
-    width: auto;
-    min-width: 0;
-  }
-
-  .roll-bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-3);
-    margin-top: var(--space-4);
-    min-width: 0;
-  }
-
-  .roll-bar-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    min-width: 0;
-  }
-
   .roll-hold {
     --roll-side: calc(var(--space-8) * 3);
     --roll-side-share: 30%;

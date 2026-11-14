@@ -1,9 +1,13 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
+  import Glyph, { type GlyphName } from './Glyph.svelte'
+  import { getRarityInk, type Rarity } from '$lib/resources'
 
   const {
     on = false,
     still = false,
+    glyph,
+    rarity,
     onclick,
     children
   }: {
@@ -11,6 +15,10 @@
     on?: boolean
     /** Draws the chip as a plain mark that cannot be pressed. */
     still?: boolean
+    /** The glyph drawn at the start of the chip. */
+    glyph?: GlyphName
+    /** Writes the word in the tone of its rarity. */
+    rarity?: Rarity
     /** Runs when the chip is pressed. */
     onclick?: (event: MouseEvent) => void
     /** The word the chip carries. */
@@ -19,33 +27,57 @@
 </script>
 
 {#if still}
-  <span class="dnd-chip dnd-chip-still">{@render children?.()}</span>
+  <span
+    class="dnd-chip dnd-chip-still"
+    class:dnd-chip-rarity={Boolean(rarity)}
+    style:--chip-ink={rarity ? getRarityInk(rarity) : undefined}
+  >
+    {#if glyph}<span class="dnd-chip-glyph"><Glyph name={glyph} size="sm" /></span>{/if}
+    {@render children?.()}
+  </span>
 {:else}
-  <button type="button" class="dnd-chip" class:dnd-chip-on={on} aria-pressed={on} {onclick}>
+  <button
+    type="button"
+    class="dnd-chip"
+    class:dnd-chip-on={on}
+    class:dnd-chip-rarity={Boolean(rarity)}
+    style:--chip-ink={rarity ? getRarityInk(rarity) : undefined}
+    aria-pressed={on}
+    {onclick}
+  >
+    {#if glyph}<span class="dnd-chip-glyph"><Glyph name={glyph} size="sm" /></span>{/if}
     {@render children?.()}
   </button>
 {/if}
 
 <style>
   .dnd-chip {
-    padding: var(--space-0) var(--space-3);
-    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-width: 0;
+    padding: var(--space-0) var(--space-2);
+    border: var(--border-hair) solid color-mix(in srgb, var(--metal-dim) 80%, transparent);
     border-radius: var(--radius-sm);
-    background: var(--texture-noise), linear-gradient(180deg, var(--ground-lift) 0%, var(--ground-deep) 100%);
-    box-shadow: var(--rim-thin);
+    background: var(--ground-deep);
     font-family: var(--font-display);
     font-size: var(--text-xs);
     letter-spacing: var(--tracking-wide);
     white-space: nowrap;
     color: var(--ink-dim);
-    text-shadow: 0 1px 0 #000;
     cursor: pointer;
-    transition: color 0.15s ease, text-shadow 0.15s ease, box-shadow 0.15s ease;
+    transition: color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .dnd-chip-glyph {
+    display: flex;
+    flex: none;
+    color: var(--metal);
   }
 
   .dnd-chip:hover {
+    border-color: var(--metal);
     color: var(--metal-bright);
-    text-shadow: var(--glow-text);
   }
 
   .dnd-chip:active {
@@ -53,15 +85,31 @@
   }
 
   .dnd-chip-on {
+    border-color: var(--metal);
     color: var(--metal-bright);
-    box-shadow: var(--rim-thin), inset 0 0 8px var(--ember-glow), 0 0 12px var(--ember-glow);
+    box-shadow: inset 0 0 8px var(--ember-glow), 0 0 12px var(--ember-glow);
   }
 
   .dnd-chip-still,
   .dnd-chip-still:hover {
+    border-color: color-mix(in srgb, var(--metal-dim) 80%, transparent);
     cursor: default;
     color: var(--metal);
-    text-shadow: 0 1px 0 #000;
+  }
+
+  .dnd-chip-rarity {
+    color: color-mix(in srgb, var(--chip-ink) 65%, var(--ink-faint));
+  }
+
+  .dnd-chip-rarity:hover,
+  .dnd-chip-rarity.dnd-chip-on,
+  .dnd-chip-rarity.dnd-chip-still {
+    color: var(--chip-ink);
+  }
+
+  .dnd-chip-rarity.dnd-chip-on {
+    border-color: var(--chip-ink);
+    box-shadow: inset 0 0 8px color-mix(in srgb, var(--chip-ink) 45%, transparent), 0 0 12px color-mix(in srgb, var(--chip-ink) 45%, transparent);
   }
 
   .dnd-chip:focus-visible {

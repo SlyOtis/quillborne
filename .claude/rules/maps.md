@@ -24,4 +24,4 @@ paths:
 
 ## Tests
 
-7. Every geometry and tool behaviour has a spec under `web/test/nimap/`, named `*.spec.ts` with fixtures as `*.fixture.ts`. `web/test/nimap/tools/performance.spec.ts` measures time per move, so the web `test` script runs it alone after the rest of the suite.
+7. Every geometry and tool behaviour has a spec under `web/test/nimap/`, named as `setup.md` Tests says; `web/test/nimap/tools/performance.spec.ts` measures time per move and runs alone after the rest.

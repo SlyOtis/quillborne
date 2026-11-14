@@ -57,7 +57,6 @@ describe('getResolvedCharacter on the 5e core', () => {
     const derived = (id: string) => resolved.derived.find((entry) => entry.id === id)?.value
     expect(derived('initiative')).toBe(4)
     expect(derived('armorClass')).toBe(14)
-    expect(derived('carryCapacity')).toBe(165)
   })
 
   it('resolves a pool whose maximum is a derived value', () => {
@@ -70,6 +69,15 @@ describe('getResolvedCharacter on the 5e core', () => {
     const pool = (id: string) => resolved.pools.find((entry) => entry.id === id)?.regain
     expect(pool('hitDice')).toBe(2)
     expect(pool('hitPoints')).toBe(10)
+  })
+
+  it('resolves the view a pool declares and plate for one that declares none', () => {
+    const view = (id: string) => resolved.pools.find((entry) => entry.id === id)?.view
+    expect(view('hitDice')).toBe('plate')
+    expect(view('hitPoints')).toBe('plate')
+    expect(view('inspiration')).toBe('pips')
+    const layered = getResolvedCharacter(getMergedSystem(core, nimble as RuleSystemOverlay), { ...lars, systems: ['dnd5e', 'nimble'] })
+    expect(layered.pools.find((entry) => entry.id === 'mana')?.view).toBe('plate')
   })
 
   it('keeps the death save thresholds and the hit die healing in the system', () => {

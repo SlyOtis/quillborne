@@ -49,6 +49,8 @@ export type ConditionSpec = TitledSpec & {
 
 export type PoolRegain = 'short' | 'long' | 'turn' | 'never'
 
+export type PoolView = 'plate' | 'pips'
+
 export type PoolSpec = {
   id: string
   title: string
@@ -57,6 +59,7 @@ export type PoolSpec = {
   regainedAt: PoolRegain
   regainAmount?: Expression
   tiered?: boolean
+  view?: PoolView
 }
 
 export type DerivedSpec = {
@@ -164,6 +167,7 @@ export type ResolvedPool = {
   remaining: number
   regainedAt: PoolRegain
   regain: number
+  view: PoolView
 }
 
 export type ResolvedAttribute = ResolvedValue & {

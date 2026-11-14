@@ -1,11 +1,10 @@
 <script lang="ts">
-  import { getCampaign, getCampaignCharacters, getCampaignCharactersStream, getCampaignMaps, getCampaignMapsStream, getProfiles, isNpc, NPC_TAG, postCharacter } from '$lib/api'
+  import { getCampaign, getCampaignCharacters, getCampaignPicture, getCampaignCharactersStream, getCampaignMaps, getCampaignMapsStream, getProfiles, isNpc, NPC_TAG, postCharacter } from '$lib/api'
   import type { Campaign, CampaignMap, Character, Encounter, MapMarkerKind } from '$lib/api/types'
   import { onDestroy, onMount, setContext } from 'svelte'
   import { navigate, resolvedRoute } from 'sly-svelte-location-router'
   import { getTheme, setTheme } from '$lib/dialogs/theme'
-  import { getAll, isResourceKind, type Place, type Resource } from '$lib/resources'
-  import { getDocument, getDocumentText } from '$lib/blocks'
+  import { getAll, isResourceKind, type Place } from '$lib/resources'
   import { getAbilities, getEmptyCharacter } from '$lib/engine'
   import { getSystemStack } from '$lib/rules/system'
   import { user } from '$lib/stores/auth.store'
@@ -20,6 +19,7 @@
   import Glyph from '$components/ui/Glyph.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
   import Panel from '$components/ui/Panel.svelte'
+  import Portrait from '$components/ui/Portrait.svelte'
   import Section from '$components/ui/Section.svelte'
   import BaseDialog from '$components/BaseDialog.svelte'
   import Shell from '$components/ui/Shell.svelte'
@@ -43,10 +43,10 @@
   ] as const
 
   let campaign = $state<Campaign | null>(null)
+  let picture = $state('')
   let characters = $state<Character[]>([])
   let maps = $state<CampaignMap[]>([])
   let places = $state<Place[]>([])
-  let entries = $state<Resource[]>([])
   let owners = $state<Record<string, string>>({})
   let loading = $state(true)
   let error = $state<string | null>(null)
@@ -73,9 +73,6 @@
     [...seated].sort((a, b) => Number(b.owner_id === $user?.user_id) - Number(a.owner_id === $user?.user_id))
   )
   const yours = $derived(seated.filter((entry) => entry.owner_id === $user?.user_id).length)
-  const lore = $derived(
-    [...entries].sort((a, b) => String(b.created_at ?? '').localeCompare(String(a.created_at ?? ''))).slice(0, 6)
-  )
   let tocOpen = $state(true)
   let chartsOpen = $state(false)
 
@@ -133,6 +130,7 @@
 
     try {
       campaign = await getCampaign(campaignId)
+      picture = await getCampaignPicture(campaignId)
       if (!campaign) {
         error = 'That campaign does not exist, or you are not part of it.'
         return
@@ -158,18 +156,16 @@
   })
 
   async function reload() {
-    const [held, board, world, written, seen] = await Promise.all([
+    const [held, board, world, seen] = await Promise.all([
       getCampaignCharacters(campaignId),
       getCampaignMaps(campaignId),
       getAll({ at: 'campaign', id: campaignId }, 'places') as Promise<Place[]>,
-      getAll({ at: 'campaign', id: campaignId }, 'entries'),
       getProfiles(campaign ? [campaign.dm_id, ...campaign.player_ids] : [])
     ])
 
     characters = held
     maps = board
     places = world
-    entries = written
     owners = Object.fromEntries(seen.map((one) => [one.user_id, one.display_name || one.email]))
   }
 </script>
@@ -232,11 +228,26 @@
   {/if}
 {/snippet}
 
+{#snippet head()}
+  <div class="camp-banner">
+    {#if picture}
+      <span class="camp-banner-ground"><Portrait src={picture} alt="" size="fill" /></span>
+    {/if}
+    <div class="camp-banner-words">
+      <h1 class="dnd-heading dnd-heading-hero camp-banner-name">{campaign?.name}</h1>
+      {#if campaign?.description}
+        <p class="camp-banner-lede">{campaign.description}</p>
+      {/if}
+    </div>
+  </div>
+{/snippet}
+
 <Shell
   drawers
   title={campaign?.name ?? 'Campaign'}
   width={tab === 'maps' ? 'full' : 'wide'}
   flush={tab === 'maps'}
+  crown={campaign && tab === 'overview' ? head : undefined}
 >
   {#snippet band()}
     <CampaignBar stop={tab} onopen={openRoll}>
@@ -283,27 +294,6 @@
             <div class="camp-tiles">
               {#each npcs as npc (npc.id)}
                 {@render tile(npc)}
-              {/each}
-            </div>
-          {/if}
-        </Section>
-
-        <Section title="Lore" note={lore.length === 0 ? 'Nothing written yet' : 'The latest entries'} count={lore.length}>
-          {#snippet actions()}
-            <IconBtn title="Write lore" onclick={() => openRoll('entries')}><Glyph name="edit" size="sm" /></IconBtn>
-          {/snippet}
-          {#if lore.length > 0}
-            <div class="camp-lore">
-              {#each lore as entry (entry.id)}
-                <Card
-                  layout="square"
-                  title={entry.title}
-                  sub={getDocumentText(getDocument(entry.content))}
-                  tags={entry.tags}
-                  image={entry.image}
-                  tone="metal"
-                  onclick={() => navigate(`/main/campaign/${campaignId}/entries/${entry.id}`)}
-                />
               {/each}
             </div>
           {/if}
@@ -389,18 +379,63 @@
 </Shell>
 
 <style>
+  .camp-banner {
+    --camp-banner-h: calc(var(--space-8) * 4);
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: var(--camp-banner-h);
+    min-width: 0;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    background: var(--texture-noise), linear-gradient(180deg, var(--ground-raised) 0%, var(--ground-deep) 100%);
+    box-shadow: var(--rim-thin), var(--shadow-md);
+  }
+
+  .camp-banner-ground {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    display: block;
+  }
+
+  .camp-banner-ground :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .camp-banner-words {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-6) var(--space-5) var(--space-4);
+    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--ground-deep) 85%, transparent));
+  }
+
+  .camp-banner-name {
+    margin: 0;
+    font-size: var(--text-2xl);
+    color: var(--metal-bright);
+    text-shadow: 0 0.125rem 0 var(--ground-deep), 0 0 0.875rem var(--ember-glow);
+    overflow-wrap: anywhere;
+  }
+
+  .camp-banner-lede {
+    max-width: 72ch;
+    margin: 0;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+  }
+
   .camp-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     align-content: start;
     row-gap: var(--space-6);
-    min-width: 0;
-  }
-
-  .camp-lore {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
-    gap: var(--space-4);
     min-width: 0;
   }
 

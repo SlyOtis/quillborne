@@ -1,10 +1,10 @@
 <script lang="ts">
   import { getCampaigns, getProfileEmail, getProfiles } from '$lib/api'
-  import type { Campaign, Owner } from '$lib/api/types'
+  import { ACCESS_READ } from '$lib/api/generated_auth'
+  import type { Campaign, Owner, Profile } from '$lib/api/types'
   import { user, userProfile } from '$lib/stores/auth.store'
   import { getAll, putOne, RESOURCES, type Resource, type ResourceKind } from '$lib/resources'
-  import BaseDialog from '$components/BaseDialog.svelte'
-  import Button from '$components/ui/Button.svelte'
+  import AccessDialog, { type AccessClaim, type AccessGrant, type AccessPerson } from '$components/AccessDialog.svelte'
   import Picker, { type Pick } from '$components/ui/Picker.svelte'
 
   let {
@@ -30,22 +30,34 @@
   } = $props()
 
   let loading = $state(true)
-  let busy = $state<string | null>(null)
+  let busy = $state(false)
   let error = $state<string | null>(null)
 
   let campaigns = $state<Campaign[]>([])
-  let people = $state<Pick[]>([])
+  let profiles = $state<Profile[]>([])
   let held = $state<{ kind: ResourceKind; one: Resource }[]>([])
-
-  let who = $state<Pick[]>([])
   let what = $state<Pick[]>([])
 
   const shape = $derived(RESOURCES[kind])
 
-  const reach = $derived<Pick[]>([
-    ...campaigns.map((entry) => ({ id: entry.id, mark: 'campaign', name: entry.name, tone: 'group' as const })),
-    ...people
-  ])
+  const claims = $derived<AccessClaim[]>(
+    campaigns.map((entry) => ({
+      id: entry.id,
+      label: entry.name,
+      glyph: 'campaign',
+      word: 'campaign',
+      meta: 'The dungeon master and every seated player',
+      access: one.share_campaigns.includes(entry.id) ? ACCESS_READ : undefined,
+      holders: [entry.dm_id, ...entry.player_ids].map((id) => person(id))
+    }))
+  )
+
+  const people = $derived<AccessPerson[]>(
+    profiles
+      .filter((entry) => entry.user_id !== $user?.user_id)
+      .map((entry) => person(entry.user_id))
+      .sort((a, b) => a.name.localeCompare(b.name))
+  )
 
   const shelf = $derived<Pick[]>(
     held.map((entry) => ({
@@ -57,14 +69,19 @@
     }))
   )
 
-  const changed = $derived(
-    what.some((tag) => tag.id !== one.id) ||
-      ids(who, 'campaign').join() !== one.share_campaigns.join() ||
-      ids(who, 'person').join() !== one.share_users.join()
-  )
+  const pending = $derived(what.some((tag) => tag.id !== one.id))
 
-  function ids(tags: Pick[], mark: string): string[] {
-    return tags.filter((tag) => tag.mark === mark).map((tag) => tag.id)
+  function person(id: string, found = profiles.find((entry) => entry.user_id === id)): AccessPerson {
+    const runs = campaigns.find((entry) => entry.dm_id === id)
+    const seated = campaigns.find((entry) => entry.player_ids.includes(id))
+    const role = runs ? `Dungeon master, ${runs.name}` : seated ? `Player, ${seated.name}` : $userProfile?.friends.includes(id) ? 'Friend' : undefined
+    return {
+      id,
+      name: found ? found.display_name || found.email : 'Someone',
+      email: found?.email,
+      image: found?.photo_url || null,
+      role
+    }
   }
 
   $effect(() => {
@@ -89,16 +106,7 @@
           ...($userProfile?.friends ?? []),
           ...foundCampaigns.flatMap((entry) => [entry.dm_id, ...entry.player_ids])
         ])
-        uids.delete($user?.user_id ?? '')
-        const profiles = await getProfiles([...uids])
-        people = profiles
-          .map((entry) => ({ id: entry.user_id, mark: 'person', name: entry.display_name || entry.email, tone: 'person' as const }))
-          .sort((a, b) => a.name.localeCompare(b.name))
-
-        who = [
-          ...one.share_campaigns.map((id) => ({ id, mark: 'campaign', name: foundCampaigns.find((entry) => entry.id === id)?.name ?? 'A campaign', tone: 'group' as const })),
-          ...one.share_users.map((id) => people.find((entry) => entry.id === id) ?? { id, mark: 'person', name: 'Someone', tone: 'person' as const })
-        ]
+        profiles = await getProfiles([...uids])
         what = [{ id: one.id, mark: kind, name: one.title, word: shape.word, tone: 'thing' }]
       } catch (reason) {
         error = reason instanceof Error ? reason.message : String(reason)
@@ -108,32 +116,32 @@
     })()
   })
 
-  async function mail(address: string) {
-    busy = 'mail'
+  async function mail(address: string): Promise<AccessPerson | null> {
     error = null
     try {
       const found = await getProfileEmail(address)
       if (!found) {
         error = 'Nobody signs in with that address.'
-        return
+        return null
       }
-      const tag = { id: found.user_id, mark: 'person', name: found.display_name || found.email, tone: 'person' as const }
-      if (!people.some((entry) => entry.id === tag.id)) people = [...people, tag]
-      if (!who.some((entry) => entry.id === tag.id)) who = [...who, tag]
+      return person(found.user_id, found)
     } catch (reason) {
       error = reason instanceof Error ? reason.message : String(reason)
-    } finally {
-      busy = null
+      return null
     }
   }
 
-  async function save() {
-    busy = 'save'
+  async function save(grant: AccessGrant) {
+    if (what.length === 0) {
+      error = `Pick at least one ${shape.word} to write onto.`
+      return
+    }
+    busy = true
     error = null
     try {
       const fields = {
-        share_campaigns: ids(who, 'campaign'),
-        share_users: ids(who, 'person')
+        share_campaigns: grant.claims,
+        share_users: grant.people
       }
 
       for (const tag of what) {
@@ -148,93 +156,44 @@
     } catch (reason) {
       error = reason instanceof Error ? reason.message : String(reason)
     } finally {
-      busy = null
+      busy = false
     }
   }
 </script>
 
-<BaseDialog bind:isOpen title="Access" width="560px" zIndex={9999}>
-  <div class="grant">
-    {#if error}
-      <p class="grant-alarm" role="alert">{error}</p>
-    {/if}
-
-    {#if loading}
-      <div class="dnd-loading"><span class="dnd-spinner"></span></div>
-    {:else}
-      <p class="grant-lede">You own this {shape.word}. Name who reads it, and what they get.</p>
-
-      <section class="grant-part">
-        <Picker
-          id="grant-who"
-          label="Who reads it"
-          note="A campaign, which is everyone at its table, or a person. An address adds someone you have not met."
-          picked={who}
-          options={reach}
-          onchange={(next) => (who = next)}
-          more={(asked) => asked.includes('@') && !reach.some((entry) => entry.name.toLowerCase() === asked)}
-          onmore={mail}
-          disabled={busy !== null}
-        />
-      </section>
-
-      <section class="grant-part">
-        <Picker
-          id="grant-what"
-          label="What they get"
-          note="This {shape.word} and anything else of yours."
-          picked={what}
-          options={shelf}
-          onchange={(next) => (what = next)}
-          disabled={busy !== null}
-        />
-      </section>
-
-      <footer class="grant-foot">
-        <Button variant="ghost" disabled={busy !== null} onclick={() => (isOpen = false)}>Cancel</Button>
-        <Button variant="primary" disabled={busy !== null || !changed || what.length === 0} onclick={save}>
-          Save
-        </Button>
-      </footer>
-    {/if}
-  </div>
-</BaseDialog>
-
-<style>
-  .grant {
-    display: grid;
-    gap: var(--space-4);
-    padding: var(--space-5) var(--space-6) var(--space-6);
-  }
-
-  .grant-lede {
-    margin: 0;
-    font-size: var(--text-sm);
-    color: var(--ink-dim);
-  }
-
-  .grant-part {
-    padding-top: var(--space-4);
-    border-top: var(--border-hair) solid var(--metal-dim);
-    box-shadow: inset 0 1px 0 var(--keyline);
-  }
-
-  .grant-foot {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--space-3);
-    padding-top: var(--space-4);
-    border-top: var(--border-hair) solid var(--metal-dim);
-  }
-
-  .grant-alarm {
-    margin: 0;
-    padding: var(--space-3);
-    border: var(--border-hair) solid var(--state-bad);
-    border-radius: var(--radius-sm);
-    background: var(--texture-noise), linear-gradient(180deg, color-mix(in srgb, var(--state-bad) 14%, var(--ground-raised)), var(--ground-deep));
-    box-shadow: var(--bevel-down);
-    font-size: var(--text-sm);
-    color: var(--ink);
-  }
-</style>
+<AccessDialog
+  bind:isOpen
+  title="Access"
+  description="You own this {shape.word}. Name the tables and the people who read it."
+  {claims}
+  selectedClaims={one.share_campaigns}
+  {people}
+  selected={one.share_users}
+  accessOptions={['read']}
+  getPerson={mail}
+  {pending}
+  claimsLabel="Tables"
+  claimsDescription="A campaign's table is its dungeon master and every seated player. Each table named here reads this {shape.word}."
+  claimPlaceholder="Type a campaign"
+  claimsEmptyMessage="You sit at no table"
+  holdersLabel="at the table"
+  peopleLabel="Readers"
+  peopleDescription="A person named here reads this {shape.word}. An address adds someone you have not met."
+  searchPlaceholder="Type a name"
+  emptyMessage="Nobody to show"
+  confirmLabel="Save"
+  {loading}
+  {busy}
+  {error}
+  onconfirm={save}
+>
+  <Picker
+    id="access-what"
+    label="What they get"
+    note="This {shape.word} and anything else of yours."
+    picked={what}
+    options={shelf}
+    onchange={(next) => (what = next)}
+    disabled={busy}
+  />
+</AccessDialog>

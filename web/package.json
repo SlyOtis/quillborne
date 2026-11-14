@@ -39,7 +39,7 @@
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.3.289",
     "replicate": "^1.4.0",
-    "sly-svelte-location-router": "^3.3.5",
+    "sly-svelte-location-router": "^3.3.6",
     "three": "^0.186.1",
     "yjs": "^13.6.32"
   }

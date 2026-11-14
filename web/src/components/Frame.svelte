@@ -323,7 +323,6 @@ import Toast from '$components/ui/Toast.svelte'
       linear-gradient(180deg, var(--ground-raised) 0%, var(--ground-deep) 100%);
     --shell-menu: 0px;
     --shell-chat: 0px;
-    --size-menu-max: 400px;
     --size-chat-max: 400px;
   }
 
@@ -854,7 +853,7 @@ import Toast from '$components/ui/Toast.svelte'
   }
 
   .dnd-shell-hold > :global(*) {
-    animation: dnd-shell-arrive 180ms ease-out both;
+    animation: dnd-shell-arrive 180ms ease-out backwards;
   }
 
   @keyframes dnd-shell-arrive {

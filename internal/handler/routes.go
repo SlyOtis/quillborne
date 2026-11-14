@@ -38,6 +38,13 @@ func PutRoutes(api *echo.Group, userAuth echo.MiddlewareFunc) {
 	vehicle.DELETE("/:id", DeleteVehicle)
 	vehicle.GET("/:id/stream", GetVehicleStream)
 
+	monster := api.Group("/monster", userAuth)
+	monster.GET("", GetMonsters)
+	monster.POST("", PostMonster)
+	monster.GET("/:id", GetMonster)
+	monster.PUT("/:id", PutMonster)
+	monster.DELETE("/:id", DeleteMonster)
+
 	campaign := api.Group("/campaign", userAuth)
 	campaign.GET("", GetCampaigns)
 	campaign.POST("", PostCampaign)

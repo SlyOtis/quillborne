@@ -28,7 +28,7 @@ env:
 build: build-web build-server
 
 build-web: env
-    rm -rf web/dist web/node_modules/.vite
+    rm -rf web/dist web/.vite
     cd web && pnpm build
 
 build-server:

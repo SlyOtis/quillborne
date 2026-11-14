@@ -124,8 +124,6 @@
 
 <style>
   .source-crown {
-    --source-rule-run: calc(var(--space-8) * 6);
-    --source-rule-share: 70%;
     --source-crest-lift: drop-shadow(0 var(--space-1) var(--space-3) var(--shade-hard));
     display: flex;
     flex-direction: column;
@@ -145,17 +143,6 @@
     filter: var(--source-crest-lift);
   }
 
-  .source-plate {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background:
-      linear-gradient(180deg, color-mix(in srgb, var(--stone-light) 20%, transparent) 0%, color-mix(in srgb, var(--ground-deep) 45%, transparent) 60%, color-mix(in srgb, var(--ground-deep) 65%, transparent) 100%),
-      var(--texture-noise),
-      var(--stone);
-    box-shadow: var(--rim-thin), var(--bevel-up);
-  }
-
   .source-eyebrow {
     margin: 0;
     color: var(--metal);
@@ -166,11 +153,6 @@
     color: var(--metal-bright);
     text-shadow: 0 0.125rem 0 var(--ground-deep), 0 0 0.875rem var(--ember-glow), 0 0 2rem color-mix(in srgb, var(--ember-glow) 55%, transparent);
     overflow-wrap: anywhere;
-  }
-
-  .source-rule {
-    display: block;
-    width: min(var(--source-rule-run), var(--source-rule-share));
   }
 
   .source-lede {

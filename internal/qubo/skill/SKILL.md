@@ -1,6 +1,6 @@
 ---
 name: qubo
-description: Operate Quillborne from the terminal with the qubo cli. Use when reading or writing profiles, campaigns and their players, maps, encounters, songs and chat, character sheets, vehicles, lore pages, files and folders, tags, the catalog or claims, when exporting or importing the table's data through /api/state, or when checking what a login or a credential pair can reach on a Quillborne server.
+description: Operate Quillborne from the terminal with the qubo cli. Use when reading or writing profiles, campaigns and their players, maps, encounters, songs and chat, character sheets, vehicles, monsters, lore pages, files and folders, tags, the catalog or claims, when exporting or importing the table's data through /api/state, or when checking what a login or a credential pair can reach on a Quillborne server.
 ---
 
 # qubo
@@ -13,7 +13,7 @@ description: Operate Quillborne from the terminal with the qubo cli. Use when re
 
 2. Claims decide every read and write. A 403, a 404 or an empty list means the player's claims do not bind the row, not that the tool is wrong. The dungeon master holds a campaign and everything in it; a seated player reads what the table shares.
 
-3. `qubo state export` and `qubo state import` move the table's data as one ndjson document: profiles, tags, the catalog, campaigns with their players, characters, vehicles, maps, encounters, songs, chat, lore pages, assets with their bytes, attachments and tag bindings. An import runs every record through the same handlers as the api, so every row and every claim is made the way a player would make it.
+3. `qubo state export` and `qubo state import` move the table's data as one ndjson document: profiles, tags, the catalog, campaigns with their players, characters, vehicles, monsters, maps, encounters, songs, chat, lore pages, assets with their bytes, attachments and tag bindings. An import runs every record through the same handlers as the api, so every row and every claim is made the way a player would make it.
 
 ## Configuration
 
@@ -43,21 +43,23 @@ Every resource command is `qubo <resource> <verb> [id...] [--data '{...}' | --fi
 
 3. `vehicle get [id]`, `create`, `replace <id>`, `delete <id>`, `stream <id>`. A `components` change carries the `revision` it was drafted on and answers 409 when stale.
 
-4. `campaign get [id]`, `create`, `replace <id>`, `delete <id>`, `stream <id>`; `campaign player create <campaign_id>` with `{email}`, `campaign player delete <campaign_id> <user_id>`; `campaign character get|create|delete <campaign_id> [character_id]`; `campaign map|encounter|song|chat get|create|replace|delete <campaign_id> [id]`.
+4. `monster get [id]`, `create`, `replace <id>`, `delete <id>`. A monster body names its `system`; `size`, `type`, `alignment` and `challenge` are columns, and the rest of the stat block sits in `stats`. `is_public` true lets every player read it; false keeps it the maker's homebrew, and only the maker changes or deletes it. Its monster tags are `tag object create <tag_id>` with `object_type` `public.monster`.
 
-5. `resource get [id] --query kind=items --query campaign_id=...`, `create`, `replace <id>`, `delete <id>`, `stream <id>`; `resource update get|create|replace|delete <resource_id>`. A page body is its columns, `kind`, `name`, `description`, `campaign_id`, `parent_id`, `share_users`, `share_campaigns`, and every other key lands in `fields`.
+5. `campaign get [id]`, `create`, `replace <id>`, `delete <id>`, `stream <id>`; `campaign player create <campaign_id>` with `{email}`, `campaign player delete <campaign_id> <user_id>`; `campaign character get|create|delete <campaign_id> [character_id]`; `campaign map|encounter|song|chat get|create|replace|delete <campaign_id> [id]`.
 
-6. `asset get [id]`, `asset create --upload picture.png --set name=... --set mime_type=image/png [--set campaign_id=...]` or a json body for a folder or a block document, `replace <id>`, `delete <id>`, `data <id>`, `upload <id> --upload file`, `move`; `asset object get|create|replace|delete`; `file get [id]`.
+6. `resource get [id] --query kind=items --query campaign_id=...`, `create`, `replace <id>`, `delete <id>`, `stream <id>`; `resource update get|create|replace|delete <resource_id>`. A page body is its columns, `kind`, `name`, `description`, `campaign_id`, `parent_id`, `share_users`, `share_campaigns`, and every other key lands in `fields`.
 
-7. `tag get [id]`, `create`, `replace <id>`, `delete <id>`; `tag object create <tag_id>`, `tag object delete <tag_id> --query object_type=... --query object_id=...`.
+7. `asset get [id]`, `asset create --upload picture.png --set name=... --set mime_type=image/png [--set campaign_id=...]` or a json body for a folder or a block document, `replace <id>`, `delete <id>`, `data <id>`, `upload <id> --upload file`, `move`; `asset object get|create|replace|delete`; `file get [id]`.
 
-8. `catalog get <kind> [slug]`, `catalog replace <kind> <slug>`.
+8. `tag get [id]`, `create`, `replace <id>`, `delete <id>`; `tag object create <tag_id>`, `tag object delete <tag_id> --query object_type=... --query object_id=...`.
 
-9. `search get --query q=...` or `search search` with a body.
+9. `catalog get <kind> [slug]`, `catalog replace <kind> <slug>`.
 
-10. `claim get <id>`, `claim create`; `claim user create|delete`; `claim object get <type> <id>`, `claim object create|delete`.
+10. `search get --query q=...` or `search search` with a body.
 
-11. `api <method> <path>` reaches any other route with the same identity.
+11. `claim get <id>`, `claim create`; `claim user create|delete`; `claim object get <type> <id>`, `claim object create|delete`.
+
+12. `api <method> <path>` reaches any other route with the same identity.
 
 ## State
 
