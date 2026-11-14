@@ -1,0 +1,27 @@
+{
+  "name": "Potion of Healing",
+  "description": "A red draught that glitters when the vial is shaken.",
+  "category": "potion",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": true,
+  "weight": 0.5,
+  "value": 50,
+  "notes": "Healing",
+  "tags": [
+    "healing"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nDrink it and wounds close as you watch. The vial is empty afterwards.",
+  "grants": {
+    "features": [
+      {
+        "name": "Healing",
+        "text": "You regain 2d4 + 2 hit points when you drink it."
+      }
+    ]
+  }
+}

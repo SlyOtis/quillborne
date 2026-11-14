@@ -1,0 +1,27 @@
+{
+  "name": "Goggles of Night",
+  "description": "Smoked lenses in a frame of blackened brass.",
+  "category": "wondrous item",
+  "subtype": "goggles",
+  "rarity": "uncommon",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Darkvision",
+  "tags": [
+    "senses"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What they do\n\nThrough these lenses the dark gives up its shapes. You see in darkness out to 60 feet, and a wearer who already sees in the dark sees 60 feet further.",
+  "grants": {
+    "senses": [
+      {
+        "id": "darkvision",
+        "value": 60
+      }
+    ]
+  }
+}

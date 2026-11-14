@@ -421,6 +421,9 @@ export async function getResources<T extends Row>(owner: Owner, kind: string): P
   )
 }
 
+/** Every page of a kind the reader reads, wherever it is kept, and the head of each item a table they sit at keeps locked from them. */
+export const getReachedResources = <T extends Row>(kind: string) => apiGet<T[]>(path('resource', { kind, reach: 'all' }))
+
 export async function postResource(owner: Owner, kind: string, values: Record<string, unknown>): Promise<string> {
   const created = await apiPost<Row>('resource', {
     ...values,

@@ -22,6 +22,11 @@ var resourceKinds = map[string]bool{
 	"armor": true, "locations": true, "maps": true, "sessions": true,
 }
 
+// lockedHeads names the kinds a table member may know of without reading, and the fields of the head they see.
+var lockedHeads = map[string][]string{
+	"items": {"category", "rarity"},
+}
+
 var resourceColumns = map[string]bool{
 	"id": true, "kind": true, "name": true, "description": true, "owner_id": true, "campaign_id": true, "created_at": true, "updated_at": true,
 	"share_users": true, "share_campaigns": true, "readers": true,
@@ -132,6 +137,13 @@ func GetResources(ctx echo.Context) error {
 	if !resourceKinds[kind] {
 		return respond.Error(ctx, http.StatusBadRequest, "kind must be one of the resource kinds")
 	}
+	switch ctx.QueryParam("reach") {
+	case "":
+	case "all":
+		return getReachedResources(ctx, actorID, kind)
+	default:
+		return respond.Error(ctx, http.StatusBadRequest, "reach must be all")
+	}
 	rctx := ctx.Request().Context()
 	resources := make([]db.Resource, 0)
 	q := db.Instance().NewSelect().Model(&resources).Where("kind = ?", kind)
@@ -168,6 +180,55 @@ func GetResources(ctx echo.Context) error {
 		records = append(records, getResourceRecord(resource))
 	}
 	return respond.JSON(ctx, http.StatusOK, records, len(records))
+}
+
+func getReachedResources(ctx echo.Context, actorID uuid.UUID, kind string) error {
+	rctx := ctx.Request().Context()
+	resources := make([]db.Resource, 0)
+	q := sdb.ObjectWhere(db.Instance().NewSelect().Model(&resources).Where("kind = ?", kind), actorID, db.OBJECT_TYPE_RESOURCE, sdb.ACCESS_READ, nil, nil, 0)
+	if err := q.OrderExpr("resource.name").Scan(rctx); err != nil {
+		ctx.Logger().Errorf("GetResources: %v", err)
+		return respond.ErrorInternal(ctx)
+	}
+	records := make([]map[string]any, 0, len(resources))
+	read := make([]uuid.UUID, 0, len(resources))
+	for _, resource := range resources {
+		records = append(records, getResourceRecord(resource))
+		read = append(read, resource.ID)
+	}
+	if head, ok := lockedHeads[kind]; ok {
+		locked, err := getLockedResources(rctx, actorID, kind, read)
+		if err != nil {
+			ctx.Logger().Errorf("GetResources: %v", err)
+			return respond.ErrorInternal(ctx)
+		}
+		for _, resource := range locked {
+			records = append(records, getLockedRecord(resource, head))
+		}
+	}
+	return respond.JSON(ctx, http.StatusOK, records, len(records))
+}
+
+func getLockedResources(ctx context.Context, actorID uuid.UUID, kind string, read []uuid.UUID) ([]db.Resource, error) {
+	tables := sdb.ObjectWhere(db.Instance().NewSelect().Model((*db.Campaign)(nil)).Column("id"), actorID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_READ, nil, nil, 0)
+	locked := make([]db.Resource, 0)
+	q := db.Instance().NewSelect().Model(&locked).Where("kind = ?", kind).Where("campaign_id IN (?)", tables).Where("COALESCE((fields->>'group')::boolean, false) = false")
+	if len(read) > 0 {
+		q = q.Where("resource.id NOT IN (?)", bun.In(read))
+	}
+	return locked, q.OrderExpr("resource.name").Scan(ctx)
+}
+
+func getLockedRecord(resource db.Resource, head []string) map[string]any {
+	fields := map[string]any{}
+	_ = json.Unmarshal(resource.Fields, &fields)
+	record := map[string]any{"id": resource.ID, "kind": resource.Kind, "name": resource.Name, "campaign_id": resource.CampaignID, "locked": true}
+	for _, key := range head {
+		if value, ok := fields[key]; ok {
+			record[key] = value
+		}
+	}
+	return record
 }
 
 func GetResource(ctx echo.Context) error {

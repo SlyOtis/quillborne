@@ -1,0 +1,36 @@
+{
+  "name": "Wand of Magic Missiles",
+  "description": "A short wand of white birch tipped with a bead of blue glass.",
+  "category": "wand",
+  "subtype": "",
+  "rarity": "uncommon",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 1,
+  "value": 0,
+  "notes": "Damage, Force",
+  "tags": [
+    "combat",
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nPoint it and speak, and darts of force leap out and never miss. Spend more of its charges to send more darts.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Magic Missile",
+        "level": 1,
+        "charges": 1,
+        "note": "each further charge raises its level by one, up to 3 charges"
+      }
+    ],
+    "charges": {
+      "max": 7,
+      "regain": "1d6 + 1",
+      "at": "dawn",
+      "last": "roll a d20; on a 1 it crumbles to ash"
+    }
+  }
+}

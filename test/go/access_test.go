@@ -352,6 +352,66 @@ func TestAPageSharedWithACampaignReachesItsTable(t *testing.T) {
 	}
 }
 
+func found(t *testing.T, answer envelope, wanted string) map[string]any {
+	t.Helper()
+	rows := make([]map[string]any, 0)
+	if err := json.Unmarshal(answer.Data, &rows); err != nil {
+		t.Fatalf("not a list: %s", string(answer.Data))
+	}
+	for _, row := range rows {
+		if row["id"] == wanted {
+			return row
+		}
+	}
+	return nil
+}
+
+func TestALockedItemShowsTheTableItsHeadAlone(t *testing.T) {
+	requireStack(t)
+	ensureProfile(t, player, "pip@quillborne.local")
+	campaignID := postCampaign(t)
+	itemID := postResource(t, dungeonMaster, `{"kind":"items","name":"Sealed Reliquary","description":"A saint's finger bone","campaign_id":"`+campaignID+`","category":"wondrous item","rarity":"rare","body":"It hums near the dead.","grants":{"features":[{"name":"Hush","text":"The dead fall quiet."}]}}`)
+	params := map[string]string{"id": itemID}
+	reach := "/api/resource?kind=items&reach=all"
+
+	if status, _ := call(t, player, http.MethodGet, "/api/resource?kind=items&reach=some", "", nil, handler.GetResources); status != http.StatusBadRequest {
+		t.Fatalf("an unknown reach answered %d", status)
+	}
+	if _, away := call(t, player, http.MethodGet, reach, "", nil, handler.GetResources); listed(t, away, itemID) {
+		t.Fatalf("a player away from the table knows of its locked item")
+	}
+
+	seatPlayer(t, campaignID)
+	status, seated := call(t, player, http.MethodGet, reach, "", nil, handler.GetResources)
+	head := found(t, seated, itemID)
+	if status != http.StatusOK || head == nil {
+		t.Fatalf("a seated player does not know of the table's locked item: %d", status)
+	}
+	if head["locked"] != true || head["name"] != "Sealed Reliquary" || head["category"] != "wondrous item" || head["rarity"] != "rare" || head["campaign_id"] != campaignID {
+		t.Fatalf("a locked item's head is wrong: %v", head)
+	}
+	for _, key := range []string{"description", "body", "grants", "owner_id", "share_users", "share_campaigns"} {
+		if _, ok := head[key]; ok {
+			t.Fatalf("a locked item carries its %s to a player who may not read it", key)
+		}
+	}
+	if status, _ := call(t, player, http.MethodGet, "/", "", params, handler.GetResource); status != http.StatusForbidden {
+		t.Fatalf("a seated player opened a locked item: %d", status)
+	}
+	_, own := call(t, dungeonMaster, http.MethodGet, reach, "", nil, handler.GetResources)
+	if mine := found(t, own, itemID); mine == nil || mine["locked"] != nil {
+		t.Fatalf("the maker's own item is not open to them: %v", mine)
+	}
+
+	if status, _ := call(t, dungeonMaster, http.MethodPut, "/", `{"share_campaigns":["`+campaignID+`"]}`, params, handler.PutResource); status != http.StatusOK {
+		t.Fatalf("PutResource share campaign: %d", status)
+	}
+	_, unlocked := call(t, player, http.MethodGet, reach, "", nil, handler.GetResources)
+	if open := found(t, unlocked, itemID); open == nil || open["locked"] != nil || open["body"] != "It hums near the dead." {
+		t.Fatalf("an item shared with the table is not open to it: %v", open)
+	}
+}
+
 func TestACampaignsAttachedAssetIsReadByItsTable(t *testing.T) {
 	requireBlob(t)
 	ensureProfile(t, dungeonMaster, "testy@quillborne.local")

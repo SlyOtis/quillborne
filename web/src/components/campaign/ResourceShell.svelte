@@ -43,19 +43,25 @@
 
   const {
     kind,
+    fixed,
     line,
     facts,
     form,
+    tail,
     bar
   }: {
     /** Which resource the page it scaffolds is for. */
     kind: ResourceKind
+    /** A resource handed in whole, read and never written, such as a general item. */
+    fixed?: Record<string, unknown> & Resource
     /** The type's own line under the title, drawn while reading. */
     line?: Snippet<[Record<string, unknown> & Resource]>
     /** The type's own facts, drawn while reading. */
     facts?: Snippet<[Record<string, unknown> & Resource]>
     /** The type's own fields, drawn while writing. */
     form?: Snippet<[Record<string, unknown> & Resource]>
+    /** The type's own part under the page, handed whether it is being written. */
+    tail?: Snippet<[Record<string, unknown> & Resource, boolean]>
     /** The type's own screen actions, placed on the bar. */
     bar?: Snippet<[Record<string, unknown> & Resource, Owner]>
   } = $props()
@@ -104,7 +110,7 @@
   const traced = $derived(one.frame in SHAPES ? (one.frame as PortraitFrame) : null)
 
   const canWrite = $derived(
-    fresh || !one.owner_id ? Boolean($user) : Boolean($user && one.owner_id === $user.user_id)
+    fixed ? false : fresh || !one.owner_id ? Boolean($user) : Boolean($user && one.owner_id === $user.user_id)
   )
   let editing = $state(false)
   const writing = $derived(editing || fresh)
@@ -203,7 +209,7 @@
   }
 
   function blank(): Record<string, unknown> & Resource {
-    return { ...getBlank(kind, $user?.user_id ?? ''), share_campaigns: owner.at === 'campaign' ? [owner.id] : [] }
+    return { ...getBlank(kind, $user?.user_id ?? ''), share_campaigns: owner.at === 'campaign' && !shape.locks ? [owner.id] : [] }
   }
 
   onMount(() => setTheme(getTheme()))
@@ -211,6 +217,11 @@
   let read = $state('')
 
   $effect(() => {
+    if (fixed) {
+      one = fixed
+      loading = false
+      return
+    }
     if (!owner.id) return
 
     const now = `${owner.at}/${owner.id}/${kind}`
@@ -236,7 +247,7 @@
   let drawn = $state('')
 
   $effect(() => {
-    if (loading) return
+    if (loading || fixed) return
 
     const found = all.find((entry) => entry.id === recordId)
     const now = `${recordId}/${all.length}/${found ? 'held' : 'void'}`
@@ -571,6 +582,7 @@
           </span>
         {:else}
           <span class="dnd-band-acts">
+            {#if !fixed}
             <IconBtn title={busy ? 'Uploading' : 'Add a picture'} disabled={!canWrite || busy} onclick={() => picker?.click()}>
               <Glyph name="picture" size="md" />
             </IconBtn>
@@ -590,6 +602,7 @@
             <IconBtn title={canWrite ? `Delete this ${shape.word}` : 'Only the owner may delete this'} disabled={!canWrite || busy} onclick={() => (dropOpen = true)}>
               <Glyph name="remove" size="md" />
             </IconBtn>
+            {/if}
             <IconBtn title={tabsOpen ? 'Fold the head' : 'Unfold the head'} active={!tabsOpen} onclick={() => (tabsOpen = !tabsOpen)}>
               <Glyph name={tabsOpen ? 'fold' : 'unfold'} size="md" />
             </IconBtn>
@@ -728,6 +741,8 @@
         <BlockReader value={one.content} onopen={follow} onvote={vote} onsearch={seek} openAsset={getAssetTab} mine={$user?.user_id ?? ''} />
       {/if}
     </section>
+
+    {@render tail?.(one, writing)}
 
     {#if fresh}
       <div class="page-acts-row">

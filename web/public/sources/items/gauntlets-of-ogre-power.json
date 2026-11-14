@@ -1,0 +1,28 @@
+{
+  "name": "Gauntlets of Ogre Power",
+  "description": "Heavy gauntlets of hide and iron, cut for hands larger than yours.",
+  "category": "wondrous item",
+  "subtype": "gauntlets",
+  "rarity": "uncommon",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Strength",
+  "tags": [
+    "strength"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What they do\n\nWhile you wear them, your grip and your arm carry the brute strength of an ogre. A wearer who is already stronger than that gains nothing.",
+  "grants": {
+    "attributes": [
+      {
+        "id": "str",
+        "mode": "set",
+        "value": 19
+      }
+    ]
+  }
+}

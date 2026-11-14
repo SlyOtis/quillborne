@@ -1,6 +1,8 @@
-import { deleteFile, deleteResource, getResources, isStoredFile, postResource, putResource } from './api'
+import { deleteFile, deleteResource, getReachedResources, getResources, isStoredFile, postResource, putResource } from './api'
 import type { Access, Owner } from './api/types'
 import { dropDoc } from './collab'
+import type { ItemAttribute, ItemGrants } from './rules/item.types'
+import type { RuleSystem } from './rules/spec.types'
 
 /** A label the writer added to the head, with the line written next to it. */
 export interface Fact {
@@ -29,6 +31,8 @@ export interface Resource extends Access {
   group_id: string
   /** The resource this one is a sub page of. */
   parent_id: string
+  /** The campaign that keeps it, or none. */
+  campaign_id: string
   /** When it was written down, which is what orders a chronicle. */
   created_at: string | null
 }
@@ -36,7 +40,6 @@ export interface Resource extends Access {
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'very rare' | 'legendary' | 'artifact'
 export type ItemType =
   | 'adventuring gear' | 'potion' | 'ring' | 'rod' | 'scroll' | 'staff' | 'wand' | 'wondrous item' | 'tool' | 'treasure'
-export type Recharge = 'none' | 'dawn' | 'dusk' | 'short rest' | 'long rest'
 export type DamageKind =
   | 'bludgeoning' | 'piercing' | 'slashing' | 'fire' | 'cold' | 'lightning' | 'necrotic' | 'radiant'
 export type ArmorWeight = 'light' | 'medium' | 'heavy' | 'shield'
@@ -55,12 +58,21 @@ export interface Item extends Resource {
   attunement: boolean
   /** Who may attune to it, as it reads after "requires attunement", such as "by a wizard". */
   attuned_by: string
-  charges: number
-  recharge: Recharge
   consumable: boolean
   weight: number
   /** Worth in gold. */
   value: number
+  /** A short line read beside the prose. */
+  notes: string
+  /** The rule system whose ids its grants name. */
+  system: string
+  grants: ItemGrants
+  /** General items ship with the app and every player reads them; homebrew is what a player makes. */
+  source: 'general' | 'homebrew'
+  /** The book a general item comes from. */
+  book: string
+  /** Kept by a campaign the reader sits at without reading it, so only its name, type and rarity arrived. */
+  locked: boolean
 }
 
 export interface Weapon extends Resource {
@@ -110,6 +122,7 @@ function getShared(stored: Stored): Resource {
     frame: String(stored.frame ?? ''),
     content: String(stored.body ?? ''),
     parent_id: String(stored.parent_id ?? ''),
+    campaign_id: String(stored.campaign_id ?? ''),
     group: Boolean(stored.group),
     group_id: String(stored.group_id ?? ''),
     owner_id: String(stored.owner_id ?? ''),
@@ -155,34 +168,194 @@ export function putEntry(owner: Owner, id: string, one: Partial<Entry>): Promise
 
 // Items
 
-const ITEM: Omit<Item, keyof Resource> = {
+const ITEM_PATH = '/sources/items'
+
+const ITEM: Omit<Item, keyof Resource | 'grants'> = {
   category: 'adventuring gear',
   subtype: '',
   rarity: 'common',
   attunement: false,
   attuned_by: '',
-  charges: 0,
-  recharge: 'none',
   consumable: false,
   weight: 0,
-  value: 0
+  value: 0,
+  notes: '',
+  system: 'dnd5e',
+  source: 'homebrew',
+  book: '',
+  locked: false
 }
 
-export async function getItems(owner: Owner): Promise<Item[]> {
-  const stored = await getResources<Stored>(owner, 'items')
-  return stored.map((one) => ({
+function getList<T>(value: unknown, read: (one: Record<string, unknown>) => T | null): T[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((one) => {
+    const held = one && typeof one === 'object' ? read(one as Record<string, unknown>) : null
+    return held ? [held] : []
+  })
+}
+
+function getText(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : typeof value === 'number' ? String(value) : ''
+}
+
+function getFigure(value: unknown): number | undefined {
+  const figure = typeof value === 'string' && value.trim() !== '' ? Number(value) : value
+  return typeof figure === 'number' && Number.isFinite(figure) ? figure : undefined
+}
+
+/** Reads the grants an item carries, from a world document or a homebrew page, dropping every row that names nothing. */
+export function getItemGrants(value: unknown): ItemGrants {
+  const held = value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {}
+  const charges = held.charges && typeof held.charges === 'object' ? (held.charges as Record<string, unknown>) : {}
+  const named = (one: Record<string, unknown>) => (getText(one.id) || getText(one.name) ? { id: getText(one.id), name: getText(one.id) ? '' : getText(one.name) } : null)
+  const reach = (one: Record<string, unknown>) => (getText(one.id) ? { id: getText(one.id), value: getFigure(one.value) ?? 0 } : null)
+  return {
+    attributes: getList(held.attributes, (one) => {
+      if (!getText(one.id)) return null
+      const max = getFigure(one.max)
+      const attribute: ItemAttribute = { id: getText(one.id), mode: one.mode === 'set' ? 'set' : 'bonus', value: getFigure(one.value) ?? 0 }
+      return max === undefined ? attribute : { ...attribute, max }
+    }),
+    bonuses: getList(held.bonuses, reach),
+    proficiencies: getList(held.proficiencies, (one) => {
+      const target = named(one)
+      return target ? { ...target, tier: getText(one.tier) } : null
+    }),
+    advantages: getList(held.advantages, (one) => {
+      const target = named(one)
+      return target ? { ...target, note: getText(one.note) } : null
+    }),
+    defences: getList(held.defences, (one) => (getText(one.id) && getText(one.damage) ? { id: getText(one.id), damage: getText(one.damage) } : null)),
+    senses: getList(held.senses, reach),
+    speeds: getList(held.speeds, reach),
+    damage: getList(held.damage, (one) => (getText(one.dice) ? { dice: getText(one.dice), damage: getText(one.damage), note: getText(one.note) } : null)),
+    spells: getList(held.spells, (one) => {
+      if (!getText(one.name)) return null
+      const dc = getFigure(one.dc)
+      const attack = getFigure(one.attack)
+      return {
+        name: getText(one.name),
+        level: getFigure(one.level) ?? 0,
+        charges: getFigure(one.charges) ?? 0,
+        ...(dc === undefined ? {} : { dc }),
+        ...(attack === undefined ? {} : { attack }),
+        note: getText(one.note)
+      }
+    }),
+    features: getList(held.features, (one) => (getText(one.name) || getText(one.text) ? { name: getText(one.name), text: getText(one.text) } : null)),
+    charges: {
+      max: Math.max(0, getFigure(charges.max) ?? 0),
+      regain: getText(charges.regain),
+      at: getText(charges.at),
+      last: getText(charges.last)
+    }
+  }
+}
+
+function getItem(one: Stored): Item {
+  return {
     ...getShared(one),
     category: (one.category as ItemType) ?? ITEM.category,
     subtype: String(one.subtype ?? ITEM.subtype),
     rarity: (one.rarity as Rarity) ?? ITEM.rarity,
     attunement: Boolean(one.attunement ?? ITEM.attunement),
     attuned_by: String(one.attuned_by ?? ITEM.attuned_by),
-    charges: Number(one.charges ?? ITEM.charges),
-    recharge: (one.recharge as Recharge) ?? ITEM.recharge,
     consumable: Boolean(one.consumable ?? ITEM.consumable),
     weight: Number(one.weight ?? ITEM.weight),
-    value: Number(one.value ?? ITEM.value)
-  }))
+    value: Number(one.value ?? ITEM.value),
+    notes: String(one.notes ?? ITEM.notes),
+    system: String(one.system ?? ITEM.system),
+    grants: getItemGrants(one.grants),
+    source: ITEM.source,
+    book: ITEM.book,
+    locked: Boolean(one.locked)
+  }
+}
+
+export async function getItems(owner: Owner): Promise<Item[]> {
+  const stored = await getResources<Stored>(owner, 'items')
+  return stored.map(getItem)
+}
+
+/** The general items, the world's list that ships under `/sources/items` with an index naming them. */
+export async function getWorldItems(): Promise<Item[]> {
+  const answer = await fetch(`${ITEM_PATH}/index.json`)
+  if (!answer.ok) throw new Error(`The item index did not load: ${answer.status} ${answer.statusText}`)
+  const listed = (await answer.json()) as { items: string[] }
+  return Promise.all(
+    listed.items.map(async (id) => {
+      const held = await fetch(`${ITEM_PATH}/${id}.json`)
+      if (!held.ok) throw new Error(`The item ${id} did not load: ${held.status} ${held.statusText}`)
+      const document = (await held.json()) as Stored
+      return { ...getItem({ ...document, id }), source: 'general' as const, book: String(document.book ?? '') }
+    })
+  )
+}
+
+/** Every item the reader reaches: the general items, then every homebrew item they read or a table they sit at keeps locked from them. */
+export async function getItemRoom(): Promise<Item[]> {
+  const [world, made] = await Promise.all([getWorldItems(), getReachedResources<Stored>('items')])
+  return [...world, ...made.map(getItem)]
+}
+
+/** What a proficiency or an advantage may name out of a system: its skills, then its saves, by the scope each lands on. */
+export function getItemTargets(system: RuleSystem): { id: string; title: string }[] {
+  return [
+    ...system.skills.map((one) => ({ id: `skill.${one.id}`, title: one.title })),
+    ...system.saves.map((one) => ({ id: `save.${one.id}`, title: `${one.title} saves` }))
+  ]
+}
+
+/** Every grant written out as a label and a line, with the names the system gives its ids. */
+export function getGrantLines(grants: ItemGrants, system: RuleSystem): Fact[] {
+  const title = (list: { id: string; title: string }[] | undefined, id: string) => list?.find((one) => one.id === id)?.title ?? id
+  const signed = (value: number) => (value < 0 ? `${value}` : `+${value}`)
+  const targets = getItemTargets(system)
+  const target = (one: { id: string; name: string }) => (one.id ? title(targets, one.id) : one.name)
+  const ranged = (one: { id: string; value: number }, list: { id: string; title: string; unit?: string }[] | undefined) => {
+    const found = list?.find((entry) => entry.id === one.id)
+    return { label: found?.title ?? one.id, value: `${one.value}${found?.unit ? ` ${found.unit}` : ''}` }
+  }
+  const joined = (label: string, values: string[]) => (values.length > 0 ? [{ label, value: values.join('; ') }] : [])
+  const { charges } = grants
+  return [
+    ...grants.attributes.map((one) => ({
+      label: title(system.attributes, one.id),
+      value: one.mode === 'set' ? `Becomes ${one.value}` : `${signed(one.value)}${one.max ? `, to ${one.max} at most` : ''}`
+    })),
+    ...grants.bonuses.map((one) => ({ label: title(system.bonuses, one.id), value: signed(one.value) })),
+    ...joined('Proficiency', grants.proficiencies.map((one) => `${target(one)}${one.tier ? ` (${title(system.proficiencyTiers, one.tier).toLowerCase()})` : ''}`)),
+    ...joined('Advantage', grants.advantages.map((one) => `${target(one)}${one.note ? ` ${one.note}` : ''}`)),
+    ...(system.defences ?? [])
+      .map((defence) => ({ label: defence.title, damage: grants.defences.filter((one) => one.id === defence.id).map((one) => title(system.damageTypes, one.damage)) }))
+      .flatMap((one) => joined(one.label, one.damage)),
+    ...grants.senses.map((one) => ranged(one, system.senses)),
+    ...grants.speeds.map((one) => ranged(one, system.speeds)),
+    ...joined('On a hit', grants.damage.map((one) => `${/^[+-]/.test(one.dice) ? one.dice : `+${one.dice}`}${one.damage ? ` ${title(system.damageTypes, one.damage).toLowerCase()}` : ''}${one.note ? `, ${one.note}` : ''}`)),
+    ...grants.spells.map((one) => ({
+      label: one.name,
+      value: [
+        one.level === 0 ? 'Cantrip' : `Level ${one.level}`,
+        one.charges > 0 ? `${one.charges} ${one.charges === 1 ? 'charge' : 'charges'}` : '',
+        one.dc !== undefined ? `save DC ${one.dc}` : '',
+        one.attack !== undefined ? `${signed(one.attack)} to hit` : '',
+        one.note
+      ]
+        .filter(Boolean)
+        .join(', ')
+    })),
+    ...grants.features.map((one) => ({ label: one.name, value: one.text })),
+    ...(charges.max > 0
+      ? [
+          {
+            label: 'Charges',
+            value: [`${charges.max}`, charges.regain ? `regains ${charges.regain}${charges.at ? ` at ${title(system.recharges, charges.at).toLowerCase()}` : ''}` : '', charges.last]
+              .filter(Boolean)
+              .join(', ')
+          }
+        ]
+      : [])
+  ]
 }
 
 function putItemFields(one: Partial<Item>): Record<string, unknown> {
@@ -193,11 +366,12 @@ function putItemFields(one: Partial<Item>): Record<string, unknown> {
     rarity: one.rarity ?? ITEM.rarity,
     attunement: one.attunement ?? ITEM.attunement,
     attuned_by: one.attuned_by ?? ITEM.attuned_by,
-    charges: one.charges ?? ITEM.charges,
-    recharge: one.recharge ?? ITEM.recharge,
     consumable: one.consumable ?? ITEM.consumable,
     weight: one.weight ?? ITEM.weight,
-    value: one.value ?? ITEM.value
+    value: one.value ?? ITEM.value,
+    notes: one.notes ?? ITEM.notes,
+    system: one.system ?? ITEM.system,
+    grants: getItemGrants(one.grants)
   }
 }
 
@@ -399,6 +573,8 @@ export interface ResourceShape {
   mark: (one: Resource) => string
   /** The page a new one opens with, written as markdown the block editor parses. */
   example: string
+  /** Starts kept from the campaign it is written in, locked to its table until its owner shares it. */
+  locks?: boolean
 }
 
 const EXAMPLES: Record<ResourceKind, string> = {
@@ -513,14 +689,13 @@ export const RESOURCES: Record<ResourceKind, ResourceShape> = {
       { key: 'rarity', label: 'Rarity', form: 'choice', choices: ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact'] },
       { key: 'attunement', label: 'Requires attunement', form: 'flag' },
       { key: 'attuned_by', label: 'Attuned by', form: 'text' },
-      { key: 'charges', label: 'Charges', form: 'number' },
-      { key: 'recharge', label: 'Recharge', form: 'choice', choices: ['none', 'dawn', 'dusk', 'short rest', 'long rest'] },
       { key: 'consumable', label: 'Consumable', form: 'flag' },
       { key: 'weight', label: 'Weight', form: 'number' },
       { key: 'value', label: 'Worth in gold', form: 'number' }
     ],
     mark: (one) => (one as Item).rarity,
-    example: EXAMPLES.items
+    example: EXAMPLES.items,
+    locks: true
   },
   weapons: {
     part: 'weapons',
@@ -596,7 +771,7 @@ export function isResourceKind(value: string | undefined): value is ResourceKind
 /** A fresh resource of a kind, owned by whoever is writing it, opened on the kind's example page. */
 export function getBlank(kind: ResourceKind, ownerId: string): Record<string, unknown> & Resource {
   return {
-    ...(kind === 'items' ? ITEM : {}),
+    ...(kind === 'items' ? { ...ITEM, grants: getItemGrants({}) } : {}),
     id: '',
     title: '',
     description: '',
@@ -607,6 +782,7 @@ export function getBlank(kind: ResourceKind, ownerId: string): Record<string, un
     frame: '',
     content: RESOURCES[kind].example,
     parent_id: '',
+    campaign_id: '',
     group: false,
     group_id: '',
     owner_id: ownerId,

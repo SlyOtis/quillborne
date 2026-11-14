@@ -1,0 +1,33 @@
+{
+  "name": "Periapt of Proof against Poison",
+  "description": "A silver locket with a sliver of bezoar sealed inside.",
+  "category": "wondrous item",
+  "subtype": "periapt",
+  "rarity": "rare",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Poison",
+  "tags": [
+    "defence"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nThe stone in the locket drinks every venom before it reaches the blood. While it hangs at your throat, no poison harms you.",
+  "grants": {
+    "defences": [
+      {
+        "id": "immunity",
+        "damage": "poison"
+      }
+    ],
+    "features": [
+      {
+        "name": "Untainted",
+        "text": "You cannot be poisoned."
+      }
+    ]
+  }
+}

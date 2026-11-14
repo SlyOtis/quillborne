@@ -1,0 +1,37 @@
+{
+  "name": "Wand of Web",
+  "description": "A gnarled wand wrapped in old grey silk.",
+  "category": "wand",
+  "subtype": "",
+  "rarity": "uncommon",
+  "attunement": true,
+  "attuned_by": "by a spellcaster",
+  "consumable": false,
+  "weight": 1,
+  "value": 0,
+  "notes": "Control",
+  "tags": [
+    "spell",
+    "control"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nA flick casts a mass of sticky strands that fills a space and holds whatever blunders into it.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Web",
+        "level": 2,
+        "charges": 1,
+        "dc": 15,
+        "note": ""
+      }
+    ],
+    "charges": {
+      "max": 7,
+      "regain": "1d6 + 1",
+      "at": "dawn",
+      "last": "roll a d20; on a 1 it crumbles to ash"
+    }
+  }
+}
