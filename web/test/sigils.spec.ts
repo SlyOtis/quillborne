@@ -69,9 +69,9 @@ const attributes = (text: string): Attrs => {
   return attrs
 }
 
-const sigils = (source: string): Attrs[] => {
+const tagged = (source: string, tag: string): Attrs[] => {
   const found: Attrs[] = []
-  let at = source.indexOf('<Sigil')
+  let at = source.indexOf(`<${tag}`)
   while (at !== -1) {
     let depth = 0
     let end = at
@@ -82,8 +82,8 @@ const sigils = (source: string): Attrs[] => {
       else if (ch === '>' && depth === 0) break
       end += 1
     }
-    found.push(attributes(source.slice(at + '<Sigil'.length, end)))
-    at = source.indexOf('<Sigil', end)
+    found.push(attributes(source.slice(at + tag.length + 1, end)))
+    at = source.indexOf(`<${tag}`, end)
   }
   return found
 }
@@ -118,7 +118,7 @@ const bar: [string, string, number][] = [
 
 describe('no bar call site decides the sigil design', () => {
   for (const [where, source, count] of bar) {
-    const found = sigils(source)
+    const found = tagged(source, 'Sigil')
 
     it(`${where} still holds ${count} sigils`, () => {
       expect(found.length).toBe(count)
@@ -144,7 +144,7 @@ describe('no bar call site decides the sigil design', () => {
   }
 
   it('leaves every bar sigil the one outline, rim and tone', () => {
-    const drawn = bar.flatMap(([, source]) => sigils(source)).map((attrs) => ({
+    const drawn = bar.flatMap(([, source]) => tagged(source, 'Sigil')).map((attrs) => ({
       frame: attrs.frame ?? fallback('frame'),
       tone: attrs.tone ?? fallback('tone'),
       size: attrs.size
@@ -252,15 +252,18 @@ describe('the sigil is the forged HUD button', () => {
   })
 })
 
-describe('the sigils outside the bar', () => {
-  for (const [where, path, want] of [
-    ['the dialog close', 'src/components/BaseDialog.svelte', { title: 'Close dialog', tone: 'bane', frame: 'cusped' }],
-    ['the chat send', 'src/components/chat/Chat.svelte', { title: 'Send', tone: 'metal', frame: 'star' }]
-  ] as const) {
-    it(`${where} keeps its own frame`, () => {
-      const found = sigils(read(path)).find((attrs) => attrs.title === want.title)
-      expect(found, `${want.title} is gone`).toBeDefined()
-      expect({ tone: found?.tone, frame: found?.frame }).toEqual({ tone: want.tone, frame: want.frame })
-    })
-  }
+describe('the glyph buttons outside the bar', () => {
+  it('the dialog close is an IconBtn with no frame', () => {
+    const source = read('src/components/BaseDialog.svelte')
+    expect(tagged(source, 'Sigil').find((attrs) => attrs.title === 'Close dialog')).toBeUndefined()
+    const found = tagged(source, 'IconBtn').find((attrs) => attrs.title === 'Close dialog')
+    expect(found, 'Close dialog is gone').toBeDefined()
+    expect({ tone: found?.tone, frame: found?.frame }).toEqual({ tone: 'bane', frame: undefined })
+  })
+
+  it('the chat send keeps its own frame', () => {
+    const found = tagged(read('src/components/chat/Chat.svelte'), 'Sigil').find((attrs) => attrs.title === 'Send')
+    expect(found, 'Send is gone').toBeDefined()
+    expect({ tone: found?.tone, frame: found?.frame }).toEqual({ tone: 'metal', frame: 'star' })
+  })
 })

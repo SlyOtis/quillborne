@@ -14,7 +14,7 @@
     /** Reads as the accessible name and the native tooltip. */
     title: string
     /** Colours the glyph. */
-    tone?: 'metal' | 'ember' | 'verdigris' | 'ink'
+    tone?: 'metal' | 'ember' | 'verdigris' | 'bane' | 'ink'
     /** Lights the glyph to mark it as chosen. */
     active?: boolean
     /** Says whether what the button opens is open, for a button that shows and hides a region. */
@@ -73,6 +73,10 @@
 
   .dnd-iconbtn-verdigris {
     --icon-tone: var(--verdigris);
+  }
+
+  .dnd-iconbtn-bane {
+    --icon-tone: var(--state-bad);
   }
 
   .dnd-iconbtn-ink {

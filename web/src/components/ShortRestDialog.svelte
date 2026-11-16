@@ -6,7 +6,9 @@
   import { postShortRest } from '$lib/engine'
   import BaseDialog from './BaseDialog.svelte'
   import Button from '$components/ui/Button.svelte'
-  import Field from '$components/ui/Field.svelte'
+  import Glyph from '$components/ui/Glyph.svelte'
+  import IconBtn from '$components/ui/IconBtn.svelte'
+  import Stat from '$components/ui/Stat.svelte'
 
   let { isOpen = $bindable(false) }: {
     /** Whether the dialog is showing. */
@@ -41,9 +43,16 @@
       Choose how many hit dice to roll for the rest. {remaining} of {hitDice?.max ?? 0} d{die} left.
     </p>
 
-    <Field label="Hit dice to spend" id="shortrest-dice" help="Zero rests without rolling a die.">
-      <input id="shortrest-dice" class="dnd-num" type="number" min="0" max={remaining} bind:value={dice} />
-    </Field>
+    <div class="dnd-shortrest-dice">
+      <IconBtn title="One fewer hit die" disabled={dice <= 0} onclick={() => (dice -= 1)}>
+        <Glyph name="minus" size="lg" />
+      </IconBtn>
+      <Stat label="Hit dice to spend" value={dice} sub="d{die}" tone="ember" lit={dice > 0} title="Hit dice to spend" />
+      <IconBtn title="One more hit die" disabled={dice >= remaining} onclick={() => (dice += 1)}>
+        <Glyph name="add" size="lg" />
+      </IconBtn>
+    </div>
+    <p class="dnd-shortrest-help">Zero rests without rolling a die.</p>
 
     <div class="dnd-shortrest-acts">
       <Button variant="ghost" size="sm" onclick={() => (isOpen = false)}>Cancel</Button>
@@ -65,6 +74,22 @@
     font-size: var(--text-sm);
     line-height: 1.5;
     color: var(--ink-dim);
+  }
+
+  .dnd-shortrest-dice {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: var(--space-3);
+    padding-inline: var(--space-2);
+    font-size: var(--text-xl);
+  }
+
+  .dnd-shortrest-help {
+    margin: calc(var(--space-2) * -1) 0 0;
+    font-size: var(--text-xs);
+    text-align: center;
+    color: var(--ink-faint);
   }
 
   .dnd-shortrest-acts {
