@@ -77,6 +77,18 @@ type ChatEntryData struct {
 	Total      float64         `json:"total"`
 }
 
+func getShareKeys(ctx context.Context, campaigns []uuid.UUID) []string {
+	keys := make([]string, 0, len(campaigns))
+	for _, campaign := range campaigns {
+		key, err := resolver{}.GetKey(ctx, GroupCampaign, campaign.String())
+		if err != nil {
+			key = campaign.String()
+		}
+		keys = append(keys, key)
+	}
+	return keys
+}
+
 func getShare(ctx context.Context, users, campaigns []string) (map[string]any, error) {
 	if users == nil {
 		users = []string{}
@@ -261,7 +273,7 @@ func exportEncounters(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[
 			Turn:           row.Turn,
 			IsActive:       row.IsActive,
 			ShareUsers:     getStrings(row.ShareUsers),
-			ShareCampaigns: getStrings(row.ShareCampaigns),
+			ShareCampaigns: getShareKeys(ctx.Request().Context(), row.ShareCampaigns),
 		}
 	})
 }
@@ -325,7 +337,7 @@ func exportSongs(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[SongD
 			Address:        row.Address,
 			Duration:       row.Duration,
 			ShareUsers:     getStrings(row.ShareUsers),
-			ShareCampaigns: getStrings(row.ShareCampaigns),
+			ShareCampaigns: getShareKeys(ctx.Request().Context(), row.ShareCampaigns),
 		}
 	})
 }
