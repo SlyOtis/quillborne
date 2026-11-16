@@ -210,7 +210,7 @@
       {/each}
     </div>
     <span class="dnd-menu-rail-acts">
-      <IconBtn title="Open scribe" onclick={() => navigate('/main/scribe')}>
+      <IconBtn title="Open scribe" onclick={() => { navigate('/main/scribe'); pickTab('scribe') }}>
         <Glyph name="quill" size="sm" />
       </IconBtn>
     </span>
