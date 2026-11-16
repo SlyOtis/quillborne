@@ -137,6 +137,7 @@
     return [
       ...defaults,
       ...(item.kind === 'folder' ? [{ title: 'Open page', glyph: 'scroll', run: () => scribe.show(one.id) } satisfies FileOption] : []),
+      { title: 'Share', glyph: 'share', run: () => scribe.share(one) },
       { title: 'Open in lore', glyph: 'forward', run: () => navigate(scribe.loreOf(one)) }
     ]
   }
