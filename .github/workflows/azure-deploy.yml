@@ -91,13 +91,13 @@ jobs:
           GOPRIVATE: github.com/nimling/*
         run: |
           git config --global url."https://${GH_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go install github.com/nimling/samna-auth/cmd/sauth@v1.0.0-alpha0364
+          go install github.com/nimling/samna-auth/cmd/sauth@v1.0.0-alpha0366
 
       - name: Upload the login page
-        run: sauth app page replace login --app dndcs --data "$(jq -n --rawfile t deploy/sauth/pages/login.html '{kind:"login",template:$t}')" --yes
+        run: sauth app page replace login --app quillborne --upload deploy/sauth/pages/login.html --yes
 
       - name: Upload the redirect page
-        run: sauth app page replace redirect --app dndcs --data "$(jq -n --rawfile t deploy/sauth/pages/redirect.html '{kind:"redirect",template:$t}')" --yes
+        run: sauth app page replace redirect --app quillborne --upload deploy/sauth/pages/redirect.html --yes
 
   deploy:
     needs: [build, migrate]
