@@ -79,8 +79,8 @@
     flex: none;
     align-items: center;
     justify-content: center;
-    inline-size: var(--space-5);
-    block-size: var(--space-5);
+    inline-size: calc(var(--size-bar) * 0.55);
+    block-size: calc(var(--size-bar) * 0.55);
     padding: 0;
     border: none;
     border-radius: var(--radius-pill);
