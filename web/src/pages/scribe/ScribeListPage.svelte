@@ -116,8 +116,10 @@
   }
 
   function open(item: FileItem) {
-    if (pageOf(item)) {
-      scribe.show(item.id)
+    const one = pageOf(item)
+    if (one) {
+      if (scribe.countKids(one) > 0) scribe.enter(one.id)
+      else scribe.show(one.id)
       return
     }
     if (item.url) preview = item
@@ -138,7 +140,11 @@
   function options(item: FileItem, defaults: FileOption[]): FileOption[] {
     const one = pageOf(item)
     if (!one) return defaults.filter((option) => option.title !== 'Rename' && !option.submenu)
-    return [...defaults, { title: 'Open in lore', glyph: 'forward', run: () => navigate(scribe.loreOf(one)) }]
+    return [
+      ...defaults,
+      ...(item.kind === 'folder' ? [{ title: 'Open page', glyph: 'scroll', run: () => scribe.show(one.id) } satisfies FileOption] : []),
+      { title: 'Open in lore', glyph: 'forward', run: () => navigate(scribe.loreOf(one)) }
+    ]
   }
 </script>
 
@@ -187,7 +193,7 @@
       moveSearchPlaceholder="Search the pages..."
       itemOptions={options}
       {preview}
-      onadd={() => scribe.postPage(null)}
+      onadd={() => scribe.postPage(scribe.inside?.id ?? null)}
       onopen={open}
       onpreview={(item) => (preview = item)}
       ondownload={(item) => getAssetTab(item.id)}

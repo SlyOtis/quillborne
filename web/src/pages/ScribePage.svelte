@@ -15,6 +15,7 @@
     readonly campaign: Campaign | null
     readonly owner: Owner | null
     readonly open: Resource | null
+    readonly inside: Resource | null
     readonly mode: Mode
     readonly view: View
     readonly shown: Resource[]
@@ -23,6 +24,7 @@
     readonly columns: TableColumn[]
     readonly groupBy: FileGroupBy
     show: (id: string, mode?: Mode) => void
+    enter: (id: string) => void
     postPage: (parentId?: string | null) => Promise<void>
     putPage: (held: Resource) => void
     countKids: (one: Resource) => number
@@ -106,6 +108,7 @@
     (view === 'tree' ? TREE_COLUMNS : LIST_COLUMNS).filter((column) => column.key !== 'actions').map((column) => ({ value: column.key, label: column.label, disabled: column.key === 'title' }))
   )
   const picked = $derived((query.get('tags') ?? '').split(',').filter(Boolean))
+  const inId = $derived(query.get('in') ?? '')
 
   const table = $state<Scribe['table']>({ pages: held.pages, loading: held.key === '', saving: false })
   let hunt = $state(new URLSearchParams($resolvedRoute.search ?? '').get('q') ?? '')
@@ -137,6 +140,7 @@
   }
 
   const open = $derived(table.pages.find((one) => one.id === openId) ?? null)
+  const inside = $derived(table.pages.find((one) => one.id === inId) ?? null)
   const trail = $derived(open ? getTrail(table.pages, open.id).filter((step) => step.id !== open.id) : [])
   const wanted = $derived(hunt.trim().toLowerCase())
   const sifting = $derived(Boolean(wanted) || picked.length > 0)
@@ -150,12 +154,13 @@
     ...(allTags.length > 0 ? [{ value: 'tag', label: 'Tag' }] : [])
   ])
   const shown = $derived(sort(table.pages.filter(keep)))
-  const roots = $derived(sifting ? shown : sort(getRoots(table.pages)))
+  const roots = $derived(sifting ? shown : sort(inside ? getChildren(table.pages, inside.id) : getRoots(table.pages)))
   const rows = $derived(roots.map(limb))
 
   const crumbs = $derived<Crumb[]>([
     { id: '', title: campaign ? campaign.name : 'Your own' },
-    ...(open ? [{ id: CRUMB_SCRIBE, title: 'Scribe' }, ...trail.map((step) => ({ id: step.id, title: step.title }))] : [])
+    ...(open || inside ? [{ id: CRUMB_SCRIBE, title: 'Scribe' }] : []),
+    ...(open ? trail : inside ? getTrail(table.pages, inside.id) : []).map((step) => ({ id: step.id, title: step.title }))
   ])
 
   const strip = $derived.by(() => {
@@ -218,9 +223,17 @@
     held = { ...held, pages: table.pages }
   }
 
+  function enter(id: string) {
+    put({ in: id || null })
+  }
+
   function openCrumb(id: string) {
     if (id === '') {
       navigate(campaign ? `/main/campaign/${campaign.id}` : '/main')
+      return
+    }
+    if (!open) {
+      enter(id === CRUMB_SCRIBE ? '' : id)
       return
     }
     show(id === CRUMB_SCRIBE ? '' : id)
@@ -263,7 +276,7 @@
     void getPages()
   })
 
-  async function postPage(parentId: string | null = open?.id ?? null) {
+  async function postPage(parentId: string | null = open?.id ?? inside?.id ?? null) {
     if (!owner) return
     try {
       const id = await postOne(owner, 'entries', { title: 'Untitled', content: '', parent_id: parentId })
@@ -318,6 +331,9 @@
     get open() {
       return open
     },
+    get inside() {
+      return inside
+    },
     get mode() {
       return mode
     },
@@ -340,6 +356,7 @@
       return groupBy
     },
     show,
+    enter,
     postPage,
     putPage,
     countKids,
@@ -378,7 +395,7 @@
       </IconBtn>
     </ToggleGroup>
   {/if}
-  <IconBtn title={open ? `New page under ${open.title}` : 'New page'} onclick={() => postPage()}>
+  <IconBtn title={open || inside ? `New page under ${(open ?? inside)?.title}` : 'New page'} onclick={() => postPage()}>
     <Glyph name="add" size="md" />
   </IconBtn>
 {/snippet}
