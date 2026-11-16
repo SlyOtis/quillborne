@@ -4,11 +4,13 @@
   import type { ObjectAsset } from '$lib/api/types'
   import { getTrail, putOne, type Resource } from '$lib/resources'
   import { postNotice } from '$lib/stores/ui.store'
-  import Tree from '$components/ui/Tree.svelte'
-  import Row from '$components/ui/Row.svelte'
   import Chip from '$components/ui/Chip.svelte'
   import FileExplorer, { type FileItem, type FileMoveTarget, type FileOption } from '$components/ui/FileExplorer.svelte'
-  import { getScribe, type Shelf } from '../ScribePage.svelte'
+  import Glyph from '$components/ui/Glyph.svelte'
+  import IconBtn from '$components/ui/IconBtn.svelte'
+  import Table, { type TableRow } from '$components/ui/Table.svelte'
+  import Tree, { type TreeRow } from '$components/ui/Tree.svelte'
+  import { getScribe } from '../ScribePage.svelte'
 
   const scribe = getScribe()
 
@@ -28,6 +30,16 @@
     ...scribe.roots.map(tileOf),
     ...scribe.roots.flatMap((one) => (held.get(one.id) ?? []).flatMap((link) => (link.asset ? [fileOf(link.asset)] : [])))
   ])
+
+  const lines = $derived<TableRow[]>(
+    scribe.shown.map((one) => ({
+      id: one.id,
+      title: one.title,
+      tags: one.tags,
+      under: scribe.parentOf(one)?.title ?? '',
+      written: scribe.written(one)
+    }))
+  )
 
   $effect(() => {
     for (const one of scribe.roots) {
@@ -81,8 +93,12 @@
     }
   }
 
-  function pageOf(item: FileItem): Resource | null {
+  function pageOf(item: { id: string }): Resource | null {
     return scribe.table.pages.find((one) => one.id === item.id) ?? null
+  }
+
+  function wordsOf(row: TreeRow | TableRow): string[] {
+    return Array.isArray(row.tags) ? row.tags.map(String) : []
   }
 
   async function write(next: Resource) {
@@ -126,13 +142,29 @@
   }
 </script>
 
-{#snippet divide(shelf: Shelf)}
-  {#if shelf.title}
-    <header class="scribe-divide">
-      <h2 class="dnd-label scribe-divide-name">{shelf.title}</h2>
-      <span class="scribe-divide-note">{shelf.kids.length}</span>
-      <span class="scribe-divide-run"></span>
-    </header>
+{#snippet tags(words: string[])}
+  {#if words.length > 0}
+    <span class="scribe-tags" title={words.join(', ')}>
+      {#each words.slice(0, 3) as word (word)}<Chip still>#{word}</Chip>{/each}
+      {#if words.length > 3}<Chip still>+{words.length - 3}</Chip>{/if}
+    </span>
+  {/if}
+{/snippet}
+
+{#snippet cell(key: string, row: TreeRow | TableRow)}
+  {#if key === 'tags'}
+    {@render tags(wordsOf(row))}
+  {:else}
+    {String(row[key] ?? '')}
+  {/if}
+{/snippet}
+
+{#snippet acts(row: TableRow)}
+  {@const one = pageOf(row)}
+  {#if one}
+    <IconBtn title="Open in lore" onclick={(event) => { event.stopPropagation(); navigate(scribe.loreOf(one)) }}>
+      <Glyph name="forward" size="sm" />
+    </IconBtn>
   {/if}
 {/snippet}
 
@@ -163,31 +195,9 @@
       onmove={move}
     />
   {:else if scribe.view === 'tree'}
-    <Tree rows={scribe.rows} on="" onopen={(id) => scribe.show(id)} />
+    <Tree rows={scribe.rows} columns={scribe.columns} on="" onopen={(id) => scribe.show(id)} {cell} />
   {:else}
-    {#each scribe.lines as shelf (shelf.title)}
-      <section class="scribe-shelf" aria-label={shelf.title || 'Pages'}>
-        {@render divide(shelf)}
-        <div class="scribe-list">
-          {#each shelf.kids as one (one.id)}
-            {@const above = scribe.parentOf(one)}
-            {@const kids = scribe.countKids(one)}
-            <Row
-              title={one.title}
-              sub={one.description || undefined}
-              mark={kids > 0 ? `${kids} sub pages` : undefined}
-              image={one.image || undefined}
-              onclick={() => scribe.show(one.id)}
-              onopen={() => navigate(scribe.loreOf(one))}
-            >
-              {#each one.tags as tag (tag)}<Chip still glyph="tag">#{tag}</Chip>{/each}
-              {#if above}<span>Under {above.title}</span>{/if}
-              {#if scribe.written(one)}<span>{scribe.written(one)}</span>{/if}
-            </Row>
-          {/each}
-        </div>
-      </section>
-    {/each}
+    <Table columns={scribe.columns} rows={lines} onrow={(row) => scribe.show(row.id)} {cell} actions={acts} />
   {/if}
 </section>
 
@@ -199,43 +209,14 @@
     min-width: 0;
   }
 
-  .scribe-shelf {
+  .scribe-tags {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    min-width: 0;
-  }
-
-  .scribe-divide {
-    display: flex;
+    flex-wrap: nowrap;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-1);
     min-width: 0;
-  }
-
-  .scribe-divide-name {
-    margin: 0;
-    color: var(--metal);
-  }
-
-  .scribe-divide-note {
-    font-family: var(--font-figures);
-    font-size: var(--text-xs);
-    color: var(--ink-faint);
-  }
-
-  .scribe-divide-run {
-    flex: 1;
-    min-width: 0;
-    block-size: var(--border-hair);
-    background: linear-gradient(90deg, var(--metal-dim), transparent);
-  }
-
-  .scribe-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
   }
 
   .scribe-empty {

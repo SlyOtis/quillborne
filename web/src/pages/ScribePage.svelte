@@ -4,11 +4,11 @@
   import type { Mention, Reference } from '$lib/blocks'
   import type { Resource } from '$lib/resources'
   import type { TreeRow } from '$components/ui/Tree.svelte'
+  import type { TableColumn } from '$components/ui/Table.svelte'
   import type { FileGroupBy } from '$components/ui/FileExplorer.svelte'
 
   export type View = 'grid' | 'tree' | 'list'
   export type Mode = 'edit' | 'read'
-  export type Shelf = { title: string; kids: Resource[] }
 
   export type Scribe = {
     table: { pages: Resource[]; loading: boolean; saving: boolean }
@@ -20,7 +20,7 @@
     readonly shown: Resource[]
     readonly roots: Resource[]
     readonly rows: TreeRow[]
-    readonly lines: Shelf[]
+    readonly columns: TableColumn[]
     readonly groupBy: FileGroupBy
     show: (id: string, mode?: Mode) => void
     postPage: (parentId?: string | null) => Promise<void>
@@ -67,6 +67,18 @@
     { value: 'title', label: 'Name' },
     { value: 'written', label: 'Written' }
   ]
+  const TREE_COLUMNS: TableColumn[] = [
+    { key: 'title', label: 'Title', width: 'minmax(10em, 4fr)', sortable: true },
+    { key: 'tags', label: 'Tags', width: 'minmax(6em, 2fr)', kind: 'tags' },
+    { key: 'written', label: 'Written', width: 'minmax(6em, 1fr)', sortable: true }
+  ]
+  const LIST_COLUMNS: TableColumn[] = [
+    { key: 'title', label: 'Title', width: 'minmax(10em, 4fr)', sortable: true },
+    { key: 'tags', label: 'Tags', width: 'minmax(6em, 2fr)', kind: 'tags', sortable: true },
+    { key: 'under', label: 'Under', width: 'minmax(6em, 2fr)', sortable: true },
+    { key: 'written', label: 'Written', width: 'minmax(6em, 1fr)', sortable: true },
+    { key: 'actions', label: '' }
+  ]
 
   const routes: Routes = {
     '/': { name: 'scribe-pages', component: () => import('./scribe/ScribeListPage.svelte') },
@@ -88,6 +100,11 @@
   const order = $derived(query.get('order') === 'written' ? 'written' : 'title')
   const descending = $derived(query.get('desc') === '1')
   const groupBy = $derived<FileGroupBy>(GROUPS.find((one) => one === query.get('by')) ?? 'none')
+  const hidden = $derived((query.get('hide') ?? '').split(',').filter(Boolean))
+  const columns = $derived((view === 'tree' ? TREE_COLUMNS : LIST_COLUMNS).filter((column) => column.key === 'title' || !hidden.includes(column.key)))
+  const columnOptions = $derived<DropdownOption[]>(
+    (view === 'tree' ? TREE_COLUMNS : LIST_COLUMNS).filter((column) => column.key !== 'actions').map((column) => ({ value: column.key, label: column.label, disabled: column.key === 'title' }))
+  )
   const picked = $derived((query.get('tags') ?? '').split(',').filter(Boolean))
 
   const table = $state<Scribe['table']>({ pages: held.pages, loading: held.key === '', saving: false })
@@ -135,7 +152,6 @@
   const shown = $derived(sort(table.pages.filter(keep)))
   const roots = $derived(sifting ? shown : sort(getRoots(table.pages)))
   const rows = $derived(roots.map(limb))
-  const lines = $derived(shelve(shown))
 
   const crumbs = $derived<Crumb[]>([
     { id: '', title: campaign ? campaign.name : 'Your own' },
@@ -167,16 +183,18 @@
     })
   }
 
-  function shelve(pages: Resource[]): Shelf[] {
-    if (groupBy !== 'tag') return [{ title: '', kids: pages }]
-    const tagged = allTags.map((tag) => ({ title: `#${tag}`, kids: pages.filter((one) => one.tags.includes(tag)) }))
-    const loose = { title: 'Untagged', kids: pages.filter((one) => one.tags.length === 0) }
-    return [...tagged, loose].filter((shelf) => shelf.kids.length > 0)
-  }
-
   function limb(row: Resource): TreeRow {
     const kids = sifting ? [] : sort(getChildren(table.pages, row.id)).map(limb)
-    return { id: row.id, title: row.title, mark: kids.length > 0 ? String(kids.length) : undefined, glyph: 'scroll', kids }
+    return {
+      id: row.id,
+      title: row.title,
+      mark: kids.length > 0 ? String(kids.length) : undefined,
+      glyph: 'scroll',
+      kids,
+      tags: row.tags,
+      under: parentOf(row)?.title ?? '',
+      written: written(row)
+    }
   }
 
   function countKids(one: Resource): number {
@@ -315,8 +333,8 @@
     get rows() {
       return rows
     },
-    get lines() {
-      return lines
+    get columns() {
+      return columns
     },
     get groupBy() {
       return groupBy
@@ -386,6 +404,15 @@
           <Glyph name={descending ? 'sortnumericdown' : 'sortnumericup'} size="sm" />
         </IconBtn>
         <Dropdown label="Group by" glyph="group" value={groupBy} options={groupings} onchange={(next) => put({ by: next === 'none' ? null : next })} />
+      {/if}
+      {#if view !== 'grid'}
+        <Dropdown
+          label="Columns"
+          glyph="table"
+          values={columns.map((column) => column.key)}
+          options={columnOptions}
+          onpick={(picked) => put({ hide: columnOptions.map((option) => option.value).filter((key) => !picked.includes(key)).join(',') || null })}
+        />
       {/if}
     {/snippet}
     <IconBtn title="Files" active={view === 'grid'} onclick={() => put({ view: null })}>
