@@ -205,6 +205,7 @@ func PostVehicle(ctx echo.Context) error {
 	}
 	rctx := ctx.Request().Context()
 	var campaign *db.Campaign
+	var ownerID *uuid.UUID
 	if body.CampaignID != nil {
 		if _, err := sdb.Instance().MutationAccess(rctx, actorID, *body.CampaignID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_READ); err != nil {
 			if errors.Is(err, sdb.ErrNotFound) {
@@ -216,8 +217,9 @@ func PostVehicle(ctx echo.Context) error {
 		if err := db.Instance().NewSelect().Model(campaign).WherePK().Scan(rctx); err != nil {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
+		ownerID = &campaign.OrganizationID
 	}
-	w, err := postWriter(rctx, actorID)
+	w, err := postWriter(rctx, actorID, ownerID)
 	if err != nil {
 		if errors.Is(err, errNoOwner) {
 			ctx.Logger().Error(err)
@@ -368,7 +370,7 @@ func PutVehicle(ctx echo.Context) error {
 			ctx.Logger().Errorf("PutVehicle: %v", err)
 			return respond.ErrorInternal(ctx)
 		}
-		w, err = postWriter(rctx, actorID)
+		w, err = postWriter(rctx, actorID, &item.OwnerID)
 		if err != nil || item.CrewClaimID == nil {
 			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 		}

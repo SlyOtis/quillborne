@@ -140,7 +140,7 @@ func PostMap(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusBadRequest, "Invalid JSON body")
 	}
 	rctx := ctx.Request().Context()
-	w, err := postWriter(rctx, actorID)
+	w, err := postWriter(rctx, actorID, &campaign.OrganizationID)
 	if err != nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
@@ -400,7 +400,7 @@ func PostEncounter(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusBadRequest, "Invalid JSON body")
 	}
 	rctx := ctx.Request().Context()
-	w, err := postWriter(rctx, actorID)
+	w, err := postWriter(rctx, actorID, &campaign.OrganizationID)
 	if err != nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
@@ -517,7 +517,7 @@ func PutEncounter(ctx echo.Context) error {
 	columns = append(columns, shared...)
 	var w *Writer
 	if len(shared) > 0 {
-		if w, err = postWriter(rctx, actorID); err != nil {
+		if w, err = postWriter(rctx, actorID, &item.OwnerID); err != nil {
 			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 		}
 	}
@@ -644,7 +644,7 @@ func PostSong(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusBadRequest, "Invalid JSON body")
 	}
 	rctx := ctx.Request().Context()
-	w, err := postWriter(rctx, actorID)
+	w, err := postWriter(rctx, actorID, &campaign.OrganizationID)
 	if err != nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
@@ -733,7 +733,7 @@ func PutSong(ctx echo.Context) error {
 	columns = append(columns, shared...)
 	var w *Writer
 	if len(shared) > 0 {
-		if w, err = postWriter(rctx, actorID); err != nil {
+		if w, err = postWriter(rctx, actorID, &item.OwnerID); err != nil {
 			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 		}
 	}
@@ -854,7 +854,7 @@ func PostChatEntry(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusBadRequest, "Invalid JSON body")
 	}
 	rctx := ctx.Request().Context()
-	w, err := postWriter(rctx, actorID)
+	w, err := postWriter(rctx, actorID, &campaign.OrganizationID)
 	if err != nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}

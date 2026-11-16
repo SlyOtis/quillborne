@@ -19,12 +19,15 @@ type Writer struct {
 	Access  *sdb.AccessClaim
 }
 
-func postWriter(ctx context.Context, actorID uuid.UUID) (*Writer, error) {
-	ownerID, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID"))
+func postWriter(ctx context.Context, actorID uuid.UUID, ownerID *uuid.UUID) (*Writer, error) {
+	serverOwnerID, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID"))
 	if err != nil {
 		return nil, errNoOwner
 	}
-	ac, err := sdb.Instance().MutationAccess(ctx, actorID, ownerID, sdb.OBJECT_TYPE_ORGANIZATION, sdb.ACCESS_EXECUTE)
+	if ownerID == nil {
+		ownerID = &serverOwnerID
+	}
+	ac, err := sdb.Instance().MutationAccess(ctx, actorID, serverOwnerID, sdb.OBJECT_TYPE_ORGANIZATION, sdb.ACCESS_EXECUTE)
 	if err != nil {
 		return nil, err
 	}
@@ -32,8 +35,8 @@ func postWriter(ctx context.Context, actorID uuid.UUID) (*Writer, error) {
 		return nil, sdb.ErrNoAccess
 	}
 	stamp := *ac
-	stamp.OwnerID = ownerID
-	return &Writer{ActorID: actorID, OwnerID: ownerID, Access: &stamp}, nil
+	stamp.OwnerID = *ownerID
+	return &Writer{ActorID: actorID, OwnerID: *ownerID, Access: &stamp}, nil
 }
 
 func postOwnerBinding(ctx context.Context, tx bun.Tx, w *Writer, objectType string, objectID uuid.UUID, access sdb.ClaimAccess) error {

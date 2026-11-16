@@ -124,7 +124,7 @@ func PostProfile(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusBadRequest, "Invalid JSON body")
 	}
 	rctx := ctx.Request().Context()
-	w, err := postWriter(rctx, actorID)
+	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
 		if errors.Is(err, errNoOwner) {
 			ctx.Logger().Error(err)
@@ -380,7 +380,7 @@ func PutProfileDetails(ctx echo.Context) error {
 	if err != nil || ac == nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	w, err := postWriter(rctx, actorID)
+	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
 		if errors.Is(err, errNoOwner) {
 			ctx.Logger().Error(err)

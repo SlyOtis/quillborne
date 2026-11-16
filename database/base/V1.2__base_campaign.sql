@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS campaign (
     settings         JSONB NOT NULL DEFAULT '{}'::jsonb,
     dm_claim_id      UUID,
     player_claim_id  UUID,
+    organization_id  UUID NOT NULL,
     sa_owner_id      UUID NOT NULL,
     sa_created_by    UUID,
     sa_created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -23,7 +24,8 @@ COMMENT ON COLUMN campaign.is_active IS 'Whether the campaign is being played';
 COMMENT ON COLUMN campaign.settings IS 'Character editing, sheet sharing, private notes and the experience mode';
 COMMENT ON COLUMN campaign.dm_claim_id IS 'The claim the dungeon master holds on the campaign and everything in it';
 COMMENT ON COLUMN campaign.player_claim_id IS 'The claim every player at the table holds, read on what the table shares';
-COMMENT ON COLUMN campaign.sa_owner_id IS 'The owning organization';
+COMMENT ON COLUMN campaign.organization_id IS 'The claimius.organization of kind campaign that the campaign is, owner of the campaign row and of every row the table keeps';
+COMMENT ON COLUMN campaign.sa_owner_id IS 'The owning organization, the campaign''s own';
 COMMENT ON COLUMN campaign.sa_created_by IS 'The user_claim of the dungeon master who created it';
 COMMENT ON COLUMN campaign.sa_created_at IS 'When the row was created';
 COMMENT ON COLUMN campaign.sa_updated_at IS 'When the row last changed';

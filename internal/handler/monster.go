@@ -128,7 +128,7 @@ func PostMonster(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusBadRequest, "A monster names its system")
 	}
 	rctx := ctx.Request().Context()
-	w, err := postWriter(rctx, actorID)
+	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
 		if errors.Is(err, errNoOwner) {
 			ctx.Logger().Error(err)
@@ -210,7 +210,7 @@ func PutMonster(ctx echo.Context) error {
 			return err
 		}
 		if public {
-			w, err := postWriter(tctx, actorID)
+			w, err := postWriter(tctx, actorID, nil)
 			if err != nil {
 				return err
 			}

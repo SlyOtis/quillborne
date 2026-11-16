@@ -41,8 +41,8 @@ COMMENT ON COLUMN resource.share_users IS 'The players it is shared with by name
 COMMENT ON COLUMN resource.share_campaigns IS 'The campaigns whose tables read it';
 COMMENT ON COLUMN resource.reader_claim_id IS 'The claim the players it is shared with by name hold';
 COMMENT ON COLUMN resource.sa_owner_id IS 'The owning organization';
-COMMENT ON COLUMN resource.sa_parent_id IS 'The resource this one is a sub page of, itself for a top resource';
-COMMENT ON COLUMN resource.sa_root_id IS 'The top resource of the tree';
+COMMENT ON COLUMN resource.sa_parent_id IS 'The resource this one is a sub page of: the root for a top resource, itself for a root';
+COMMENT ON COLUMN resource.sa_root_id IS 'The root of the tree, the row that holds every page of one campaign or of one player';
 COMMENT ON COLUMN resource.sa_created_by IS 'The user_claim of the creator';
 COMMENT ON COLUMN resource.sa_created_at IS 'When the row was created';
 COMMENT ON COLUMN resource.sa_updated_at IS 'When the row last changed';
