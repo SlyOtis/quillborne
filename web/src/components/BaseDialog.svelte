@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getContext, type Snippet } from 'svelte';
   import Ornament from '$components/ui/Ornament.svelte';
-  import Sigil from '$components/ui/Sigil.svelte'
+  import IconBtn from '$components/ui/IconBtn.svelte'
   import Glyph from '$components/ui/Glyph.svelte';
 
   let {
@@ -120,9 +120,9 @@
           <h2 id="dialog-title" class="dialog-title">{title}</h2>
         {/if}
         {#if showCloseButton}
-          <Sigil title="Close dialog" tone="bane" size="sm" frame="cusped" onclick={closeDialog}>
+          <IconBtn title="Close dialog" tone="bane" onclick={closeDialog}>
             <Glyph name="close" size="sm" />
-          </Sigil>
+          </IconBtn>
         {/if}
       </div>
       <span class="dialog-key">
@@ -264,9 +264,10 @@
 
   .dialog-title {
     margin: 0;
-    padding-inline-start: var(--space-5);
+    flex: 1;
+    min-width: 0;
     font-family: var(--font-display);
-    font-size: var(--text-lg);
+    font-size: var(--text-sm);
     font-weight: 700;
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;

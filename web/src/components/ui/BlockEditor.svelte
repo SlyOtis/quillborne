@@ -2786,7 +2786,7 @@
     {#if hovered && !drag?.on}
       <div class="dnd-write-handle" style:top="{handleAt.top}px" style:left="{handleAt.left}px">
         <IconBtn title="Options, drag to move" active={!!menu} onpointerdown={onHandleDown} onclick={onHandleClick}>
-          <Glyph name="more" size="sm" />
+          <Glyph name="morevert" size="sm" />
         </IconBtn>
       </div>
     {/if}

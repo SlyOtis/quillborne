@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { setContext, tick, type Snippet } from 'svelte'
+  import { flushSync, setContext, tick, type Snippet } from 'svelte'
   import { navigate, resolvedRoute } from 'sly-svelte-location-router'
   import { getCampaigns, getCharacters, getProfiles } from '$lib/api'
   import type { Profile } from '$lib/api/types'
@@ -32,7 +32,7 @@ import Toast from '$components/ui/Toast.svelte'
   })
 
   const character = $derived($userCharacters.find((one) => one.id === ($currentCharacterId ?? $userProfile?.preferences?.active_characters?.[$currentCampaignId ?? $userCampaigns[0]?.id ?? ''] ?? $userProfile?.preferences?.recent_characters?.[0])) ?? null)
-  const campaign = $derived($userCampaigns.find((one) => one.id === ($currentCampaignId ?? character?.campaign_id)) ?? null)
+  const campaign = $derived($userCampaigns.find((one) => one.id === ($currentCampaignId ?? character?.campaign_id)) ?? $userCampaigns[0] ?? null)
   const onSheet = $derived(Boolean(character) && $resolvedRoute.path === `/main/character/${character?.id}`)
   const seats = $derived(campaign ? [campaign.dm_id, ...campaign.player_ids.filter((id) => id !== campaign.dm_id)] : [])
   let profiles = $state<Record<string, Profile>>({})
@@ -50,10 +50,19 @@ import Toast from '$components/ui/Toast.svelte'
   let stackEl = $state<HTMLElement | null>(null)
   let shellEl = $state<HTMLElement | null>(null)
   let dropLeft = $state(0)
+  const TIPPED = '.dnd-sigil[title], .dnd-shell-handle[title], .dnd-shell-chip[title], .dnd-iconbtn[title], .dnd-button[title], .vitals-cell[title]'
+  let tipEl = $state<HTMLElement | null>(null)
+  let tipFor: Element | null = null
+  let tipText = $state('')
+  let tipBelow = $state(false)
+  let tipX = $state(0)
+  let tipY = $state(0)
+  let tipShift = $state(0)
 
   $effect(() => {
     $resolvedRoute.path
     toolsOpen = false
+    hideTip()
   })
 
   $effect(() => {
@@ -122,11 +131,47 @@ import Toast from '$components/ui/Toast.svelte'
     reach()
   })
 
-  function closeTools(event: PointerEvent) {
+  function press(event: PointerEvent) {
+    hideTip()
     if (!toolsOpen) return
     const target = event.target as Element | null
     if (target?.closest('.dnd-shell-drop') || target?.closest('.dnd-shell-chip-round')) return
     toolsOpen = false
+  }
+
+  function showTip(event: Event) {
+    const held = event.target instanceof Element ? event.target.closest(TIPPED) : null
+    const text = held?.getAttribute('title')
+    if (!tipEl || !held || !text || held === tipFor) return
+    if (event.type === 'focusin' && !held.matches(':focus-visible')) return
+    const at = held.getBoundingClientRect()
+    tipFor = held
+    tipText = text
+    tipBelow = false
+    tipShift = 0
+    tipX = at.left + at.width / 2
+    tipY = at.top
+    flushSync()
+    tipEl.togglePopover(true)
+    let tip = tipEl.getBoundingClientRect()
+    if (tip.top < 0) {
+      tipBelow = true
+      tipY = at.bottom
+      flushSync()
+      tip = tipEl.getBoundingClientRect()
+    }
+    tipShift = Math.max(0, -tip.left) + Math.min(0, window.innerWidth - tip.right)
+  }
+
+  function leaveTip(event: FocusEvent | PointerEvent) {
+    if (!tipFor || !(event.target instanceof Node) || !tipFor.contains(event.target)) return
+    if (event.relatedTarget instanceof Node && tipFor.contains(event.relatedTarget)) return
+    hideTip()
+  }
+
+  function hideTip() {
+    tipFor = null
+    tipEl?.togglePopover(false)
   }
 
   function stepDrawers(event: KeyboardEvent) {
@@ -145,7 +190,16 @@ import Toast from '$components/ui/Toast.svelte'
   }
 </script>
 
-<svelte:window onkeydown={stepDrawers} onhashchange={reach} onpointerdown={closeTools} />
+<svelte:window
+  onkeydown={stepDrawers}
+  onhashchange={reach}
+  onpointerdown={press}
+  onpointerover={showTip}
+  onpointerout={leaveTip}
+  onfocusin={showTip}
+  onfocusout={leaveTip}
+  onscrollcapture={hideTip}
+/>
 
 <main
   class="dnd-shell"
@@ -160,6 +214,9 @@ import Toast from '$components/ui/Toast.svelte'
           <Glyph name="menu" size="sm" />
         </Sigil>
       {/if}
+      <button type="button" class="dnd-shell-handle" title="Home" onclick={() => navigate('/main')}>
+        <Crest lit={$resolvedRoute.path === '/main'} />
+      </button>
       <Sigil title="Back" size="sm" disabled={!canBack} onclick={() => history.back()}>
         <Glyph name="back" size="sm" />
       </Sigil>
@@ -167,10 +224,6 @@ import Toast from '$components/ui/Toast.svelte'
         <Glyph name="forward" size="sm" />
       </Sigil>
     </span>
-
-    <button type="button" class="dnd-shell-handle" title="Home" onclick={() => navigate('/main')}>
-      <Crest lit={$resolvedRoute.path === '/main'} />
-    </button>
 
     {#if $shell.nav}
       <nav class="dnd-shell-nav" aria-label="Page">{@render $shell.nav()}</nav>
@@ -224,6 +277,17 @@ import Toast from '$components/ui/Toast.svelte'
       </span>
     {/if}
   </header>
+
+  <div
+    class="dnd-shell-tip"
+    class:dnd-shell-tip-below={tipBelow}
+    role="tooltip"
+    popover="manual"
+    bind:this={tipEl}
+    style:--tip-x="{tipX}px"
+    style:--tip-y="{tipY}px"
+    style:--tip-shift="{tipShift}px"
+  >{tipText}</div>
 
   {#if toolsOpen && $shell.tools}
     <div class="dnd-shell-drop" role="group" aria-label="The sheet's tools" style:--drop-left="{dropLeft}px">{@render $shell.tools()}</div>
@@ -901,12 +965,30 @@ import Toast from '$components/ui/Toast.svelte'
     grid-area: chat;
   }
 
-  .dnd-shell-bar .dnd-shell-chip[title]:hover::after,
-  .dnd-shell-bar .dnd-shell-chip[title]:focus-visible::after,
-  .dnd-shell-bar :global(.dnd-sigil[title]:hover::after),
-  .dnd-shell-bar :global(.dnd-sigil[title]:focus-visible::after) {
-    top: calc(100% + var(--space-1));
-    bottom: auto;
+  .dnd-shell-tip {
+    position: fixed;
+    inset: var(--tip-y) auto auto calc(var(--tip-x) + var(--tip-shift));
+    margin: 0;
+    width: max-content;
+    padding: var(--space-1) var(--space-2);
+    border: var(--border-hair) solid var(--metal-dim);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--shadow-ink) 88%, transparent);
+    box-shadow: var(--shadow-sm);
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 400;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: nowrap;
+    color: var(--ink);
+    translate: -50% calc(-100% - var(--space-1));
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .dnd-shell-tip-below {
+    translate: -50% var(--space-1);
   }
 
   @media (max-width: 1100px) {

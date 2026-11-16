@@ -269,35 +269,37 @@
     />
   {/snippet}
 
-  <PageHead
-    title={shape.many}
-    count="{shown.length} of {rows.length}{groups.length > 0 ? `, in ${groups.length} groups` : ''}"
-    crumbs={[{ id: '', title: campaign ? campaign.name : load ? 'All you reach' : 'Your own' }]}
-    {tools}
-  >
-    {#snippet actions()}
-      {#if arranging}
-        <IconBtn title="New group" disabled={busy} onclick={() => (naming = true)}>
-          <Glyph name="group" size="md" />
-        </IconBtn>
-        <IconBtn title="Done arranging" tone="verdigris" active onclick={() => (arranging = false)}>
-          <Glyph name="save" size="md" />
-        </IconBtn>
-      {:else}
-        <IconBtn title="Add {shape.word}" onclick={() => navigate(`${under}/create`)}>
-          <Glyph name="add" size="md" />
-        </IconBtn>
-        {#if canArrange}
-          <IconBtn title="Arrange into groups" onclick={() => (arranging = true)}>
-            <Glyph name="edit" size="md" />
+  {#snippet band()}
+    <PageHead
+      title={shape.many}
+      count="{shown.length} of {rows.length}{groups.length > 0 ? `, in ${groups.length} groups` : ''}"
+      crumbs={[{ id: '', title: campaign ? campaign.name : load ? 'All you reach' : 'Your own' }]}
+      {tools}
+    >
+      {#snippet actions()}
+        {#if arranging}
+          <IconBtn title="New group" disabled={busy} onclick={() => (naming = true)}>
+            <Glyph name="group" size="md" />
           </IconBtn>
+          <IconBtn title="Done arranging" tone="verdigris" active onclick={() => (arranging = false)}>
+            <Glyph name="save" size="md" />
+          </IconBtn>
+        {:else}
+          <IconBtn title="Add {shape.word}" onclick={() => navigate(`${under}/create`)}>
+            <Glyph name="add" size="md" />
+          </IconBtn>
+          {#if canArrange}
+            <IconBtn title="Arrange into groups" onclick={() => (arranging = true)}>
+              <Glyph name="edit" size="md" />
+            </IconBtn>
+          {/if}
         {/if}
-      {/if}
-    {/snippet}
-    {#snippet center()}
-      <SearchInput bind:value={hunt} bind:tags={picked} options={allTags} placeholder="Search the {shape.words}..." label="Search {shape.many}" />
-    {/snippet}
-  </PageHead>
+      {/snippet}
+      {#snippet center()}
+        <SearchInput bind:value={hunt} bind:tags={picked} options={allTags} placeholder="Search the {shape.words}..." label="Search {shape.many}" />
+      {/snippet}
+    </PageHead>
+  {/snippet}
 
   <div class="roll-hold" class:roll-hold-peeking={Boolean(peeked)}>
     <div class="roll-tree" class:roll-tree-arranging={arranging}>

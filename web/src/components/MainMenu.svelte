@@ -398,12 +398,6 @@
     padding-inline: var(--space-2);
   }
 
-  .dnd-menu-rail :global(.dnd-iconbtn[title]:hover::after),
-  .dnd-menu-rail :global(.dnd-iconbtn[title]:focus-visible::after) {
-    top: calc(100% + var(--space-1));
-    bottom: auto;
-  }
-
   .dnd-menu-body {
     display: flex;
     flex-direction: column;
