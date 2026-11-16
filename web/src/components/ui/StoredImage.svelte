@@ -5,7 +5,9 @@
   const {
     src,
     alt,
-    draggable
+    draggable,
+    onload,
+    onerror
   }: {
     /** A hosted address, a file: record or a local: reference. A blob: address is dead and draws the missing mark. */
     src: string
@@ -13,6 +15,10 @@
     alt: string
     /** Passed straight to the img element. */
     draggable?: boolean
+    /** Runs once the picture has drawn. */
+    onload?: () => void
+    /** Runs when the picture cannot be drawn at its resolved address. */
+    onerror?: () => void
   } = $props()
 
   let resolved = $state('')
@@ -68,7 +74,7 @@
 </script>
 
 {#if resolved}
-  <img src={resolved} {alt} draggable={draggable} onerror={relook} />
+  <img src={resolved} {alt} draggable={draggable} {onload} onerror={() => { void relook(); onerror?.() }} />
 {:else}
   <span class="dnd-stored-image-missing" aria-label="{alt}, not on this device"></span>
 {/if}

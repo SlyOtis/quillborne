@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/SlyOtis/quillborne/internal/broker"
@@ -364,6 +365,50 @@ func PutResource(ctx echo.Context) error {
 	if err != nil {
 		return respond.Error(ctx, http.StatusBadRequest, err.Error())
 	}
+	columns := []string{"name", "description", "fields", "share_users", "share_campaigns", "sa_updated_at"}
+	if raw, found := body["parent_id"]; found {
+		text, ok := raw.(string)
+		if !ok {
+			return respond.Error(ctx, http.StatusBadRequest, "Invalid parent_id, expected UUID")
+		}
+		if text == "" {
+			if resource.ParentID != resource.ID {
+				return respond.Error(ctx, http.StatusBadRequest, "A page below another stays in its tree; move it under a page")
+			}
+		} else {
+			parentID, err := uuid.Parse(text)
+			if err != nil {
+				return respond.Error(ctx, http.StatusBadRequest, "Invalid parent_id, expected UUID")
+			}
+			if _, err := sdb.Instance().MutationAccess(rctx, actorID, parentID, db.OBJECT_TYPE_RESOURCE, sdb.ACCESS_READ); err != nil {
+				if errors.Is(err, sdb.ErrNotFound) {
+					return respond.Error(ctx, http.StatusNotFound, "Not found")
+				}
+				return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			}
+			parent := db.Resource{ID: parentID}
+			if err := db.Instance().NewSelect().Model(&parent).WherePK().Scan(rctx); err != nil {
+				return respond.Error(ctx, http.StatusNotFound, "Not found")
+			}
+			ancestors, err := getResourceAncestors(rctx, parent.ID)
+			if err != nil {
+				ctx.Logger().Errorf("PutResource: %v", err)
+				return respond.ErrorInternal(ctx)
+			}
+			if parent.ID == resource.ID || slices.Contains(ancestors, resource.ID) {
+				return respond.Error(ctx, http.StatusBadRequest, "A page moves only under a page that is not itself or below it")
+			}
+			if parent.RootID != resource.RootID {
+				if _, err := db.Instance().NewRaw(`SELECT claimius.migrate_root(?, ?, ?)`, db.OBJECT_TYPE_RESOURCE, resource.ID, parent.RootID).Exec(rctx); err != nil {
+					ctx.Logger().Warnf("PutResource migrate_root: %v", err)
+					return respond.Error(ctx, http.StatusForbidden, "Cross-root reparenting requires admin")
+				}
+			}
+			resource.ParentID = parent.ID
+			resource.RootID = parent.RootID
+		}
+		columns = append(columns, "sa_parent_id", "sa_root_id")
+	}
 	putShareBody(&resource.Share, BodyShare{})
 	var w *Writer
 	if shared {
@@ -381,7 +426,7 @@ func PutResource(ctx echo.Context) error {
 				return err
 			}
 		}
-		if _, err := tx.NewUpdate().Model(&resource).Column("name", "description", "fields", "share_users", "share_campaigns", "sa_updated_at").WherePK().Exec(tctx); err != nil {
+		if _, err := tx.NewUpdate().Model(&resource).Column(columns...).WherePK().Exec(tctx); err != nil {
 			return err
 		}
 		return sdb.Write(tctx, tx, "PutResource", "update", db.OBJECT_TYPE_RESOURCE, resource.ID, resource.OwnerID, ac.UserClaimID, resource.Name)
@@ -546,4 +591,10 @@ func DeleteResourceUpdates(ctx echo.Context) error {
 	}
 	broker.Post(ctx.Request().Context(), broker.ResourceTopic(resourceID), broker.KindUpdate, resourceID.String(), broker.OpDelete)
 	return respond.NoContent(ctx, http.StatusOK)
+}
+
+func getResourceAncestors(ctx context.Context, id uuid.UUID) ([]uuid.UUID, error) {
+	ancestors := make([]uuid.UUID, 0)
+	err := db.Instance().NewRaw("WITH RECURSIVE up AS (SELECT id, sa_parent_id FROM resource WHERE id = ? UNION SELECT r.id, r.sa_parent_id FROM resource r JOIN up ON r.id = up.sa_parent_id AND up.sa_parent_id <> up.id) SELECT id FROM up", id).Scan(ctx, &ancestors)
+	return ancestors, err
 }

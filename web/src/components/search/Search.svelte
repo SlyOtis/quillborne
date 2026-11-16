@@ -8,7 +8,8 @@
   import { currentCampaignId, userCampaigns } from "$lib/stores/campaign.store";
   import { ACTIONS, actionBlocks, putShortcuts, shortcuts } from "$lib/actions";
   import IconBtn from "$components/ui/IconBtn.svelte";
-  import { RESOURCES, type ResourceKind } from "$lib/resources";
+  import { RESOURCES, getWorldItems, type Item, type ResourceKind } from "$lib/resources";
+  import { getDocument, getDocumentText } from "$lib/blocks";
 
   interface Hit {
     id: string;
@@ -47,15 +48,17 @@
     { caps: ['Esc'], does: 'close' }
   ];
 
-  const SIGILS: Record<string, { type: string; label: string; glyph: GlyphName }> = {
-    '@': { type: 'character', label: 'Characters', glyph: 'character' },
-    '!': { type: 'campaign', label: 'Campaigns', glyph: 'campaign' },
-    '*': { type: 'resource', label: 'Lore and items', glyph: 'scroll' },
-    '&': { type: 'vehicle', label: 'Vessels', glyph: 'gear' }
+  const SIGILS: Record<string, { type: string; kind?: ResourceKind; word: string; label: string; glyph: GlyphName }> = {
+    '@': { type: 'character', word: 'character', label: 'Characters', glyph: 'character' },
+    '!': { type: 'campaign', word: 'campaign', label: 'Campaigns', glyph: 'campaign' },
+    '*': { type: 'resource', word: 'lore', label: 'Lore and items', glyph: 'scroll' },
+    '$': { type: 'resource', kind: 'items', word: 'item', label: 'Items', glyph: 'chest' },
+    '&': { type: 'vehicle', word: 'vessel', label: 'Vessels', glyph: 'gear' },
+    '^': { type: 'monster', word: 'monster', label: 'Monsters', glyph: 'claw' }
   };
 
-  const SYNTAX = [
-    ...Object.entries(SIGILS).map(([cap, one]) => ({ cap, does: one.label.toLowerCase() })),
+  const SYNTAX: { cap: string; word?: string; does: string }[] = [
+    ...Object.entries(SIGILS).map(([cap, one]) => ({ cap, word: `${one.word}:`, does: one.label.toLowerCase() })),
     { cap: '#', does: 'tag' },
     { cap: '-', does: 'exclude' }
   ];
@@ -76,7 +79,8 @@
   const SEARCH_DELAY = 250;
   const SEARCH_MIN = 2;
   const SEARCH_LIMIT = 30;
-  const SEARCH_TYPES = ['campaign', 'character', 'resource', 'vehicle'];
+  const SEARCH_TYPES = ['campaign', 'character', 'resource', 'vehicle', 'monster'];
+  let world: Promise<Item[]> | undefined;
 
   const rites = $derived<Hit[]>(
     ACTIONS.filter((one) => one.id !== 'search').map((one) => ({
@@ -96,9 +100,14 @@
   );
 
   const tokens = $derived(searchQuery.trim().toLowerCase().split(/\s+/).filter(Boolean));
-  const sigil = $derived(tokens[0] && tokens[0].charAt(0) in SIGILS ? tokens[0].charAt(0) : '');
+  const head = $derived(tokens[0] ?? '');
+  const sigil = $derived(
+    head.charAt(0) in SIGILS ? head.charAt(0) : (Object.keys(SIGILS).find((cap) => head.startsWith(`${SIGILS[cap].word}:`)) ?? '')
+  );
   const typeScope = $derived(sigil ? SIGILS[sigil].type : '');
-  const plain = $derived(sigil ? [tokens[0].slice(1), ...tokens.slice(1)].filter(Boolean) : tokens);
+  const kindScope = $derived(sigil ? SIGILS[sigil].kind ?? '' : '');
+  const prefix = $derived(sigil ? (head.charAt(0) === sigil ? 1 : SIGILS[sigil].word.length + 1) : 0);
+  const plain = $derived(sigil ? [head.slice(prefix), ...tokens.slice(1)].filter(Boolean) : tokens);
   const tagged = $derived(plain.filter((one) => one.startsWith('#') && one.length > 1).map((one) => one.slice(1)));
   const excluded = $derived(plain.filter((one) => one.startsWith('-') && one.length > 1).map((one) => one.slice(1)));
   const words = $derived(plain.filter((one) => !one.startsWith('#') && !one.startsWith('-')));
@@ -210,6 +219,10 @@
     if (one.object_type === 'public.vehicle') {
       return { id: `vehicle/${one.id}`, title: name, sub, group: 'Vessels', place: '', glyph: 'gear', key: '', tags: [], token: '', hay, run: () => navigate(`/main/vehicles/${one.id}`) };
     }
+    if (one.object_type === 'public.monster') {
+      const lore = getDocumentText(getDocument(sub));
+      return { id: `monster/${one.id}`, title: name, sub: lore, group: 'Monsters', place: '', glyph: 'claw', key: '', tags: [], token: '', hay: `${name} ${lore}`.toLowerCase(), run: () => navigate(`/main/monsters/${one.id}`) };
+    }
     const kind = (one.kind === 'locations' ? 'places' : one.kind ?? 'entries') as ResourceKind;
     const under = one.campaign_id ? `/main/campaign/${one.campaign_id}` : '/main';
     return {
@@ -224,6 +237,22 @@
       token: '',
       hay,
       run: () => navigate(`${under}/${kind}/${one.id}`)
+    };
+  }
+
+  function getWorldHit(one: Item): Hit {
+    return {
+      id: `/main/items/${one.id}`,
+      title: one.title,
+      sub: one.description,
+      group: RESOURCES.items.many,
+      place: 'General',
+      glyph: GLYPHS.items,
+      key: '',
+      tags: one.tags,
+      token: '',
+      hay: `${one.title} ${one.description}`.toLowerCase(),
+      run: () => navigate(`/main/items/${one.id}`)
     };
   }
 
@@ -244,7 +273,13 @@
       parent_type: table ? 'campaign' : undefined,
       limit: SEARCH_LIMIT
     });
-    return hits.map(getHit);
+    const found = (kindScope ? hits.filter((one) => one.kind === kindScope) : hits).map(getHit);
+    if (kindScope !== 'items') return found;
+    world ??= getWorldItems();
+    const general = (await world)
+      .map(getWorldHit)
+      .filter((hit) => isTagged(hit) && words.every((word) => hit.hay.includes(word)));
+    return [...general, ...found];
   }
 
   function putChips(held: string[], rest: string) {
@@ -333,7 +368,7 @@
 
   $effect(() => {
     const open = isOpen && Boolean($user?.user_id);
-    const key = `${words.join(' ')}|${tagged.join(' ')}|${typeScope}|${table?.id ?? ''}`;
+    const key = `${words.join(' ')}|${tagged.join(' ')}|${typeScope}|${kindScope}|${table?.id ?? ''}`;
     clearTimeout(timer);
     if (!open) return;
     const mine = ++asked;
@@ -459,7 +494,7 @@
   <div class="foot">
     <span class="syntax">
       {#each SYNTAX as one (one.cap)}
-        <span class="keys"><kbd class="cap">{one.cap}</kbd> {one.does}</span>
+        <span class="keys"><kbd class="cap">{one.cap}</kbd>{#if one.word}<kbd class="cap">{one.word}</kbd>{/if} {one.does}</span>
       {/each}
     </span>
     <span class="foot-keys">
