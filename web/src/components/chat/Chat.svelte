@@ -591,15 +591,6 @@
         padding: var(--space-3) var(--space-3) var(--space-2) 0;
     }
 
-    .actions :global(.dnd-sigil[title]:hover::after),
-    .actions :global(.dnd-sigil[title]:focus-visible::after) {
-        top: 50%;
-        right: calc(100% + var(--space-2));
-        bottom: auto;
-        left: auto;
-        transform: translateY(-50%);
-    }
-
     .status {
         position: relative;
         width: 100%;

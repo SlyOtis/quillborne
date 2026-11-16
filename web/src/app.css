@@ -919,84 +919,6 @@ a:hover {
   font-style: italic;
 }
 
-.dnd-sigil[title],
-.dnd-shell-handle[title],
-.dnd-shell-chip[title],
-.dnd-iconbtn[title],
-.dnd-button[title],
-.vitals-cell[title] {
-  position: relative;
-}
-
-.dnd-sigil[title]:hover::after,
-.dnd-shell-handle[title]:hover::after,
-.dnd-shell-chip[title]:hover::after,
-.dnd-iconbtn[title]:hover::after,
-.dnd-button[title]:hover::after,
-.vitals-cell[title]:hover::after,
-.dnd-sigil[title]:focus-visible::after,
-.dnd-shell-handle[title]:focus-visible::after,
-.dnd-shell-chip[title]:focus-visible::after,
-.dnd-iconbtn[title]:focus-visible::after,
-.dnd-button[title]:focus-visible::after {
-  content: attr(title);
-  position: absolute;
-  bottom: calc(100% + var(--space-1));
-  left: 50%;
-  z-index: 5;
-  transform: translateX(-50%);
-  width: max-content;
-  padding: var(--space-1) var(--space-2);
-  border: var(--border-hair) solid var(--metal-dim);
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--shadow-ink) 88%, transparent);
-  box-shadow: var(--shadow-sm);
-  font-family: var(--font-body);
-  font-size: var(--text-xs);
-  font-weight: 400;
-  letter-spacing: normal;
-  text-transform: none;
-  white-space: nowrap;
-  color: var(--ink);
-  pointer-events: none;
-}
-
-.dnd-sigil[title]:first-child:not(:last-child):hover::after,
-.dnd-iconbtn[title]:first-child:not(:last-child):hover::after,
-.dnd-button[title]:first-child:not(:last-child):hover::after,
-.dnd-sigil[title]:first-child:not(:last-child):focus-visible::after,
-.dnd-iconbtn[title]:first-child:not(:last-child):focus-visible::after,
-.dnd-button[title]:first-child:not(:last-child):focus-visible::after {
-  left: 0;
-  transform: none;
-}
-
-.dnd-sigil[title]:last-child:not(:first-child):hover::after,
-.dnd-iconbtn[title]:last-child:not(:first-child):hover::after,
-.dnd-button[title]:last-child:not(:first-child):hover::after,
-.dnd-sigil[title]:last-child:not(:first-child):focus-visible::after,
-.dnd-iconbtn[title]:last-child:not(:first-child):focus-visible::after,
-.dnd-button[title]:last-child:not(:first-child):focus-visible::after {
-  left: auto;
-  right: 0;
-  transform: none;
-}
-
-.dnd-shell-handle[title]:hover::after,
-.dnd-shell-handle[title]:focus-visible::after,
-.dnd-menupanel-head .dnd-button[title]:hover::after,
-.dnd-menupanel-head .dnd-button[title]:focus-visible::after {
-  left: 0;
-  transform: none;
-}
-
-.dnd-shell-handle:last-child .dnd-sigil[title]:hover::after,
-.dnd-shell-handle:last-child .dnd-sigil[title]:focus-visible::after {
-  left: auto;
-  right: 0;
-  transform: none;
-}
-
 .dnd-band {
   min-width: 0;
   padding: var(--space-6);
@@ -1026,13 +948,6 @@ a:hover {
   justify-content: flex-end;
   gap: var(--space-3);
   height: var(--space-7);
-}
-
-.dnd-band-acts .dnd-iconbtn[title]:hover::after,
-.dnd-band-acts .dnd-iconbtn[title]:focus-visible::after {
-  left: auto;
-  right: 0;
-  transform: none;
 }
 
 ::selection {

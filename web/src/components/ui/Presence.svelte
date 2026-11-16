@@ -119,12 +119,10 @@
 
   .dnd-presence-item-self {
     --presence-ring: var(--ember);
-    z-index: 1;
     color: var(--ember-core);
   }
 
   .dnd-presence-overflow {
-    z-index: 2;
     color: var(--ink);
   }
 
