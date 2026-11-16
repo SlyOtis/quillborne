@@ -55,7 +55,8 @@ export function getMergedSystem(base: RuleSystem, overlay: RuleSystemOverlay): R
     defences: mergeKeyed(base.defences ?? [], overlay.defences),
     bonuses: mergeKeyed(base.bonuses ?? [], overlay.bonuses),
     speeds: mergeKeyed(base.speeds ?? [], overlay.speeds),
-    recharges: mergeKeyed(base.recharges ?? [], overlay.recharges)
+    recharges: mergeKeyed(base.recharges ?? [], overlay.recharges),
+    items: overlay.items ?? base.items
   }
 }
 

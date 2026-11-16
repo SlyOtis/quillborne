@@ -1,6 +1,10 @@
-import type { Character, CharacterSkill, Proficiency } from '../character.types'
+import type { Character, CharacterInventoryItem, CharacterSkill, Proficiency } from '../character.types'
 import { getResolvedCharacter } from './derive'
-import type { CharacterSheet, ProficiencyTier, RuleSystem } from './spec.types'
+import { getExpressionValue } from './expression'
+import type { ItemGrants } from './item.types'
+import type { CharacterSheet, ProficiencyTier, ResolvedCharacter, RuleSystem } from './spec.types'
+
+export type AppliedItem = CharacterInventoryItem & { grants: ItemGrants }
 
 const ATTRIBUTE_IDS: Record<string, string> = {
   strength: 'str',
@@ -36,6 +40,10 @@ function getProficiencyMap(skills: CharacterSkill[], tiers: ProficiencyTier[]): 
   return map
 }
 
+/**
+ * The stored character as the engine reads it. The stored totals leave out what worn items grant: the bonuses are
+ * recovered from them first, and the items that apply are laid over last, so each grant counts once.
+ */
 export function getSheet(character: Character, system: RuleSystem): CharacterSheet {
   const tiers = system.proficiencyTiers
   const info = character.info
@@ -79,7 +87,74 @@ export function getSheet(character: Character, system: RuleSystem): CharacterShe
   const speed = Number.parseInt(String(info?.speed ?? ''), 10)
   if (Number.isFinite(speed)) bonuses.speed = speed - 30
 
-  if (info?.spells?.modifier) bonuses.spellcasting = scope[`mod.${getAttributeId(info.spells.modifier)}`] ?? 0
+  const worn = getWornSheet({ ...base, bonuses }, getAppliedItems(character.inventory ?? [], system), system)
+  if (!info?.spells?.modifier) return worn
 
-  return { ...base, bonuses }
+  const spellcasting = getResolvedCharacter(system, worn).scope[`mod.${getAttributeId(info.spells.modifier)}`] ?? 0
+  return { ...worn, bonuses: { ...worn.bonuses, spellcasting: spellcasting + (worn.bonuses.spellcasting ?? 0) } }
+}
+
+/** Whether an item's grants reach the character, by the system's rule for items. */
+export function isItemApplied(item: CharacterInventoryItem, system: RuleSystem): boolean {
+  if (!system.items) return false
+  const flags = { equipped: item.equipped ? 1 : 0, attuned: item.attunement?.attuned ? 1 : 0, attunement: item.attunement?.required ? 1 : 0 }
+  return getExpressionValue(system.items.applies, flags) !== 0
+}
+
+export function getAppliedItems(inventory: CharacterInventoryItem[], system: RuleSystem): AppliedItem[] {
+  return inventory.filter((item): item is AppliedItem => Boolean(item.grants) && isItemApplied(item, system))
+}
+
+/**
+ * Lays the grants of the items that apply over a sheet, the way an overlay lays over a system: scores raised and set,
+ * bonuses added, proficiencies at the higher tier, and the least each sense and speed reaches.
+ */
+export function getWornSheet(sheet: CharacterSheet, items: AppliedItem[], system: RuleSystem): CharacterSheet {
+  const grants = items.map((item) => item.grants)
+  const attributes = { ...sheet.attributes }
+  const bonuses = { ...sheet.bonuses }
+  const proficiencies = { ...sheet.proficiencies }
+  const reaches = { ...sheet.reaches }
+
+  const score = (id: string) => attributes[id] ?? system.attributes.find((one) => one.id === id)?.default ?? 0
+  const scores = grants.flatMap((one) => one.attributes)
+  for (const one of scores.filter((entry) => entry.mode === 'bonus')) {
+    const held = score(one.id)
+    attributes[one.id] = one.max === undefined ? held + one.value : Math.max(held, Math.min(held + one.value, one.max))
+  }
+  for (const one of scores.filter((entry) => entry.mode === 'set')) attributes[one.id] = Math.max(score(one.id), one.value)
+
+  for (const one of grants.flatMap((entry) => entry.bonuses)) bonuses[one.id] = (bonuses[one.id] ?? 0) + one.value
+
+  const tier = (id: string | undefined) => system.proficiencyTiers.find((one) => one.id === id)?.multiplier ?? -Infinity
+  for (const one of grants.flatMap((entry) => entry.proficiencies)) {
+    if (one.id && tier(one.tier) > tier(proficiencies[one.id])) proficiencies[one.id] = one.tier
+  }
+
+  const reach = (key: string, value: number) => (reaches[key] = Math.max(reaches[key] ?? value, value))
+  for (const one of grants.flatMap((entry) => entry.senses)) reach(`sense.${one.id}`, one.value)
+  for (const one of grants.flatMap((entry) => entry.speeds)) reach(`speed.${one.id}`, one.value)
+
+  return { ...sheet, attributes, bonuses, proficiencies, reaches }
+}
+
+/** How many items the character is attuned to, and how many the system lets them be attuned to at once. */
+export function getAttunement(inventory: CharacterInventoryItem[], resolved: ResolvedCharacter): { used: number; slots: number } {
+  const rule = resolved.system.items?.attunement
+  return {
+    used: inventory.filter((item) => item.attunement?.attuned).length,
+    slots: rule ? Math.max(0, Math.floor(getExpressionValue(rule, resolved.scope))) : 0
+  }
+}
+
+/** The inventory with one item attuned or let go, or null when attuning it would pass the slots the system allows. */
+export function getAttunedInventory(
+  inventory: CharacterInventoryItem[],
+  id: string,
+  attuned: boolean,
+  slots: number
+): CharacterInventoryItem[] | null {
+  const others = inventory.filter((item) => item.id !== id && item.attunement?.attuned).length
+  if (attuned && others >= slots) return null
+  return inventory.map((item) => (item.id === id && item.attunement ? { ...item, attunement: { ...item.attunement, attuned } } : item))
 }

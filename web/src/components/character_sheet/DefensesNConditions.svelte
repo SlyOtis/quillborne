@@ -3,17 +3,32 @@
   import type {Readable} from "svelte/store";
   import type {CharacterContext} from "$lib/types";
   import type {RulesState} from "$lib/rules/store";
+  import {getAppliedItems} from "$lib/rules/sheet";
   import {deleteCondition, deleteDefence, putCondition, putDefence} from "$lib/engine";
   import Field from "$components/ui/Field.svelte";
   import IconBtn from "$components/ui/IconBtn.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
 
-  const {info} = getContext<CharacterContext>('character')
+  const {info, inventory} = getContext<CharacterContext>('character')
   const rules = getContext<Readable<RulesState>>('rules')
 
   const conditionList = $derived($rules.system?.conditions ?? [])
   const damageTypes = $derived($rules.system?.damageTypes ?? [])
   const defenceKinds = $derived($rules.system?.defences ?? [])
+
+  const getDefenceTitle = (kindId: string, damageId: string) => {
+    const kind = defenceKinds.find(entry => entry.id === kindId)?.title ?? kindId
+    const damage = damageTypes.find(entry => entry.id === damageId)?.title ?? damageId
+    return `${damage} ${kind.toLowerCase()}`
+  }
+
+  const worn = $derived.by(() => {
+    if (!$rules.system) return []
+    const held = new Set(($info.defences ?? []).map(entry => entry.title.toLowerCase()))
+    return getAppliedItems($inventory, $rules.system)
+      .flatMap(item => item.grants.defences.map(one => ({title: getDefenceTitle(one.id, one.damage), from: item.title})))
+      .filter(one => !held.has(one.title.toLowerCase()))
+  })
 
   let conditionId = $state('')
   let kindId = $state('')
@@ -41,7 +56,7 @@
     const kind = defenceKinds.find(entry => entry.id === kindId)
     const damage = damageTypes.find(entry => entry.id === damageId)
     if (!kind || !damage) return
-    putDefence({title: `${damage.title} ${kind.title.toLowerCase()}`, effects: [`${kind.title} to ${damage.title.toLowerCase()} damage`]})
+    putDefence({title: getDefenceTitle(kind.id, damage.id), effects: [`${kind.title} to ${damage.title.toLowerCase()} damage`]})
     damageId = ''
   }
 </script>
@@ -56,9 +71,16 @@
                     <Glyph name="remove" size="sm" />
                 </IconBtn>
             </span>
-        {:else}
-            <span class="none">None</span>
         {/each}
+        {#each worn as defence (defence.title + defence.from)}
+            <span class="chip" title="From {defence.from}">
+                <span>{defence.title}</span>
+                <Glyph name="shield" size="sm" />
+            </span>
+        {/each}
+        {#if ($info.defences ?? []).length === 0 && worn.length === 0}
+            <span class="none">None</span>
+        {/if}
     </div>
     <div class="adder">
         <Field label="Defence" id="defence-kind" inline>

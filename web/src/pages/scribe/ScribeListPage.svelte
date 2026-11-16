@@ -60,11 +60,6 @@
     }
   }
 
-  function pictureOf(one: Resource): string | null {
-    const picture = (held.get(one.id) ?? []).find((link) => link.asset?.mime_type.startsWith('image/'))
-    return picture ? getMediaUrl(picture.asset_id) : null
-  }
-
   function tileOf(one: Resource): FileItem {
     const kids = scribe.countKids(one)
     return {
@@ -74,7 +69,6 @@
       type: 'Page',
       glyph: 'scroll',
       size: kids > 0 ? `${kids} sub pages` : undefined,
-      thumbnailUrl: pictureOf(one),
       updatedAt: one.created_at ?? undefined,
       tags: one.tags
     }

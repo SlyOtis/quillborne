@@ -1,18 +1,26 @@
 <script lang="ts">
   import {getContext} from "svelte";
+  import type {Readable} from "svelte/store";
   import type {CharacterContext} from "$lib/types";
   import type {Character, CharacterCurrency, Currency, ItemType} from "$lib/character.types";
-  import {ChangeActions} from "$lib/changelog";
-  import {addCurrencies, asGold, deleteItem, postItem, putCurrency, putItem, updateCharacterWithChangeLog} from "$lib/engine";
+  import type {RulesState} from "$lib/rules/store";
+  import {getAttunement, isItemApplied} from "$lib/rules/sheet";
+  import {getCarriedItem, getGrantLines, getItemLine, getItemRoom, type Item} from "$lib/resources";
+  import {addCurrencies, asGold, deleteItem, postItem, putAttunement, putCurrency, putEquipped, putItem} from "$lib/engine";
   import Button from "$components/ui/Button.svelte";
+  import Chip from "$components/ui/Chip.svelte";
   import Field from "$components/ui/Field.svelte";
   import Glyph, {type GlyphName} from "$components/ui/Glyph.svelte";
   import IconBtn from "$components/ui/IconBtn.svelte";
+  import Pool from "$components/ui/Pool.svelte";
+  import Row from "$components/ui/Row.svelte";
+  import SearchInput from "$components/ui/SearchInput.svelte";
   import Sigil from "$components/ui/Sigil.svelte";
 
   type InventoryItem = Character['inventory'][number]
 
-  const {inventory, info, currency, equipped} = getContext<CharacterContext>('character')
+  const {inventory, info, currency} = getContext<CharacterContext>('character')
+  const rules = getContext<Readable<RulesState>>('rules')
 
   const COINS: Currency[] = ['pp', 'gp', 'sp', 'cp']
   const ITEM_TYPES: ItemType[] = ['weapon', 'armor', 'consumable', 'tool', 'container', 'treasure', 'ammunition', 'misc']
@@ -39,6 +47,54 @@
     val.type?.includes(searchInput) ||
     val.id?.includes(searchInput) ||
     val.title?.includes(searchInput)))
+  let equipment = $derived(filteredItems.filter(item => item.equipped))
+  let carried = $derived(filteredItems.filter(item => !item.equipped))
+
+  let attunement = $derived($rules.resolved?.system.items ? getAttunement($inventory, $rules.resolved) : null)
+  let note = $state('')
+
+  let finding = $state(false)
+  let room = $state<Item[] | null>(null)
+  let roomError = $state('')
+  let roomQuery = $state('')
+  let found = $derived.by(() => {
+    const words = roomQuery.trim().toLowerCase()
+    return (room ?? []).filter(one => !one.locked && (!words ||
+      [one.title, one.category, one.subtype, one.rarity, one.notes, ...one.tags].some(text => text.toLowerCase().includes(words))))
+  })
+
+  function openRoom() {
+    finding = !finding
+    if (!finding || room) return
+    roomError = ''
+    getItemRoom()
+      .then(items => (room = items))
+      .catch(reason => (roomError = reason instanceof Error ? reason.message : String(reason)))
+  }
+
+  function addFromRoom(one: Item) {
+    postItem(getCarriedItem(one))
+    note = `${one.title} is in the pack.`
+  }
+
+  function getGives(item: InventoryItem): string {
+    if (!item.grants || !$rules.system) return ''
+    return getGrantLines(item.grants, $rules.system).map(line => `${line.label} ${line.value}`).join(' · ')
+  }
+
+  function getTypeLine(item: InventoryItem): string {
+    const type = item.origin ? item.subtype ?? item.type : getDisplayType(item)
+    return item.equipped && item.attunement?.required && !item.attunement.attuned ? `${type} · not attuned` : type
+  }
+
+  function attune(item: InventoryItem) {
+    const attuned = !item.attunement?.attuned
+    if (putAttunement(item, attuned, attunement?.slots ?? 0)) {
+      note = ''
+      return
+    }
+    note = `All ${attunement?.slots ?? 0} attunement slots are taken. End an attunement before attuning to ${item.title}.`
+  }
 
   function getEquipIcon(itemType: string): GlyphName {
     const icons: {[key: string]: GlyphName} = {
@@ -69,27 +125,6 @@
 
   function getDisplayType(item: InventoryItem): string {
     return isAmmunition(item) ? 'ammunition' : item.type;
-  }
-
-  function isItemEquipped(itemId: string): boolean {
-    return Array.isArray($equipped) && $equipped.some(equippedItem => equippedItem.id === itemId);
-  }
-
-  function equipItem(item: InventoryItem) {
-    const wearing = isItemEquipped(item.id)
-    updateCharacterWithChangeLog(
-      'equipped',
-      curr => {
-        const list = Array.isArray(curr) ? curr : []
-        if (wearing) return list.filter(equippedItem => equippedItem.id !== item.id)
-        return [
-          ...list.filter(equippedItem => !equippedItem.type.split(',').map(t => t.trim()).includes(item.type)),
-          {id: item.id, title: item.title, type: item.type}
-        ]
-      },
-      ChangeActions.EQUIPMENT_CHANGE,
-      `${wearing ? 'Unequipped' : 'Equipped'} ${item.title}`
-    )
   }
 
   function consumeItem(item: InventoryItem) {
@@ -143,6 +178,9 @@
                 {/if}
             </span>
         </div>
+        {#if attunement}
+            <Pool title="Attunement" note="{Math.max(0, attunement.slots - attunement.used)} free" max={attunement.slots} current={attunement.used} view="pips" />
+        {/if}
         <div class="currency">
             <span class="coins">
                 {#each COINS as coin (coin)}
@@ -157,8 +195,41 @@
     </div>
     <div class="search">
         <input placeholder="search" bind:value={searchInput}/>
+        <Button variant="secondary" size="sm" title="Find an item in the item room" onclick={openRoom}>{finding ? 'Done' : 'Find an item'}</Button>
         <Button variant="secondary" size="sm" title="Add an item" onclick={() => openItem()}>Add item</Button>
     </div>
+    {#if finding}
+        <div class="room">
+            <SearchInput bind:value={roomQuery} placeholder="Search the item room" autofocus />
+            {#if roomError}
+                <span class="room-note" role="alert">{roomError}</span>
+            {:else if !room}
+                <span class="room-note">Opening the item room</span>
+            {:else}
+                <div class="room-list">
+                    {#each found as one (one.id)}
+                        <Row
+                            title={one.title}
+                            sub={getItemLine(one)}
+                            rarity={one.rarity}
+                            tone={one.source === 'general' ? 'verdigris' : 'metal'}
+                            image={one.image}
+                            mark="Add"
+                            onclick={() => addFromRoom(one)}
+                        >
+                            <Chip still glyph={one.source === 'general' ? 'gem' : 'edit'}>{one.source === 'general' ? 'General' : 'Homebrew'}</Chip>
+                            {#if one.notes}<span>{one.notes}</span>{/if}
+                        </Row>
+                    {:else}
+                        <span class="room-note">No item in the room answers to that.</span>
+                    {/each}
+                </div>
+            {/if}
+        </div>
+    {/if}
+    {#if note}
+        <span class="note" role="status">{note}</span>
+    {/if}
     {#if draft}
         <form class="draft" onsubmit={event => { event.preventDefault(); saveItem() }}>
             <Field label="Name" id="item-title" required>
@@ -209,67 +280,98 @@
                 <span>Cost (gp)</span>
                 <span>Notes</span>
             </li>
-            {#each filteredItems as item (item.id)}
-                <li class="item">
-                    <div class="equippable center">
-                        {#if item.type === 'consumable' && !isAmmunition(item)}
-                            <Sigil
-                                frame="ring"
-                                size="sm"
-                                tone="verdigris"
-                                title="Consume {item.title}"
-                                onclick={() => consumeItem(item)}
-                            >
-                                <Glyph name="potion" size="sm" />
-                            </Sigil>
-                        {:else}
-                            <Sigil
-                                frame="ring"
-                                size="sm"
-                                tone="ember"
-                                active={isItemEquipped(item.id)}
-                                title="{isItemEquipped(item.id) ? 'Unequip' : 'Equip'} {item.title}"
-                                onclick={() => equipItem(item)}
-                            >
-                                <Glyph name={isAmmunition(item) ? 'ammunition' : getEquipIcon(item.type)} size="sm" />
-                            </Sigil>
-                        {/if}
-                    </div>
-                    <div class="name">
-                        <h4 title={item.title}>{item.title}</h4>
-                        <span>{getDisplayType(item)}</span>
-                    </div>
-                    <div class="weight center">
-                        <span><b>{item.weight}</b> lb.</span>
-                    </div>
-                    <div class="qty center">
-                        <span class="stepper">
-                            <IconBtn title="One fewer {item.title}" onclick={() => putItem({...item, quantity: item.quantity - 1})}>
-                                <Glyph name="minus" size="sm" />
-                            </IconBtn>
-                            <b>{item.quantity}</b>
-                            <IconBtn title="One more {item.title}" onclick={() => putItem({...item, quantity: item.quantity + 1})}>
-                                <Glyph name="add" size="sm" />
-                            </IconBtn>
-                        </span>
-                    </div>
-                    <div class="cost center">
-                        <span><b>{item.value.amount}</b> {item.value.currency}</span>
-                    </div>
-                    <div class="notes">
-                        <p title={item.description}>{item.description}</p>
-                        <IconBtn title="Edit {item.title}" onclick={() => openItem(item)}>
-                            <Glyph name="edit" size="sm" />
-                        </IconBtn>
-                        <IconBtn title="Remove {item.title}" onclick={() => deleteItem(item.id)}>
-                            <Glyph name="remove" size="sm" />
-                        </IconBtn>
-                    </div>
-                </li>
+            <li class="items-section">
+                <b>Equipment</b>
+                <span>Worn and wielded. What applies changes the sheet.</span>
+            </li>
+            {#each equipment as item (item.id)}
+                {@render row(item)}
+            {/each}
+            <li class="items-section">
+                <b>Carried</b>
+                <span>In the pack. Changes nothing.</span>
+            </li>
+            {#each carried as item (item.id)}
+                {@render row(item)}
             {/each}
         </ul>
     </div>
 </div>
+
+{#snippet row(item: InventoryItem)}
+    {@const gives = getGives(item)}
+    <li class="item">
+        <div class="equippable center">
+            {#if item.type === 'consumable' && !isAmmunition(item)}
+                <Sigil
+                    frame="ring"
+                    size="sm"
+                    tone="verdigris"
+                    title="Consume {item.title}"
+                    onclick={() => consumeItem(item)}
+                >
+                    <Glyph name="potion" size="sm" />
+                </Sigil>
+            {:else if item.equippable}
+                <Sigil
+                    frame="ring"
+                    size="sm"
+                    tone="ember"
+                    active={item.equipped}
+                    title="{item.equipped ? 'Unequip' : 'Equip'} {item.title}"
+                    onclick={() => putEquipped(item, !item.equipped)}
+                >
+                    <Glyph name={isAmmunition(item) ? 'ammunition' : getEquipIcon(item.type)} size="sm" />
+                </Sigil>
+            {/if}
+            {#if item.attunement?.required}
+                <Sigil
+                    frame="ring"
+                    size="sm"
+                    tone="arcane"
+                    active={item.attunement.attuned}
+                    title="{item.attunement.attuned ? 'End attunement to' : 'Attune to'} {item.title}"
+                    onclick={() => attune(item)}
+                >
+                    <Glyph name="sparkles" size="sm" />
+                </Sigil>
+            {/if}
+        </div>
+        <div class="name">
+            <h4 title={item.title}>{item.title}</h4>
+            <span>{getTypeLine(item)}</span>
+            {#if gives}
+                <span class="gives" class:gives-on={$rules.system && isItemApplied(item, $rules.system)} title={gives}>{gives}</span>
+            {/if}
+        </div>
+        <div class="weight center">
+            <span><b>{item.weight}</b> lb.</span>
+        </div>
+        <div class="qty center">
+            <span class="stepper">
+                <IconBtn title="One fewer {item.title}" onclick={() => putItem({...item, quantity: item.quantity - 1})}>
+                    <Glyph name="minus" size="sm" />
+                </IconBtn>
+                <b>{item.quantity}</b>
+                <IconBtn title="One more {item.title}" onclick={() => putItem({...item, quantity: item.quantity + 1})}>
+                    <Glyph name="add" size="sm" />
+                </IconBtn>
+            </span>
+        </div>
+        <div class="cost center">
+            <span><b>{item.value.amount}</b> {item.value.currency}</span>
+        </div>
+        <div class="notes">
+            <p title={item.description}>{item.description}</p>
+            <IconBtn title="Edit {item.title}" onclick={() => openItem(item)}>
+                <Glyph name="edit" size="sm" />
+            </IconBtn>
+            <IconBtn title="Remove {item.title}" onclick={() => deleteItem(item.id)}>
+                <Glyph name="remove" size="sm" />
+            </IconBtn>
+        </div>
+    </li>
+{/snippet}
 
 <style>
     .root {
@@ -548,6 +650,63 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    .equippable {
+        flex-direction: row;
+        gap: var(--space-1);
+    }
+
+    .name .gives {
+        font-style: normal;
+        color: var(--ink-faint);
+    }
+
+    .name .gives-on {
+        color: var(--ember-core);
+    }
+
+    .items-section {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-2);
+        grid-column: 1 / -1;
+        padding: var(--space-2) var(--space-2) var(--space-1);
+        border-bottom: var(--border-hair) solid color-mix(in srgb, var(--metal-dim) 60%, transparent);
+        font-size: var(--text-xs);
+        color: var(--ink-faint);
+    }
+
+    .items-section b {
+        font-family: var(--font-display);
+        font-weight: 700;
+        letter-spacing: var(--tracking-caps);
+        text-transform: uppercase;
+        color: var(--metal);
+        text-shadow: 0 1px 0 var(--shadow-ink);
+    }
+
+    .room {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        width: 100%;
+        min-height: 0;
+    }
+
+    .room-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        max-height: 40vh;
+        overflow-y: auto;
+    }
+
+    .room-note,
+    .note {
+        font-size: var(--text-xs);
+        font-style: italic;
+        color: var(--ink-dim);
     }
 
 </style>

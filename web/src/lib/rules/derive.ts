@@ -97,6 +97,10 @@ export function getResolvedCharacter(system: RuleSystem, sheet: CharacterSheet):
     nodes.set(`sense.${sense.id}`, { key: `sense.${sense.id}`, source: sense.value, locals: {} })
   }
 
+  for (const speed of system.speeds ?? []) {
+    nodes.set(`speed.${speed.id}`, { key: `speed.${speed.id}`, source: speed.value ?? '0', locals: {} })
+  }
+
   for (const pool of system.pools) {
     nodes.set(`pool.${pool.id}.max`, { key: `pool.${pool.id}.max`, source: pool.max, locals: {} })
   }
@@ -124,7 +128,7 @@ export function getResolvedCharacter(system: RuleSystem, sheet: CharacterSheet):
       local[name] = resolve(name)
     }
 
-    const value = getExpressionValue(node.source, local)
+    const value = Math.max(getExpressionValue(node.source, local), sheet.reaches?.[key] ?? -Infinity)
     resolving.pop()
     scope[key] = value
     return value
@@ -171,6 +175,13 @@ export function getResolvedCharacter(system: RuleSystem, sheet: CharacterSheet):
     value: scope[`sense.${sense.id}`]
   }))
 
+  const speeds: ResolvedValue[] = (system.speeds ?? []).map((speed) => ({
+    id: speed.id,
+    title: speed.title,
+    unit: speed.unit,
+    value: scope[`speed.${speed.id}`]
+  }))
+
   const pools: ResolvedPool[] = system.pools.map((pool) => {
     const max = scope[`pool.${pool.id}.max`]
     const spent = Math.max(0, Math.min(sheet.pools?.[pool.id] ?? 0, max))
@@ -204,6 +215,7 @@ export function getResolvedCharacter(system: RuleSystem, sheet: CharacterSheet):
     saves,
     skills,
     senses,
+    speeds,
     pools,
     derived,
     panels: system.panels,

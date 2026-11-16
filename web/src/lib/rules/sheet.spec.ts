@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest'
+import cloak from '../../../public/sources/items/cloak-of-protection.json'
+import gauntlets from '../../../public/sources/items/gauntlets-of-ogre-power.json'
 import dnd5e from '../../../public/sources/systems/dnd5e.json'
+import type { CharacterInventoryItem } from '../character.types'
 import lars from '../character.fixture'
+import { getItemGrants } from '../resources'
 import { getResolvedCharacter } from './derive'
-import { getAttributeId, getSheet, getSkillId, getTierId } from './sheet'
+import { getAttributeId, getAttunedInventory, getAttunement, getSheet, getSkillId, getTierId } from './sheet'
 import type { RuleSystem } from './spec.types'
 
 const core = dnd5e as RuleSystem
@@ -84,5 +88,52 @@ describe('getSheet on the sample character', () => {
 
   it('carries the custom resource pool the character owns', () => {
     expect(sheet.pools[getSkillId(lars.special.name)]).toBe(lars.special.max - lars.special.current)
+  })
+})
+
+describe('what a character wears', () => {
+  const held = (document: typeof cloak | typeof gauntlets, equipped: boolean, attuned: boolean): CharacterInventoryItem => ({
+    id: document.name,
+    title: document.name,
+    type: 'misc',
+    rarity: 'uncommon',
+    attributes: [],
+    description: '',
+    value: { amount: 0, currency: 'gp' },
+    weight: 0,
+    quantity: 1,
+    equippable: true,
+    equipped,
+    attunement: { required: document.attunement, attuned },
+    grants: getItemGrants(document.grants)
+  })
+  const resolve = (...inventory: CharacterInventoryItem[]) => getResolvedCharacter(core, getSheet({ ...lars, inventory }, core))
+  const bare = resolve()
+  const armorClass = (resolved: typeof bare) => resolved.derived.find((entry) => entry.id === 'armorClass')?.value
+  const strength = (resolved: typeof bare) => resolved.attributes.find((entry) => entry.id === 'str')?.score
+
+  it('sets Strength to 19 with Gauntlets of Ogre Power equipped and attuned, and not before they are attuned', () => {
+    expect(strength(resolve(held(gauntlets, true, true)))).toBe(19)
+    expect(strength(resolve(held(gauntlets, true, false)))).toBe(strength(bare))
+  })
+
+  it('raises armor class and every save by 1 with a Cloak of Protection equipped and attuned, counting it once', () => {
+    const warded = resolve(held(cloak, true, true))
+    expect(armorClass(warded)).toBe(lars.info.ac + 1)
+    expect(warded.saves.map((save) => save.value)).toEqual(bare.saves.map((save) => save.value + 1))
+  })
+
+  it('changes nothing with a Cloak of Protection carried', () => {
+    const carried = resolve(held(cloak, false, true))
+    expect(armorClass(carried)).toBe(lars.info.ac)
+    expect(carried.saves).toEqual(bare.saves)
+  })
+
+  it('refuses a fourth attunement', () => {
+    const attuned = [held(cloak, true, true), { ...held(gauntlets, true, true), id: 'left' }, { ...held(gauntlets, false, true), id: 'right' }]
+    const { slots } = getAttunement(attuned, bare)
+    expect(slots).toBe(3)
+    expect(getAttunedInventory([...attuned, { ...held(cloak, false, false), id: 'fourth' }], 'fourth', true, slots)).toBeNull()
+    expect(getAttunedInventory(attuned, cloak.name, false, slots)?.filter((item) => item.attunement?.attuned)).toHaveLength(2)
   })
 })
