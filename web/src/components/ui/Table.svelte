@@ -37,7 +37,8 @@
     onrow,
     onsort,
     cell,
-    actions
+    actions,
+    detail
   }: {
     /** The columns, in order; one keyed `actions` holds the row actions. */
     columns: TableColumn[]
@@ -63,6 +64,8 @@
     cell?: Snippet<[key: string, row: TableRow]>
     /** Draws the row actions, each an IconBtn, in the `actions` column. */
     actions?: Snippet<[row: TableRow]>
+    /** Draws under its row, across every column, what the caller writes for that row; nothing written draws nothing. */
+    detail?: Snippet<[row: TableRow]>
   } = $props()
 
   const SKELETONS = Array.from({ length: 6 }, (_, at) => at)
@@ -184,6 +187,11 @@
             </div>
           {/each}
         </div>
+        {#if detail}
+          <div class="dnd-table-detail" role="row">
+            <div class="dnd-table-detail-cell" role="cell">{@render detail(row)}</div>
+          </div>
+        {/if}
       {/each}
     {/if}
   </div>
@@ -320,6 +328,20 @@
 
   .dnd-table-td-actions {
     justify-content: flex-end;
+  }
+
+  .dnd-table-detail {
+    min-width: 0;
+    padding: var(--space-2) var(--space-2) var(--space-3);
+    border-bottom: var(--border-hair) solid color-mix(in srgb, var(--metal-dim) 40%, transparent);
+  }
+
+  .dnd-table-detail:has(> .dnd-table-detail-cell:empty) {
+    display: none;
+  }
+
+  .dnd-table-detail-cell {
+    min-width: 0;
   }
 
   .dnd-table-text {
