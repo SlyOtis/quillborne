@@ -7,6 +7,7 @@
     active = false,
     expanded,
     disabled = false,
+    count,
     onclick,
     onpointerdown,
     children
@@ -21,6 +22,8 @@
     expanded?: boolean
     /** Blocks the press and dims the glyph. */
     disabled?: boolean
+    /** Draws a figure in the lower right corner of the glyph. */
+    count?: number
     /** Runs when the button is pressed. */
     onclick?: (event: MouseEvent) => void
     /** Runs when the pointer lands, for a control that drags. */
@@ -34,6 +37,7 @@
   type="button"
   class="dnd-iconbtn dnd-iconbtn-{tone}"
   class:dnd-iconbtn-on={active}
+  class:dnd-iconbtn-counted={count !== undefined}
   aria-pressed={active || undefined}
   aria-expanded={expanded}
   aria-label={title}
@@ -43,6 +47,9 @@
   {onpointerdown}
 >
   {@render children?.()}
+  {#if count !== undefined}
+    <span class="dnd-iconbtn-count">{count}</span>
+  {/if}
 </button>
 
 <style>
@@ -102,6 +109,27 @@
       inset 0 0 0 3px var(--keyline),
       inset 0 3px 5px var(--shade-hard);
     filter: brightness(0.85);
+  }
+
+  .dnd-iconbtn-counted {
+    position: relative;
+  }
+
+  .dnd-iconbtn-count {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    min-width: 1.1em;
+    padding: 0 var(--space-0);
+    border-radius: var(--radius-sm);
+    background: linear-gradient(180deg, var(--ground) 0%, var(--ground-deep) 100%);
+    box-shadow: inset 0 0 0 var(--border-hair) var(--metal-dim);
+    font-family: var(--font-figures);
+    font-size: 0.55em;
+    line-height: 1.4;
+    text-align: center;
+    color: var(--metal-bright);
+    pointer-events: none;
   }
 
   .dnd-iconbtn-on {
