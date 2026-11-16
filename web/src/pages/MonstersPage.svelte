@@ -1,12 +1,24 @@
+<script lang="ts" module>
+  type Kept = {
+    key: string
+    systems: import('$lib/rules/monster.types').MonsterSystem[]
+    monsters: import('$lib/api/types').Monster[]
+    tags: import('$lib/api/types').Tag[]
+  }
+
+  let kept: Kept = { key: '', systems: [], monsters: [], tags: [] }
+</script>
+
 <script lang="ts">
   import { getMonsters, getObjectTags } from '$lib/api'
   import { OBJECT_TYPE_MONSTER, type Monster, type Tag } from '$lib/api/types'
   import { getTheme, setTheme } from '$lib/dialogs/theme'
   import { getEmptyFilter, getMonsterBlock, getMonsterStats, getMonsterSystems, isMonsterShown } from '$lib/rules/monster'
-  import type { MonsterBlock as Block, MonsterChoice, MonsterEntry, MonsterFilter, MonsterStats, MonsterSystem } from '$lib/rules/monster.types'
+  import type { MonsterBlock as Block, MonsterEntry, MonsterFilter, MonsterStats, MonsterSystem } from '$lib/rules/monster.types'
   import { user } from '$lib/stores/auth.store'
-  import { onMount } from 'svelte'
-  import { navigate } from 'sly-svelte-location-router'
+  import { onDestroy, onMount } from 'svelte'
+  import { get } from 'svelte/store'
+  import { navigate, resolvedRoute } from 'sly-svelte-location-router'
   import MonsterBlock from '$components/monster/MonsterBlock.svelte'
   import Button from '$components/ui/Button.svelte'
   import Chip from '$components/ui/Chip.svelte'
@@ -44,6 +56,23 @@
     | 'tag'
     | 'subtype'
 
+  const FACETS: Facet[] = [
+    'size',
+    'habitat',
+    'alignment',
+    'sense',
+    'save',
+    'skill',
+    'resistance',
+    'immunity',
+    'conditionImmunity',
+    'vulnerability',
+    'language',
+    'movement',
+    'tag',
+    'subtype'
+  ]
+
   type Line = {
     monster: Monster
     system: MonsterSystem
@@ -71,28 +100,35 @@
   const TREE_COLUMNS: TableColumn[] = LIST_COLUMNS.filter((one) => one.key !== 'type' && one.key !== 'actions')
   const ORDERS: DropdownOption[] = COLUMNS.map((one) => ({ value: one.id, label: one.label }))
 
-  let systems = $state<MonsterSystem[]>([])
-  let monsters = $state<Monster[]>([])
-  let tags = $state<Tag[]>([])
-  let loading = $state(true)
+  const GROUPS: FileGroupBy[] = ['modified', 'name', 'tag']
+  const HOME = '/main/monsters'
+  const SAVE_DELAY = 600
+
+  let systems = $state<MonsterSystem[]>(kept.systems)
+  let monsters = $state<Monster[]>(kept.monsters)
+  let tags = $state<Tag[]>(kept.tags)
+  let loading = $state(kept.key === '')
   let error = $state<string | null>(null)
-  let filter = $state<MonsterFilter>(getEmptyFilter())
-  let advanced = $state(false)
-  let inspected = $state<string[]>([])
-  let sort = $state<{ by: Column; down: boolean }>({ by: 'name', down: false })
-  let view = $state<View>('grid')
-  let groupBy = $state<FileGroupBy>('none')
-  let hidden = $state<string[]>([])
+  let hunt = $state(new URLSearchParams($resolvedRoute.search ?? '').get('q') ?? '')
+  let huntTimer: ReturnType<typeof setTimeout> | undefined
 
   onMount(() => setTheme(getTheme()))
 
+  onDestroy(() => {
+    clearTimeout(huntTimer)
+    if (get(resolvedRoute).path !== HOME) kept = { key: '', systems: [], monsters: [], tags: [] }
+  })
+
   $effect(() => {
     if (!$user) return
+    const key = $user.user_id
+    if (kept.key === key) return
     let live = true
     loading = true
     Promise.all([getMonsterSystems(), getMonsters(), getObjectTags(OBJECT_TYPE_MONSTER)])
       .then(([loadedSystems, loadedMonsters, loadedTags]) => {
         if (!live) return
+        kept = { key, systems: loadedSystems, monsters: loadedMonsters, tags: loadedTags }
         systems = loadedSystems
         monsters = loadedMonsters
         tags = loadedTags
@@ -105,6 +141,59 @@
   })
 
   const system = $derived(systems[0] ?? null)
+
+  const query = $derived(new URLSearchParams($resolvedRoute.search ?? ''))
+  const view = $derived<View>(query.get('view') === 'tree' || query.get('view') === 'list' ? (query.get('view') as View) : 'grid')
+  const sort = $derived<{ by: Column; down: boolean }>({
+    by: COLUMNS.find((one) => one.id === query.get('order'))?.id ?? 'name',
+    down: query.get('desc') === '1'
+  })
+  const groupBy = $derived<FileGroupBy>(GROUPS.find((one) => one === query.get('by')) ?? 'none')
+  const hidden = $derived((query.get('hide') ?? '').split(',').filter(Boolean))
+  const advanced = $derived(query.get('advanced') === '1')
+  const inspected = $derived((query.get('inspect') ?? '').split(',').filter(Boolean))
+
+  const filter = $derived<MonsterFilter>({
+    ...getEmptyFilter(),
+    ...Object.fromEntries(FACETS.map((key) => [key, query.get(key) ?? ''])),
+    name: hunt,
+    type: query.get('type') ?? '',
+    challengeMin: getFigure('challengeMin'),
+    challengeMax: getFigure('challengeMax'),
+    acMin: getFigure('acMin'),
+    acMax: getFigure('acMax'),
+    hpMin: getFigure('hpMin'),
+    hpMax: getFigure('hpMax'),
+    flags: Object.fromEntries(
+      (system?.flags ?? []).flatMap((flag) => {
+        const choice = query.get(`flag.${flag.id}`)
+        return choice === 'yes' || choice === 'no' ? [[flag.id, choice]] : []
+      })
+    )
+  })
+
+  function getFigure(key: string): number | null {
+    const held = query.get(key)
+    return held === null || held === '' || Number.isNaN(Number(held)) ? null : Number(held)
+  }
+
+  function put(changes: Record<string, string | null>) {
+    const next = new URLSearchParams($resolvedRoute.search ?? '')
+    for (const [key, value] of Object.entries(changes)) {
+      if (value) next.set(key, value)
+      else next.delete(key)
+    }
+    const search = next.toString()
+    navigate(`${HOME}${search ? `?${search}` : ''}`)
+  }
+
+  function seek(text: string) {
+    hunt = text
+    clearTimeout(huntTimer)
+    huntTimer = setTimeout(() => {
+      if (text !== (query.get('q') ?? '')) put({ q: text || null })
+    }, SAVE_DELAY)
+  }
 
   const lines = $derived<Line[]>(
     monsters.flatMap((monster) => {
@@ -246,36 +335,45 @@
   }
 
   function sortBy(by: Column) {
-    sort = { by, down: sort.by === by ? !sort.down : by === 'challenge' }
+    const down = sort.by === by ? !sort.down : by === 'challenge'
+    put({ order: by === 'name' ? null : by, desc: down ? '1' : null })
   }
 
   function reset() {
-    filter = getEmptyFilter()
+    clearTimeout(huntTimer)
+    hunt = ''
+    put(
+      Object.fromEntries(
+        ['q', 'type', 'challengeMin', 'challengeMax', 'acMin', 'acMax', 'hpMin', 'hpMax', ...FACETS, ...(system?.flags ?? []).map((flag) => `flag.${flag.id}`)].map(
+          (key) => [key, null]
+        )
+      )
+    )
   }
 
   function inspect(id: string) {
-    inspected = inspected.includes(id) ? inspected.filter((one) => one !== id) : [...inspected, id]
+    put({ inspect: (inspected.includes(id) ? inspected.filter((one) => one !== id) : [...inspected, id]).join(',') || null })
   }
 
   function show(id: string) {
-    if (held.has(id)) navigate(`/main/monsters/${id}`)
+    if (held.has(id)) navigate(`${HOME}/${id}`)
   }
 </script>
 
 {#snippet actions()}
-  <IconBtn title="New monster" disabled={!system} onclick={() => navigate('/main/monsters/new')}>
+  <IconBtn title="New monster" disabled={!system} onclick={() => navigate(`${HOME}/new`)}>
     <Glyph name="add" size="md" />
   </IconBtn>
 {/snippet}
 
 {#snippet center()}
-  <SearchInput value={filter.name} label="Monster name" placeholder="Search the bestiary..." onsearch={(next) => (filter.name = next)} />
+  <SearchInput value={hunt} label="Monster name" placeholder="Search the bestiary..." autofocus={Boolean(hunt)} onsearch={seek} />
 {/snippet}
 
 {#snippet tools()}
   {#if system}
     <div class="lair-kinds" role="group" aria-label="Monster types">
-      <IconBtn title="All monsters" active={!filter.type} onclick={() => (filter.type = '')}>
+      <IconBtn title="All monsters" active={!filter.type} onclick={() => put({ type: null })}>
         <Glyph name="blocks" size="md" />
       </IconBtn>
       {#each system.types as type (type.id)}
@@ -283,7 +381,7 @@
           title={type.name}
           active={filter.type === type.id}
           count={counts[type.id] || undefined}
-          onclick={() => (filter.type = filter.type === type.id ? '' : type.id)}
+          onclick={() => put({ type: filter.type === type.id ? null : type.id })}
         >
           <Glyph name={(type.glyph ?? system.typeGlyph) as GlyphName} size="md" />
         </IconBtn>
@@ -293,18 +391,18 @@
       label="Challenge min"
       value={filter.challengeMin === null ? '' : String(filter.challengeMin)}
       options={getOptions('Challenge min', challenges)}
-      onchange={(next) => (filter.challengeMin = next === '' ? null : Number(next))}
+      onchange={(next) => put({ challengeMin: next || null })}
     />
     <Dropdown
       label="Challenge max"
       value={filter.challengeMax === null ? '' : String(filter.challengeMax)}
       options={getOptions('Challenge max', challenges)}
-      onchange={(next) => (filter.challengeMax = next === '' ? null : Number(next))}
+      onchange={(next) => put({ challengeMax: next || null })}
     />
     {#each basics as facet (facet.key)}
-      <Dropdown label={facet.label} value={filter[facet.key]} options={getOptions(facet.label, facet.entries)} onchange={(next) => (filter[facet.key] = next)} />
+      <Dropdown label={facet.label} value={filter[facet.key]} options={getOptions(facet.label, facet.entries)} onchange={(next) => put({ [facet.key]: next || null })} />
     {/each}
-    <IconBtn title={advanced ? 'Hide advanced filters' : 'Show advanced filters'} active={advanced} expanded={advanced} onclick={() => (advanced = !advanced)}>
+    <IconBtn title={advanced ? 'Hide advanced filters' : 'Show advanced filters'} active={advanced} expanded={advanced} onclick={() => put({ advanced: advanced ? null : '1' })}>
       <Glyph name="slidersh" size="md" />
     </IconBtn>
     <IconBtn title="Reset all filters" disabled={!narrowed} onclick={reset}>
@@ -312,7 +410,7 @@
     </IconBtn>
     {#if advanced}
       {#each facets as facet (facet.key)}
-        <Dropdown label={facet.label} value={filter[facet.key]} options={getOptions(facet.label, facet.entries)} onchange={(next) => (filter[facet.key] = next)} />
+        <Dropdown label={facet.label} value={filter[facet.key]} options={getOptions(facet.label, facet.entries)} onchange={(next) => put({ [facet.key]: next || null })} />
       {/each}
       {#each system.flags as flag (flag.id)}
         <Dropdown
@@ -322,16 +420,16 @@
             { id: 'yes', name: 'Yes' },
             { id: 'no', name: 'No' }
           ])}
-          onchange={(next) => (filter.flags = { ...filter.flags, [flag.id]: next as MonsterChoice | '' })}
+          onchange={(next) => put({ [`flag.${flag.id}`]: next || null })}
         />
       {/each}
       <Field id="lair-ac-min" label="Armor class" inline>
-        <input id="lair-ac-min" class="lair-range" type="number" min="0" placeholder="Min" bind:value={filter.acMin} />
-        <input class="lair-range" type="number" min="0" placeholder="Max" aria-label="Armor class, highest" bind:value={filter.acMax} />
+        <input id="lair-ac-min" class="lair-range" type="number" min="0" placeholder="Min" value={filter.acMin} onchange={(event) => put({ acMin: event.currentTarget.value || null })} />
+        <input class="lair-range" type="number" min="0" placeholder="Max" aria-label="Armor class, highest" value={filter.acMax} onchange={(event) => put({ acMax: event.currentTarget.value || null })} />
       </Field>
       <Field id="lair-hp-min" label="Average hit points" inline>
-        <input id="lair-hp-min" class="lair-range" type="number" min="0" placeholder="Min" bind:value={filter.hpMin} />
-        <input class="lair-range" type="number" min="0" placeholder="Max" aria-label="Average hit points, highest" bind:value={filter.hpMax} />
+        <input id="lair-hp-min" class="lair-range" type="number" min="0" placeholder="Min" value={filter.hpMin} onchange={(event) => put({ hpMin: event.currentTarget.value || null })} />
+        <input class="lair-range" type="number" min="0" placeholder="Max" aria-label="Average hit points, highest" value={filter.hpMax} onchange={(event) => put({ hpMax: event.currentTarget.value || null })} />
       </Field>
     {/if}
   {/if}
@@ -342,27 +440,27 @@
     {#snippet actions()}
       {#if view === 'grid'}
         <Dropdown label="Sort" glyph="sort" value={sort.by} options={ORDERS} onchange={(next) => sortBy(next as Column)} />
-        <IconBtn title={sort.down ? 'Descending' : 'Ascending'} onclick={() => (sort = { ...sort, down: !sort.down })}>
+        <IconBtn title={sort.down ? 'Descending' : 'Ascending'} onclick={() => put({ desc: sort.down ? null : '1' })}>
           <Glyph name={sort.down ? 'sortnumericdown' : 'sortnumericup'} size="sm" />
         </IconBtn>
-        <Dropdown label="Group by" glyph="group" value={groupBy} options={groupings} onchange={(next) => (groupBy = next as FileGroupBy)} />
+        <Dropdown label="Group by" glyph="group" value={groupBy} options={groupings} onchange={(next) => put({ by: next === 'none' ? null : next })} />
       {:else}
         <Dropdown
           label="Columns"
           glyph="table"
           values={columns.map((column) => column.key)}
           options={columnOptions}
-          onpick={(picked) => (hidden = columnOptions.map((option) => option.value).filter((key) => !picked.includes(key)))}
+          onpick={(picked) => put({ hide: columnOptions.map((option) => option.value).filter((key) => !picked.includes(key)).join(',') || null })}
         />
       {/if}
     {/snippet}
-    <IconBtn title="Files" active={view === 'grid'} onclick={() => (view = 'grid')}>
+    <IconBtn title="Files" active={view === 'grid'} onclick={() => put({ view: null })}>
       <Glyph name="file" size="md" />
     </IconBtn>
-    <IconBtn title="Tree" active={view === 'tree'} onclick={() => (view = 'tree')}>
+    <IconBtn title="Tree" active={view === 'tree'} onclick={() => put({ view: 'tree' })}>
       <Glyph name="tree" size="md" />
     </IconBtn>
-    <IconBtn title="List" active={view === 'list'} onclick={() => (view = 'list')}>
+    <IconBtn title="List" active={view === 'list'} onclick={() => put({ view: 'list' })}>
       <Glyph name="list" size="md" />
     </IconBtn>
   </ToggleGroup>
@@ -381,7 +479,7 @@
           {/if}
         </span>
         <span class="lair-stack">
-          <span class="lair-title">{line.monster.name}</span>
+          <a class="lair-title" href="{HOME}/{line.monster.id}">{line.monster.name}</a>
           <span class="lair-under" class:lair-under-lit={line.homebrew}>{line.homebrew ? 'Homebrew' : line.system.title}</span>
         </span>
       </span>
@@ -424,9 +522,9 @@
   {/if}
 {/snippet}
 
-{#snippet detail(row: TableRow)}
+{#snippet expanded(row: TableRow)}
   {@const line = held.get(row.id)}
-  {#if line && inspected.includes(row.id)}
+  {#if line}
     <MonsterBlock system={line.system} monster={line.monster} />
   {/if}
 {/snippet}
@@ -469,7 +567,7 @@
         addLabel="New monster"
         showTags={items.some((one) => (one.tags ?? []).length > 0)}
         itemOptions={getMenu}
-        onadd={() => navigate('/main/monsters/new')}
+        onadd={() => navigate(`${HOME}/new`)}
         onopen={(item) => show(item.id)}
       />
     {:else if view === 'tree'}
@@ -491,10 +589,11 @@
         sortKey={sort.by}
         sortDir={sort.down ? 'desc' : 'asc'}
         onsort={(next) => sortBy(next.key as Column)}
-        onrow={(row) => show(row.id)}
+        onrow={(row, event) => !(event.target as HTMLElement).closest('a') && show(row.id)}
         {cell}
         actions={acts}
-        {detail}
+        expandedRowKeys={new Set(inspected)}
+        rowExpanded={expanded}
       />
     {/if}
   </section>
@@ -552,8 +651,14 @@
     font-weight: 700;
     letter-spacing: var(--tracking-wide);
     color: var(--ink);
+    text-decoration: none;
     text-shadow: 0 1px 0 var(--shadow-ink);
     overflow-wrap: anywhere;
+  }
+
+  .lair-title:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
   }
 
   .lair-type {

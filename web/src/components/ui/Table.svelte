@@ -38,7 +38,8 @@
     onsort,
     cell,
     actions,
-    detail
+    expandedRowKeys = new Set<string>(),
+    rowExpanded
   }: {
     /** The columns, in order; one keyed `actions` holds the row actions. */
     columns: TableColumn[]
@@ -64,8 +65,10 @@
     cell?: Snippet<[key: string, row: TableRow]>
     /** Draws the row actions, each an IconBtn, in the `actions` column. */
     actions?: Snippet<[row: TableRow]>
-    /** Draws under its row, across every column, what the caller writes for that row; nothing written draws nothing. */
-    detail?: Snippet<[row: TableRow]>
+    /** Row ids whose `rowExpanded` content shows beneath them, owned by the caller. */
+    expandedRowKeys?: Set<string>
+    /** Draws under an expanded row, across every column. */
+    rowExpanded?: Snippet<[row: TableRow]>
   } = $props()
 
   const SKELETONS = Array.from({ length: 6 }, (_, at) => at)
@@ -187,9 +190,9 @@
             </div>
           {/each}
         </div>
-        {#if detail}
-          <div class="dnd-table-detail" role="row">
-            <div class="dnd-table-detail-cell" role="cell">{@render detail(row)}</div>
+        {#if rowExpanded && expandedRowKeys.has(row.id)}
+          <div class="dnd-table-expanded" role="row">
+            <div class="dnd-table-expanded-cell" role="cell">{@render rowExpanded(row)}</div>
           </div>
         {/if}
       {/each}
@@ -330,17 +333,13 @@
     justify-content: flex-end;
   }
 
-  .dnd-table-detail {
+  .dnd-table-expanded {
     min-width: 0;
     padding: var(--space-2) var(--space-2) var(--space-3);
     border-bottom: var(--border-hair) solid color-mix(in srgb, var(--metal-dim) 40%, transparent);
   }
 
-  .dnd-table-detail:has(> .dnd-table-detail-cell:empty) {
-    display: none;
-  }
-
-  .dnd-table-detail-cell {
+  .dnd-table-expanded-cell {
     min-width: 0;
   }
 
