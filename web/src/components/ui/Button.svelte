@@ -155,6 +155,7 @@
     justify-content: center;
     gap: var(--space-2);
     padding: 0 var(--button-pad);
+    min-width: 0;
     min-height: var(--button-h);
     font-family: var(--font-display);
     font-size: var(--button-text);
@@ -234,6 +235,10 @@
 
   .dnd-button-ghost:hover:not(:disabled) {
     --button-rim: linear-gradient(180deg, var(--metal) 0%, var(--metal-dim) 100%);
+  }
+
+  .dnd-button-plain {
+    --button-pad: 0;
   }
 
   .dnd-button-plain,
