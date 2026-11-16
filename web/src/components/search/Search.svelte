@@ -48,17 +48,17 @@
     { caps: ['Esc'], does: 'close' }
   ];
 
-  const SIGILS: Record<string, { type: string; kind?: ResourceKind; label: string; glyph: GlyphName }> = {
-    '@': { type: 'character', label: 'Characters', glyph: 'character' },
-    '!': { type: 'campaign', label: 'Campaigns', glyph: 'campaign' },
-    '*': { type: 'resource', label: 'Lore and items', glyph: 'scroll' },
-    '$': { type: 'resource', kind: 'items', label: 'Items', glyph: 'chest' },
-    '&': { type: 'vehicle', label: 'Vessels', glyph: 'gear' },
-    '^': { type: 'monster', label: 'Monsters', glyph: 'claw' }
+  const SIGILS: Record<string, { type: string; kind?: ResourceKind; word: string; label: string; glyph: GlyphName }> = {
+    '@': { type: 'character', word: 'character', label: 'Characters', glyph: 'character' },
+    '!': { type: 'campaign', word: 'campaign', label: 'Campaigns', glyph: 'campaign' },
+    '*': { type: 'resource', word: 'lore', label: 'Lore and items', glyph: 'scroll' },
+    '$': { type: 'resource', kind: 'items', word: 'item', label: 'Items', glyph: 'chest' },
+    '&': { type: 'vehicle', word: 'vessel', label: 'Vessels', glyph: 'gear' },
+    '^': { type: 'monster', word: 'monster', label: 'Monsters', glyph: 'claw' }
   };
 
-  const SYNTAX = [
-    ...Object.entries(SIGILS).map(([cap, one]) => ({ cap, does: one.label.toLowerCase() })),
+  const SYNTAX: { cap: string; word?: string; does: string }[] = [
+    ...Object.entries(SIGILS).map(([cap, one]) => ({ cap, word: `${one.word}:`, does: one.label.toLowerCase() })),
     { cap: '#', does: 'tag' },
     { cap: '-', does: 'exclude' }
   ];
@@ -100,10 +100,14 @@
   );
 
   const tokens = $derived(searchQuery.trim().toLowerCase().split(/\s+/).filter(Boolean));
-  const sigil = $derived(tokens[0] && tokens[0].charAt(0) in SIGILS ? tokens[0].charAt(0) : '');
+  const head = $derived(tokens[0] ?? '');
+  const sigil = $derived(
+    head.charAt(0) in SIGILS ? head.charAt(0) : (Object.keys(SIGILS).find((cap) => head.startsWith(`${SIGILS[cap].word}:`)) ?? '')
+  );
   const typeScope = $derived(sigil ? SIGILS[sigil].type : '');
   const kindScope = $derived(sigil ? SIGILS[sigil].kind ?? '' : '');
-  const plain = $derived(sigil ? [tokens[0].slice(1), ...tokens.slice(1)].filter(Boolean) : tokens);
+  const prefix = $derived(sigil ? (head.charAt(0) === sigil ? 1 : SIGILS[sigil].word.length + 1) : 0);
+  const plain = $derived(sigil ? [head.slice(prefix), ...tokens.slice(1)].filter(Boolean) : tokens);
   const tagged = $derived(plain.filter((one) => one.startsWith('#') && one.length > 1).map((one) => one.slice(1)));
   const excluded = $derived(plain.filter((one) => one.startsWith('-') && one.length > 1).map((one) => one.slice(1)));
   const words = $derived(plain.filter((one) => !one.startsWith('#') && !one.startsWith('-')));
@@ -490,7 +494,7 @@
   <div class="foot">
     <span class="syntax">
       {#each SYNTAX as one (one.cap)}
-        <span class="keys"><kbd class="cap">{one.cap}</kbd> {one.does}</span>
+        <span class="keys"><kbd class="cap">{one.cap}</kbd>{#if one.word}<kbd class="cap">{one.word}</kbd>{/if} {one.does}</span>
       {/each}
     </span>
     <span class="foot-keys">
