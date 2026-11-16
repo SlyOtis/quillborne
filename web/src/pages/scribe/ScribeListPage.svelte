@@ -1,6 +1,6 @@
 <script lang="ts">
   import { navigate } from 'sly-svelte-location-router'
-  import { getAssetTab, getMediaUrl, getObjectAssets, getSize } from '$lib/api'
+  import { getAssetTab, getBannerUrl, getMediaUrl, getObjectAssets, getSize } from '$lib/api'
   import type { ObjectAsset } from '$lib/api/types'
   import { getTrail, putOne, type Resource } from '$lib/resources'
   import { postNotice } from '$lib/stores/ui.store'
@@ -59,8 +59,7 @@
   }
 
   function pictureOf(one: Resource): string | null {
-    const picture = (held.get(one.id) ?? []).find((link) => link.asset?.mime_type.startsWith('image/'))
-    return picture ? getMediaUrl(picture.asset_id) : null
+    return getBannerUrl(held.get(one.id) ?? []) || null
   }
 
   function tileOf(one: Resource): FileItem {

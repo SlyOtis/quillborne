@@ -290,8 +290,8 @@ export const getCampaign = (campaignId: string) =>
 
 export const getCampaigns = () => apiGet<Campaign[]>('campaign')
 
-export async function getObjectPicture(objectType: string, objectId: string): Promise<string> {
-  const held = (await getObjectAssets(objectType, objectId)) ?? []
+export async function getCampaignPicture(campaignId: string): Promise<string> {
+  const held = (await getObjectAssets('campaign', campaignId)) ?? []
   const picture = held.find((link) => link.asset?.mime_type.startsWith('image/'))
   return picture ? getMediaUrl(picture.asset_id) : ''
 }
@@ -454,6 +454,7 @@ const LOCAL_PREFIX = 'local:'
 const FILE_PREFIX = 'file:'
 const BLOB_PREFIX = 'blob:'
 const ASSET_ADDRESS = /^\/api\/asset\/([0-9a-f-]+)\/data$/
+const BANNER_TYPE = 'banner'
 const FOLDER_TYPE = 'inode/directory'
 const MEDIA_TYPES: Record<MediaKind, string> = {
   image: 'image/*',
@@ -615,12 +616,21 @@ export const getObjectAssets = (objectType: string, objectId: string) =>
 export const postObjectAsset = (assetId: string, objectType: string, objectId: string) =>
   apiPost<ObjectAsset>(`asset/${assetId}/object`, { object_type: objectType, object_id: objectId })
 
-export async function putObjectPicture(assetId: string, objectType: string, objectId: string): Promise<void> {
+export const deleteObjectAsset = (assetId: string, linkId: string) => apiDelete(`asset/${assetId}/object/${linkId}`)
+
+export const putAsset = (assetId: string, updates: Partial<Asset>) => apiPut<Asset>(`asset/${assetId}`, updates)
+
+export function getBannerUrl(links: ObjectAsset[]): string {
+  const banner = links.find((link) => link.asset?.type === BANNER_TYPE)
+  return banner ? getMediaUrl(banner.asset_id) : ''
+}
+
+export async function putBanner(assetId: string, objectType: string, objectId: string): Promise<void> {
   const held = (await getObjectAssets(objectType, objectId)) ?? []
-  const picture = held.find((link) => link.asset?.mime_type.startsWith('image/'))
-  if (picture?.asset_id === assetId) return
-  if (picture) await apiDelete(`asset/${picture.asset_id}/object/${picture.id}`)
-  await postObjectAsset(assetId, objectType, objectId)
+  const banners = held.filter((link) => link.asset?.type === BANNER_TYPE)
+  await Promise.all(banners.filter((link) => link.asset_id !== assetId).map((link) => deleteObjectAsset(link.asset_id, link.id)))
+  await putAsset(assetId, { type: BANNER_TYPE })
+  if (!held.some((link) => link.asset_id === assetId)) await postObjectAsset(assetId, objectType, objectId)
 }
 
 export async function putAttachments(resourceId: string, content: string): Promise<void> {
@@ -631,7 +641,7 @@ export async function putAttachments(resourceId: string, content: string): Promi
     ...[...wanted]
       .filter((assetId) => !held.some((link) => link.asset_id === assetId))
       .map((assetId) => postObjectAsset(assetId, 'resource', resourceId)),
-    ...held.filter((link) => !wanted.has(link.asset_id)).map((link) => apiDelete(`asset/${link.asset_id}/object/${link.id}`))
+    ...held.filter((link) => !wanted.has(link.asset_id) && link.asset?.type !== BANNER_TYPE).map((link) => deleteObjectAsset(link.asset_id, link.id))
   ])
 }
 

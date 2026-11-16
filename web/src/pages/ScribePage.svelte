@@ -47,7 +47,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { navigate, resolvedRoute, Router, type Routes } from 'sly-svelte-location-router'
-  import { getAssets, getCampaigns, getObjectPicture, postFile, putObjectPicture } from '$lib/api'
+  import { getAssets, getCampaigns, getBannerUrl, getObjectAssets, postFile, putBanner } from '$lib/api'
   import type { MediaAsset } from '$lib/blocks'
   import { getAll, getChildren, getRoots, getTrail, postOne, putOne } from '$lib/resources'
   import { currentCampaignId, userCampaigns } from '$lib/stores/campaign.store'
@@ -307,9 +307,9 @@
     let stale = false
     picture = ''
     if (!id) return
-    getObjectPicture('resource', id)
-      .then((url) => {
-        if (!stale) picture = url
+    getObjectAssets('resource', id)
+      .then((links) => {
+        if (!stale) picture = getBannerUrl(links ?? [])
       })
       .catch((reason) => postNotice(reason instanceof Error ? reason.message : String(reason)))
     return () => {
@@ -317,11 +317,11 @@
     }
   })
 
-  async function putBanner(asset: MediaAsset | null) {
+  async function pickBanner(asset: MediaAsset | null) {
     picking = false
     if (!asset || !open) return
     try {
-      await putObjectPicture(asset.id, 'resource', open.id)
+      await putBanner(asset.id, 'resource', open.id)
       picture = asset.url
     } catch (reason) {
       postNotice(reason instanceof Error ? reason.message : String(reason))
@@ -518,7 +518,7 @@
     current={picture}
     getAssets={(query, kind) => getAssets(query, kind, { kind: 'user' })}
     uploadFile={(file) => postFile(file, { kind: 'user' })}
-    onclose={putBanner}
+    onclose={pickBanner}
   />
 {/if}
 

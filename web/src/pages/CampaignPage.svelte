@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getCampaign, getCampaignCharacters, getObjectPicture, getCampaignCharactersStream, getCampaignMaps, getCampaignMapsStream, getProfiles, isNpc, NPC_TAG, postCharacter } from '$lib/api'
+  import { getCampaign, getCampaignCharacters, getCampaignPicture, getCampaignCharactersStream, getCampaignMaps, getCampaignMapsStream, getProfiles, isNpc, NPC_TAG, postCharacter } from '$lib/api'
   import type { Campaign, CampaignMap, Character, Encounter, MapMarkerKind } from '$lib/api/types'
   import { onDestroy, onMount, setContext } from 'svelte'
   import { navigate, resolvedRoute } from 'sly-svelte-location-router'
@@ -130,7 +130,7 @@
 
     try {
       campaign = await getCampaign(campaignId)
-      picture = await getObjectPicture('campaign', campaignId)
+      picture = await getCampaignPicture(campaignId)
       if (!campaign) {
         error = 'That campaign does not exist, or you are not part of it.'
         return
