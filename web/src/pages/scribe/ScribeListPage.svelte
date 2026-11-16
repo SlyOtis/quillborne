@@ -1,12 +1,96 @@
 <script lang="ts">
   import { navigate } from 'sly-svelte-location-router'
+  import { getMediaUrl, getObjectAssets } from '$lib/api'
+  import { getTrail, putOne, type Resource } from '$lib/resources'
+  import { postNotice } from '$lib/stores/ui.store'
   import Tree from '$components/ui/Tree.svelte'
   import Row from '$components/ui/Row.svelte'
-  import Card from '$components/ui/Card.svelte'
   import Chip from '$components/ui/Chip.svelte'
+  import FileExplorer, { type FileItem, type FileMoveTarget, type FileOption } from '$components/ui/FileExplorer.svelte'
   import { getScribe, type Shelf } from '../ScribePage.svelte'
 
   const scribe = getScribe()
+
+  let pictures = $state(new Map<string, string>())
+  const asked = new Set<string>()
+
+  const targets = $derived<FileMoveTarget[]>(
+    scribe.table.pages.map((one) => ({
+      id: one.id,
+      label: one.title,
+      path: getTrail(scribe.table.pages, one.id).slice(0, -1).map((step) => step.title).join(' / ') || undefined
+    }))
+  )
+
+  $effect(() => {
+    for (const shelf of scribe.tiles) {
+      for (const one of shelf.kids) {
+        if (asked.has(one.id)) continue
+        asked.add(one.id)
+        void getPicture(one.id)
+      }
+    }
+  })
+
+  async function getPicture(id: string) {
+    try {
+      const held = (await getObjectAssets('resource', id)) ?? []
+      const picture = held.find((link) => link.asset?.mime_type.startsWith('image/'))
+      if (picture) pictures = new Map(pictures).set(id, getMediaUrl(picture.asset_id))
+    } catch (reason) {
+      postNotice(reason instanceof Error ? reason.message : String(reason))
+    }
+  }
+
+  function tileOf(one: Resource): FileItem {
+    const kids = scribe.countKids(one)
+    return {
+      id: one.id,
+      name: one.title,
+      kind: kids > 0 ? 'folder' : 'file',
+      glyph: 'scroll',
+      size: kids > 0 ? `${kids} sub pages` : undefined,
+      thumbnailUrl: pictures.get(one.id) ?? null,
+      updatedAt: one.created_at ?? undefined,
+      tags: one.tags
+    }
+  }
+
+  function pageOf(item: FileItem): Resource | null {
+    return scribe.table.pages.find((one) => one.id === item.id) ?? null
+  }
+
+  async function write(next: Resource) {
+    const owner = scribe.owner
+    if (!owner) return
+    scribe.putPage(next)
+    scribe.table.saving = true
+    try {
+      await putOne(owner, 'entries', next.id, { ...next })
+    } catch (reason) {
+      postNotice(reason instanceof Error ? reason.message : String(reason))
+    } finally {
+      scribe.table.saving = false
+    }
+  }
+
+  function rename(item: FileItem, title: string) {
+    const one = pageOf(item)
+    if (one) void write({ ...one, title })
+  }
+
+  function move(item: FileItem, targetId: string | null) {
+    const one = pageOf(item)
+    if (!one || targetId === null || targetId === one.id) return
+    if (getTrail(scribe.table.pages, targetId).some((step) => step.id === one.id)) return
+    void write({ ...one, parent_id: targetId })
+  }
+
+  function options(item: FileItem, defaults: FileOption[]): FileOption[] {
+    const one = pageOf(item)
+    if (!one) return defaults
+    return [...defaults, { title: 'Open in lore', glyph: 'forward', run: () => navigate(scribe.loreOf(one)) }]
+  }
 </script>
 
 {#snippet divide(shelf: Shelf)}
@@ -30,21 +114,17 @@
     {#each scribe.tiles as shelf (shelf.title)}
       <section class="scribe-shelf" aria-label={shelf.title || 'Pages'}>
         {@render divide(shelf)}
-        <div class="scribe-grid">
-          {#each shelf.kids as one (one.id)}
-            {@const kids = scribe.countKids(one)}
-            <Card
-              title={one.title}
-              sub={one.description || (kids > 0 ? `${kids} sub pages` : undefined)}
-              image={one.image || undefined}
-              badge={kids > 0 && one.description ? String(kids) : undefined}
-              layout="tile"
-              onclick={() => scribe.show(one.id)}
-            >
-              {#each one.tags as tag (tag)}<span>#{tag}</span>{/each}
-            </Card>
-          {/each}
-        </div>
+        <FileExplorer
+          items={shelf.kids.map(tileOf)}
+          showTags={shelf.kids.some((one) => one.tags.length > 0)}
+          moveTargets={targets}
+          moveLabel="Move under"
+          moveSearchPlaceholder="Search the pages..."
+          itemOptions={options}
+          onopen={(item) => scribe.show(item.id)}
+          onrename={rename}
+          onmove={move}
+        />
       </section>
     {/each}
   {:else if scribe.view === 'tree'}
@@ -114,13 +194,6 @@
     min-width: 0;
     block-size: var(--border-hair);
     background: linear-gradient(90deg, var(--metal-dim), transparent);
-  }
-
-  .scribe-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-4);
-    min-width: 0;
   }
 
   .scribe-list {
