@@ -19,6 +19,7 @@ var searchObjectTypes = map[string]string{
 	"character": db.OBJECT_TYPE_CHARACTER,
 	"resource":  db.OBJECT_TYPE_RESOURCE,
 	"vehicle":   db.OBJECT_TYPE_VEHICLE,
+	"monster":   db.OBJECT_TYPE_MONSTER,
 	"asset":     db.OBJECT_TYPE_ASSET,
 }
 

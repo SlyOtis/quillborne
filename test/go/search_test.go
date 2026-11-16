@@ -44,6 +44,8 @@ func TestTheSearchFindsWhatTheReaderMayRead(t *testing.T) {
 	if status != http.StatusCreated {
 		t.Fatalf("PostCharacter: %d %+v", status, sheet.Error)
 	}
+	postMonster(t, `{"system":"dnd5e","name":"`+word+` Wyrm","type":"dragon","challenge":17,"is_public":true}`)
+	postMonster(t, `{"system":"dnd5e","name":"`+word+` Gloomling","type":"aberration","challenge":0.25}`)
 
 	status, found := call(t, player, http.MethodGet, "/api/search?q="+word, "", nil, handler.GetSearch)
 	if status != http.StatusOK {
@@ -63,6 +65,12 @@ func TestTheSearchFindsWhatTheReaderMayRead(t *testing.T) {
 	if seen[word+" owes a debt"] {
 		t.Fatalf("a player read a page kept from them: %v", names)
 	}
+	if !seen[word+" Wyrm"] {
+		t.Fatalf("a player misses a public monster: %v", names)
+	}
+	if seen[word+" Gloomling"] {
+		t.Fatalf("a player read another's homebrew monster: %v", names)
+	}
 
 	status, typed := call(t, player, http.MethodGet, "/api/search?q="+word+"&object_types=character", "", nil, handler.GetSearch)
 	if status != http.StatusOK {
@@ -70,6 +78,13 @@ func TestTheSearchFindsWhatTheReaderMayRead(t *testing.T) {
 	}
 	if names := getSearchNames(t, typed); len(names) != 1 || names[0] != word+" Vane" {
 		t.Fatalf("a type filter answered %v", names)
+	}
+	status, monsters := call(t, player, http.MethodGet, "/api/search?q="+word+"&object_types=monster", "", nil, handler.GetSearch)
+	if status != http.StatusOK {
+		t.Fatalf("GetSearch by monster: %d %+v", status, monsters.Error)
+	}
+	if names := getSearchNames(t, monsters); len(names) != 1 || names[0] != word+" Wyrm" {
+		t.Fatalf("the monster filter answered %v", names)
 	}
 	if status, _ := call(t, player, http.MethodGet, "/api/search?q="+word+"&object_types=profile", "", nil, handler.GetSearch); status != http.StatusBadRequest {
 		t.Fatalf("an unknown object type answered %d", status)
