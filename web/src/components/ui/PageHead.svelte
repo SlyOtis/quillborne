@@ -19,7 +19,8 @@
     center,
     tools,
     view,
-    bottom
+    bottom,
+    banner
   }: {
     /** The name of the page, written as the hero heading unless `heading` is given. */
     title?: string
@@ -43,6 +44,8 @@
     view?: Snippet
     /** The strip along the bottom edge: the page tabs, which survive the collapse. */
     bottom?: Snippet
+    /** The picture painted across the band behind the title, under the band's veil; it folds with the head. */
+    banner?: Snippet
   } = $props()
 
   const COLLAPSE_AT = 36
@@ -160,8 +163,13 @@
   class="dnd-band dnd-pagehead"
   class:dnd-pagehead-tabbed={Boolean(bottom)}
   class:dnd-pagehead-collapsed={collapsed}
+  class:dnd-pagehead-banner={Boolean(banner)}
   style:--pagehead-duration={duration}
 >
+  {#if banner}
+    <div class="dnd-pagehead-banner-clip" aria-hidden="true">{@render banner()}</div>
+  {/if}
+
   <div bind:this={lineEl} class="dnd-band-line dnd-pagehead-line">
     <div class="dnd-pagehead-title">
       {#if heading}
@@ -236,6 +244,52 @@
     transition:
       padding var(--pagehead-duration, 0.35s) var(--pagehead-ease),
       row-gap var(--pagehead-duration, 0.35s) var(--pagehead-ease);
+  }
+
+  .dnd-pagehead-banner {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .dnd-pagehead-banner-clip {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .dnd-pagehead-banner-clip::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--band-veil);
+  }
+
+  .dnd-pagehead-banner-clip > :global(*) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .dnd-pagehead-banner-clip :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .dnd-pagehead-banner .dnd-pagehead-crumbs,
+  .dnd-pagehead-banner .dnd-pagehead-count,
+  .dnd-pagehead-banner .dnd-pagehead-lede {
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 var(--space-3) var(--shadow-ink);
+  }
+
+  .dnd-pagehead-banner .dnd-pagehead-lede {
+    color: var(--ink);
   }
 
   .dnd-pagehead-line,

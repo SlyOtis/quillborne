@@ -50,6 +50,7 @@
   import Shell from '$components/ui/Shell.svelte'
   import PageHead, { type Crumb } from '$components/ui/PageHead.svelte'
   import PageTab, { type PageTabItem } from '$components/ui/PageTab.svelte'
+  import StoredImage from '$components/ui/StoredImage.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
   import Glyph from '$components/ui/Glyph.svelte'
   import SearchInput from '$components/ui/SearchInput.svelte'
@@ -393,6 +394,12 @@
   {/if}
 {/snippet}
 
+{#snippet banner()}
+  {#if open?.image}
+    <StoredImage src={open.image} alt="" />
+  {/if}
+{/snippet}
+
 <Shell drawers title="Scribe" width="full" {backdrop}>
   {#snippet band()}
     <PageHead
@@ -405,6 +412,7 @@
       center={open ? undefined : center}
       view={open ? undefined : views}
       bottom={open && strip ? bottom : undefined}
+      banner={open?.image ? banner : undefined}
     />
   {/snippet}
 
