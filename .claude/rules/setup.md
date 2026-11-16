@@ -16,7 +16,7 @@ pnpm only. Never npm, never yarn.
 
 Every key lives in `.env`, which is ignored. `.env.example` names every key the code reads and carries the working local value of each one that is not a secret; a secret stays empty there.
 
-- `APP_NAME`, `SERVER_*`: the service's name, version, port, html path, allowed origins, log level, environment, and `SERVER_OWNER_ID`, the Knights of the Cauldron organization in Samna Auth that owns every row.
+- `APP_NAME`, `SERVER_*`: the service's name, version, port, html path, allowed origins, log level, environment, and `SERVER_OWNER_ID`, the Knights of the Cauldron organization in Samna Auth: the parent of every campaign organization and the owner of every row no campaign keeps.
 - `PG*`: the Postgres connection the service and smig use.
 - `SAUTH_ENDPOINT`, `SAUTH_APP_SLUG`, `SAUTH_APP_SECRET`, `SAUTH_REDIRECT_URI`, `SAUTH_PAGE_REDIRECT`: the Samna Auth prophet and the app this service signs in as. A local run leaves `SAUTH_ENDPOINT` and `SAUTH_APP_SECRET` empty and reaches no hosted service: it signs in as `SAUTH_DEBUG_USER_ID`, writes claims through the local claimius functions, and keeps files in Azurite.
 - `SAUTH_DEBUG_USER_ID`: set, the service signs every request in as that user and the `debug` migration step seeds the identity, so a local run needs no browser login. Empty on tst.
