@@ -4,8 +4,8 @@
   import { currentCampaignId, userCampaigns } from '$lib/stores/campaign.store'
   import { openLibrary } from '$lib/music'
   import Glyph from '$components/ui/Glyph.svelte'
-  import Sigil from '$components/ui/Sigil.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
+  import SearchInput from '$components/ui/SearchInput.svelte'
   import MainMenu from '$components/MainMenu.svelte'
   import SoundBoardComponent from '$components/soundboard/SoundBoard.svelte'
   import Playlist from '$components/music/Playlist.svelte'
@@ -40,19 +40,13 @@
       <SoundBoardComponent soundBoard={$soundBoardStore ?? null} onSoundBoardChange={handleSoundBoardChange} />
     </div>
   {:else if $menuView === 'music'}
-    <header class="dnd-menupanel-head dnd-menupanel-head-flush">
+    <header class="dnd-menupanel-rail">
       {@render back()}
-      <input
-        type="text"
-        class="dnd-search dnd-menupanel-search"
-        placeholder="Search the songs..."
-        aria-label="Search songs"
-        bind:value={search}
-      />
       <IconBtn title="Import songs" disabled={!scope} onclick={() => openImport()}>
         <Glyph name="upload" size="sm" />
       </IconBtn>
     </header>
+    <SearchInput bind:value={search} placeholder="Search the songs..." label="Search songs" variant="band" />
     <div class="dnd-menupanel-body dnd-menupanel-body-flush">
       <Playlist campaignId={scope} {search} onimport={openImport} />
     </div>
@@ -65,9 +59,9 @@
 </div>
 
 {#snippet back()}
-  <Sigil title="Back to the navigator" size="sm" onclick={uiStore.openMenu}>
+  <IconBtn title="Back to the navigator" onclick={uiStore.openMenu}>
     <Glyph name="back" size="sm" />
-  </Sigil>
+  </IconBtn>
 {/snippet}
 
 {#snippet head()}
@@ -86,6 +80,8 @@
     --menu-surface-lift: var(--ground-lift);
     --menu-accent: var(--metal-bright);
     --menu-radius: var(--radius-sm);
+    --menu-surface-sunk: var(--ground-deep);
+    --menu-hair: var(--border-hair) solid color-mix(in srgb, var(--metal-dim) 80%, transparent);
 
     display: flex;
     flex-direction: column;
@@ -105,18 +101,17 @@
     box-shadow: var(--bevel-up), inset 0 -1px 0 var(--keyline), 0 1px 0 var(--metal-dim), 0 2px 0 var(--metal), 0 3px 0 var(--keyline), 0 5px 8px var(--shade);
   }
 
-  .dnd-menupanel-head-flush {
+  .dnd-menupanel-rail {
+    position: relative;
+    z-index: 2;
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    height: var(--menu-row);
-    padding: 0 var(--space-2) 0 0;
-  }
-
-  .dnd-menupanel-search {
-    flex: 1;
-    width: auto;
-    min-width: 0;
+    justify-content: space-between;
+    gap: var(--space-1);
+    min-height: var(--menu-row);
+    padding-inline: var(--space-2);
+    background: var(--menu-surface-sunk);
+    border-bottom: var(--menu-hair);
   }
 
   .dnd-menupanel-body {
