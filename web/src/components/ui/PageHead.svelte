@@ -19,7 +19,8 @@
     center,
     tools,
     view,
-    bottom
+    bottom,
+    banner
   }: {
     /** The name of the page, written as the hero heading unless `heading` is given. */
     title?: string
@@ -43,6 +44,8 @@
     view?: Snippet
     /** The strip along the bottom edge: the page tabs, which survive the collapse. */
     bottom?: Snippet
+    /** The picture painted across the band behind the title, under a scrim that shades its edges; it folds with the head. */
+    banner?: Snippet
   } = $props()
 
   const COLLAPSE_AT = 36
@@ -160,8 +163,13 @@
   class="dnd-band dnd-pagehead"
   class:dnd-pagehead-tabbed={Boolean(bottom)}
   class:dnd-pagehead-collapsed={collapsed}
+  class:dnd-pagehead-banner={Boolean(banner)}
   style:--pagehead-duration={duration}
 >
+  {#if banner}
+    <div class="dnd-pagehead-banner-clip" aria-hidden="true">{@render banner()}</div>
+  {/if}
+
   <div bind:this={lineEl} class="dnd-band-line dnd-pagehead-line">
     <div class="dnd-pagehead-title">
       {#if heading}
@@ -236,6 +244,74 @@
     transition:
       padding var(--pagehead-duration, 0.35s) var(--pagehead-ease),
       row-gap var(--pagehead-duration, 0.35s) var(--pagehead-ease);
+  }
+
+  .dnd-pagehead-banner {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .dnd-pagehead-banner-clip {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .dnd-pagehead-banner-clip::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--shadow-ink) 72%, transparent) 0%,
+      color-mix(in srgb, var(--shadow-ink) 22%, transparent) 40%,
+      color-mix(in srgb, var(--shadow-ink) 28%, transparent) 60%,
+      color-mix(in srgb, var(--shadow-ink) 82%, transparent) 100%
+    );
+  }
+
+  .dnd-pagehead-banner-clip > :global(*) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .dnd-pagehead-banner-clip :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .dnd-pagehead-banner .dnd-pagehead-crumb,
+  .dnd-pagehead-banner .dnd-pagehead-crumb-mark,
+  .dnd-pagehead-banner .dnd-pagehead-count,
+  .dnd-pagehead-banner .dnd-pagehead-lede {
+    color: var(--ink);
+    text-shadow: 0 1px 0 var(--shadow-ink), 0 0 var(--space-3) var(--shadow-ink);
+  }
+
+  .dnd-pagehead-banner .dnd-pagehead-crumb-step:hover {
+    color: var(--metal-bright);
+  }
+
+  .dnd-pagehead-banner .dnd-pagehead-crumbs {
+    justify-self: start;
+    max-inline-size: 100%;
+    padding-inline: var(--space-2);
+    border-radius: var(--radius-sm);
+  }
+
+  .dnd-pagehead-banner .dnd-pagehead-crumbs,
+  .dnd-pagehead-banner .dnd-band-acts > :global(.dnd-iconbtn) {
+    background: color-mix(in srgb, var(--shadow-ink) 45%, transparent);
+    -webkit-backdrop-filter: blur(var(--space-2)) saturate(1.2);
+    backdrop-filter: blur(var(--space-2)) saturate(1.2);
   }
 
   .dnd-pagehead-line,

@@ -454,6 +454,7 @@ const LOCAL_PREFIX = 'local:'
 const FILE_PREFIX = 'file:'
 const BLOB_PREFIX = 'blob:'
 const ASSET_ADDRESS = /^\/api\/asset\/([0-9a-f-]+)\/data$/
+export const IMAGE_TYPE_BANNER = 'banner'
 const FOLDER_TYPE = 'inode/directory'
 const MEDIA_TYPES: Record<MediaKind, string> = {
   image: 'image/*',
@@ -615,6 +616,12 @@ export const getObjectAssets = (objectType: string, objectId: string) =>
 export const postObjectAsset = (assetId: string, objectType: string, objectId: string) =>
   apiPost<ObjectAsset>(`asset/${assetId}/object`, { object_type: objectType, object_id: objectId })
 
+export const deleteObjectAsset = (assetId: string, linkId: string) => apiDelete(`asset/${assetId}/object/${linkId}`)
+
+export const putAsset = (assetId: string, updates: Partial<Asset>) => apiPut<Asset>(`asset/${assetId}`, updates)
+
+export const assetBannerUrl = (bannerId?: string) => (bannerId ? getMediaUrl(bannerId) : null)
+
 export async function putAttachments(resourceId: string, content: string): Promise<void> {
   const wanted = new Set(getBlockAssets(getDocument(content).blocks))
   const held = (await getObjectAssets('resource', resourceId)) ?? []
@@ -623,7 +630,7 @@ export async function putAttachments(resourceId: string, content: string): Promi
     ...[...wanted]
       .filter((assetId) => !held.some((link) => link.asset_id === assetId))
       .map((assetId) => postObjectAsset(assetId, 'resource', resourceId)),
-    ...held.filter((link) => !wanted.has(link.asset_id)).map((link) => apiDelete(`asset/${link.asset_id}/object/${link.id}`))
+    ...held.filter((link) => !wanted.has(link.asset_id) && link.asset?.type !== IMAGE_TYPE_BANNER).map((link) => deleteObjectAsset(link.asset_id, link.id))
   ])
 }
 

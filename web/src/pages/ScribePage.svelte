@@ -47,7 +47,9 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { navigate, resolvedRoute, Router, type Routes } from 'sly-svelte-location-router'
-  import { getCampaigns } from '$lib/api'
+  import { assetBannerUrl, deleteObjectAsset, getAssets, getCampaigns, getObjectAssets, IMAGE_TYPE_BANNER, postFile, postObjectAsset, putAsset } from '$lib/api'
+  import type { ObjectAsset } from '$lib/api/types'
+  import type { MediaAsset } from '$lib/blocks'
   import { getAll, getChildren, getRoots, getTrail, postOne, putOne } from '$lib/resources'
   import { currentCampaignId, userCampaigns } from '$lib/stores/campaign.store'
   import { user } from '$lib/stores/auth.store'
@@ -55,6 +57,8 @@
   import Shell from '$components/ui/Shell.svelte'
   import PageHead, { type Crumb } from '$components/ui/PageHead.svelte'
   import PageTab, { type PageTabItem } from '$components/ui/PageTab.svelte'
+  import StoredImage from '$components/ui/StoredImage.svelte'
+  import MediaDialog from '$components/MediaDialog.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
   import Glyph from '$components/ui/Glyph.svelte'
   import SearchInput from '$components/ui/SearchInput.svelte'
@@ -296,6 +300,53 @@
     void putOne(owner, 'entries', open.id, next).catch((reason) => postNotice(reason instanceof Error ? reason.message : String(reason)))
   }
 
+  const fail = (reason: unknown) => postNotice(reason instanceof Error ? reason.message : String(reason))
+
+  let banner = $state<ObjectAsset | null>(null)
+  let picking = $state(false)
+  const bannerId = $derived(openId)
+  const picture = $derived(assetBannerUrl(banner?.asset_id) ?? '')
+
+  async function getBanners(id: string) {
+    return ((await getObjectAssets('resource', id)) ?? []).filter((link) => link.asset?.type === IMAGE_TYPE_BANNER)
+  }
+
+  async function loadBanner(id: string) {
+    const links = await getBanners(id)
+    if (id === bannerId) banner = links[0] ?? null
+  }
+
+  $effect(() => {
+    banner = null
+    if (bannerId) void loadBanner(bannerId).catch(fail)
+  })
+
+  async function clearBanner() {
+    const id = bannerId
+    if (!id) return
+    try {
+      for (const link of await getBanners(id)) await deleteObjectAsset(link.asset_id, link.id)
+      banner = null
+    } catch (reason) {
+      fail(reason)
+    }
+  }
+
+  async function pickBanner(asset: MediaAsset | null) {
+    picking = false
+    const id = bannerId
+    if (!asset || !id) return
+    try {
+      if (banner && banner.asset_id !== asset.id) await clearBanner()
+      await putAsset(asset.id, { type: IMAGE_TYPE_BANNER })
+      const links = (await getObjectAssets('resource', id)) ?? []
+      if (!links.some((link) => link.asset_id === asset.id)) await postObjectAsset(asset.id, 'resource', id)
+      await loadBanner(id)
+    } catch (reason) {
+      fail(reason)
+    }
+  }
+
   function follow(reference: Reference) {
     if (reference.mark === '#') {
       const next = new URLSearchParams($resolvedRoute.search ?? '')
@@ -386,6 +437,14 @@
 {#snippet actions()}
   {#if table.saving}<span class="dnd-spinner scribe-saving"></span>{/if}
   {#if open}
+    <IconBtn title={picture ? 'Change banner' : 'Set banner'} onclick={() => (picking = true)}>
+      <Glyph name="image" size="md" />
+    </IconBtn>
+    {#if picture}
+      <IconBtn title="Clear banner" onclick={clearBanner}>
+        <Glyph name="cross" size="md" />
+      </IconBtn>
+    {/if}
     <ToggleGroup label="Mode">
       <IconBtn title="Edit" active={mode === 'edit'} onclick={() => show(open.id, 'edit')}>
         <Glyph name="edit" size="md" />
@@ -450,6 +509,10 @@
   {/if}
 {/snippet}
 
+{#snippet cover()}
+  <StoredImage src={picture} alt="" />
+{/snippet}
+
 <Shell drawers title="Scribe" width="full" {backdrop}>
   {#snippet band()}
     <PageHead
@@ -462,6 +525,7 @@
       center={open ? undefined : center}
       view={open ? undefined : views}
       bottom={open && strip ? bottom : undefined}
+      banner={open && picture ? cover : undefined}
     />
   {/snippet}
 
@@ -471,6 +535,16 @@
     </Router>
   </div>
 </Shell>
+
+{#if picking}
+  <MediaDialog
+    kind="image"
+    current={picture}
+    getAssets={(query, kind) => getAssets(query, kind, { kind: 'user' })}
+    uploadFile={(file) => postFile(file, { kind: 'user' })}
+    onclose={pickBanner}
+  />
+{/if}
 
 <style>
   .scribe-ground {
