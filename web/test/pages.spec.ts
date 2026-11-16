@@ -188,7 +188,8 @@ describe('the frame holds the sideways backstop', () => {
   it('floors and caps the hold, so a wide child cannot push the track', () => {
     const hold = frame.style('.dnd-shell-hold')
     expect(hold?.['min-width']).toBe('0')
-    expect(hold?.['max-width']).toBe('min(100%, var(--size-page-max))')
+    expect(hold?.['max-width']).toBe('min(100%, var(--shell-hold-max))')
+    expect(frame.style('.dnd-shell-scroll')?.['--shell-hold-max']).toBe('var(--size-page-max)')
   })
 
   it('floors the content area and clips the frame itself', () => {
@@ -199,11 +200,11 @@ describe('the frame holds the sideways backstop', () => {
 
   it('narrows the hold only for the widths that ask for it, and leaves full on the base cap', () => {
     expect(widths).toEqual(['narrow', 'wide', 'full'])
-    const narrow = frame.style('.dnd-shell-hold-narrow')?.['max-width'] ?? ''
-    const wide = frame.style('.dnd-shell-hold-wide')?.['max-width'] ?? ''
+    const narrow = frame.style('.dnd-shell-scroll-narrow')?.['--shell-hold-max'] ?? ''
+    const wide = frame.style('.dnd-shell-scroll-wide')?.['--shell-hold-max'] ?? ''
     expect(parseInt(narrow, 10)).toBeGreaterThan(0)
     expect(parseInt(wide, 10)).toBeGreaterThan(parseInt(narrow, 10))
-    expect(frame.style('.dnd-shell-hold-full')).toBeNull()
+    expect(frame.style('.dnd-shell-scroll-full')).toBeNull()
   })
 })
 
