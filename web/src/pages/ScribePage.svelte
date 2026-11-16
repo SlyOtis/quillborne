@@ -71,7 +71,7 @@
     !ready ? null : campaign ? { at: 'campaign', id: campaign.id } : $user ? { at: 'user', id: $user.user_id } : null
   )
 
-  const steps = $derived($resolvedRoute.path.split('/').filter(Boolean).slice(2))
+  const steps = $derived($resolvedRoute.path.startsWith(`${HOME}/`) ? $resolvedRoute.path.split('/').filter(Boolean).slice(2) : [])
   const openId = $derived(steps[0] ?? '')
   const mode = $derived<Mode>(steps[1] === 'edit' ? 'edit' : 'read')
   const query = $derived(new URLSearchParams($resolvedRoute.search ?? ''))

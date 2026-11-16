@@ -48,13 +48,13 @@
 {/snippet}
 
 <span class="dnd-presence">
-  {#each shown as user (user.id)}
+  {#each shown as user, i (user.id)}
     {#if onclick}
-      <button type="button" class="dnd-presence-item" class:dnd-presence-item-self={user.self} title={user.self ? `${user.name} (you)` : user.name} onclick={() => onclick(user)}>
+      <button type="button" class="dnd-presence-item" class:dnd-presence-item-self={user.self} style:--presence-depth={-i} title={user.self ? `${user.name} (you)` : user.name} onclick={() => onclick(user)}>
         {@render face(user)}
       </button>
     {:else}
-      <span class="dnd-presence-item" class:dnd-presence-item-self={user.self} title={user.self ? `${user.name} (you)` : user.name}>
+      <span class="dnd-presence-item" class:dnd-presence-item-self={user.self} style:--presence-depth={-i} title={user.self ? `${user.name} (you)` : user.name}>
         {@render face(user)}
       </span>
     {/if}
@@ -74,12 +74,13 @@
   .dnd-presence-item {
     --presence-ring: var(--metal-dim);
     position: relative;
+    z-index: var(--presence-depth);
     display: inline-flex;
     flex: none;
     align-items: center;
     justify-content: center;
-    inline-size: var(--space-5);
-    block-size: var(--space-5);
+    inline-size: calc(var(--size-bar) * 0.55);
+    block-size: calc(var(--size-bar) * 0.55);
     padding: 0;
     border: none;
     border-radius: var(--radius-pill);
