@@ -531,11 +531,12 @@
 
   .dnd-filetile-tags {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     justify-content: center;
     gap: 0.3333em;
     max-width: 100%;
+    overflow: hidden;
     opacity: 0;
     transition: opacity 0.1s ease;
   }

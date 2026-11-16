@@ -8,11 +8,13 @@
     name: string
     /** Whether the item is a folder, which takes a drop, or a file. */
     kind: 'folder' | 'file'
+    /** The readable type written in the hover card; Folder or File when unset. */
+    type?: string
     /** The type mark drawn when the mime type says nothing. */
     glyph?: GlyphName
     /** Preformatted size label of the file. */
     size?: string
-    /** Download address, whose presence adds Download to the menu. */
+    /** Download address, whose presence adds Download to the menu and lets the preview draw it. */
     url?: string
     /** Picture drawn over the mark when set. */
     thumbnailUrl?: string | null
@@ -57,13 +59,18 @@
 
 <script lang="ts">
   import { onMount, tick } from 'svelte'
+  import AssetTooltip from './AssetTooltip.svelte'
+  import FileBanner from './FileBanner.svelte'
+  import FilePreview from './FilePreview.svelte'
   import FileTile from './FileTile.svelte'
   import Glyph, { getMimeGlyph } from './Glyph.svelte'
+  import IconBtn from './IconBtn.svelte'
   import type { PresenceUser } from './Presence.svelte'
 
   type Bucket = { key: string; label: string; order: number }
   type FileGroup = Bucket & { items: FileItem[] }
   type Menu = { item: FileItem; top: number; left: number; options: FileOption[] }
+  type Tip = { item: FileItem; top: number; left: number }
 
   const {
     items,
@@ -82,8 +89,10 @@
     selectable = false,
     selectLabel = 'Select',
     deselectLabel = 'Deselect',
+    preview = null,
     onadd,
     onopen,
+    onpreview,
     onselect,
     onselectend,
     onhover,
@@ -124,10 +133,14 @@
     selectLabel?: string
     /** Words of the pick row for a selected item. */
     deselectLabel?: string
+    /** The file whose preview takes over the grid, owned by the caller; null shows the grid. */
+    preview?: FileItem | null
     /** Runs when the add tile is pressed. */
     onadd?: () => void
     /** Runs with the item pressed, a folder to walk into or a file to read. */
     onopen?: (item: FileItem) => void
+    /** Runs with the file the preview should move to, a neighbour from the steppers, or null when it is closed. */
+    onpreview?: (item: FileItem | null) => void
     /** Runs with the item picked and the click behind it, absent when the pick came from the menu. */
     onselect?: (item: FileItem, event?: MouseEvent) => void
     /** Runs when Escape or a press on the ground asks to end the selection. */
@@ -145,6 +158,7 @@
   } = $props()
 
   const DAY = 86400000
+  const HOVER_MS = 350
   const SKELETONS = Array.from({ length: 12 }, (_, at) => at)
 
   let root = $state<HTMLElement>()
@@ -159,6 +173,8 @@
   let menu = $state<Menu | null>(null)
   let sub = $state(false)
   let hunt = $state('')
+  let tip = $state<Tip | null>(null)
+  let hoverTimer: ReturnType<typeof setTimeout> | null = null
 
   const picking = $derived(selectable && !touch && selectedIds.size > 0)
   const groups = $derived.by<FileGroup[] | null>(() => {
@@ -175,6 +191,10 @@
     return [...map.values()].sort((a, b) => a.order - b.order || a.label.localeCompare(b.label))
   })
   const loose = $derived(groups ? [] : items)
+  const files = $derived(items.filter((one) => one.kind === 'file' && one.url))
+  const at = $derived(preview ? files.findIndex((one) => one.id === preview.id) : -1)
+  const before = $derived(at > 0 ? files[at - 1] : null)
+  const after = $derived(at >= 0 && at < files.length - 1 ? files[at + 1] : null)
   const targets = $derived(menu ? moveTargets.filter((target) => target.id !== menu!.item.id) : [])
   const sought = $derived.by(() => {
     const wanted = hunt.trim().toLowerCase()
@@ -188,6 +208,10 @@
   function glyphOf(item: FileItem) {
     if (item.kind === 'folder') return 'folder'
     return item.glyph ?? getMimeGlyph(item.mimeType ?? '')
+  }
+
+  function typeOf(item: FileItem): string {
+    return item.type ?? (item.kind === 'folder' ? 'Folder' : 'File')
   }
 
   function typeBucket(item: FileItem): Bucket {
@@ -208,13 +232,13 @@
 
   function modifiedBucket(item: FileItem): Bucket {
     if (!item.updatedAt) return { key: 'nodate', label: 'No date', order: 5 }
-    const at = new Date(item.updatedAt).getTime()
-    if (Number.isNaN(at)) return { key: 'nodate', label: 'No date', order: 5 }
+    const when = new Date(item.updatedAt).getTime()
+    if (Number.isNaN(when)) return { key: 'nodate', label: 'No date', order: 5 }
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
-    if (at >= today) return { key: 'today', label: 'Today', order: 0 }
-    if (at >= today - 7 * DAY) return { key: 'week', label: 'This week', order: 1 }
-    if (at >= today - 30 * DAY) return { key: 'month', label: 'This month', order: 2 }
+    if (when >= today) return { key: 'today', label: 'Today', order: 0 }
+    if (when >= today - 7 * DAY) return { key: 'week', label: 'This week', order: 1 }
+    if (when >= today - 30 * DAY) return { key: 'month', label: 'This month', order: 2 }
     return { key: 'earlier', label: 'Earlier', order: 3 }
   }
 
@@ -268,6 +292,7 @@
 
   function open(item: FileItem, event: MouseEvent) {
     if (picking) return pick(item, event)
+    hideTip()
     onopen?.(item)
   }
 
@@ -284,6 +309,10 @@
       closeMenu()
       return
     }
+    if (preview) {
+      onpreview?.(null)
+      return
+    }
     if (picking) onselectend?.()
   }
 
@@ -293,6 +322,7 @@
   }
 
   function onDragStart(event: DragEvent, item: FileItem) {
+    hideTip()
     draggingId = item.id
     if (!event.dataTransfer) return
     event.dataTransfer.effectAllowed = 'move'
@@ -323,14 +353,35 @@
     onmove?.(source, item.id)
   }
 
+  function hideTip() {
+    if (hoverTimer) clearTimeout(hoverTimer)
+    hoverTimer = null
+    tip = null
+  }
+
   function onEnter(event: MouseEvent, item: FileItem) {
-    if (renamingId) return
+    if (renamingId || draggingId) return
     onhover?.(item, event)
+    const tile = event.currentTarget as HTMLElement | null
+    hideTip()
+    if (!tile || !root || touch) return
+    hoverTimer = setTimeout(() => {
+      hoverTimer = null
+      if (!root) return
+      const frame = root.getBoundingClientRect()
+      const box = tile.getBoundingClientRect()
+      tip = { item, top: box.bottom - frame.top + root.scrollTop + 4, left: box.left - frame.left + root.scrollLeft }
+    }, HOVER_MS)
+  }
+
+  function onLeave() {
+    hideTip()
+    onhoverend?.()
   }
 
   function startRename(item: FileItem) {
     renamingId = item.id
-    onhoverend?.()
+    onLeave()
   }
 
   function commitRename(item: FileItem, name: string) {
@@ -367,6 +418,7 @@
 
   function openMenu(event: MouseEvent, item: FileItem) {
     if (!root) return
+    hideTip()
     const move = moveOption(item)
     const options = menuOptions(item, move)
     if (options.length === 0) return
@@ -420,6 +472,7 @@
     coarse.addEventListener('change', read)
     document.addEventListener('pointerdown', onDocumentDown)
     return () => {
+      hideTip()
       coarse.removeEventListener('change', read)
       document.removeEventListener('pointerdown', onDocumentDown)
     }
@@ -445,7 +498,7 @@
     onpick={(event) => pick(item, event)}
     onmore={(event) => openMenu(event, item)}
     onenter={(event) => onEnter(event, item)}
-    onleave={onhoverend}
+    onleave={onLeave}
     ondragstart={(event) => onDragStart(event, item)}
     ondragover={(event) => onDragOver(event, item)}
     ondragleave={() => onDragLeave(item)}
@@ -462,13 +515,33 @@
 <div
   bind:this={root}
   class="dnd-fileexplorer"
+  class:dnd-fileexplorer-previewing={Boolean(preview)}
   tabindex="-1"
   onclick={onGround}
   onkeydown={onKey}
-  onmouseleave={onhoverend}
+  onmouseleave={onLeave}
   ondragend={resetDrag}
 >
-  {#if loading}
+  {#if preview}
+    <div class="dnd-fileexplorer-preview">
+      <FileBanner name={preview.name} type={preview.type ?? preview.mimeType} size={preview.size}>
+        {#if before || after}
+          <IconBtn title="Previous file" disabled={!before} onclick={() => before && onpreview?.(before)}>
+            <Glyph name="arrowleft" size="sm" />
+          </IconBtn>
+          <IconBtn title="Next file" disabled={!after} onclick={() => after && onpreview?.(after)}>
+            <Glyph name="arrowright" size="sm" />
+          </IconBtn>
+        {/if}
+        <IconBtn title="Close preview" onclick={() => onpreview?.(null)}>
+          <Glyph name="close" size="sm" />
+        </IconBtn>
+      </FileBanner>
+      <div class="dnd-fileexplorer-preview-body">
+        <FilePreview url={preview.url ?? ''} mimeType={preview.mimeType ?? ''} name={preview.name} />
+      </div>
+    </div>
+  {:else if loading}
     <div class="dnd-fileexplorer-grid" aria-busy="true">
       {#each SKELETONS as at (at)}
         <div class="dnd-fileexplorer-skeleton" aria-hidden="true">
@@ -507,6 +580,19 @@
         </section>
       {/each}
     {/if}
+  {/if}
+
+  {#if tip && !menu}
+    <div class="dnd-fileexplorer-tip" style:top="{tip.top}px" style:left="{tip.left}px">
+      <AssetTooltip
+        name={tip.item.name}
+        type={typeOf(tip.item)}
+        format={tip.item.mimeType}
+        size={tip.item.size}
+        updated={tip.item.updatedAt ? tip.item.updatedAt.slice(0, 10) : undefined}
+        tags={tip.item.tags}
+      />
+    </div>
   {/if}
 
   {#if menu}
@@ -552,6 +638,28 @@
     color: var(--ink);
     user-select: none;
     outline: none;
+  }
+
+  .dnd-fileexplorer-previewing {
+    block-size: 70vh;
+  }
+
+  .dnd-fileexplorer-preview {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    box-shadow: var(--rim-thin), inset 0 0 16px 2px var(--shade-hard);
+    font-size: var(--text-md);
+    user-select: text;
+  }
+
+  .dnd-fileexplorer-preview-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
   }
 
   .dnd-fileexplorer-grid {
@@ -687,6 +795,13 @@
 
   .dnd-fileexplorer-add:focus-visible .dnd-fileexplorer-add-area {
     box-shadow: var(--focus-ring);
+  }
+
+  .dnd-fileexplorer-tip {
+    position: absolute;
+    z-index: 20;
+    font-size: var(--text-md);
+    pointer-events: none;
   }
 
   .dnd-fileexplorer-menu {

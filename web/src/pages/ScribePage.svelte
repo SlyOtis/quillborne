@@ -17,10 +17,12 @@
     readonly mode: Mode
     readonly view: View
     readonly shown: Resource[]
+    readonly roots: Resource[]
     readonly rows: TreeRow[]
-    readonly tiles: Shelf[]
     readonly lines: Shelf[]
+    readonly byTag: boolean
     show: (id: string, mode?: Mode) => void
+    postPage: (parentId?: string | null) => Promise<void>
     putPage: (held: Resource) => void
     countKids: (one: Resource) => number
     parentOf: (one: Resource) => Resource | null
@@ -118,7 +120,6 @@
   const shown = $derived(sort(table.pages.filter(keep)))
   const roots = $derived(sifting ? shown : sort(getRoots(table.pages)))
   const rows = $derived(roots.map(limb))
-  const tiles = $derived(shelve(roots))
   const lines = $derived(shelve(shown))
 
   const crumbs = $derived<Crumb[]>([
@@ -293,16 +294,20 @@
     get shown() {
       return shown
     },
+    get roots() {
+      return roots
+    },
     get rows() {
       return rows
-    },
-    get tiles() {
-      return tiles
     },
     get lines() {
       return lines
     },
+    get byTag() {
+      return byTag
+    },
     show,
+    postPage,
     putPage,
     countKids,
     parentOf,

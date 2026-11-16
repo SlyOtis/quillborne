@@ -1,6 +1,7 @@
 <script lang="ts">
   import { navigate } from 'sly-svelte-location-router'
-  import { getMediaUrl, getObjectAssets } from '$lib/api'
+  import { getAssetTab, getMediaUrl, getObjectAssets, getSize } from '$lib/api'
+  import type { ObjectAsset } from '$lib/api/types'
   import { getTrail, putOne, type Resource } from '$lib/resources'
   import { postNotice } from '$lib/stores/ui.store'
   import Tree from '$components/ui/Tree.svelte'
@@ -11,7 +12,8 @@
 
   const scribe = getScribe()
 
-  let pictures = $state(new Map<string, string>())
+  let held = $state(new Map<string, ObjectAsset[]>())
+  let preview = $state<FileItem | null>(null)
   const asked = new Set<string>()
 
   const targets = $derived<FileMoveTarget[]>(
@@ -22,24 +24,31 @@
     }))
   )
 
+  const items = $derived<FileItem[]>([
+    ...scribe.roots.map(tileOf),
+    ...scribe.roots.flatMap((one) => (held.get(one.id) ?? []).flatMap((link) => (link.asset ? [fileOf(link.asset)] : [])))
+  ])
+
   $effect(() => {
-    for (const shelf of scribe.tiles) {
-      for (const one of shelf.kids) {
-        if (asked.has(one.id)) continue
-        asked.add(one.id)
-        void getPicture(one.id)
-      }
+    for (const one of scribe.roots) {
+      if (asked.has(one.id)) continue
+      asked.add(one.id)
+      void getAttachments(one.id)
     }
   })
 
-  async function getPicture(id: string) {
+  async function getAttachments(id: string) {
     try {
-      const held = (await getObjectAssets('resource', id)) ?? []
-      const picture = held.find((link) => link.asset?.mime_type.startsWith('image/'))
-      if (picture) pictures = new Map(pictures).set(id, getMediaUrl(picture.asset_id))
+      const links = (await getObjectAssets('resource', id)) ?? []
+      held = new Map(held).set(id, links)
     } catch (reason) {
       postNotice(reason instanceof Error ? reason.message : String(reason))
     }
+  }
+
+  function pictureOf(one: Resource): string | null {
+    const picture = (held.get(one.id) ?? []).find((link) => link.asset?.mime_type.startsWith('image/'))
+    return picture ? getMediaUrl(picture.asset_id) : null
   }
 
   function tileOf(one: Resource): FileItem {
@@ -48,11 +57,27 @@
       id: one.id,
       name: one.title,
       kind: kids > 0 ? 'folder' : 'file',
+      type: 'Page',
       glyph: 'scroll',
       size: kids > 0 ? `${kids} sub pages` : undefined,
-      thumbnailUrl: pictures.get(one.id) ?? null,
+      thumbnailUrl: pictureOf(one),
       updatedAt: one.created_at ?? undefined,
       tags: one.tags
+    }
+  }
+
+  function fileOf(asset: NonNullable<ObjectAsset['asset']>): FileItem {
+    const url = getMediaUrl(asset.id)
+    return {
+      id: asset.id,
+      name: asset.name,
+      kind: 'file',
+      url,
+      mimeType: asset.mime_type,
+      thumbnailUrl: asset.mime_type.startsWith('image/') ? url : null,
+      size: asset.size_bytes ? getSize(asset.size_bytes) : undefined,
+      updatedAt: asset.updated_at,
+      tags: (asset.tags ?? []).map((tag) => tag.name)
     }
   }
 
@@ -74,6 +99,14 @@
     }
   }
 
+  function open(item: FileItem) {
+    if (pageOf(item)) {
+      scribe.show(item.id)
+      return
+    }
+    if (item.url) preview = item
+  }
+
   function rename(item: FileItem, title: string) {
     const one = pageOf(item)
     if (one) void write({ ...one, title })
@@ -88,7 +121,7 @@
 
   function options(item: FileItem, defaults: FileOption[]): FileOption[] {
     const one = pageOf(item)
-    if (!one) return defaults
+    if (!one) return defaults.filter((option) => option.title !== 'Rename' && !option.submenu)
     return [...defaults, { title: 'Open in lore', glyph: 'forward', run: () => navigate(scribe.loreOf(one)) }]
   }
 </script>
@@ -106,27 +139,29 @@
 <section class="scribe-main" aria-label="Pages">
   {#if scribe.table.loading}
     <div class="dnd-loading"><span class="dnd-spinner"></span></div>
-  {:else if scribe.table.pages.length === 0}
+  {:else if scribe.table.pages.length === 0 && scribe.view !== 'grid'}
     <p class="scribe-empty">No page written yet. Press New page to begin.</p>
-  {:else if scribe.shown.length === 0}
+  {:else if scribe.shown.length === 0 && scribe.table.pages.length > 0}
     <p class="scribe-empty">No page matches.</p>
   {:else if scribe.view === 'grid'}
-    {#each scribe.tiles as shelf (shelf.title)}
-      <section class="scribe-shelf" aria-label={shelf.title || 'Pages'}>
-        {@render divide(shelf)}
-        <FileExplorer
-          items={shelf.kids.map(tileOf)}
-          showTags={shelf.kids.some((one) => one.tags.length > 0)}
-          moveTargets={targets}
-          moveLabel="Move under"
-          moveSearchPlaceholder="Search the pages..."
-          itemOptions={options}
-          onopen={(item) => scribe.show(item.id)}
-          onrename={rename}
-          onmove={move}
-        />
-      </section>
-    {/each}
+    <FileExplorer
+      {items}
+      groupBy={scribe.byTag ? 'tag' : 'none'}
+      showAdd
+      addLabel="New page"
+      showTags={items.some((one) => (one.tags ?? []).length > 0)}
+      moveTargets={targets}
+      moveLabel="Move under"
+      moveSearchPlaceholder="Search the pages..."
+      itemOptions={options}
+      {preview}
+      onadd={() => scribe.postPage(null)}
+      onopen={open}
+      onpreview={(item) => (preview = item)}
+      ondownload={(item) => getAssetTab(item.id)}
+      onrename={rename}
+      onmove={move}
+    />
   {:else if scribe.view === 'tree'}
     <Tree rows={scribe.rows} on="" onopen={(id) => scribe.show(id)} />
   {:else}
