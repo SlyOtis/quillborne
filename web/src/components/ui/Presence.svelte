@@ -69,6 +69,7 @@
     display: inline-flex;
     align-items: center;
     isolation: isolate;
+    block-size: 100%;
   }
 
   .dnd-presence-item {
@@ -79,8 +80,8 @@
     flex: none;
     align-items: center;
     justify-content: center;
-    inline-size: calc(var(--size-bar) * 0.55);
-    block-size: calc(var(--size-bar) * 0.55);
+    aspect-ratio: 1;
+    block-size: 100%;
     padding: 0;
     border: none;
     border-radius: var(--radius-pill);

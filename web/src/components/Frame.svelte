@@ -232,7 +232,7 @@ import Toast from '$components/ui/Toast.svelte'
     <span class="dnd-shell-run" aria-hidden="true"></span>
 
     {#if campaign}
-      <Presence users={members} onclick={(one) => navigate(`/main/player/${one.id}`)} />
+      <span class="dnd-shell-presence"><Presence users={members} onclick={(one) => navigate(`/main/player/${one.id}`)} /></span>
     {/if}
 
     <span class="dnd-shell-stack" bind:this={stackEl}>
@@ -593,6 +593,12 @@ import Toast from '$components/ui/Toast.svelte'
   .dnd-shell-run {
     flex: 1 1 0;
     min-width: var(--space-4);
+  }
+
+  .dnd-shell-presence {
+    display: flex;
+    flex: none;
+    block-size: calc(var(--size-bar) * 0.55);
   }
 
   .dnd-shell-stack {
