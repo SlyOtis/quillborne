@@ -206,6 +206,7 @@ export type IconName =
   | 'printer'
   | 'prometheus'
   | 'qrcode'
+  | 'quill'
   | 'radar'
   | 'reddit'
   | 'redo'

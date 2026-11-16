@@ -10,6 +10,7 @@
   import Fold from '$components/ui/Fold.svelte'
   import Tree, { type TreeRow } from '$components/ui/Tree.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
+  import Button from '$components/ui/Button.svelte'
   import Glyph, { type GlyphName } from '$components/ui/Glyph.svelte'
   import SearchInput from '$components/ui/SearchInput.svelte'
   import { actionBlocks, getAction, shortcuts } from '$lib/actions'
@@ -209,8 +210,8 @@
       {/each}
     </div>
     <span class="dnd-menu-rail-acts">
-      <IconBtn title="Open scribe" active={steps[0] === 'scribe'} onclick={() => navigate('/main/scribe')}>
-        <Glyph name="edit" size="sm" />
+      <IconBtn title="Open scribe" onclick={() => { navigate('/main/scribe'); pickTab('scribe') }}>
+        <Glyph name="quill" size="sm" />
       </IconBtn>
     </span>
   </div>
@@ -258,24 +259,22 @@
     {#each $shortcuts as pin (pin.action)}
       {@const action = getAction(pin.action)}
       {#if action}
-        <span class="dnd-menu-foot-cell">
-          <IconBtn
-            title={$actionBlocks[action.id] ? `${action.title}: ${$actionBlocks[action.id]}` : pin.key ? `${action.title} (${pin.key})` : action.title}
-            disabled={Boolean($actionBlocks[action.id])}
-            onclick={action.run}
-          >
-            <Glyph name={action.glyph} size="sm" />
-          </IconBtn>
+        <Button
+          variant="plain"
+          size="sm"
+          title={$actionBlocks[action.id] ? `${action.title}: ${$actionBlocks[action.id]}` : pin.key ? `${action.title} (${pin.key})` : action.title}
+          disabled={Boolean($actionBlocks[action.id])}
+          onclick={action.run}
+        >
+          <Glyph name={action.glyph} size="sm" />
           <span class="dnd-menu-foot-word">{action.title}</span>
-        </span>
+        </Button>
       {/if}
     {/each}
-    <span class="dnd-menu-foot-cell">
-      <IconBtn title="Pin an action" tone="ink" onclick={() => uiStore.openSearchDialog()}>
-        <Glyph name="add" size="sm" />
-      </IconBtn>
+    <Button variant="plain" size="sm" title="Pin an action" onclick={() => uiStore.openSearchDialog()}>
+      <Glyph name="add" size="sm" />
       <span class="dnd-menu-foot-word">Pin</span>
-    </span>
+    </Button>
   </footer>
 
   <div class="dnd-menu-user">
@@ -361,6 +360,8 @@
   }
 
   .dnd-menu-tab {
+    position: relative;
+    isolation: isolate;
     min-width: 0;
     padding: var(--space-2) var(--menu-pad);
     border: none;
@@ -384,6 +385,33 @@
 
   .dnd-menu-tab-on {
     background: var(--menu-surface-solid);
+    color: var(--menu-accent);
+    text-shadow: var(--glow-text);
+  }
+
+  .dnd-menu-tab-on::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(ellipse 70% 130% at 50% 100%, color-mix(in srgb, var(--ember-glow) 70%, transparent) 0%, color-mix(in srgb, var(--ember-glow) 25%, transparent) 40%, transparent 75%);
+    animation: dnd-menu-tab-breathe 2.6s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+
+  @keyframes dnd-menu-tab-breathe {
+    from {
+      opacity: 0.6;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dnd-menu-tab-on::before {
+      animation: none;
+    }
   }
 
   .dnd-menu-tab:focus-visible {
@@ -570,27 +598,14 @@
     color: var(--menu-text-muted);
   }
 
-  .dnd-menu-foot-cell {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
-    min-width: 0;
-    padding-inline: var(--space-1);
-  }
-
   .dnd-menu-foot-word {
-    max-inline-size: calc(var(--menu-row) * 2);
+    max-inline-size: calc(var(--menu-row) * 3);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-family: var(--font-display);
-    font-size: calc(var(--text-xs) * 0.85);
-    letter-spacing: var(--tracking-wide);
-    color: var(--menu-text-muted);
   }
 
-  .dnd-menu-foot-cell + .dnd-menu-foot-cell::before {
+  .dnd-menu-foot > :global(.dnd-button + .dnd-button)::before {
     content: '';
     position: absolute;
     inset-inline-start: calc((var(--space-2) + var(--border-hair)) / -2);
