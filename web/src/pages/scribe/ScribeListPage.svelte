@@ -146,7 +146,7 @@
   {:else if scribe.view === 'grid'}
     <FileExplorer
       {items}
-      groupBy={scribe.byTag ? 'tag' : 'none'}
+      groupBy={scribe.groupBy}
       showAdd
       addLabel="New page"
       showTags={items.some((one) => (one.tags ?? []).length > 0)}

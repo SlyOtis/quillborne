@@ -4,6 +4,7 @@
   import type { Mention, Reference } from '$lib/blocks'
   import type { Resource } from '$lib/resources'
   import type { TreeRow } from '$components/ui/Tree.svelte'
+  import type { FileGroupBy } from '$components/ui/FileExplorer.svelte'
 
   export type View = 'grid' | 'tree' | 'list'
   export type Mode = 'edit' | 'read'
@@ -20,7 +21,7 @@
     readonly roots: Resource[]
     readonly rows: TreeRow[]
     readonly lines: Shelf[]
-    readonly byTag: boolean
+    readonly groupBy: FileGroupBy
     show: (id: string, mode?: Mode) => void
     postPage: (parentId?: string | null) => Promise<void>
     putPage: (held: Resource) => void
@@ -56,10 +57,16 @@
   import Glyph from '$components/ui/Glyph.svelte'
   import SearchInput from '$components/ui/SearchInput.svelte'
   import ToggleGroup from '$components/ui/ToggleGroup.svelte'
+  import Dropdown, { type DropdownOption } from '$components/ui/Dropdown.svelte'
 
   const SAVE_DELAY = 600
   const HOME = '/main/scribe'
   const CRUMB_SCRIBE = 'scribe'
+  const GROUPS: FileGroupBy[] = ['kind', 'type', 'modified', 'name', 'tag']
+  const ORDERS: DropdownOption[] = [
+    { value: 'title', label: 'Name' },
+    { value: 'written', label: 'Written' }
+  ]
 
   const routes: Routes = {
     '/': { name: 'scribe-pages', component: () => import('./scribe/ScribeListPage.svelte') },
@@ -80,7 +87,7 @@
   const view = $derived<View>(query.get('view') === 'tree' || query.get('view') === 'list' ? (query.get('view') as View) : 'grid')
   const order = $derived(query.get('order') === 'written' ? 'written' : 'title')
   const descending = $derived(query.get('desc') === '1')
-  const byTag = $derived(query.get('by') === 'tag')
+  const groupBy = $derived<FileGroupBy>(GROUPS.find((one) => one === query.get('by')) ?? 'none')
   const picked = $derived((query.get('tags') ?? '').split(',').filter(Boolean))
 
   const table = $state<Scribe['table']>({ pages: held.pages, loading: held.key === '', saving: false })
@@ -117,6 +124,14 @@
   const wanted = $derived(hunt.trim().toLowerCase())
   const sifting = $derived(Boolean(wanted) || picked.length > 0)
   const allTags = $derived([...new Set(table.pages.flatMap((one) => one.tags))].sort())
+  const groupings = $derived<DropdownOption[]>([
+    { value: 'none', label: 'No grouping' },
+    { value: 'kind', label: 'Kind' },
+    { value: 'type', label: 'Type' },
+    { value: 'modified', label: 'Modified' },
+    { value: 'name', label: 'Name' },
+    ...(allTags.length > 0 ? [{ value: 'tag', label: 'Tag' }] : [])
+  ])
   const shown = $derived(sort(table.pages.filter(keep)))
   const roots = $derived(sifting ? shown : sort(getRoots(table.pages)))
   const rows = $derived(roots.map(limb))
@@ -153,7 +168,7 @@
   }
 
   function shelve(pages: Resource[]): Shelf[] {
-    if (!byTag) return [{ title: '', kids: pages }]
+    if (groupBy !== 'tag') return [{ title: '', kids: pages }]
     const tagged = allTags.map((tag) => ({ title: `#${tag}`, kids: pages.filter((one) => one.tags.includes(tag)) }))
     const loose = { title: 'Untagged', kids: pages.filter((one) => one.tags.length === 0) }
     return [...tagged, loose].filter((shelf) => shelf.kids.length > 0)
@@ -303,8 +318,8 @@
     get lines() {
       return lines
     },
-    get byTag() {
-      return byTag
+    get groupBy() {
+      return groupBy
     },
     show,
     postPage,
@@ -365,29 +380,22 @@
 {#snippet views()}
   <ToggleGroup label="View">
     {#snippet actions()}
-      <IconBtn title="By title" active={order === 'title'} onclick={() => put({ order: null })}>
-        <Glyph name="textheight" size="sm" />
-      </IconBtn>
-      <IconBtn title="By written" active={order === 'written'} onclick={() => put({ order: 'written' })}>
-        <Glyph name="calendar" size="sm" />
-      </IconBtn>
-      <IconBtn title={descending ? 'Descending' : 'Ascending'} onclick={() => put({ desc: descending ? null : '1' })}>
-        <Glyph name={descending ? 'fold' : 'unfold'} size="sm" />
-      </IconBtn>
-      {#if allTags.length > 0}
-        <IconBtn title="Shelve by tag" active={byTag} onclick={() => put({ by: byTag ? null : 'tag' })}>
-          <Glyph name="tags" size="sm" />
+      {#if view === 'grid'}
+        <Dropdown label="Sort" glyph="sort" value={order} options={ORDERS} onchange={(next) => put({ order: next === 'title' ? null : next })} />
+        <IconBtn title={descending ? 'Descending' : 'Ascending'} onclick={() => put({ desc: descending ? null : '1' })}>
+          <Glyph name={descending ? 'sortnumericdown' : 'sortnumericup'} size="sm" />
         </IconBtn>
+        <Dropdown label="Group by" glyph="group" value={groupBy} options={groupings} onchange={(next) => put({ by: next === 'none' ? null : next })} />
       {/if}
     {/snippet}
-    <IconBtn title="Grid" active={view === 'grid'} onclick={() => put({ view: null })}>
-      <Glyph name="blocks" size="md" />
+    <IconBtn title="Files" active={view === 'grid'} onclick={() => put({ view: null })}>
+      <Glyph name="file" size="md" />
     </IconBtn>
     <IconBtn title="Tree" active={view === 'tree'} onclick={() => put({ view: 'tree' })}>
-      <Glyph name="lines" size="md" />
+      <Glyph name="tree" size="md" />
     </IconBtn>
     <IconBtn title="List" active={view === 'list'} onclick={() => put({ view: 'list' })}>
-      <Glyph name="menu" size="md" />
+      <Glyph name="list" size="md" />
     </IconBtn>
   </ToggleGroup>
 {/snippet}
