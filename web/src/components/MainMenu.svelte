@@ -471,7 +471,7 @@
 
   .dnd-menu-foot {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: flex-start;
     align-items: center;
     gap: var(--space-2);
@@ -596,6 +596,15 @@
   .dnd-menu-user-mail {
     font-size: var(--text-xs);
     color: var(--menu-text-muted);
+  }
+
+  .dnd-menu-foot > :global(.dnd-button) {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .dnd-menu-foot > :global(.dnd-button) > :global(.dnd-button-inner) {
+    min-width: 0;
   }
 
   .dnd-menu-foot-word {
