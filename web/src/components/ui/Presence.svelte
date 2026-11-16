@@ -60,7 +60,7 @@
     {/if}
   {/each}
   {#if rest > 0}
-    <span class="dnd-presence-item dnd-presence-overflow">+{rest}</span>
+    <span class="dnd-presence-item dnd-presence-overflow"><span class="dnd-presence-initials">+{rest}</span></span>
   {/if}
 </span>
 
@@ -69,7 +69,6 @@
     display: inline-flex;
     align-items: center;
     isolation: isolate;
-    block-size: 100%;
   }
 
   .dnd-presence-item {
@@ -80,8 +79,8 @@
     flex: none;
     align-items: center;
     justify-content: center;
-    aspect-ratio: 1;
-    block-size: 100%;
+    inline-size: 2em;
+    block-size: 2em;
     padding: 0;
     border: none;
     border-radius: var(--radius-pill);
@@ -92,7 +91,7 @@
       0 0 0 calc(var(--border-hair) * 2) var(--presence-ring),
       var(--shadow-sm);
     font-family: var(--font-display);
-    font-size: calc(var(--text-xs) * 0.8);
+    font-size: inherit;
     font-weight: 700;
     letter-spacing: var(--tracking-wide);
     color: var(--metal);
@@ -100,7 +99,7 @@
   }
 
   .dnd-presence-item ~ .dnd-presence-item {
-    margin-inline-start: calc(var(--space-2) * -1);
+    margin-inline-start: calc(-2em / 3);
   }
 
   button.dnd-presence-item {
@@ -126,6 +125,10 @@
 
   .dnd-presence-overflow {
     color: var(--ink);
+  }
+
+  .dnd-presence-initials {
+    font-size: 0.8em;
   }
 
   .dnd-presence-item :global(img) {
