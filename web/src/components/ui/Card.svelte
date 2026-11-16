@@ -168,6 +168,7 @@
     left: var(--space-3);
     z-index: 3;
     display: flex;
+    font-size: calc(var(--space-5) / 2);
     transform: translateY(-50%);
   }
 

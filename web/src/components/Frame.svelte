@@ -406,6 +406,7 @@ import Toast from '$components/ui/Toast.svelte'
     gap: var(--space-3);
     height: var(--size-bar);
     padding: 0 var(--space-5);
+    font-size: calc(var(--size-bar) * 0.275);
     background: linear-gradient(180deg, var(--ground-deep) 0%, var(--ground) 70%, var(--ground-raised) 100%);
     z-index: 20;
   }
