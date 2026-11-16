@@ -52,21 +52,19 @@ type Profile struct {
 type Campaign struct {
 	bun.BaseModel `json:"-" bun:"table:campaign"`
 
-	ID            uuid.UUID       `bun:"id,pk" json:"id"`
-	UserID        uuid.UUID       `bun:"-" json:"dm_id"`
-	Name          string          `bun:"-" json:"name"`
-	Description   string          `bun:"-" json:"description"`
-	IsActive      bool            `bun:"is_active" json:"is_active"`
-	Settings      json.RawMessage `bun:"settings,type:jsonb" json:"settings"`
-	DmClaimID     *uuid.UUID      `bun:"-" json:"-"`
-	PlayerClaimID *uuid.UUID      `bun:"-" json:"-"`
-	PlayerIDs     []uuid.UUID     `bun:"-" json:"player_ids"`
-	CharacterIDs  []uuid.UUID     `bun:"-" json:"character_ids"`
-	OwnerID       uuid.UUID       `bun:"sa_owner_id" json:"-"`
-	CreatedBy     *uuid.UUID      `bun:"sa_created_by" json:"-"`
-	CreatedAt     time.Time       `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
-	UpdatedAt     time.Time       `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
-	DeletedAt     bun.NullTime    `bun:"sa_deleted_at,soft_delete,nullzero" json:"-"`
+	ID           uuid.UUID       `bun:"id,pk" json:"id"`
+	DmID         uuid.UUID       `bun:"-" json:"dm_id"`
+	Name         string          `bun:"-" json:"name"`
+	Description  string          `bun:"-" json:"description"`
+	IsActive     bool            `bun:"is_active" json:"is_active"`
+	Settings     json.RawMessage `bun:"settings,type:jsonb" json:"settings"`
+	PlayerIDs    []uuid.UUID     `bun:"-" json:"player_ids"`
+	CharacterIDs []uuid.UUID     `bun:"-" json:"character_ids"`
+	OwnerID      uuid.UUID       `bun:"sa_owner_id" json:"-"`
+	CreatedBy    *uuid.UUID      `bun:"sa_created_by" json:"-"`
+	CreatedAt    time.Time       `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
+	UpdatedAt    time.Time       `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
+	DeletedAt    bun.NullTime    `bun:"sa_deleted_at,soft_delete,nullzero" json:"-"`
 }
 
 type CampaignMap struct {

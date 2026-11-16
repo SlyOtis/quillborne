@@ -193,12 +193,16 @@ func PostMap(ctx echo.Context) error {
 		if err := postOwnerBinding(tctx, tx, w, db.OBJECT_TYPE_CAMPAIGN_MAP, item.ID, sdb.ACCESS_MEMBER); err != nil {
 			return err
 		}
-		want := map[uuid.UUID]sdb.ClaimAccess{}
-		if campaign.DmClaimID != nil {
-			want[*campaign.DmClaimID] = sdb.ACCESS_ALL
+		memberships, err := getMemberships(tctx, []uuid.UUID{campaign.ID})
+		if err != nil {
+			return err
 		}
-		if campaign.PlayerClaimID != nil {
-			want[*campaign.PlayerClaimID] = sdb.ACCESS_READ
+		want := map[uuid.UUID]sdb.ClaimAccess{}
+		if ownerClaim := memberships[campaign.ID].ownerClaim; ownerClaim != nil {
+			want[*ownerClaim] = sdb.ACCESS_ALL
+		}
+		if memberClaim := memberships[campaign.ID].memberClaim; memberClaim != nil {
+			want[*memberClaim] = sdb.ACCESS_READ
 		}
 		return putBindings(tctx, tx, w, db.OBJECT_TYPE_CAMPAIGN_MAP, item.ID, want, nil)
 	}); err != nil {
@@ -439,11 +443,15 @@ func PostEncounter(ctx echo.Context) error {
 		if err := postOwnerBinding(tctx, tx, w, db.OBJECT_TYPE_ENCOUNTER, item.ID, sdb.ACCESS_MEMBER); err != nil {
 			return err
 		}
+		memberships, err := getMemberships(tctx, []uuid.UUID{campaign.ID})
+		if err != nil {
+			return err
+		}
 		fixed := map[uuid.UUID]sdb.ClaimAccess{}
 		managed := []uuid.UUID{}
-		if campaign.DmClaimID != nil {
-			fixed[*campaign.DmClaimID] = sdb.ACCESS_ALL
-			managed = append(managed, *campaign.DmClaimID)
+		if ownerClaim := memberships[campaign.ID].ownerClaim; ownerClaim != nil {
+			fixed[*ownerClaim] = sdb.ACCESS_ALL
+			managed = append(managed, *ownerClaim)
 		}
 		return putShare(tctx, tx, w, db.OBJECT_TYPE_ENCOUNTER, item.ID, &item.Share, fixed, managed)
 	}); err != nil {
@@ -524,11 +532,15 @@ func PutEncounter(ctx echo.Context) error {
 	item.UpdatedAt = time.Now()
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		if w != nil {
+			memberships, err := getMemberships(tctx, []uuid.UUID{campaign.ID})
+			if err != nil {
+				return err
+			}
 			fixed := map[uuid.UUID]sdb.ClaimAccess{}
 			managed := []uuid.UUID{}
-			if campaign.DmClaimID != nil {
-				fixed[*campaign.DmClaimID] = sdb.ACCESS_ALL
-				managed = append(managed, *campaign.DmClaimID)
+			if ownerClaim := memberships[campaign.ID].ownerClaim; ownerClaim != nil {
+				fixed[*ownerClaim] = sdb.ACCESS_ALL
+				managed = append(managed, *ownerClaim)
 			}
 			if err := putShare(tctx, tx, w, db.OBJECT_TYPE_ENCOUNTER, item.ID, &item.Share, fixed, managed); err != nil {
 				return err
@@ -905,12 +917,16 @@ func PostChatEntry(ctx echo.Context) error {
 		if err := postOwnerBinding(tctx, tx, w, db.OBJECT_TYPE_CHAT_ENTRY, entry.ID, sdb.ACCESS_MEMBER); err != nil {
 			return err
 		}
-		want := map[uuid.UUID]sdb.ClaimAccess{}
-		if campaign.DmClaimID != nil {
-			want[*campaign.DmClaimID] = sdb.ACCESS_READ
+		memberships, err := getMemberships(tctx, []uuid.UUID{campaign.ID})
+		if err != nil {
+			return err
 		}
-		if campaign.PlayerClaimID != nil && !entry.IsHidden {
-			want[*campaign.PlayerClaimID] = sdb.ACCESS_READ
+		want := map[uuid.UUID]sdb.ClaimAccess{}
+		if ownerClaim := memberships[campaign.ID].ownerClaim; ownerClaim != nil {
+			want[*ownerClaim] = sdb.ACCESS_READ
+		}
+		if memberClaim := memberships[campaign.ID].memberClaim; memberClaim != nil && !entry.IsHidden {
+			want[*memberClaim] = sdb.ACCESS_READ
 		}
 		return putBindings(tctx, tx, w, db.OBJECT_TYPE_CHAT_ENTRY, entry.ID, want, nil)
 	}); err != nil {
