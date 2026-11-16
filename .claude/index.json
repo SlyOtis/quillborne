@@ -889,6 +889,171 @@
         "parallel",
         "pull request"
       ]
+    },
+    {
+      "path": ".claude/rules/go.md",
+      "kind": "rule",
+      "answers": "How Go is written here: the names, the handler shape, access as three calls, what a route carries, the tests, each with the file and line that shows it, and what is refused.",
+      "keywords": [
+        "go",
+        "handler",
+        "route",
+        "naming",
+        "respond",
+        "body",
+        "model",
+        "wiring",
+        "pattern",
+        "helper",
+        "contract"
+      ]
+    },
+    {
+      "path": ".claude/rules/claimius.md",
+      "kind": "rule",
+      "answers": "How claimius is built, the prophet and the disciple, the middleware from Go, and what Quillborne does and never does with them: a campaign as an organization, membership, roots, no claimius writes in SQL.",
+      "keywords": [
+        "claimius",
+        "claim",
+        "access",
+        "organization",
+        "membership",
+        "member",
+        "middleware",
+        "sauth",
+        "prophet",
+        "disciple",
+        "binding",
+        "grant",
+        "root",
+        "migrate_root",
+        "sdb"
+      ]
+    },
+    {
+      "path": ".claude/rules/sql.md",
+      "kind": "rule",
+      "answers": "The database tree and its four smig steps, how a table is named, registered and commented, what a base file's replay reaches, and that only the local database is a session's.",
+      "keywords": [
+        "sql",
+        "smig",
+        "migration",
+        "database",
+        "table",
+        "column",
+        "base",
+        "comment",
+        "registration",
+        "upsert_table_info",
+        "deployed",
+        "local"
+      ]
+    },
+    {
+      "path": ".claude/rules/tests.md",
+      "kind": "rule",
+      "answers": "The least every route, stream, state group, formula and page is tested with, which kind of test proves which thing, Go, vitest, the browser or hurl, the names, and where a suite may run.",
+      "keywords": [
+        "test",
+        "tests",
+        "minimum",
+        "go test",
+        "vitest",
+        "hurl",
+        "nimon",
+        "walk",
+        "spec",
+        "fixture",
+        "naming",
+        "flaky"
+      ]
+    },
+    {
+      "path": ".claude/agents/go.md",
+      "kind": "agent",
+      "answers": "The Go specialist: consulted before a handler, a route, a model, a state group or a qubo verb is written, and writes it; holds go.md.",
+      "keywords": [
+        "agent",
+        "specialist",
+        "go",
+        "handler",
+        "route",
+        "consult"
+      ]
+    },
+    {
+      "path": ".claude/agents/claimius.md",
+      "kind": "agent",
+      "answers": "The access specialist, read only: answers who may reach a row and how from the pinned middleware's SQL and Go and the reference services; holds claimius.md.",
+      "keywords": [
+        "agent",
+        "specialist",
+        "claimius",
+        "claim",
+        "access",
+        "middleware",
+        "sauth",
+        "consult"
+      ]
+    },
+    {
+      "path": ".claude/agents/sql.md",
+      "kind": "agent",
+      "answers": "The database specialist: consulted before a table or a base file changes, writes the SQL and rebuilds the local database with smig; holds sql.md.",
+      "keywords": [
+        "agent",
+        "specialist",
+        "sql",
+        "smig",
+        "database",
+        "table",
+        "consult"
+      ]
+    },
+    {
+      "path": ".claude/agents/design.md",
+      "kind": "agent",
+      "answers": "The components and design specialist through impeccable: which primitive owns a job, tokens only, builds a page and sees it in the browser; holds components.md, buttons.md and DESIGN.md.",
+      "keywords": [
+        "agent",
+        "specialist",
+        "design",
+        "component",
+        "primitive",
+        "token",
+        "impeccable",
+        "consult"
+      ]
+    },
+    {
+      "path": ".claude/agents/tester.md",
+      "kind": "agent",
+      "answers": "The test specialist: says which kind of test proves a change, holds the minimum, and writes the test or spars with whoever does; holds tests.md.",
+      "keywords": [
+        "agent",
+        "specialist",
+        "tester",
+        "test",
+        "tests",
+        "minimum",
+        "consult"
+      ]
+    },
+    {
+      "path": ".claude/agents/reviewer.md",
+      "kind": "agent",
+      "answers": "Runs the gate part by part, says where each failure is with the file and line of its cause, tells a timeout from a failure by a rerun, and takes a bug task on the board for every real one. Edits no code.",
+      "keywords": [
+        "agent",
+        "reviewer",
+        "review",
+        "gate",
+        "failure",
+        "bug",
+        "task",
+        "board",
+        "flaky"
+      ]
     }
   ]
 }

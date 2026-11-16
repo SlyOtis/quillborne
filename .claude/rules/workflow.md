@@ -6,7 +6,7 @@ description: How work reaches Quillborne when more than one person or session wo
 
 1. Every change reaches `main` through a pull request. Nothing is pushed to `main`, and the ruleset on `main` refuses it. Anyone with write access merges a pull request, and no approval is needed.
 2. Work starts from a task on the board of the `features` skill, one file under `.claude/tasks/features/`, numbered after the last. Before starting, read the board for the same concern; when a task holds it, the work joins that task instead of starting a second one. A new concern is taken as its own task first, and no GitHub issue is made for it.
-3. A task is held by the agent whose worktree builds it; its `agent` line says who. A task that arrives for a surface an agent already holds joins that agent and its branch, never a second tree.
+3. A task is held by the agent whose worktree builds it; its `agent` line says who. A task that arrives for a surface an agent already holds joins that agent and its branch, never a second tree. Before it writes, that agent consults the specialists under `.claude/agents/` the task touches, and a specialist's "this is not a pattern" goes to the user: `features` skill 5.1 to 5.4.
 4. One task, one branch, `feat/<number>-<slug>`, cut from the newest `main`. Open the pull request, never as a draft.
 5. A pull request stays inside its task. A finding outside it is a new task, never a change folded in.
 6. Before a pull request is opened, it is up to date with `main` and `just gate` is clean: zero errors and zero warnings.
