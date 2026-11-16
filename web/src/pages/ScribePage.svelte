@@ -394,7 +394,7 @@
 {/snippet}
 
 <Shell drawers title="Scribe" width="full" {backdrop}>
-  <div class="scribe">
+  {#snippet band()}
     <PageHead
       title="Scribe"
       count={open ? undefined : shown.length}
@@ -406,7 +406,9 @@
       view={open ? undefined : views}
       bottom={open && strip ? bottom : undefined}
     />
+  {/snippet}
 
+  <div class="scribe">
     <Router {routes} fallback={() => import('./NotFoundPage.svelte')}>
       <div class="dnd-loading"><span class="dnd-spinner"></span></div>
     </Router>

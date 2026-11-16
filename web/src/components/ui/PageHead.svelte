@@ -6,7 +6,7 @@
 </script>
 
 <script lang="ts">
-  import type { Snippet } from 'svelte'
+  import { tick, type Snippet } from 'svelte'
 
   const {
     title = '',
@@ -25,7 +25,7 @@
     title?: string
     /** A figure written beside the heading. */
     count?: string | number
-    /** A line under the centre that says what the page holds. */
+    /** A line under the centre that says what the page holds; it folds away as the head collapses. */
     description?: string
     /** The way back, each a step the reader may press; the open page is the heading and never a crumb. */
     crumbs?: Crumb[]
@@ -41,15 +41,128 @@
     tools?: Snippet
     /** The view toggle and its options at the end of the content row. */
     view?: Snippet
-    /** The strip along the bottom edge: the page tabs. */
+    /** The strip along the bottom edge: the page tabs, which survive the collapse. */
     bottom?: Snippet
   } = $props()
 
+  const COLLAPSE_AT = 36
+  const EXPAND_AT = 10
+  const SETTLE = 400
+  const DURATION_SLOW = 350
+  const DURATION_FAST = 120
+  const SPEED_SLOW = 1
+  const SPEED_FAST = 4
+  const SPEED_WINDOW = 100
+  const SPEED_SAMPLES = 4
+  const FRAME = 1000 / 60
+
   const named = $derived(crumbs.filter((one) => one.title.trim()))
+
+  let headerEl = $state<HTMLElement>()
+  let lineEl = $state<HTMLElement>()
+  let bottomEl = $state<HTMLElement>()
+  let scroller = $state<HTMLElement | null>(null)
+  let collapsed = $state(false)
+  let duration = $state<string>()
+  let transitioning = false
+  let settle = 0
+  const samples: { y: number; t: number }[] = []
+
+  const sample = (y: number, t: number) => {
+    const last = samples[samples.length - 1]
+    if (last && t - last.t > SPEED_WINDOW) samples.splice(0, samples.length, { y: last.y, t: t - FRAME })
+    samples.push({ y, t })
+    if (samples.length > SPEED_SAMPLES) samples.shift()
+  }
+
+  const speed = () => {
+    const first = samples[0]
+    const last = samples[samples.length - 1]
+    if (!first || !last || last.t <= first.t) return 0
+    return Math.abs(last.y - first.y) / (last.t - first.t)
+  }
+
+  const headerDuration = (rate: number) => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return '0s'
+    const share = Math.min(1, Math.max(0, (rate - SPEED_SLOW) / (SPEED_FAST - SPEED_SLOW)))
+    return `${Math.round(DURATION_SLOW - (DURATION_SLOW - DURATION_FAST) * share) / 1000}s`
+  }
+
+  const scrollerOf = (el: HTMLElement) => {
+    let node = el.parentElement
+    while (node && !/auto|scroll/.test(getComputedStyle(node).overflowY)) node = node.parentElement
+    return node
+  }
+
+  const gained = () => {
+    if (!headerEl || !lineEl) return 0
+    const pad = parseFloat(getComputedStyle(headerEl).getPropertyValue('--space-2'))
+    return headerEl.offsetHeight - lineEl.offsetHeight - (bottomEl?.offsetHeight ?? 0) - pad * 2
+  }
+
+  const canCollapse = (scroller: HTMLElement, top: number) => {
+    if (top <= EXPAND_AT || top < COLLAPSE_AT) return false
+    return scroller.scrollHeight - scroller.clientHeight - gained() > EXPAND_AT
+  }
+
+  const follow = (top: number) => {
+    if (!scroller) return
+    if (!collapsed) {
+      if (canCollapse(scroller, top)) setCollapsed(true)
+    } else if (top <= EXPAND_AT) setCollapsed(false)
+  }
+
+  const setCollapsed = (next: boolean) => {
+    transitioning = true
+    duration = headerDuration(speed())
+    collapsed = next
+    window.clearTimeout(settle)
+    settle = window.setTimeout(() => {
+      transitioning = false
+      if (scroller) follow(scroller.scrollTop)
+    }, SETTLE)
+  }
+
+  const onScroll = (event: Event) => {
+    if (!scroller) return
+    const top = scroller.scrollTop
+    sample(top, event.timeStamp)
+    if (!transitioning) follow(top)
+  }
+
+  $effect(() => {
+    if (!headerEl) return
+    const found = scrollerOf(headerEl)
+    if (!found) return
+    scroller = found
+    sample(found.scrollTop, performance.now())
+    found.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      found.removeEventListener('scroll', onScroll)
+      window.clearTimeout(settle)
+      scroller = null
+    }
+  })
+
+  $effect(() => {
+    void [title, heading, crumbs, center, description, tools, view, bottom]
+    void tick().then(() => {
+      if (!scroller) return
+      window.clearTimeout(settle)
+      transitioning = false
+      follow(scroller.scrollTop)
+    })
+  })
 </script>
 
-<header class="dnd-band dnd-pagehead" class:dnd-pagehead-tabbed={Boolean(bottom)}>
-  <div class="dnd-band-line dnd-pagehead-line">
+<header
+  bind:this={headerEl}
+  class="dnd-band dnd-pagehead"
+  class:dnd-pagehead-tabbed={Boolean(bottom)}
+  class:dnd-pagehead-collapsed={collapsed}
+  style:--pagehead-duration={duration}
+>
+  <div bind:this={lineEl} class="dnd-band-line dnd-pagehead-line">
     <div class="dnd-pagehead-title">
       {#if heading}
         {@render heading()}
@@ -66,62 +179,86 @@
   </div>
 
   {#if named.length > 0}
-    <nav class="dnd-label dnd-pagehead-crumbs" aria-label="Where this sits">
-      {#each named as step, index (step.id)}
-        {#if index > 0}<span class="dnd-pagehead-crumb-mark" aria-hidden="true">/</span>{/if}
-        {#if oncrumb}
-          <button type="button" class="dnd-pagehead-crumb dnd-pagehead-crumb-step" onclick={() => oncrumb(step.id)}>{step.title}</button>
-        {:else}
-          <span class="dnd-pagehead-crumb">{step.title}</span>
-        {/if}
-      {/each}
-    </nav>
+    <div class="dnd-pagehead-fold">
+      <nav class="dnd-label dnd-pagehead-crumbs" aria-label="Where this sits">
+        {#each named as step, index (step.id)}
+          {#if index > 0}<span class="dnd-pagehead-crumb-mark" aria-hidden="true">/</span>{/if}
+          {#if oncrumb}
+            <button type="button" class="dnd-pagehead-crumb dnd-pagehead-crumb-step" onclick={() => oncrumb(step.id)}>{step.title}</button>
+          {:else}
+            <span class="dnd-pagehead-crumb">{step.title}</span>
+          {/if}
+        {/each}
+      </nav>
+    </div>
   {/if}
 
   {#if center}
-    <div class="dnd-pagehead-center">{@render center()}</div>
+    <div class="dnd-pagehead-fold">
+      <div class="dnd-pagehead-center">{@render center()}</div>
+    </div>
   {/if}
 
   {#if description}
-    <p class="dnd-pagehead-lede">{description}</p>
+    <div class="dnd-pagehead-fold">
+      <p class="dnd-pagehead-lede">{description}</p>
+    </div>
   {/if}
 
   {#if tools || view}
-    <div class="dnd-pagehead-row">
-      {#if tools}
-        <div class="dnd-pagehead-tools">{@render tools()}</div>
-      {/if}
-      {#if view}
-        <div class="dnd-pagehead-view">{@render view()}</div>
-      {/if}
+    <div class="dnd-pagehead-fold">
+      <div class="dnd-pagehead-row">
+        {#if tools}
+          <div class="dnd-pagehead-tools">{@render tools()}</div>
+        {/if}
+        {#if view}
+          <div class="dnd-pagehead-view">{@render view()}</div>
+        {/if}
+      </div>
     </div>
   {/if}
 
   {#if bottom}
-    <div class="dnd-pagehead-bottom">{@render bottom()}</div>
+    <div bind:this={bottomEl} class="dnd-pagehead-bottom">{@render bottom()}</div>
   {/if}
 </header>
 
 <style>
   .dnd-pagehead {
     --pagehead-pad: var(--space-6);
+    --pagehead-ease: cubic-bezier(0.4, 0, 0.2, 1);
     display: grid;
+    align-content: center;
     gap: var(--space-3);
+    margin: 0;
+    padding: var(--pagehead-pad);
+    transition:
+      padding var(--pagehead-duration, 0.35s) var(--pagehead-ease),
+      row-gap var(--pagehead-duration, 0.35s) var(--pagehead-ease);
   }
 
   .dnd-pagehead-tabbed {
     padding-block-end: 0;
   }
 
+  .dnd-pagehead-collapsed {
+    padding-block: var(--space-2);
+    row-gap: 0;
+  }
+
+  .dnd-pagehead-collapsed.dnd-pagehead-tabbed {
+    padding-block-end: 0;
+  }
+
   .dnd-pagehead-line {
-    align-items: flex-start;
+    align-items: center;
   }
 
   .dnd-pagehead-title {
     display: flex;
     flex: 1;
     flex-wrap: wrap;
-    align-items: baseline;
+    align-items: center;
     gap: var(--space-1) var(--space-3);
     min-width: 0;
   }
@@ -132,12 +269,44 @@
     overflow-wrap: anywhere;
   }
 
+  .dnd-pagehead-name,
+  .dnd-pagehead-title > :global(.dnd-heading-hero) {
+    transition: font-size var(--pagehead-duration, 0.35s) var(--pagehead-ease);
+  }
+
+  .dnd-pagehead-collapsed .dnd-pagehead-name,
+  .dnd-pagehead-collapsed .dnd-pagehead-title > :global(.dnd-heading-hero) {
+    font-size: var(--text-xl);
+  }
+
   .dnd-pagehead-count {
     flex: none;
     font-family: var(--font-figures);
     font-size: var(--text-sm);
     letter-spacing: var(--tracking-wide);
     color: var(--ink-faint);
+  }
+
+  .dnd-pagehead-fold {
+    display: grid;
+    grid-template-rows: 1fr;
+    min-width: 0;
+    opacity: 1;
+    transition:
+      grid-template-rows var(--pagehead-duration, 0.35s) var(--pagehead-ease),
+      opacity var(--pagehead-duration, 0.35s) var(--pagehead-ease);
+  }
+
+  .dnd-pagehead-fold > * {
+    min-height: 0;
+    overflow: clip;
+  }
+
+  .dnd-pagehead-collapsed .dnd-pagehead-fold {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    overflow: clip;
+    pointer-events: none;
   }
 
   .dnd-pagehead-crumbs {

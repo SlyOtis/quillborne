@@ -83,8 +83,7 @@
     margin-inline: calc(var(--togglegroup-radius) * -1) 0;
   }
 
-  .dnd-togglegroup-toggle > :global(.dnd-iconbtn),
-  .dnd-togglegroup-acts > :global(.dnd-iconbtn) {
+  .dnd-togglegroup-toggle > :global(.dnd-iconbtn) {
     inline-size: auto;
     block-size: auto;
     padding: var(--space-1) var(--space-2);
@@ -92,7 +91,8 @@
   }
 
   .dnd-togglegroup-acts > :global(.dnd-iconbtn) {
-    border-radius: calc(var(--togglegroup-radius) - var(--border-hair));
+    padding: var(--space-1);
+    border-radius: var(--radius-pill);
   }
 
   .dnd-togglegroup-toggle > :global(.dnd-iconbtn + .dnd-iconbtn) {
