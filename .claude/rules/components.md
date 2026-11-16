@@ -41,3 +41,30 @@ The look is `DESIGN.md`: the tokens, the five skins and the named rules. `Shell`
 A clickable card is a `<button>`, not a div with a handler. A file drop zone carries a role and an `aria-label`. Every control a `Field` wraps carries the id the `Field` points at.
 
 `just check` is zero warnings. An a11y warning is a regression, not a note.
+
+## Names
+
+A name is the user's: a component, a prop, a variant value or a token is proposed and written only once it has been said. A component is named for what it is, one or two words, with no prefix beyond the `dnd-` of its root class.
+
+## Brought in from another library
+
+A piece brought in from another library takes no prefix from it and is brought up in place as code of this repo: rewritten on the tokens, the primitives and the authoring rules above, never imported and wrapped. It keeps its job, its states and its keyboard behaviour; it loses its own colours, sizes and shell.
+
+## The one of each
+
+One dialog shell, `web/src/components/BaseDialog.svelte`. One tooltip, drawn top most by `web/src/components/Frame.svelte`; no component draws its own with `[title]::after`. One page head, `PageHead` in `web/src/components/ui/`, which collapses on scroll. A second of any of them is drift to remove.
+
+## Layout
+
+A layout is relative: flexbox or grid, a fraction, a percentage or `fr`, clamped with `min-*`, `max-*` or `clamp()`. Never a measured pixel size. The row decides how large a control is; a size is a property of where a primitive sits, `buttons.md`.
+
+## Good and bad
+
+- Good: a `Button` that will not fit gets a prop on `Button`, or the fix lands in `Button`. Bad: a `<span>` or a `<div>` around it with flex, padding or a width.
+- Good: a new colour is a token in `:root` and in all five themes. Bad: a hex, an `rgb()` or a branch on `data-theme` in a component.
+- Good: state a reader can return to lives in a query parameter. Bad: a view, a sort or a selection kept only in component state.
+- Good: a page shows what the api answered. Bad: a component that filters rows by who may see them.
+
+## Seen before done
+
+A page is seen in the browser before it is called done: the stack of this worktree on its own slot through the `run` skill, the page opened with the `nimon` skill at a narrow and a wide width, and in a second theme when a colour changed.

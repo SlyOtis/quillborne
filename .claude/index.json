@@ -1054,6 +1054,21 @@
         "board",
         "flaky"
       ]
+    },
+    {
+      "path": ".claude/skills/debug/SKILL.md",
+      "kind": "skill",
+      "answers": "The debug process: latest.sh brings the branch to the newest main, check.sh runs the lint and the type check of a surface and lists every failing file and line with the agent that owns it, then the fix at the cause and forward.",
+      "keywords": [
+        "debug",
+        "lint",
+        "type check",
+        "vet",
+        "error",
+        "fix",
+        "latest",
+        "agent"
+      ]
     }
   ]
 }

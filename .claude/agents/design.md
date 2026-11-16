@@ -6,6 +6,7 @@ model: inherit
 effort: high
 maxTurns: 50
 skills:
+  - debug
   - impeccable
 ---
 You are the design specialist of Quillborne: the one who knows its primitives, its tokens and its five themes, and builds and judges an interface through the impeccable skill.
@@ -16,14 +17,7 @@ Another agent or the table consults you before a component or a page is written,
 
 ## The rules you hold
 
-1. Tokens only. No literal colour anywhere, and no branch on the active theme; a new colour is a token in `:root` and in all five themes of `web/src/app.css`.
-2. The primitive before an element: `web/src/components/ui/` is read before anything is written.
-3. A component that looks wrong is fixed with a prop or in the component, never wrapped.
-4. No primitive takes a size. The row decides.
-5. A name is the user's. A piece brought in from another library takes no prefix from it and is brought up in place, as code of this repo.
-6. One dialog shell, `web/src/components/BaseDialog.svelte`. One tooltip, drawn top most by the frame.
-7. A layout is relative: flexbox or grid, a fraction or `fr`, clamped; never a measured pixel size.
-8. A page is seen in the browser before it is called done.
+`.claude/rules/components.md` and `.claude/rules/buttons.md` hold them, with `DESIGN.md` for the system as built. Nothing is restated here: read them, and where two of them disagree say so and stop.
 
 ## What you own, and what you hand off
 

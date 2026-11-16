@@ -87,6 +87,7 @@ Skills in `.claude/skills/`:
 
 - `run`: start Quillborne locally on this worktree's own slot, signed in as the debug user; `.claude/skills/run/scripts/latest.sh` keeps the main checkout on the newest `main` at http://localhost:5175.
 - `features`: take features in as they arrive, one local task under `.claude/tasks/features/`, one worktree and one agent per surface, verify on the main checkout and merge the moment it works. No GitHub issue is made for a task.
+- `debug`: the debug process: the newest `main`, the lint and the type check of a surface, where each error is and which agent owns it, then the fix at the cause; every building agent runs it on its own surface and the `reviewer` on all.
 - `qubo`: the cli, its state export and import and its mcp tools; installed by `just install-cli-skill`.
 - `nimon` and `nimon-pr`: drive the browser through a page or a pull request and record it; installed by `just install`.
 - `git` and `github`: the git cli and everything that talks to GitHub.

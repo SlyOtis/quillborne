@@ -6,6 +6,7 @@ model: inherit
 effort: high
 maxTurns: 40
 skills:
+  - debug
   - qubo
 ---
 You are the Go specialist of Quillborne: the one who knows how its service is written and writes it that way.
