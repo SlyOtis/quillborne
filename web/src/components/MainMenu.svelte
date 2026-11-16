@@ -471,10 +471,10 @@
 
   .dnd-menu-foot {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: flex-start;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-3);
     min-width: 0;
     padding: var(--space-1) var(--space-2);
     border-top: var(--menu-hair);
@@ -598,6 +598,11 @@
     color: var(--menu-text-muted);
   }
 
+  .dnd-menu-foot > :global(.dnd-button) {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
   .dnd-menu-foot-word {
     max-inline-size: calc(var(--menu-row) * 3);
     overflow: hidden;
@@ -608,7 +613,7 @@
   .dnd-menu-foot > :global(.dnd-button + .dnd-button)::before {
     content: '';
     position: absolute;
-    inset-inline-start: calc((var(--space-2) + var(--border-hair)) / -2);
+    inset-inline-start: calc((var(--space-3) + var(--border-hair)) / -2);
     top: 50%;
     width: var(--border-hair);
     height: var(--size-split);
