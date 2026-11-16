@@ -5,7 +5,7 @@
   import { user } from "$lib/stores/auth.store";
   import type { Campaign, Profile } from "$lib/api/types";
   import Card from "$components/ui/Card.svelte";
-  import { getCampaignPicture } from '$lib/api';
+  import { getObjectPicture } from '$lib/api';
 
   let {
     loading = false,
@@ -38,7 +38,7 @@
 
   $effect(() => {
     const held = $userCampaigns;
-    Promise.all(held.map(async (entry) => [entry.id, await getCampaignPicture(entry.id)] as const)).then((pairs) => {
+    Promise.all(held.map(async (entry) => [entry.id, await getObjectPicture('campaign', entry.id)] as const)).then((pairs) => {
       pictures = Object.fromEntries(pairs);
     });
   });

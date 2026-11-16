@@ -44,7 +44,7 @@
     view?: Snippet
     /** The strip along the bottom edge: the page tabs, which survive the collapse. */
     bottom?: Snippet
-    /** The picture painted across the band behind the title, under the band's veil; it folds with the head. */
+    /** The picture painted across the band behind the title, under a scrim that shades its edges; it folds with the head. */
     banner?: Snippet
   } = $props()
 
@@ -265,7 +265,13 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: var(--band-veil);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--shadow-ink) 72%, transparent) 0%,
+      color-mix(in srgb, var(--shadow-ink) 22%, transparent) 40%,
+      color-mix(in srgb, var(--shadow-ink) 28%, transparent) 60%,
+      color-mix(in srgb, var(--shadow-ink) 82%, transparent) 100%
+    );
   }
 
   .dnd-pagehead-banner-clip > :global(*) {
@@ -282,14 +288,30 @@
     object-fit: cover;
   }
 
-  .dnd-pagehead-banner .dnd-pagehead-crumbs,
+  .dnd-pagehead-banner .dnd-pagehead-crumb,
+  .dnd-pagehead-banner .dnd-pagehead-crumb-mark,
   .dnd-pagehead-banner .dnd-pagehead-count,
   .dnd-pagehead-banner .dnd-pagehead-lede {
+    color: var(--ink);
     text-shadow: 0 1px 0 var(--shadow-ink), 0 0 var(--space-3) var(--shadow-ink);
   }
 
-  .dnd-pagehead-banner .dnd-pagehead-lede {
-    color: var(--ink);
+  .dnd-pagehead-banner .dnd-pagehead-crumb-step:hover {
+    color: var(--metal-bright);
+  }
+
+  .dnd-pagehead-banner .dnd-pagehead-crumbs {
+    justify-self: start;
+    max-inline-size: 100%;
+    padding-inline: var(--space-2);
+    border-radius: var(--radius-sm);
+  }
+
+  .dnd-pagehead-banner .dnd-pagehead-crumbs,
+  .dnd-pagehead-banner .dnd-band-acts > :global(.dnd-iconbtn) {
+    background: color-mix(in srgb, var(--shadow-ink) 45%, transparent);
+    -webkit-backdrop-filter: blur(var(--space-2)) saturate(1.2);
+    backdrop-filter: blur(var(--space-2)) saturate(1.2);
   }
 
   .dnd-pagehead-line,

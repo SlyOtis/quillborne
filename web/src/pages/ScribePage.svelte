@@ -42,7 +42,8 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { navigate, resolvedRoute, Router, type Routes } from 'sly-svelte-location-router'
-  import { getCampaigns } from '$lib/api'
+  import { getAssets, getCampaigns, getObjectPicture, postFile, putObjectPicture } from '$lib/api'
+  import type { MediaAsset } from '$lib/blocks'
   import { getAll, getChildren, getRoots, getTrail, postOne, putOne } from '$lib/resources'
   import { currentCampaignId, userCampaigns } from '$lib/stores/campaign.store'
   import { user } from '$lib/stores/auth.store'
@@ -51,6 +52,7 @@
   import PageHead, { type Crumb } from '$components/ui/PageHead.svelte'
   import PageTab, { type PageTabItem } from '$components/ui/PageTab.svelte'
   import StoredImage from '$components/ui/StoredImage.svelte'
+  import MediaDialog from '$components/MediaDialog.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
   import Glyph from '$components/ui/Glyph.svelte'
   import SearchInput from '$components/ui/SearchInput.svelte'
@@ -250,6 +252,35 @@
     void putOne(owner, 'entries', open.id, next).catch((reason) => postNotice(reason instanceof Error ? reason.message : String(reason)))
   }
 
+  let picture = $state('')
+  let picking = $state(false)
+
+  $effect(() => {
+    const id = openId
+    let stale = false
+    picture = ''
+    if (!id) return
+    getObjectPicture('resource', id)
+      .then((url) => {
+        if (!stale) picture = url
+      })
+      .catch((reason) => postNotice(reason instanceof Error ? reason.message : String(reason)))
+    return () => {
+      stale = true
+    }
+  })
+
+  async function putBanner(asset: MediaAsset | null) {
+    picking = false
+    if (!asset || !open) return
+    try {
+      await putObjectPicture(asset.id, 'resource', open.id)
+      picture = asset.url
+    } catch (reason) {
+      postNotice(reason instanceof Error ? reason.message : String(reason))
+    }
+  }
+
   function follow(reference: Reference) {
     if (reference.mark === '#') {
       const next = new URLSearchParams($resolvedRoute.search ?? '')
@@ -332,6 +363,9 @@
 {#snippet actions()}
   {#if table.saving}<span class="dnd-spinner scribe-saving"></span>{/if}
   {#if open}
+    <IconBtn title={picture ? 'Change banner' : 'Set banner'} onclick={() => (picking = true)}>
+      <Glyph name="image" size="md" />
+    </IconBtn>
     <ToggleGroup label="Mode">
       <IconBtn title="Edit" active={mode === 'edit'} onclick={() => show(open.id, 'edit')}>
         <Glyph name="edit" size="md" />
@@ -395,9 +429,7 @@
 {/snippet}
 
 {#snippet banner()}
-  {#if open?.image}
-    <StoredImage src={open.image} alt="" />
-  {/if}
+  <StoredImage src={picture} alt="" />
 {/snippet}
 
 <Shell drawers title="Scribe" width="full" {backdrop}>
@@ -412,7 +444,7 @@
       center={open ? undefined : center}
       view={open ? undefined : views}
       bottom={open && strip ? bottom : undefined}
-      banner={open?.image ? banner : undefined}
+      banner={open && picture ? banner : undefined}
     />
   {/snippet}
 
@@ -422,6 +454,16 @@
     </Router>
   </div>
 </Shell>
+
+{#if picking}
+  <MediaDialog
+    kind="image"
+    current={picture}
+    getAssets={(query, kind) => getAssets(query, kind, { kind: 'user' })}
+    uploadFile={(file) => postFile(file, { kind: 'user' })}
+    onclose={putBanner}
+  />
+{/if}
 
 <style>
   .scribe-ground {

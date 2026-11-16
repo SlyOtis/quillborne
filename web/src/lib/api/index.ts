@@ -290,8 +290,8 @@ export const getCampaign = (campaignId: string) =>
 
 export const getCampaigns = () => apiGet<Campaign[]>('campaign')
 
-export async function getCampaignPicture(campaignId: string): Promise<string> {
-  const held = (await getObjectAssets('campaign', campaignId)) ?? []
+export async function getObjectPicture(objectType: string, objectId: string): Promise<string> {
+  const held = (await getObjectAssets(objectType, objectId)) ?? []
   const picture = held.find((link) => link.asset?.mime_type.startsWith('image/'))
   return picture ? getMediaUrl(picture.asset_id) : ''
 }
@@ -610,6 +610,14 @@ export const getObjectAssets = (objectType: string, objectId: string) =>
 
 export const postObjectAsset = (assetId: string, objectType: string, objectId: string) =>
   apiPost<ObjectAsset>(`asset/${assetId}/object`, { object_type: objectType, object_id: objectId })
+
+export async function putObjectPicture(assetId: string, objectType: string, objectId: string): Promise<void> {
+  const held = (await getObjectAssets(objectType, objectId)) ?? []
+  const picture = held.find((link) => link.asset?.mime_type.startsWith('image/'))
+  if (picture?.asset_id === assetId) return
+  if (picture) await apiDelete(`asset/${picture.asset_id}/object/${picture.id}`)
+  await postObjectAsset(assetId, objectType, objectId)
+}
 
 export async function putAttachments(resourceId: string, content: string): Promise<void> {
   const wanted = new Set(getBlockAssets(getDocument(content).blocks))
