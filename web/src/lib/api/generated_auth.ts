@@ -6,11 +6,16 @@
 export const CodeCookie = "__Host-sauth_samk";
 export type CodeKind = string;
 export const CODE_KIND_INVITE: CodeKind = "invite";
-export const CODE_KIND_GUEST: CodeKind = "guest";
-export type GuestMode = string;
-export const GUEST_MODE_OPEN: GuestMode = "open";
-export const GUEST_MODE_CODE: GuestMode = "code";
-export const GUEST_MODE_OFF: GuestMode = "off";
+export interface ClaimOptionsSamk {
+  value?: string;
+  hash?: string;
+  query: boolean;
+  header: boolean;
+  cookie: boolean;
+}
+export interface ClaimOptions {
+  samk?: ClaimOptionsSamk;
+}
 export interface Code {
   BaseModel: any /* bun.BaseModel */;
   id: string;
@@ -33,9 +38,6 @@ export interface Code {
 export interface CodeAccess {
   Code: Code;
   app_id?: string;
-  guest_mode: GuestMode;
-  guest_user_id?: string;
-  guest_user_claim_id?: string;
 }
 export interface BodyCode {
   kind: CodeKind;
@@ -60,13 +62,6 @@ export interface BodySamCodeHash {
 export interface BodySamCodeActor {
   user_id: string;
 }
-export interface BodyClaimGuest {
-  mode: GuestMode;
-}
-export interface BodySamClaimGuest {
-  user_id: string;
-  mode: GuestMode;
-}
 export interface CodeCreated {
   Code: Code;
   value: string;
@@ -74,11 +69,6 @@ export interface CodeCreated {
 }
 export interface CodeRedeemed {
   code: Code;
-  user_claim: UserClaim;
-}
-export interface ClaimGuest {
-  claim: Claim;
-  samna_user: SamnaUser;
   user_claim: UserClaim;
 }
 
@@ -123,14 +113,15 @@ export const OBJECT_TYPE_APP_COST = "claimius.app_cost";
 export const OBJECT_TYPE_CODE = "claimius.code";
 export type OrganizationType = string;
 export const ORGANIZATION_TYPE_SYSTEM: OrganizationType = "system";
-export const ORGANIZATION_TYPE_COMPANY: OrganizationType = "company";
-export const ORGANIZATION_TYPE_CHILD: OrganizationType = "child";
+export const ORGANIZATION_TYPE_CUSTOMER: OrganizationType = "customer";
+export const ORGANIZATION_TYPE_ENTITY: OrganizationType = "entity";
 export type LocationType = string;
 export type UserType = string;
 export const USER_TYPE_USER: UserType = "user";
 export const USER_TYPE_CLIENT: UserType = "client";
 export const USER_TYPE_SYSTEM: UserType = "system";
 export const USER_TYPE_GUEST: UserType = "guest";
+export const USER_TYPE_ANONYMOUS: UserType = "anonymous";
 export type UserStatus = string;
 export const USER_STATUS_ACTIVE: UserStatus = "active";
 export const USER_STATUS_PENDING: UserStatus = "pending";
@@ -162,7 +153,6 @@ export interface SamnaUserToken {
   id_claim?: string;
   user?: SamnaUser;
   claim_id?: string;
-  app_id?: string;
   reason?: string;
   owner_id?: string;
   created_by?: string;
@@ -170,7 +160,14 @@ export interface SamnaUserToken {
 export interface SamnaUserExternal {
   user?: SamnaUser;
   claim_id?: string;
-  app_id?: string;
+  reason?: string;
+  owner_id?: string;
+  created_by?: string;
+}
+export interface SamnaUserGuest {
+  user?: SamnaUser;
+  claim_id?: string;
+  ends_at?: string;
   reason?: string;
   owner_id?: string;
   created_by?: string;
@@ -195,7 +192,8 @@ export interface Organization {
   id: string;
   name: string;
   description?: string;
-  type: OrganizationType;
+  kind?: string;
+  type?: OrganizationType;
   owner_id: string;
   root_id: string;
   location_id?: string;
@@ -239,7 +237,6 @@ export interface Claim {
   inherits: boolean;
   level: number /* int */;
   type: ClaimType;
-  guest_mode?: GuestMode;
   owner_id: string;
   root_id: string;
   created_by?: string;
@@ -271,6 +268,7 @@ export interface UserClaim {
   reason?: string;
   starts_at?: string;
   ends_at?: string;
+  options?: any;
   owner_id: string;
   created_by: string;
   deleted_at?: string;

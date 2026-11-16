@@ -100,7 +100,7 @@ func PostClaim(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusBadRequest, "access must be a grant mask")
 	}
 	rctx := ctx.Request().Context()
-	w, err := postWriter(rctx, actorID)
+	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
@@ -144,7 +144,7 @@ func PostClaimUser(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	w, err := postWriter(rctx, actorID)
+	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
@@ -184,7 +184,7 @@ func DeleteClaimUser(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	w, err := postWriter(rctx, actorID)
+	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
@@ -234,7 +234,7 @@ func PostClaimObject(ctx echo.Context) error {
 	if body.Access != nil {
 		access = *body.Access
 	}
-	w, err := postWriter(rctx, actorID)
+	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
@@ -280,7 +280,7 @@ func DeleteClaimObject(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	w, err := postWriter(rctx, actorID)
+	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}

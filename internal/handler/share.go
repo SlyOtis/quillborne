@@ -19,12 +19,15 @@ type Writer struct {
 	Access  *sdb.AccessClaim
 }
 
-func postWriter(ctx context.Context, actorID uuid.UUID) (*Writer, error) {
-	ownerID, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID"))
+func postWriter(ctx context.Context, actorID uuid.UUID, ownerID *uuid.UUID) (*Writer, error) {
+	serverOwnerID, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID"))
 	if err != nil {
 		return nil, errNoOwner
 	}
-	ac, err := sdb.Instance().MutationAccess(ctx, actorID, ownerID, sdb.OBJECT_TYPE_ORGANIZATION, sdb.ACCESS_EXECUTE)
+	if ownerID == nil {
+		ownerID = &serverOwnerID
+	}
+	ac, err := sdb.Instance().MutationAccess(ctx, actorID, serverOwnerID, sdb.OBJECT_TYPE_ORGANIZATION, sdb.ACCESS_EXECUTE)
 	if err != nil {
 		return nil, err
 	}
@@ -32,8 +35,8 @@ func postWriter(ctx context.Context, actorID uuid.UUID) (*Writer, error) {
 		return nil, sdb.ErrNoAccess
 	}
 	stamp := *ac
-	stamp.OwnerID = ownerID
-	return &Writer{ActorID: actorID, OwnerID: ownerID, Access: &stamp}, nil
+	stamp.OwnerID = *ownerID
+	return &Writer{ActorID: actorID, OwnerID: *ownerID, Access: &stamp}, nil
 }
 
 func postOwnerBinding(ctx context.Context, tx bun.Tx, w *Writer, objectType string, objectID uuid.UUID, access sdb.ClaimAccess) error {
@@ -190,8 +193,8 @@ func putShare(ctx context.Context, tx bun.Tx, w *Writer, objectType string, obje
 	}
 	read := sdb.ACCESS_READ
 	if len(share.ShareCampaigns) > 0 {
-		campaigns := make([]db.Campaign, 0)
-		if err := tx.NewSelect().Model(&campaigns).Where("id IN (?)", bun.In(share.ShareCampaigns)).Scan(ctx); err != nil {
+		campaigns, err := getCampaigns(ctx, share.ShareCampaigns)
+		if err != nil {
 			return err
 		}
 		for _, campaign := range campaigns {
@@ -225,11 +228,9 @@ func putShare(ctx context.Context, tx bun.Tx, w *Writer, objectType string, obje
 	}
 	previous := make([]uuid.UUID, 0)
 	if err := tx.NewRaw("SELECT unnest(share_campaigns) FROM ? WHERE id = ?", bun.Ident(objectTypeTable(objectType)), objectID).Scan(ctx, &previous); err == nil {
-		campaigns := make([]db.Campaign, 0)
-		if len(previous) > 0 {
-			if err := tx.NewSelect().Model(&campaigns).Where("id IN (?)", bun.In(previous)).Scan(ctx); err != nil {
-				return err
-			}
+		campaigns, err := getCampaigns(ctx, previous)
+		if err != nil {
+			return err
 		}
 		for _, campaign := range campaigns {
 			for _, claimID := range []*uuid.UUID{campaign.DmClaimID, campaign.PlayerClaimID} {
@@ -282,8 +283,8 @@ func getPageShare(ctx context.Context, objectType string, objectIDs []uuid.UUID)
 		return shared, nil
 	}
 	if objectType == db.OBJECT_TYPE_CAMPAIGN {
-		campaigns := make([]db.Campaign, 0)
-		if err := db.Instance().NewSelect().Model(&campaigns).Column("dm_claim_id", "player_claim_id").Where("id IN (?)", bun.In(objectIDs)).Scan(ctx); err != nil {
+		campaigns, err := getCampaigns(ctx, objectIDs)
+		if err != nil {
 			return nil, err
 		}
 		for _, campaign := range campaigns {

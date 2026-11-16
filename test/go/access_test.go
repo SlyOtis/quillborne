@@ -516,8 +516,8 @@ func TestAPageMovesOnlyUnderAPageItsMoverReads(t *testing.T) {
 	if err := json.Unmarshal(read.Data, &record); err != nil || record.ParentID != shelfID {
 		t.Fatalf("the move did not persist: %q %v", record.ParentID, err)
 	}
-	if status, _ := call(t, player, http.MethodPut, "/", `{"parent_id":""}`, note, handler.PutResource); status != http.StatusBadRequest {
-		t.Fatalf("a page below another left its tree: %d", status)
+	if status, _ := call(t, dungeonMaster, http.MethodPut, "/", `{"parent_id":""}`, note, handler.PutResource); status != http.StatusForbidden {
+		t.Fatalf("a reader moved a page that is not theirs to the top level: %d", status)
 	}
 	if status, answer := call(t, player, http.MethodPut, "/", `{"parent_id":"`+shelfID+`"}`, footnote, handler.PutResource); status != http.StatusOK {
 		t.Fatalf("a sub page was refused a move within its tree: %d %+v", status, answer.Error)
@@ -525,5 +525,25 @@ func TestAPageMovesOnlyUnderAPageItsMoverReads(t *testing.T) {
 	_, read = call(t, player, http.MethodGet, "/", "", footnote, handler.GetResource)
 	if err := json.Unmarshal(read.Data, &record); err != nil || record.ParentID != shelfID {
 		t.Fatalf("the move within the tree did not persist: %q %v", record.ParentID, err)
+	}
+	if status, answer := call(t, player, http.MethodPut, "/", `{"parent_id":""}`, note, handler.PutResource); status != http.StatusOK {
+		t.Fatalf("a page was refused the move to the top level: %d %+v", status, answer.Error)
+	}
+	_, read = call(t, player, http.MethodGet, "/", "", note, handler.GetResource)
+	if err := json.Unmarshal(read.Data, &record); err != nil || record.ParentID != "" {
+		t.Fatalf("the move to the top level did not persist: %q %v", record.ParentID, err)
+	}
+	if status, answer := call(t, player, http.MethodPut, "/", `{"parent_id":"`+noteID+`"}`, footnote, handler.PutResource); status != http.StatusOK {
+		t.Fatalf("a sub page was refused the move back under a top level page: %d %+v", status, answer.Error)
+	}
+	if status, answer := call(t, player, http.MethodPut, "/", `{"parent_id":""}`, footnote, handler.PutResource); status != http.StatusOK {
+		t.Fatalf("a sub page was refused the move to the top level: %d %+v", status, answer.Error)
+	}
+	_, read = call(t, player, http.MethodGet, "/", "", footnote, handler.GetResource)
+	if err := json.Unmarshal(read.Data, &record); err != nil || record.ParentID != "" {
+		t.Fatalf("the sub page did not reach the top level: %q %v", record.ParentID, err)
+	}
+	if status, _ := call(t, dungeonMaster, http.MethodGet, "/", "", note, handler.GetResource); status == http.StatusOK {
+		t.Fatalf("a page moved to the top level opened to a player it is not shared with: %d", status)
 	}
 }

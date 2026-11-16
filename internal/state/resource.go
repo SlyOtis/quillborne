@@ -3,6 +3,7 @@ package state
 import (
 	"encoding/json"
 	"net/http"
+	"slices"
 
 	"github.com/SlyOtis/quillborne/internal/db"
 	"github.com/google/uuid"
@@ -52,6 +53,7 @@ func exportResources(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[R
 	if err := getRows(ctx, query, db.OBJECT_TYPE_RESOURCE, "resource", &rows, "resource.sa_created_at ASC, resource.id ASC"); err != nil {
 		return nil, err
 	}
+	rows = slices.DeleteFunc(rows, func(row db.Resource) bool { return row.ParentID == row.ID })
 	return getRecords(ctx, GroupResource, query, rows, func(row db.Resource) uuid.UUID { return row.ID }, func(row db.Resource) ResourceData {
 		data := ResourceData{
 			Kind:           row.Kind,
@@ -60,10 +62,10 @@ func exportResources(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[R
 			Name:           row.Name,
 			Description:    row.Description,
 			ShareUsers:     getStrings(row.ShareUsers),
-			ShareCampaigns: getStrings(row.ShareCampaigns),
+			ShareCampaigns: getShareKeys(ctx.Request().Context(), row.ShareCampaigns),
 			Fields:         getRaw(row.Fields),
 		}
-		if row.ParentID != row.ID && row.ParentID != uuid.Nil {
+		if row.ParentID != row.RootID {
 			data.ParentID = getText(&row.ParentID)
 		}
 		return data

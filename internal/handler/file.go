@@ -354,7 +354,15 @@ func PostAsset(ctx echo.Context) error {
 		}
 		asset.ParentID = folder.ID
 	}
-	w, err := postWriter(rctx, actorID)
+	var ownerID *uuid.UUID
+	if asset.ParentID != uuid.Nil {
+		parent := db.Asset{ID: asset.ParentID}
+		if err := db.Instance().NewSelect().Model(&parent).Column("sa_owner_id").WherePK().Scan(rctx); err != nil {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ownerID = &parent.OwnerID
+	}
+	w, err := postWriter(rctx, actorID, ownerID)
 	if err != nil {
 		if errors.Is(err, errNoOwner) {
 			ctx.Logger().Error(err)
@@ -920,7 +928,7 @@ func PostObjectAsset(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	w, err := postWriter(rctx, actorID)
+	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
 		if errors.Is(err, errNoOwner) {
 			ctx.Logger().Error(err)
@@ -987,7 +995,7 @@ func PutObjectAsset(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	w, err := postWriter(rctx, actorID)
+	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
 		if errors.Is(err, errNoOwner) {
 			ctx.Logger().Error(err)
@@ -1079,7 +1087,7 @@ func DeleteObjectAsset(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	w, err := postWriter(rctx, actorID)
+	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
@@ -1191,7 +1199,7 @@ func PostTag(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusBadRequest, "name required")
 	}
 	rctx := ctx.Request().Context()
-	w, err := postWriter(rctx, actorID)
+	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
 		if errors.Is(err, errNoOwner) {
 			ctx.Logger().Error(err)
@@ -1319,7 +1327,7 @@ func PostTagObject(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	w, err := postWriter(rctx, actorID)
+	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
 		if errors.Is(err, errNoOwner) {
 			ctx.Logger().Error(err)

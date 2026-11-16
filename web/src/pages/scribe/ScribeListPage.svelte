@@ -18,15 +18,17 @@
   let preview = $state<FileItem | null>(null)
   const asked = new Set<string>()
 
-  const targets = $derived<FileMoveTarget[]>(
-    scribe.table.pages.map((one) => ({
+  const targets = $derived<FileMoveTarget[]>([
+    { id: '', label: 'Scribe' },
+    ...scribe.table.pages.map((one) => ({
       id: one.id,
       label: one.title,
       path: getTrail(scribe.table.pages, one.id).slice(0, -1).map((step) => step.title).join(' / ') || undefined
     }))
-  )
+  ])
 
   const items = $derived<FileItem[]>([
+    ...(scribe.inside ? [{ id: '', name: 'Scribe', kind: 'folder', root: true } satisfies FileItem] : []),
     ...scribe.roots.map(tileOf),
     ...scribe.roots.flatMap((one) => (held.get(one.id) ?? []).flatMap((link) => (link.asset ? [fileOf(link.asset)] : [])))
   ])
@@ -110,6 +112,7 @@
   }
 
   function open(item: FileItem) {
+    if (item.id === '') return scribe.enter('')
     const one = pageOf(item)
     if (one) {
       if (scribe.countKids(one) > 0) scribe.enter(one.id)
@@ -126,7 +129,7 @@
 
   function move(item: FileItem, targetId: string | null) {
     const one = pageOf(item)
-    if (!one || targetId === null || targetId === one.id) return
+    if (!one || targetId === null || targetId === one.id || targetId === one.parent_id) return
     if (getTrail(scribe.table.pages, targetId).some((step) => step.id === one.id)) return
     void write({ ...one, parent_id: targetId })
   }

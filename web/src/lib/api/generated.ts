@@ -142,6 +142,8 @@ export interface Character {
   id: string;
   owner_id: string;
   campaign_id?: string;
+  name: string;
+  description: string;
   character: any;
   metadata: any;
 }
@@ -150,7 +152,8 @@ export interface Resource extends Share {
   kind: string;
   owner_id: string;
   campaign_id?: string;
-  title: string;
+  name: string;
+  description: string;
   created_at: string;
   updated_at: string;
 }

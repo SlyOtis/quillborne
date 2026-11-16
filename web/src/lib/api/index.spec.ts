@@ -413,6 +413,8 @@ const sheet = (name: string, imageUrl = '') =>
 const row = (fields: Partial<Character> = {}): Character => ({
   id: 'char-1',
   owner_id: 'lars',
+  name: 'Lyra',
+  description: '',
   character: sheet('Lyra'),
   metadata: {
     name: 'Lyra',

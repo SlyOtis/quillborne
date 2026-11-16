@@ -159,16 +159,18 @@ func PostCharacter(ctx echo.Context) error {
 	}
 	rctx := ctx.Request().Context()
 	var campaign *db.Campaign
+	var ownerID *uuid.UUID
 	if body.CampaignID != nil {
 		if _, err := sdb.Instance().MutationAccess(rctx, actorID, *body.CampaignID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_READ); err != nil {
 			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 		}
 		campaign = &db.Campaign{ID: *body.CampaignID}
-		if err := db.Instance().NewSelect().Model(campaign).WherePK().Scan(rctx); err != nil {
+		if err := getCampaign(rctx, campaign); err != nil {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
+		ownerID = &campaign.ID
 	}
-	w, err := postWriter(rctx, actorID)
+	w, err := postWriter(rctx, actorID, ownerID)
 	if err != nil {
 		if errors.Is(err, errNoOwner) {
 			ctx.Logger().Error(err)
@@ -280,7 +282,7 @@ func PutCharacter(ctx echo.Context) error {
 			return err
 		}
 		if public != nil {
-			w, err := postWriter(tctx, actorID)
+			w, err := postWriter(tctx, actorID, &character.OwnerID)
 			if err != nil {
 				return err
 			}

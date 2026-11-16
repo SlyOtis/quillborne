@@ -52,14 +52,14 @@ type Profile struct {
 type Campaign struct {
 	bun.BaseModel `json:"-" bun:"table:campaign"`
 
-	ID            uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
-	UserID        uuid.UUID       `bun:"user_id" json:"dm_id"`
-	Name          string          `bun:"name" json:"name"`
-	Description   string          `bun:"description" json:"description"`
+	ID            uuid.UUID       `bun:"id,pk" json:"id"`
+	UserID        uuid.UUID       `bun:"-" json:"dm_id"`
+	Name          string          `bun:"-" json:"name"`
+	Description   string          `bun:"-" json:"description"`
 	IsActive      bool            `bun:"is_active" json:"is_active"`
 	Settings      json.RawMessage `bun:"settings,type:jsonb" json:"settings"`
-	DmClaimID     *uuid.UUID      `bun:"dm_claim_id" json:"-"`
-	PlayerClaimID *uuid.UUID      `bun:"player_claim_id" json:"-"`
+	DmClaimID     *uuid.UUID      `bun:"-" json:"-"`
+	PlayerClaimID *uuid.UUID      `bun:"-" json:"-"`
 	PlayerIDs     []uuid.UUID     `bun:"-" json:"player_ids"`
 	CharacterIDs  []uuid.UUID     `bun:"-" json:"character_ids"`
 	OwnerID       uuid.UUID       `bun:"sa_owner_id" json:"-"`

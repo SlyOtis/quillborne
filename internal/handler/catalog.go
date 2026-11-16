@@ -129,7 +129,7 @@ func PutCatalogEntry(ctx echo.Context) error {
 		ctx.Logger().Errorf("PutCatalogEntry: %v", err)
 		return respond.ErrorInternal(ctx)
 	}
-	w, err := postWriter(rctx, actorID)
+	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
 		if errors.Is(err, errNoOwner) {
 			ctx.Logger().Error(err)
