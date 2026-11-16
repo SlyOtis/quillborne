@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getAssets, getAssetTab, getCampaign, getCampaignCharacters, getCharacters, postFile, putAttachments, type UploadScope } from '$lib/api'
+  import { getAssets, getAssetTab, getCampaign, getCampaignCharacters, getCharacters, getObjectPicture, postFile, putAttachments, putObjectPicture, type UploadScope } from '$lib/api'
   import type { Campaign, Owner } from '$lib/api/types'
   import { onMount, setContext, type Snippet } from 'svelte'
   import { navigate, resolvedRoute } from 'sly-svelte-location-router'
@@ -37,6 +37,7 @@
   import Glyph from '$components/ui/Glyph.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
   import Ornament from '$components/ui/Ornament.svelte'
+  import PageHead, { type Crumb } from '$components/ui/PageHead.svelte'
   import Shell from '$components/ui/Shell.svelte'
   import Tree, { type TreeRow } from '$components/ui/Tree.svelte'
   import StoredImage from '$components/ui/StoredImage.svelte'
@@ -145,6 +146,11 @@
   const kids = $derived(getChildren(all, recordId))
   const trail = $derived(fresh ? [] : getTrail(all, recordId))
   const twigs = $derived(getRoots(all).map(limb))
+  const crumbs = $derived<Crumb[]>([
+    { id: campaignId ? `/main/campaign/${campaignId}` : '/main', title: campaign ? campaign.name : 'Your own' },
+    { id: under, title: shape.many },
+    ...trail.filter((step) => step.id !== recordId).map((step) => ({ id: `${under}/${step.id}`, title: step.title }))
+  ])
   const names = $derived(all.map((entry) => ({ id: entry.id, label: entry.title.replace(/\s+/g, ''), icon: entry.image || undefined })))
   const words = $derived([...new Set(all.flatMap((entry) => entry.tags))].sort().map((tag) => ({ id: tag, label: tag })))
 
@@ -489,6 +495,36 @@
     }
   }
 
+  let picture = $state('')
+  let picking = $state(false)
+
+  $effect(() => {
+    const id = fresh || fixed ? '' : recordId
+    let stale = false
+    picture = ''
+    if (!id) return
+    getObjectPicture('resource', id)
+      .then((url) => {
+        if (!stale) picture = url
+      })
+      .catch((reason) => (error = reason instanceof Error ? reason.message : String(reason)))
+    return () => {
+      stale = true
+    }
+  })
+
+  async function putBanner(asset: MediaAsset | null) {
+    picking = false
+    if (!asset || fresh) return
+    error = null
+    try {
+      await putObjectPicture(asset.id, 'resource', recordId)
+      picture = asset.url
+    } catch (reason) {
+      error = reason instanceof Error ? reason.message : String(reason)
+    }
+  }
+
   async function addPage(title: string) {
     const id = await postOne(owner, kind, { ...blank(), title, parent_id: recordId })
     await reload()
@@ -505,6 +541,64 @@
   <span class="page-ground"></span>
 {/snippet}
 
+{#snippet heading()}
+  <input class="dnd-heading dnd-heading-hero page-name page-title-host" placeholder="Name it" aria-label="Title" bind:value={one.title} />
+{/snippet}
+
+{#snippet actions()}
+  {#if writing}
+    <IconBtn title="Back" disabled={past.length === 0} onclick={stepBack}>
+      <Glyph name="back" size="md" />
+    </IconBtn>
+    <IconBtn title="Forward" disabled={ahead.length === 0} onclick={stepForward}>
+      <Glyph name="forward" size="md" />
+    </IconBtn>
+    <IconBtn title="Revert" disabled={!changed} onclick={revert}>
+      <Glyph name="revert" size="md" />
+    </IconBtn>
+    <IconBtn title="Save" tone="verdigris" disabled={busy || !named} onclick={save}>
+      <Glyph name="save" size="md" />
+    </IconBtn>
+    {#if fresh}
+      <IconBtn title={busy ? 'Uploading' : 'Add a picture'} disabled={busy} onclick={() => picker?.click()}>
+        <Glyph name="picture" size="md" />
+      </IconBtn>
+    {/if}
+  {:else}
+    {#if !fixed}
+      <IconBtn title={picture ? 'Change banner' : 'Set banner'} disabled={!canWrite} onclick={() => (picking = true)}>
+        <Glyph name="image" size="md" />
+      </IconBtn>
+      <IconBtn title={busy ? 'Uploading' : 'Add a picture'} disabled={!canWrite || busy} onclick={() => picker?.click()}>
+        <Glyph name="picture" size="md" />
+      </IconBtn>
+      <IconBtn title={canWrite ? 'Edit' : 'Only the owner may edit this'} disabled={!canWrite} onclick={openWriting}>
+        <Glyph name="edit" size="md" />
+      </IconBtn>
+      <IconBtn title="Access" disabled={!canWrite} onclick={() => (accessOpen = true)}>
+        <Glyph name="key" size="md" />
+      </IconBtn>
+      <IconBtn title="Choose the frame" disabled={!canWrite || !one.image} onclick={openFrame}>
+        <Glyph name="gear" size="md" />
+      </IconBtn>
+      <IconBtn title={canWrite ? `Delete this ${shape.word}` : 'Only the owner may delete this'} disabled={!canWrite || busy} onclick={() => (dropOpen = true)}>
+        <Glyph name="remove" size="md" />
+      </IconBtn>
+    {/if}
+    <IconBtn title={tabsOpen ? 'Fold the head' : 'Unfold the head'} active={!tabsOpen} onclick={() => (tabsOpen = !tabsOpen)}>
+      <Glyph name={tabsOpen ? 'fold' : 'unfold'} size="md" />
+    </IconBtn>
+  {/if}
+{/snippet}
+
+{#snippet center()}
+  {@render line?.(one)}
+{/snippet}
+
+{#snippet banner()}
+  <StoredImage src={picture} alt="" />
+{/snippet}
+
 <Shell
   drawers
   title={fresh ? `New ${shape.one}` : one.title || shape.one}
@@ -512,12 +606,26 @@
   backdrop={ground}
   tools={bar && !fresh ? acts : undefined}
 >
+  {#snippet band()}
+    <PageHead
+      title={one.title}
+      {crumbs}
+      oncrumb={navigate}
+      heading={writing ? heading : undefined}
+      {actions}
+      center={!writing && line ? center : undefined}
+      description={fresh ? `New ${shape.word}` : writing ? '' : one.description}
+      banner={picture ? banner : undefined}
+    />
+  {/snippet}
+
   {#if loading}
     <div class="dnd-loading"><span class="dnd-spinner"></span></div>
   {:else}
-    <header class="dnd-band">
-      <div class="page-band-grid" class:page-band-grid-bare={!one.image && one.images.length === 0} style:--page-face="{bandHeight}px">
-        {#if one.image || one.images.length > 0}
+    <input bind:this={picker} class="page-pick" type="file" accept="image/*" aria-label="Add a picture" onchange={addImage} />
+
+    <div class="page-band-grid" class:page-band-grid-bare={!one.image && one.images.length === 0} style:--page-face="{bandHeight}px">
+      {#if one.image || one.images.length > 0}
         <div class="page-side">
           {#if one.image}
             <button type="button" class="page-face" class:page-face-traced={Boolean(traced)} title="Open the pictures" onclick={() => openGallery(one.image)}>
@@ -547,105 +655,12 @@
             </div>
           {/if}
         </div>
-        {/if}
+      {/if}
 
-        <div class="page-band-main" bind:clientHeight={bandHeight}>
-      <div class="dnd-band-line">
-        <p class="dnd-label page-eyebrow">
-          {#each trail as step, index (step.id)}
-            <button type="button" class="page-step" onclick={() => navigate(`${under}/${step.id}`)}>
-              {step.title}
-            </button>{#if index < trail.length - 1}<span class="page-step-mark"> / </span>{/if}
-          {/each}
-          {#if fresh}New {shape.word}{/if}
-        </p>
-
+      <div class="page-band-main" bind:clientHeight={bandHeight}>
         {#if writing}
-          <span class="dnd-band-acts">
-            <IconBtn title="Back" disabled={past.length === 0} onclick={stepBack}>
-              <Glyph name="back" size="md" />
-            </IconBtn>
-            <IconBtn title="Forward" disabled={ahead.length === 0} onclick={stepForward}>
-              <Glyph name="forward" size="md" />
-            </IconBtn>
-            <IconBtn title="Revert" disabled={!changed} onclick={revert}>
-              <Glyph name="revert" size="md" />
-            </IconBtn>
-            <IconBtn title="Save" tone="verdigris" disabled={busy || !named} onclick={save}>
-              <Glyph name="save" size="md" />
-            </IconBtn>
-            {#if fresh}
-              <IconBtn title={busy ? 'Uploading' : 'Add a picture'} disabled={busy} onclick={() => picker?.click()}>
-                <Glyph name="picture" size="md" />
-              </IconBtn>
-            {/if}
-          </span>
-        {:else}
-          <span class="dnd-band-acts">
-            {#if !fixed}
-            <IconBtn title={busy ? 'Uploading' : 'Add a picture'} disabled={!canWrite || busy} onclick={() => picker?.click()}>
-              <Glyph name="picture" size="md" />
-            </IconBtn>
-            <IconBtn
-              title={canWrite ? 'Edit' : 'Only the owner may edit this'}
-              disabled={!canWrite}
-              onclick={openWriting}
-            >
-              <Glyph name="edit" size="md" />
-            </IconBtn>
-            <IconBtn title="Access" disabled={!canWrite} onclick={() => (accessOpen = true)}>
-              <Glyph name="key" size="md" />
-            </IconBtn>
-            <IconBtn title="Choose the frame" disabled={!canWrite || !one.image} onclick={openFrame}>
-              <Glyph name="gear" size="md" />
-            </IconBtn>
-            <IconBtn title={canWrite ? `Delete this ${shape.word}` : 'Only the owner may delete this'} disabled={!canWrite || busy} onclick={() => (dropOpen = true)}>
-              <Glyph name="remove" size="md" />
-            </IconBtn>
-            {/if}
-            <IconBtn title={tabsOpen ? 'Fold the head' : 'Unfold the head'} active={!tabsOpen} onclick={() => (tabsOpen = !tabsOpen)}>
-              <Glyph name={tabsOpen ? 'fold' : 'unfold'} size="md" />
-            </IconBtn>
-          </span>
+          <input class="page-lede-host" placeholder="A line that says what this is" aria-label="Description" bind:value={one.description} />
         {/if}
-        <input
-          bind:this={picker}
-          class="page-pick"
-          type="file"
-          accept="image/*"
-          aria-label="Add a picture"
-          onchange={addImage}
-        />
-      </div>
-
-        <div class="page-crown">
-          <div class="page-title">
-            {#if writing}
-              <input
-                class="dnd-heading dnd-heading-hero page-name page-title-host"
-                placeholder="Name it"
-                aria-label="Title"
-                bind:value={one.title}
-              />
-            {:else}
-              <h1 class="dnd-heading dnd-heading-hero page-name">{one.title}</h1>
-            {/if}
-          </div>
-
-          {#if !writing}{@render line?.(one)}{/if}
-
-          {#if writing}
-            <input
-              class="page-lede-host"
-              placeholder="A line that says what this is"
-              aria-label="Description"
-              bind:value={one.description}
-            />
-          {:else if one.description}
-            <p class="page-lede">{one.description}</p>
-          {/if}
-        </div>
-
         <div class="page-head" use:unfold={tabsOpen}>
           {#if error}<p class="page-alarm" role="alert">{error}</p>{/if}
           {#if word}<p class="page-word">{word}</p>{/if}
@@ -692,9 +707,8 @@
             {/if}
           </section>
         </div>
-        </div>
       </div>
-    </header>
+    </div>
 
     <section class="page-body" aria-label="Content">
       {#if kids.length > 0}
@@ -779,6 +793,16 @@
           media?.resolve(asset)
           media = null
         }}
+      />
+    {/if}
+
+    {#if picking}
+      <MediaDialog
+        kind="image"
+        current={picture}
+        getAssets={(query, wanted) => getAssets(query, wanted, scope)}
+        uploadFile={postMedia}
+        onclose={putBanner}
       />
     {/if}
 
@@ -931,42 +955,6 @@
       aspect-ratio: 3 / 2;
     }
   }
-  .page-crown {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    min-width: 0;
-  }
-
-  .page-eyebrow {
-    margin: 0;
-    color: var(--metal);
-  }
-
-  .page-step {
-    padding: 0;
-    border: none;
-    background: none;
-    font: inherit;
-    color: var(--metal);
-    cursor: pointer;
-  }
-
-  .page-step:hover {
-    color: var(--metal-bright);
-  }
-
-  .page-step-mark {
-    color: var(--ink-faint);
-  }
-
-  .page-title {
-    display: flex;
-    align-items: center;
-    gap: var(--space-6);
-    min-width: 0;
-  }
-
   .page-name {
     margin: 0;
     min-width: 0;
@@ -989,12 +977,6 @@
   .page-lede-host:focus-visible {
     outline: none;
     box-shadow: none;
-  }
-
-  .page-lede {
-    margin: 0;
-    max-width: 70ch;
-    color: var(--ink-dim);
   }
 
   .page-lede-host {
