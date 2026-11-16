@@ -29,7 +29,7 @@
 
 <style>
   .dnd-togglegroup {
-    --togglegroup-radius: var(--radius-sm);
+    --togglegroup-radius: var(--radius-md);
     --togglegroup-line: color-mix(in srgb, var(--metal) 55%, var(--metal-dim));
     display: flex;
     align-items: stretch;
