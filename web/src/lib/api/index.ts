@@ -454,7 +454,7 @@ const LOCAL_PREFIX = 'local:'
 const FILE_PREFIX = 'file:'
 const BLOB_PREFIX = 'blob:'
 const ASSET_ADDRESS = /^\/api\/asset\/([0-9a-f-]+)\/data$/
-const BANNER_TYPE = 'banner'
+export const IMAGE_TYPE_BANNER = 'banner'
 const FOLDER_TYPE = 'inode/directory'
 const MEDIA_TYPES: Record<MediaKind, string> = {
   image: 'image/*',
@@ -620,18 +620,7 @@ export const deleteObjectAsset = (assetId: string, linkId: string) => apiDelete(
 
 export const putAsset = (assetId: string, updates: Partial<Asset>) => apiPut<Asset>(`asset/${assetId}`, updates)
 
-export function getBannerUrl(links: ObjectAsset[]): string {
-  const banner = links.find((link) => link.asset?.type === BANNER_TYPE)
-  return banner ? getMediaUrl(banner.asset_id) : ''
-}
-
-export async function putBanner(assetId: string, objectType: string, objectId: string): Promise<void> {
-  const held = (await getObjectAssets(objectType, objectId)) ?? []
-  const banners = held.filter((link) => link.asset?.type === BANNER_TYPE)
-  await Promise.all(banners.filter((link) => link.asset_id !== assetId).map((link) => deleteObjectAsset(link.asset_id, link.id)))
-  await putAsset(assetId, { type: BANNER_TYPE })
-  if (!held.some((link) => link.asset_id === assetId)) await postObjectAsset(assetId, objectType, objectId)
-}
+export const assetBannerUrl = (bannerId?: string) => (bannerId ? getMediaUrl(bannerId) : null)
 
 export async function putAttachments(resourceId: string, content: string): Promise<void> {
   const wanted = new Set(getBlockAssets(getDocument(content).blocks))
@@ -641,7 +630,7 @@ export async function putAttachments(resourceId: string, content: string): Promi
     ...[...wanted]
       .filter((assetId) => !held.some((link) => link.asset_id === assetId))
       .map((assetId) => postObjectAsset(assetId, 'resource', resourceId)),
-    ...held.filter((link) => !wanted.has(link.asset_id) && link.asset?.type !== BANNER_TYPE).map((link) => deleteObjectAsset(link.asset_id, link.id))
+    ...held.filter((link) => !wanted.has(link.asset_id) && link.asset?.type !== IMAGE_TYPE_BANNER).map((link) => deleteObjectAsset(link.asset_id, link.id))
   ])
 }
 

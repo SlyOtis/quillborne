@@ -1,6 +1,6 @@
 <script lang="ts">
   import { navigate } from 'sly-svelte-location-router'
-  import { getAssetTab, getBannerUrl, getMediaUrl, getObjectAssets, getSize } from '$lib/api'
+  import { getAssetTab, getMediaUrl, getObjectAssets, getSize } from '$lib/api'
   import type { ObjectAsset } from '$lib/api/types'
   import { getTrail, putOne, type Resource } from '$lib/resources'
   import { postNotice } from '$lib/stores/ui.store'
@@ -58,10 +58,6 @@
     }
   }
 
-  function pictureOf(one: Resource): string | null {
-    return getBannerUrl(held.get(one.id) ?? []) || null
-  }
-
   function tileOf(one: Resource): FileItem {
     const kids = scribe.countKids(one)
     return {
@@ -71,7 +67,6 @@
       type: 'Page',
       glyph: 'scroll',
       size: kids > 0 ? `${kids} sub pages` : undefined,
-      thumbnailUrl: pictureOf(one),
       updatedAt: one.created_at ?? undefined,
       tags: one.tags
     }

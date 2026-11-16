@@ -47,7 +47,8 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { navigate, resolvedRoute, Router, type Routes } from 'sly-svelte-location-router'
-  import { getAssets, getCampaigns, getBannerUrl, getObjectAssets, postFile, putBanner } from '$lib/api'
+  import { assetBannerUrl, deleteObjectAsset, getAssets, getCampaigns, getObjectAssets, IMAGE_TYPE_BANNER, postFile, postObjectAsset, putAsset } from '$lib/api'
+  import type { ObjectAsset } from '$lib/api/types'
   import type { MediaAsset } from '$lib/blocks'
   import { getAll, getChildren, getRoots, getTrail, postOne, putOne } from '$lib/resources'
   import { currentCampaignId, userCampaigns } from '$lib/stores/campaign.store'
@@ -299,32 +300,50 @@
     void putOne(owner, 'entries', open.id, next).catch((reason) => postNotice(reason instanceof Error ? reason.message : String(reason)))
   }
 
-  let picture = $state('')
+  const fail = (reason: unknown) => postNotice(reason instanceof Error ? reason.message : String(reason))
+
+  let banner = $state<ObjectAsset | null>(null)
   let picking = $state(false)
+  const bannerId = $derived(openId)
+  const picture = $derived(assetBannerUrl(banner?.asset_id) ?? '')
+
+  async function getBanners(id: string) {
+    return ((await getObjectAssets('resource', id)) ?? []).filter((link) => link.asset?.type === IMAGE_TYPE_BANNER)
+  }
+
+  async function loadBanner(id: string) {
+    const links = await getBanners(id)
+    if (id === bannerId) banner = links[0] ?? null
+  }
 
   $effect(() => {
-    const id = openId
-    let stale = false
-    picture = ''
-    if (!id) return
-    getObjectAssets('resource', id)
-      .then((links) => {
-        if (!stale) picture = getBannerUrl(links ?? [])
-      })
-      .catch((reason) => postNotice(reason instanceof Error ? reason.message : String(reason)))
-    return () => {
-      stale = true
-    }
+    banner = null
+    if (bannerId) void loadBanner(bannerId).catch(fail)
   })
+
+  async function clearBanner() {
+    const id = bannerId
+    if (!id) return
+    try {
+      for (const link of await getBanners(id)) await deleteObjectAsset(link.asset_id, link.id)
+      banner = null
+    } catch (reason) {
+      fail(reason)
+    }
+  }
 
   async function pickBanner(asset: MediaAsset | null) {
     picking = false
-    if (!asset || !open) return
+    const id = bannerId
+    if (!asset || !id) return
     try {
-      await putBanner(asset.id, 'resource', open.id)
-      picture = asset.url
+      if (banner && banner.asset_id !== asset.id) await clearBanner()
+      await putAsset(asset.id, { type: IMAGE_TYPE_BANNER })
+      const links = (await getObjectAssets('resource', id)) ?? []
+      if (!links.some((link) => link.asset_id === asset.id)) await postObjectAsset(asset.id, 'resource', id)
+      await loadBanner(id)
     } catch (reason) {
-      postNotice(reason instanceof Error ? reason.message : String(reason))
+      fail(reason)
     }
   }
 
@@ -421,6 +440,11 @@
     <IconBtn title={picture ? 'Change banner' : 'Set banner'} onclick={() => (picking = true)}>
       <Glyph name="image" size="md" />
     </IconBtn>
+    {#if picture}
+      <IconBtn title="Clear banner" onclick={clearBanner}>
+        <Glyph name="cross" size="md" />
+      </IconBtn>
+    {/if}
     <ToggleGroup label="Mode">
       <IconBtn title="Edit" active={mode === 'edit'} onclick={() => show(open.id, 'edit')}>
         <Glyph name="edit" size="md" />
@@ -485,7 +509,7 @@
   {/if}
 {/snippet}
 
-{#snippet banner()}
+{#snippet cover()}
   <StoredImage src={picture} alt="" />
 {/snippet}
 
@@ -501,7 +525,7 @@
       center={open ? undefined : center}
       view={open ? undefined : views}
       bottom={open && strip ? bottom : undefined}
-      banner={open && picture ? banner : undefined}
+      banner={open && picture ? cover : undefined}
     />
   {/snippet}
 
