@@ -4,23 +4,28 @@
   import type { Mention, Reference } from '$lib/blocks'
   import type { Resource } from '$lib/resources'
   import type { TreeRow } from '$components/ui/Tree.svelte'
+  import type { TableColumn } from '$components/ui/Table.svelte'
+  import type { FileGroupBy } from '$components/ui/FileExplorer.svelte'
 
   export type View = 'grid' | 'tree' | 'list'
   export type Mode = 'edit' | 'read'
-  export type Shelf = { title: string; kids: Resource[] }
 
   export type Scribe = {
     table: { pages: Resource[]; loading: boolean; saving: boolean }
     readonly campaign: Campaign | null
     readonly owner: Owner | null
     readonly open: Resource | null
+    readonly inside: Resource | null
     readonly mode: Mode
     readonly view: View
     readonly shown: Resource[]
+    readonly roots: Resource[]
     readonly rows: TreeRow[]
-    readonly tiles: Shelf[]
-    readonly lines: Shelf[]
+    readonly columns: TableColumn[]
+    readonly groupBy: FileGroupBy
     show: (id: string, mode?: Mode) => void
+    enter: (id: string) => void
+    postPage: (parentId?: string | null) => Promise<void>
     putPage: (held: Resource) => void
     countKids: (one: Resource) => number
     parentOf: (one: Resource) => Resource | null
@@ -54,10 +59,28 @@
   import Glyph from '$components/ui/Glyph.svelte'
   import SearchInput from '$components/ui/SearchInput.svelte'
   import ToggleGroup from '$components/ui/ToggleGroup.svelte'
+  import Dropdown, { type DropdownOption } from '$components/ui/Dropdown.svelte'
 
   const SAVE_DELAY = 600
   const HOME = '/main/scribe'
   const CRUMB_SCRIBE = 'scribe'
+  const GROUPS: FileGroupBy[] = ['kind', 'type', 'modified', 'name', 'tag']
+  const ORDERS: DropdownOption[] = [
+    { value: 'title', label: 'Name' },
+    { value: 'written', label: 'Written' }
+  ]
+  const TREE_COLUMNS: TableColumn[] = [
+    { key: 'title', label: 'Title', width: 'minmax(10em, 4fr)', sortable: true },
+    { key: 'tags', label: 'Tags', width: 'minmax(6em, 2fr)', kind: 'tags' },
+    { key: 'written', label: 'Written', width: 'minmax(6em, 1fr)', sortable: true }
+  ]
+  const LIST_COLUMNS: TableColumn[] = [
+    { key: 'title', label: 'Title', width: 'minmax(10em, 4fr)', sortable: true },
+    { key: 'tags', label: 'Tags', width: 'minmax(6em, 2fr)', kind: 'tags', sortable: true },
+    { key: 'under', label: 'Under', width: 'minmax(6em, 2fr)', sortable: true },
+    { key: 'written', label: 'Written', width: 'minmax(6em, 1fr)', sortable: true },
+    { key: 'actions', label: '' }
+  ]
 
   const routes: Routes = {
     '/': { name: 'scribe-pages', component: () => import('./scribe/ScribeListPage.svelte') },
@@ -78,8 +101,14 @@
   const view = $derived<View>(query.get('view') === 'tree' || query.get('view') === 'list' ? (query.get('view') as View) : 'grid')
   const order = $derived(query.get('order') === 'written' ? 'written' : 'title')
   const descending = $derived(query.get('desc') === '1')
-  const byTag = $derived(query.get('by') === 'tag')
+  const groupBy = $derived<FileGroupBy>(GROUPS.find((one) => one === query.get('by')) ?? 'none')
+  const hidden = $derived((query.get('hide') ?? '').split(',').filter(Boolean))
+  const columns = $derived((view === 'tree' ? TREE_COLUMNS : LIST_COLUMNS).filter((column) => column.key === 'title' || !hidden.includes(column.key)))
+  const columnOptions = $derived<DropdownOption[]>(
+    (view === 'tree' ? TREE_COLUMNS : LIST_COLUMNS).filter((column) => column.key !== 'actions').map((column) => ({ value: column.key, label: column.label, disabled: column.key === 'title' }))
+  )
   const picked = $derived((query.get('tags') ?? '').split(',').filter(Boolean))
+  const inId = $derived(query.get('in') ?? '')
 
   const table = $state<Scribe['table']>({ pages: held.pages, loading: held.key === '', saving: false })
   let hunt = $state(new URLSearchParams($resolvedRoute.search ?? '').get('q') ?? '')
@@ -111,19 +140,27 @@
   }
 
   const open = $derived(table.pages.find((one) => one.id === openId) ?? null)
+  const inside = $derived(table.pages.find((one) => one.id === inId) ?? null)
   const trail = $derived(open ? getTrail(table.pages, open.id).filter((step) => step.id !== open.id) : [])
   const wanted = $derived(hunt.trim().toLowerCase())
   const sifting = $derived(Boolean(wanted) || picked.length > 0)
   const allTags = $derived([...new Set(table.pages.flatMap((one) => one.tags))].sort())
+  const groupings = $derived<DropdownOption[]>([
+    { value: 'none', label: 'No grouping' },
+    { value: 'kind', label: 'Kind' },
+    { value: 'type', label: 'Type' },
+    { value: 'modified', label: 'Modified' },
+    { value: 'name', label: 'Name' },
+    ...(allTags.length > 0 ? [{ value: 'tag', label: 'Tag' }] : [])
+  ])
   const shown = $derived(sort(table.pages.filter(keep)))
-  const roots = $derived(sifting ? shown : sort(getRoots(table.pages)))
+  const roots = $derived(sifting ? shown : sort(inside ? getChildren(table.pages, inside.id) : getRoots(table.pages)))
   const rows = $derived(roots.map(limb))
-  const tiles = $derived(shelve(roots))
-  const lines = $derived(shelve(shown))
 
   const crumbs = $derived<Crumb[]>([
     { id: '', title: campaign ? campaign.name : 'Your own' },
-    ...(open ? [{ id: CRUMB_SCRIBE, title: 'Scribe' }, ...trail.map((step) => ({ id: step.id, title: step.title }))] : [])
+    ...(open || inside ? [{ id: CRUMB_SCRIBE, title: 'Scribe' }] : []),
+    ...(open ? trail : inside ? getTrail(table.pages, inside.id) : []).map((step) => ({ id: step.id, title: step.title }))
   ])
 
   const strip = $derived.by(() => {
@@ -151,16 +188,18 @@
     })
   }
 
-  function shelve(pages: Resource[]): Shelf[] {
-    if (!byTag) return [{ title: '', kids: pages }]
-    const tagged = allTags.map((tag) => ({ title: `#${tag}`, kids: pages.filter((one) => one.tags.includes(tag)) }))
-    const loose = { title: 'Untagged', kids: pages.filter((one) => one.tags.length === 0) }
-    return [...tagged, loose].filter((shelf) => shelf.kids.length > 0)
-  }
-
   function limb(row: Resource): TreeRow {
     const kids = sifting ? [] : sort(getChildren(table.pages, row.id)).map(limb)
-    return { id: row.id, title: row.title, mark: kids.length > 0 ? String(kids.length) : undefined, glyph: 'scroll', kids }
+    return {
+      id: row.id,
+      title: row.title,
+      mark: kids.length > 0 ? String(kids.length) : undefined,
+      glyph: 'scroll',
+      kids,
+      tags: row.tags,
+      under: parentOf(row)?.title ?? '',
+      written: written(row)
+    }
   }
 
   function countKids(one: Resource): number {
@@ -184,9 +223,17 @@
     held = { ...held, pages: table.pages }
   }
 
+  function enter(id: string) {
+    put({ in: id || null })
+  }
+
   function openCrumb(id: string) {
     if (id === '') {
       navigate(campaign ? `/main/campaign/${campaign.id}` : '/main')
+      return
+    }
+    if (!open) {
+      enter(id === CRUMB_SCRIBE ? '' : id)
       return
     }
     show(id === CRUMB_SCRIBE ? '' : id)
@@ -229,7 +276,7 @@
     void getPages()
   })
 
-  async function postPage(parentId: string | null = open?.id ?? null) {
+  async function postPage(parentId: string | null = open?.id ?? inside?.id ?? null) {
     if (!owner) return
     try {
       const id = await postOne(owner, 'entries', { title: 'Untitled', content: '', parent_id: parentId })
@@ -284,6 +331,9 @@
     get open() {
       return open
     },
+    get inside() {
+      return inside
+    },
     get mode() {
       return mode
     },
@@ -293,16 +343,21 @@
     get shown() {
       return shown
     },
+    get roots() {
+      return roots
+    },
     get rows() {
       return rows
     },
-    get tiles() {
-      return tiles
+    get columns() {
+      return columns
     },
-    get lines() {
-      return lines
+    get groupBy() {
+      return groupBy
     },
     show,
+    enter,
+    postPage,
     putPage,
     countKids,
     parentOf,
@@ -340,7 +395,7 @@
       </IconBtn>
     </ToggleGroup>
   {/if}
-  <IconBtn title={open ? `New page under ${open.title}` : 'New page'} onclick={() => postPage()}>
+  <IconBtn title={open || inside ? `New page under ${(open ?? inside)?.title}` : 'New page'} onclick={() => postPage()}>
     <Glyph name="add" size="md" />
   </IconBtn>
 {/snippet}
@@ -360,29 +415,31 @@
 {#snippet views()}
   <ToggleGroup label="View">
     {#snippet actions()}
-      <IconBtn title="By title" active={order === 'title'} onclick={() => put({ order: null })}>
-        <Glyph name="textheight" size="sm" />
-      </IconBtn>
-      <IconBtn title="By written" active={order === 'written'} onclick={() => put({ order: 'written' })}>
-        <Glyph name="calendar" size="sm" />
-      </IconBtn>
-      <IconBtn title={descending ? 'Descending' : 'Ascending'} onclick={() => put({ desc: descending ? null : '1' })}>
-        <Glyph name={descending ? 'fold' : 'unfold'} size="sm" />
-      </IconBtn>
-      {#if allTags.length > 0}
-        <IconBtn title="Shelve by tag" active={byTag} onclick={() => put({ by: byTag ? null : 'tag' })}>
-          <Glyph name="tags" size="sm" />
+      {#if view === 'grid'}
+        <Dropdown label="Sort" glyph="sort" value={order} options={ORDERS} onchange={(next) => put({ order: next === 'title' ? null : next })} />
+        <IconBtn title={descending ? 'Descending' : 'Ascending'} onclick={() => put({ desc: descending ? null : '1' })}>
+          <Glyph name={descending ? 'sortnumericdown' : 'sortnumericup'} size="sm" />
         </IconBtn>
+        <Dropdown label="Group by" glyph="group" value={groupBy} options={groupings} onchange={(next) => put({ by: next === 'none' ? null : next })} />
+      {/if}
+      {#if view !== 'grid'}
+        <Dropdown
+          label="Columns"
+          glyph="table"
+          values={columns.map((column) => column.key)}
+          options={columnOptions}
+          onpick={(picked) => put({ hide: columnOptions.map((option) => option.value).filter((key) => !picked.includes(key)).join(',') || null })}
+        />
       {/if}
     {/snippet}
-    <IconBtn title="Grid" active={view === 'grid'} onclick={() => put({ view: null })}>
-      <Glyph name="blocks" size="md" />
+    <IconBtn title="Files" active={view === 'grid'} onclick={() => put({ view: null })}>
+      <Glyph name="file" size="md" />
     </IconBtn>
     <IconBtn title="Tree" active={view === 'tree'} onclick={() => put({ view: 'tree' })}>
-      <Glyph name="lines" size="md" />
+      <Glyph name="tree" size="md" />
     </IconBtn>
     <IconBtn title="List" active={view === 'list'} onclick={() => put({ view: 'list' })}>
-      <Glyph name="menu" size="md" />
+      <Glyph name="list" size="md" />
     </IconBtn>
   </ToggleGroup>
 {/snippet}

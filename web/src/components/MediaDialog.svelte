@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getSize } from '$lib/api'
   import type { MediaAsset, MediaKind } from '$lib/blocks'
   import BaseDialog from '$components/BaseDialog.svelte'
   import Button from '$components/ui/Button.svelte'
@@ -135,10 +136,6 @@
     event.preventDefault()
     dragging = false
     hold(event.dataTransfer?.files?.[0])
-  }
-
-  function getSize(bytes: number): string {
-    return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`
   }
 
   async function send() {

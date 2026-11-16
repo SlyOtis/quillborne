@@ -472,3 +472,58 @@ func TestIntegrationKeysAreReadByTheirOwnerAlone(t *testing.T) {
 		t.Fatalf("another player holds the owner's key: %s", string(own.Data))
 	}
 }
+
+func TestAPageMovesOnlyUnderAPageItsMoverReads(t *testing.T) {
+	requireStack(t)
+	ensureProfile(t, player, "pip@quillborne.local")
+	status, made := call(t, dungeonMaster, http.MethodPost, "/api/resource", `{"kind":"entries","name":"Hidden shelf","body":"{}"}`, nil, handler.PostResource)
+	if status != http.StatusCreated {
+		t.Fatalf("PostResource shelf: %d %+v", status, made.Error)
+	}
+	shelfID := id(t, made)
+	status, made = call(t, player, http.MethodPost, "/api/resource", `{"kind":"entries","name":"Pip's note","body":"{}"}`, nil, handler.PostResource)
+	if status != http.StatusCreated {
+		t.Fatalf("PostResource note: %d %+v", status, made.Error)
+	}
+	noteID := id(t, made)
+	status, made = call(t, player, http.MethodPost, "/api/resource", `{"kind":"entries","name":"Pip's footnote","body":"{}","parent_id":"`+noteID+`"}`, nil, handler.PostResource)
+	if status != http.StatusCreated {
+		t.Fatalf("PostResource footnote: %d %+v", status, made.Error)
+	}
+	footnoteID := id(t, made)
+	note := map[string]string{"id": noteID}
+	footnote := map[string]string{"id": footnoteID}
+	var record struct {
+		ParentID string `json:"parent_id"`
+	}
+
+	if status, _ := call(t, player, http.MethodPut, "/", `{"parent_id":"`+shelfID+`"}`, note, handler.PutResource); status != http.StatusForbidden {
+		t.Fatalf("a player moved a page under a page they cannot read: %d", status)
+	}
+	if status, answer := call(t, dungeonMaster, http.MethodPut, "/", `{"share_users":["`+player.String()+`"]}`, map[string]string{"id": shelfID}, handler.PutResource); status != http.StatusOK {
+		t.Fatalf("PutResource share: %d %+v", status, answer.Error)
+	}
+	if status, _ := call(t, player, http.MethodPut, "/", `{"parent_id":"`+noteID+`"}`, note, handler.PutResource); status != http.StatusBadRequest {
+		t.Fatalf("a page moved under itself: %d", status)
+	}
+	if status, _ := call(t, player, http.MethodPut, "/", `{"parent_id":"`+footnoteID+`"}`, note, handler.PutResource); status != http.StatusBadRequest {
+		t.Fatalf("a page moved under its own sub page: %d", status)
+	}
+	if status, answer := call(t, player, http.MethodPut, "/", `{"parent_id":"`+shelfID+`"}`, note, handler.PutResource); status != http.StatusOK {
+		t.Fatalf("a reader of the parent was refused the move: %d %+v", status, answer.Error)
+	}
+	_, read := call(t, player, http.MethodGet, "/", "", note, handler.GetResource)
+	if err := json.Unmarshal(read.Data, &record); err != nil || record.ParentID != shelfID {
+		t.Fatalf("the move did not persist: %q %v", record.ParentID, err)
+	}
+	if status, _ := call(t, player, http.MethodPut, "/", `{"parent_id":""}`, note, handler.PutResource); status != http.StatusBadRequest {
+		t.Fatalf("a page below another left its tree: %d", status)
+	}
+	if status, answer := call(t, player, http.MethodPut, "/", `{"parent_id":"`+shelfID+`"}`, footnote, handler.PutResource); status != http.StatusOK {
+		t.Fatalf("a sub page was refused a move within its tree: %d %+v", status, answer.Error)
+	}
+	_, read = call(t, player, http.MethodGet, "/", "", footnote, handler.GetResource)
+	if err := json.Unmarshal(read.Data, &record); err != nil || record.ParentID != shelfID {
+		t.Fatalf("the move within the tree did not persist: %q %v", record.ParentID, err)
+	}
+}

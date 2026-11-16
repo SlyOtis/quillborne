@@ -33,7 +33,7 @@
     style:--chip-ink={rarity ? getRarityInk(rarity) : undefined}
   >
     {#if glyph}<span class="dnd-chip-glyph"><Glyph name={glyph} size="sm" /></span>{/if}
-    {@render children?.()}
+    <span class="dnd-chip-word">{@render children?.()}</span>
   </span>
 {:else}
   <button
@@ -46,7 +46,7 @@
     {onclick}
   >
     {#if glyph}<span class="dnd-chip-glyph"><Glyph name={glyph} size="sm" /></span>{/if}
-    {@render children?.()}
+    <span class="dnd-chip-word">{@render children?.()}</span>
   </button>
 {/if}
 
@@ -67,6 +67,12 @@
     color: var(--ink-dim);
     cursor: pointer;
     transition: color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .dnd-chip-word {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .dnd-chip-glyph {

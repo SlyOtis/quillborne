@@ -502,6 +502,10 @@ export function isStoredFile(address: string): boolean {
   return isLocalFile(address) || isFileRecord(address) || address.startsWith(FILE_PREFIX)
 }
 
+export function getSize(bytes: number): string {
+  return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
 export function getMediaUrl(id: string): string {
   return `${baseURL}asset/${id}/data`
 }
