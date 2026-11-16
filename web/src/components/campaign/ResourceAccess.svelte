@@ -176,7 +176,7 @@
   claimsDescription="A campaign's table is its dungeon master and every seated player. Each table named here reads this {shape.word}."
   claimPlaceholder="Type a campaign"
   claimsEmptyMessage="You sit at no table"
-  holdersLabel="at the table"
+  holdersLabel="At the table"
   peopleLabel="Readers"
   peopleDescription="A person named here reads this {shape.word}. An address adds someone you have not met."
   searchPlaceholder="Type a name"

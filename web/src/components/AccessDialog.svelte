@@ -77,6 +77,8 @@
   import Ornament from '$components/ui/Ornament.svelte'
   import Picker, { type Pick } from '$components/ui/Picker.svelte'
   import StoredImage from '$components/ui/StoredImage.svelte'
+  import Table, { type TableColumn, type TableRow } from '$components/ui/Table.svelte'
+  import Tree, { type TreeColumn, type TreeRow } from '$components/ui/Tree.svelte'
 
   let {
     isOpen = $bindable(false),
@@ -92,6 +94,8 @@
     title = 'Access',
     description = 'Share through claims that decide who reads it.',
     holdersLabel = 'Holders',
+    accessLabel = 'Access',
+    viaLabel = 'Via',
     newLabel = 'New',
     changeAccessLabel = 'Change access',
     removeClaimLabel = 'Take the claim off this object',
@@ -143,8 +147,12 @@
     title?: string
     /** Sentence under the heading saying what the dialog does. */
     description?: string
-    /** Word after the count of a claim's holders. */
+    /** Header of the holders column. */
     holdersLabel?: string
+    /** Header of the access column. */
+    accessLabel?: string
+    /** Header of the via column. */
+    viaLabel?: string
     /** Tag on a picked claim the object does not hold yet. */
     newLabel?: string
     /** Tooltip of the button editing a claim's access on the object. */
@@ -187,7 +195,7 @@
     confirmLabel?: string
     /** Label of the dismissing button. */
     cancelLabel?: string
-    /** Draws the loading line in place of the sections. */
+    /** Draws the loading line in the claims list and the people table in place of their rows. */
     loading?: boolean
     /** Blocks both buttons while the host writes the grant. */
     busy?: boolean
@@ -208,7 +216,8 @@
   let editingClaim = $state('')
   let claimsOpen = $state(false)
   let peopleOpen = $state(false)
-  let opened = $state<Record<string, boolean>>({})
+  let claimQuery = $state('')
+  let peopleQuery = $state('')
   let looking = $state(false)
 
   $effect(() => {
@@ -220,7 +229,8 @@
     revokedClaims = []
     revokedHolders = []
     editingClaim = ''
-    opened = {}
+    claimQuery = ''
+    peopleQuery = ''
   })
 
   const everyone = $derived([...people, ...known])
@@ -265,6 +275,69 @@
       !same(pickedPeople.map((person) => person.id), selected)
   )
   const editing = $derived(claims.find((claim) => claim.id === editingClaim) ?? null)
+
+  const limbs = $derived<TreeRow[]>(roots.map(limbOf))
+  const claimColumns = $derived<TreeColumn[]>([
+    { key: 'name', label: claimsLabel, width: 'minmax(8em, 5fr)' },
+    { key: 'access', label: accessLabel, width: 'minmax(4em, 3fr)' },
+    ...(hasVia ? [{ key: 'via', label: viaLabel, width: 'minmax(4em, 1fr)' }] : []),
+    { key: 'holders', label: holdersLabel, width: 'minmax(4em, 2fr)' },
+    { key: 'picked', label: '', width: 'var(--space-5)' },
+    { key: 'actions', label: '', width: 'calc(var(--space-6) * 2)' }
+  ])
+  const peopleColumns = $derived<TableColumn[]>([
+    { key: 'avatar', label: '', width: 'var(--space-6)' },
+    { key: 'name', label: nameLabel, width: 'minmax(4em, 2fr)', sortable: true },
+    { key: 'email', label: emailLabel, width: 'minmax(4em, 2fr)' },
+    { key: 'role', label: roleLabel, width: 'minmax(4em, 2fr)' },
+    { key: 'picked', label: '', width: 'var(--space-5)' }
+  ])
+  const peopleRows = $derived<TableRow[]>(
+    everyone
+      .filter((person) => [person.name, person.email ?? '', person.role ?? ''].some((text) => text.toLowerCase().includes(peopleQuery.trim().toLowerCase())))
+      .map((person) => ({ ...person }))
+  )
+
+  function limbOf(claim: AccessClaim): TreeRow {
+    return {
+      id: claim.id,
+      title: claim.label,
+      mark: claim.meta,
+      glyph: claim.glyph ?? 'key',
+      struck: revokedClaims.includes(claim.id),
+      claim,
+      kids: [
+        ...kidsOf(claim.id).map(limbOf),
+        ...(claim.holders ?? []).map((holder) => ({
+          id: `${claim.id}:${holder.id}`,
+          title: holder.name,
+          mark: holder.email,
+          glyph: 'user' as const,
+          struck: isGone(claim, holder),
+          claim,
+          holder
+        }))
+      ]
+    }
+  }
+
+  function claimOf(row: TreeRow): AccessClaim {
+    return row.claim as AccessClaim
+  }
+
+  function holderOf(row: TreeRow): AccessPerson | null {
+    return (row.holder as AccessPerson | undefined) ?? null
+  }
+
+  function pressClaim(id: string) {
+    const claim = claims.find((entry) => entry.id === id)
+    if (claim && !busy) pickClaim(claim)
+  }
+
+  function pressPerson(row: TableRow) {
+    const person = everyone.find((entry) => entry.id === row.id)
+    if (person && !busy) togglePerson(person)
+  }
 
   function same(a: string[], b: string[]): boolean {
     return a.length === b.length && a.every((id) => b.includes(id))
@@ -365,96 +438,56 @@
   </span>
 {/snippet}
 
-{#snippet limb(claim: AccessClaim, depth: number)}
-  {@const kids = kidsOf(claim.id)}
-  {@const holders = claim.holders ?? []}
-  {@const nested = kids.length + holders.length > 0}
-  {@const open = nested && Boolean(opened[claim.id])}
-  {@const picked = pickedClaims.includes(claim.id)}
+{#snippet claimCell(key: string, row: TreeRow)}
+  {@const claim = claimOf(row)}
+  {@const holder = holderOf(row)}
   {@const struck = revokedClaims.includes(claim.id)}
-
-  <li class="access-twig">
-    <div class="access-row" class:access-row-on={picked} class:access-row-struck={struck} style:--access-depth={depth}>
-      {#if nested}
-        <button
-          type="button"
-          class="access-caret"
-          class:access-caret-open={open}
-          aria-expanded={open}
-          aria-label={open ? `Fold ${claim.label}` : `Unfold ${claim.label}`}
-          onclick={() => (opened = { ...opened, [claim.id]: !open })}
-        ></button>
-      {:else}
-        <span></span>
-      {/if}
-
-      <button type="button" class="access-name" disabled={claim.readonly || busy} aria-pressed={claim.readonly ? undefined : picked} onclick={() => pickClaim(claim)}>
-        <span class="access-tile"><Glyph name={claim.glyph ?? 'key'} size="sm" /></span>
-        <span class="access-words">
-          <span class="access-title">{claim.label}</span>
-          {#if claim.meta}<span class="access-meta">{claim.meta}</span>{/if}
-        </span>
+  {#if key === 'access'}
+    {#if !holder && (isHeld(claim) || isNew(claim))}
+      <span class="access-cell" class:access-cell-struck={struck}>
         {#if isNew(claim)}<span class="access-new">{newLabel}</span>{/if}
-      </button>
-
-      <span class="access-cell">
-        {#if isHeld(claim) || isNew(claim)}
-          <AccessInput value={accessOf(claim)} readonly labels={accessLabels} />
-        {/if}
+        <AccessInput value={accessOf(claim)} readonly labels={accessLabels} />
       </span>
-      {#if hasVia}<span class="access-cell access-via">{claim.via ?? ''}</span>{/if}
-      <span class="access-cell access-holders">{holders.length ? `${holders.length} ${holdersLabel.toLowerCase()}` : ''}</span>
-      <span class="access-cell access-picked">
-        {#if picked}<Ornament name="quatrefoil" size="xs" tone="ember" />{/if}
-      </span>
-      <span class="access-cell access-acts">
-        {#if canEdit(claim)}
-          <IconBtn title={changeAccessLabel} active={editingClaim === claim.id} disabled={busy || struck} onclick={() => (editingClaim = editingClaim === claim.id ? '' : claim.id)}>
-            <Glyph name="edit" size="sm" />
-          </IconBtn>
-          <IconBtn title={struck ? keepLabel : removeClaimLabel} tone={struck ? 'metal' : 'ember'} disabled={busy} onclick={() => revokeClaim(claim)}>
-            <Glyph name={struck ? 'revert' : 'remove'} size="sm" />
-          </IconBtn>
-        {/if}
-      </span>
-    </div>
-
-    {#if nested}
-      <div class="access-nest" use:unfold={open}>
-        <ul class="access-limbs">
-          {#each kids as kid (kid.id)}
-            {@render limb(kid, depth + 1)}
-          {/each}
-          {#each holders as holder (holder.id)}
-            {@const gone = isGone(claim, holder)}
-            <li class="access-twig">
-              <div class="access-row access-row-holder" class:access-row-struck={gone} style:--access-depth={depth + 1}>
-                <span></span>
-                <span class="access-name access-name-still">
-                  {@render tile(holder)}
-                  <span class="access-words">
-                    <span class="access-title">{holder.name}</span>
-                    {#if holder.email}<span class="access-meta">{holder.email}</span>{/if}
-                  </span>
-                </span>
-                <span class="access-cell"></span>
-                {#if hasVia}<span class="access-cell"></span>{/if}
-                <span class="access-cell"></span>
-                <span class="access-cell"></span>
-                <span class="access-cell access-acts">
-                  {#if isHeld(claim) && claim.editable}
-                    <IconBtn title={gone ? keepLabel : removeHolderLabel} tone={gone ? 'metal' : 'ember'} disabled={busy || struck} onclick={() => revokeHolder(claim, holder)}>
-                      <Glyph name={gone ? 'revert' : 'remove'} size="sm" />
-                    </IconBtn>
-                  {/if}
-                </span>
-              </div>
-            </li>
-          {/each}
-        </ul>
-      </div>
     {/if}
-  </li>
+  {:else if key === 'via'}
+    {holder ? '' : (claim.via ?? '')}
+  {:else if key === 'holders'}
+    {holder || !claim.holders?.length ? '' : claim.holders.length}
+  {:else if key === 'picked'}
+    <span class="access-cell access-picked">
+      {#if !holder && pickedClaims.includes(claim.id)}<Ornament name="quatrefoil" size="xs" tone="ember" />{/if}
+    </span>
+  {:else if key === 'actions'}
+    <span class="access-cell access-acts">
+      {#if holder}
+        {#if isHeld(claim) && claim.editable}
+          {@const gone = isGone(claim, holder)}
+          <IconBtn title={gone ? keepLabel : removeHolderLabel} tone={gone ? 'metal' : 'ember'} disabled={busy || struck} onclick={() => revokeHolder(claim, holder)}>
+            <Glyph name={gone ? 'revert' : 'remove'} size="sm" />
+          </IconBtn>
+        {/if}
+      {:else if canEdit(claim)}
+        <IconBtn title={changeAccessLabel} active={editingClaim === claim.id} disabled={busy || struck} onclick={() => (editingClaim = editingClaim === claim.id ? '' : claim.id)}>
+          <Glyph name="edit" size="sm" />
+        </IconBtn>
+        <IconBtn title={struck ? keepLabel : removeClaimLabel} tone={struck ? 'metal' : 'ember'} disabled={busy} onclick={() => revokeClaim(claim)}>
+          <Glyph name={struck ? 'revert' : 'remove'} size="sm" />
+        </IconBtn>
+      {/if}
+    </span>
+  {/if}
+{/snippet}
+
+{#snippet personCell(key: string, row: TableRow)}
+  {#if key === 'avatar'}
+    {@render tile({ id: row.id, name: String(row.name ?? ''), image: row.image ? String(row.image) : null })}
+  {:else if key === 'picked'}
+    <span class="access-cell access-picked">
+      {#if peopleIds.has(row.id)}<Ornament name="quatrefoil" size="xs" tone="ember" />{/if}
+    </span>
+  {:else}
+    <span class="access-text" title={String(row[key] ?? '')}>{String(row[key] ?? '')}</span>
+  {/if}
 {/snippet}
 
 <BaseDialog bind:isOpen {title} width="42rem" zIndex={9999}>
@@ -463,127 +496,99 @@
       <p class="access-alarm" role="alert">{error}</p>
     {/if}
 
-    {#if loading}
-      <div class="dnd-loading"><span class="dnd-spinner"></span></div>
-    {:else}
-      <p class="access-lede">{description}</p>
+    <p class="access-lede">{description}</p>
 
-      <section class="access-part">
-        <div class="access-head">
-          <Picker
-            id="access-claims"
-            label={claimsLabel}
-            note={claimsDescription}
-            picked={claimChips}
-            options={claimOptions}
-            onchange={setClaims}
-            placeholder={claimPlaceholder}
-            disabled={busy}
-          />
-          <span class="access-tools">
-            {#if pickedClaims.length}<span class="access-count">{pickedClaims.length}</span>{/if}
-            <IconBtn title={claimsOpen ? collapseLabel : expandLabel} active={claimsOpen} onclick={() => (claimsOpen = !claimsOpen)}>
-              <Glyph name={claimsOpen ? 'fold' : 'unfold'} size="sm" />
-            </IconBtn>
-          </span>
-        </div>
+    <section class="access-part">
+      <div class="access-head">
+        <Picker
+          id="access-claims"
+          label={claimsLabel}
+          note={claimsDescription}
+          picked={claimChips}
+          options={claimOptions}
+          onchange={setClaims}
+          onquery={(asked) => (claimQuery = asked)}
+          placeholder={claimPlaceholder}
+          disabled={busy}
+        />
+        <span class="access-tools">
+          {#if pickedClaims.length}<span class="access-count">{pickedClaims.length}</span>{/if}
+          <IconBtn title={claimsOpen ? collapseLabel : expandLabel} active={claimsOpen} onclick={() => (claimsOpen = !claimsOpen)}>
+            <Glyph name={claimsOpen ? 'fold' : 'unfold'} size="sm" />
+          </IconBtn>
+        </span>
+      </div>
 
-        <div class="access-fold" use:unfold={claimsOpen}>
-          <div class="access-list dnd-scroll" class:access-list-via={hasVia}>
-            {#if roots.length === 0}
-              <p class="access-empty">{claimsEmptyMessage}</p>
-            {:else}
-              <ul class="access-limbs">
-                {#each roots as claim (claim.id)}
-                  {@render limb(claim, 0)}
-                {/each}
-              </ul>
-            {/if}
-          </div>
-          {#if editing}
-            <div class="access-edit">
-              <div class="access-edit-head">
-                <span class="dnd-label">{changeAccessLabel}: {editing.label}</span>
-                <IconBtn title={collapseLabel} onclick={() => (editingClaim = '')}><Glyph name="fold" size="sm" /></IconBtn>
-              </div>
-              <AccessInput
-                value={accessOf(editing)}
-                options={accessOptions}
-                labels={accessLabels}
-                layout="inline"
-                disabled={busy}
-                onchange={(next) => (accessEdits = { ...accessEdits, [editing.id]: next })}
-              />
-            </div>
+      <div class="access-fold" use:unfold={claimsOpen}>
+        <div class="access-list dnd-scroll">
+          {#if loading}
+            <div class="dnd-loading"><span class="dnd-spinner"></span></div>
+          {:else if roots.length === 0}
+            <p class="access-empty">{claimsEmptyMessage}</p>
+          {:else}
+            <Tree rows={limbs} columns={claimColumns} search={claimQuery} onopen={pressClaim} cell={claimCell} />
           {/if}
         </div>
-      </section>
-
-      <section class="access-part">
-        <div class="access-head">
-          <Picker
-            id="access-people"
-            label={peopleLabel}
-            note={peopleDescription}
-            picked={peopleChips}
-            options={peopleOptions}
-            onchange={setPeople}
-            more={unlisted}
-            onmore={address}
-            moreWord={addressLabel}
-            placeholder={searchPlaceholder}
-            disabled={busy || looking}
-          />
-          <span class="access-tools">
-            {#if pickedPeople.length}<span class="access-count">{pickedPeople.length}</span>{/if}
-            <IconBtn title={peopleOpen ? collapseLabel : expandLabel} active={peopleOpen} onclick={() => (peopleOpen = !peopleOpen)}>
-              <Glyph name={peopleOpen ? 'fold' : 'unfold'} size="sm" />
-            </IconBtn>
-          </span>
-        </div>
-
-        <div class="access-fold" use:unfold={peopleOpen}>
-          <div class="access-list dnd-scroll">
-            {#if everyone.length === 0}
-              <p class="access-empty">{emptyMessage}</p>
-            {:else}
-              <div class="access-table">
-                <div class="access-table-head">
-                  <span></span>
-                  <span>{nameLabel}</span>
-                  <span>{emailLabel}</span>
-                  <span>{roleLabel}</span>
-                  <span></span>
-                </div>
-                {#each everyone as person (person.id)}
-                  {@const picked = peopleIds.has(person.id)}
-                  <button type="button" class="access-table-row" class:access-row-on={picked} aria-pressed={picked} disabled={busy} onclick={() => togglePerson(person)}>
-                    {@render tile(person)}
-                    <span class="access-title">{person.name}</span>
-                    <span class="access-meta">{person.email ?? ''}</span>
-                    <span class="access-meta">{person.role ?? ''}</span>
-                    <span class="access-picked">
-                      {#if picked}<Ornament name="quatrefoil" size="xs" tone="ember" />{/if}
-                    </span>
-                  </button>
-                {/each}
-              </div>
-            {/if}
+        {#if editing}
+          <div class="access-edit">
+            <div class="access-edit-head">
+              <span class="dnd-label">{changeAccessLabel}: {editing.label}</span>
+              <IconBtn title={collapseLabel} onclick={() => (editingClaim = '')}><Glyph name="check" size="sm" /></IconBtn>
+            </div>
+            <AccessInput
+              value={accessOf(editing)}
+              options={accessOptions}
+              labels={accessLabels}
+              layout="inline"
+              disabled={busy}
+              onchange={(next) => (accessEdits = { ...accessEdits, [editing.id]: next })}
+            />
           </div>
+        {/if}
+      </div>
+    </section>
+
+    <section class="access-part">
+      <div class="access-head">
+        <Picker
+          id="access-people"
+          label={peopleLabel}
+          note={peopleDescription}
+          picked={peopleChips}
+          options={peopleOptions}
+          onchange={setPeople}
+          onquery={(asked) => (peopleQuery = asked)}
+          more={unlisted}
+          onmore={address}
+          moreWord={addressLabel}
+          placeholder={searchPlaceholder}
+          disabled={busy || looking}
+        />
+        <span class="access-tools">
+          {#if pickedPeople.length}<span class="access-count">{pickedPeople.length}</span>{/if}
+          <IconBtn title={peopleOpen ? collapseLabel : expandLabel} active={peopleOpen} onclick={() => (peopleOpen = !peopleOpen)}>
+            <Glyph name={peopleOpen ? 'fold' : 'unfold'} size="sm" />
+          </IconBtn>
+        </span>
+      </div>
+
+      <div class="access-fold" use:unfold={peopleOpen}>
+        <div class="access-list dnd-scroll">
+          <Table columns={peopleColumns} rows={peopleRows} selectedIds={peopleIds} {loading} {emptyMessage} onrow={pressPerson} cell={personCell} />
         </div>
+      </div>
+    </section>
+
+    {#if children}
+      <section class="access-part">
+        {@render children()}
       </section>
-
-      {#if children}
-        <section class="access-part">
-          {@render children()}
-        </section>
-      {/if}
-
-      <footer class="access-foot">
-        <Button variant="ghost" disabled={busy} onclick={() => (isOpen = false)}>{cancelLabel}</Button>
-        <Button variant="primary" disabled={busy || !ready} loading={busy} onclick={() => onconfirm?.(grant)}>{confirmLabel}</Button>
-      </footer>
     {/if}
+
+    <footer class="access-foot">
+      <Button variant="ghost" disabled={busy} onclick={() => (isOpen = false)}>{cancelLabel}</Button>
+      <Button variant="primary" disabled={busy || loading || !ready} loading={busy} onclick={() => onconfirm?.(grant)}>{confirmLabel}</Button>
+    </footer>
   </div>
 </BaseDialog>
 
@@ -645,7 +650,6 @@
   }
 
   .access-list {
-    --access-indent: var(--space-4);
     max-height: calc(var(--space-8) * 4);
     padding: var(--space-2);
     border: var(--border-hair) solid var(--metal-dim);
@@ -662,109 +666,6 @@
     font-style: italic;
     color: var(--ink-faint);
     text-align: center;
-  }
-
-  .access-limbs {
-    display: grid;
-    gap: var(--space-0);
-    margin: 0;
-    padding: 0;
-    min-width: 0;
-    list-style: none;
-  }
-
-  .access-twig {
-    min-width: 0;
-  }
-
-  .access-row {
-    display: grid;
-    grid-template-columns: var(--space-4) minmax(0, 1fr) max-content max-content var(--space-5) max-content;
-    align-items: center;
-    gap: var(--space-2);
-    min-height: var(--space-7);
-    padding-inline-start: calc(var(--access-depth) * var(--access-indent));
-    border-radius: var(--radius-sm);
-    box-shadow: inset 0 0 0 1px transparent;
-    transition: background 0.12s ease, box-shadow 0.12s ease;
-  }
-
-  .access-list-via .access-row {
-    grid-template-columns: var(--space-4) minmax(0, 1fr) max-content max-content max-content var(--space-5) max-content;
-  }
-
-  .access-row:hover {
-    background: linear-gradient(90deg, color-mix(in srgb, var(--ember) 12%, transparent) 0%, transparent 90%);
-  }
-
-  .access-row-on {
-    background:
-      linear-gradient(90deg, color-mix(in srgb, var(--ember) 20%, transparent) 0%, color-mix(in srgb, var(--ember) 6%, transparent) 100%),
-      var(--ground-deep);
-    box-shadow: inset 0 0 0 1px var(--metal), inset 0 0 10px var(--ember-glow);
-  }
-
-  .access-row-struck .access-title,
-  .access-row-struck .access-meta {
-    text-decoration: line-through;
-    opacity: 0.5;
-  }
-
-  .access-caret {
-    justify-self: center;
-    width: 0;
-    height: 0;
-    padding: 0;
-    border: none;
-    border-top: var(--space-1) solid transparent;
-    border-bottom: var(--space-1) solid transparent;
-    border-inline-start: var(--space-1) solid var(--metal);
-    background: none;
-    filter: drop-shadow(0 1px 0 var(--shadow-ink));
-    cursor: pointer;
-    transition: transform 0.15s ease, border-color 0.15s ease;
-  }
-
-  .access-caret:hover,
-  .access-caret-open {
-    border-inline-start-color: var(--metal-bright);
-  }
-
-  .access-caret-open {
-    transform: rotate(90deg);
-  }
-
-  .access-caret:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
-  }
-
-  .access-name {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    min-width: 0;
-    padding: var(--space-1) 0;
-    border: none;
-    background: none;
-    font: inherit;
-    text-align: start;
-    color: var(--ink);
-    cursor: pointer;
-  }
-
-  .access-name:disabled {
-    cursor: default;
-  }
-
-  .access-name-still {
-    cursor: default;
-  }
-
-  .access-name:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
-    border-radius: var(--radius-sm);
   }
 
   .access-tile {
@@ -799,27 +700,6 @@
     object-fit: cover;
   }
 
-  .access-words {
-    display: grid;
-    min-width: 0;
-  }
-
-  .access-title {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: var(--text-sm);
-    color: var(--ink);
-  }
-
-  .access-meta {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: var(--text-xs);
-    color: var(--ink-faint);
-  }
-
   .access-new {
     flex: none;
     padding: 0 var(--space-2);
@@ -836,16 +716,19 @@
   .access-cell {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    gap: var(--space-2);
     min-width: 0;
-    font-size: var(--text-xs);
-    color: var(--ink-faint);
   }
 
-  .access-holders,
-  .access-via {
-    font-family: var(--font-display);
-    letter-spacing: var(--tracking-wide);
+  .access-cell-struck {
+    text-decoration: line-through;
+    opacity: 0.5;
+  }
+
+  .access-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
@@ -854,11 +737,9 @@
   }
 
   .access-acts {
+    justify-content: flex-end;
     gap: var(--space-0);
-  }
-
-  .access-nest {
-    display: grid;
+    height: var(--space-6);
   }
 
   .access-edit {
@@ -871,51 +752,6 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--space-2);
-  }
-
-  .access-table {
-    display: grid;
-    gap: var(--space-0);
-  }
-
-  .access-table-head,
-  .access-table-row {
-    display: grid;
-    grid-template-columns: var(--space-6) minmax(0, 2fr) minmax(0, 2fr) minmax(0, 1fr) var(--space-5);
-    align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-1) var(--space-2);
-  }
-
-  .access-table-head {
-    font-family: var(--font-display);
-    font-size: var(--text-xs);
-    letter-spacing: var(--tracking-caps);
-    text-transform: uppercase;
-    color: var(--metal-dim);
-    text-shadow: 0 1px 0 var(--shadow-ink);
-  }
-
-  .access-table-row {
-    width: 100%;
-    min-height: var(--space-7);
-    border: none;
-    border-radius: var(--radius-sm);
-    background: none;
-    box-shadow: inset 0 0 0 1px transparent;
-    font: inherit;
-    text-align: start;
-    cursor: pointer;
-    transition: background 0.12s ease, box-shadow 0.12s ease;
-  }
-
-  .access-table-row:hover {
-    background: linear-gradient(90deg, color-mix(in srgb, var(--ember) 12%, transparent) 0%, transparent 90%);
-  }
-
-  .access-table-row:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
   }
 
   .access-foot {

@@ -11,7 +11,7 @@
   export type Mode = 'edit' | 'read'
 
   export type Scribe = {
-    table: { pages: Resource[]; loading: boolean; saving: boolean }
+    table: { readonly pages: Resource[]; readonly loading: boolean; saving: boolean }
     readonly campaign: Campaign | null
     readonly owner: Owner | null
     readonly open: Resource | null
@@ -27,6 +27,7 @@
     enter: (id: string) => void
     postPage: (parentId?: string | null) => Promise<void>
     putPage: (held: Resource) => void
+    share: (one: Resource) => void
     countKids: (one: Resource) => number
     parentOf: (one: Resource) => Resource | null
     written: (one: Resource) => string
@@ -41,7 +42,7 @@
     return getContext<Scribe>(KEY)
   }
 
-  let held: { key: string; pages: Resource[] } = { key: '', pages: [] }
+  let held: { key: string; table: Resource[]; own: Resource[] } = { key: '', table: [], own: [] }
 </script>
 
 <script lang="ts">
@@ -64,6 +65,7 @@
   import SearchInput from '$components/ui/SearchInput.svelte'
   import ToggleGroup from '$components/ui/ToggleGroup.svelte'
   import Dropdown, { type DropdownOption } from '$components/ui/Dropdown.svelte'
+  import ResourceAccess from '$components/campaign/ResourceAccess.svelte'
 
   const SAVE_DELAY = 600
   const HOME = '/main/scribe'
@@ -94,9 +96,7 @@
 
   let ready = $state(false)
   const campaign = $derived($userCampaigns.find((one) => one.id === $currentCampaignId) ?? $userCampaigns[0] ?? null)
-  const owner = $derived<Owner | null>(
-    !ready ? null : campaign ? { at: 'campaign', id: campaign.id } : $user ? { at: 'user', id: $user.user_id } : null
-  )
+  const reader = $derived<Owner | null>(ready && $user ? { at: 'user', id: $user.user_id } : null)
 
   const steps = $derived($resolvedRoute.path.startsWith(`${HOME}/`) ? $resolvedRoute.path.split('/').filter(Boolean).slice(2) : [])
   const openId = $derived(steps[0] ?? '')
@@ -114,7 +114,27 @@
   const picked = $derived((query.get('tags') ?? '').split(',').filter(Boolean))
   const inId = $derived(query.get('in') ?? '')
 
-  const table = $state<Scribe['table']>({ pages: held.pages, loading: held.key === '', saving: false })
+  const rolls = $state({ table: held.table, own: held.own })
+  let loading = $state(held.key === '')
+  let saving = $state(false)
+  let sharingId = $state('')
+  const own = $derived(openId ? rolls.own.some((one) => one.id === openId) : !campaign || query.get('own') === '1')
+  const owner = $derived<Owner | null>(own ? reader : ready && campaign ? { at: 'campaign', id: campaign.id } : null)
+  const table: Scribe['table'] = {
+    get pages() {
+      return own ? rolls.own : rolls.table
+    },
+    get loading() {
+      return loading
+    },
+    get saving() {
+      return saving
+    },
+    set saving(next) {
+      saving = next
+    }
+  }
+  const sharing = $derived(table.pages.find((one) => one.id === sharingId) ?? null)
   let hunt = $state(new URLSearchParams($resolvedRoute.search ?? '').get('q') ?? '')
   let huntTimer: ReturnType<typeof setTimeout> | undefined
   let loadedFor = ''
@@ -132,7 +152,10 @@
   function show(id: string, next: Mode = 'read') {
     const path = id ? `${HOME}/${id}${next === 'edit' ? '/edit' : ''}` : HOME
     if (path === $resolvedRoute.path) return
-    navigate(`${path}${$resolvedRoute.search ?? ''}`)
+    const search = new URLSearchParams($resolvedRoute.search ?? '')
+    if (own && campaign) search.set('own', '1')
+    else search.delete('own')
+    navigate(`${path}${search.size > 0 ? `?${search.toString()}` : ''}`)
   }
 
   function seekPages(text: string) {
@@ -162,7 +185,7 @@
   const rows = $derived(roots.map(limb))
 
   const crumbs = $derived<Crumb[]>([
-    { id: '', title: campaign ? campaign.name : 'Your own' },
+    { id: '', title: campaign && !own ? campaign.name : 'Your own' },
     ...(open || inside ? [{ id: CRUMB_SCRIBE, title: 'Scribe' }] : []),
     ...(open ? trail : inside ? getTrail(table.pages, inside.id) : []).map((step) => ({ id: step.id, title: step.title }))
   ])
@@ -219,12 +242,17 @@
   }
 
   function loreOf(one: Resource): string {
-    return `${campaign ? `/main/campaign/${campaign.id}` : '/main'}/entries/${one.id}`
+    return `${campaign && one.campaign_id ? `/main/campaign/${campaign.id}` : '/main'}/entries/${one.id}`
   }
 
   function putPage(next: Resource) {
-    table.pages = table.pages.map((one) => (one.id === next.id ? next : one))
-    held = { ...held, pages: table.pages }
+    rolls.table = rolls.table.map((one) => (one.id === next.id ? next : one))
+    rolls.own = rolls.own.map((one) => (one.id === next.id ? next : one))
+    held = { ...held, table: rolls.table, own: rolls.own }
+  }
+
+  function share(one: Resource) {
+    sharingId = one.id
   }
 
   function enter(id: string) {
@@ -233,7 +261,7 @@
 
   function openCrumb(id: string) {
     if (id === '') {
-      navigate(campaign ? `/main/campaign/${campaign.id}` : '/main')
+      navigate(campaign && !own ? `/main/campaign/${campaign.id}` : '/main')
       return
     }
     if (!open) {
@@ -254,25 +282,27 @@
   }
 
   async function getPages() {
-    if (!owner) return
-    const key = `${owner.at}/${owner.id}`
+    if (!reader) return
+    const key = `${campaign?.id ?? ''}/${reader.id}`
     if (key === loadedFor) return
     loadedFor = key
     if (held.key === key) {
-      table.pages = held.pages
-      table.loading = false
+      rolls.table = held.table
+      rolls.own = held.own
+      loading = false
     } else {
-      table.loading = true
+      loading = true
     }
     try {
-      const pages = await getAll(owner, 'entries')
-      held = { key, pages }
-      table.pages = pages
-      if (openId && !pages.some((one) => one.id === openId)) show('')
+      const [pages, loose] = await Promise.all([campaign ? getAll({ at: 'campaign', id: campaign.id }, 'entries') : [], getAll(reader, 'entries')])
+      held = { key, table: pages, own: loose }
+      rolls.table = pages
+      rolls.own = loose
+      if (openId && ![...pages, ...loose].some((one) => one.id === openId)) show('')
     } catch (reason) {
       postNotice(reason instanceof Error ? reason.message : String(reason))
     } finally {
-      table.loading = false
+      loading = false
     }
   }
 
@@ -410,6 +440,7 @@
     enter,
     postPage,
     putPage,
+    share,
     countKids,
     parentOf,
     written,
@@ -437,6 +468,9 @@
 {#snippet actions()}
   {#if table.saving}<span class="dnd-spinner scribe-saving"></span>{/if}
   {#if open}
+    <IconBtn title="Share" onclick={() => share(open)}>
+      <Glyph name="share" size="md" />
+    </IconBtn>
     <IconBtn title={picture ? 'Change banner' : 'Set banner'} onclick={() => (picking = true)}>
       <Glyph name="image" size="md" />
     </IconBtn>
@@ -469,6 +503,19 @@
     onsearch={seekPages}
     ontags={(next) => put({ tags: next.join(',') || null })}
   />
+{/snippet}
+
+{#snippet shelves()}
+  {#if campaign}
+    <ToggleGroup label="Pages">
+      <IconBtn title={campaign.name} active={!own} onclick={() => put({ own: null, in: null })}>
+        <Glyph name="campaign" size="md" />
+      </IconBtn>
+      <IconBtn title="Your own" active={own} onclick={() => put({ own: '1', in: null })}>
+        <Glyph name="user" size="md" />
+      </IconBtn>
+    </ToggleGroup>
+  {/if}
 {/snippet}
 
 {#snippet views()}
@@ -523,6 +570,7 @@
       heading={open ? heading : undefined}
       {actions}
       center={open ? undefined : center}
+      tools={open ? undefined : shelves}
       view={open ? undefined : views}
       bottom={open && strip ? bottom : undefined}
       banner={open && picture ? cover : undefined}
@@ -535,6 +583,17 @@
     </Router>
   </div>
 </Shell>
+
+{#if sharing && owner}
+  {@const one = sharing}
+  <ResourceAccess
+    bind:isOpen={() => true, (next) => { if (!next) sharingId = '' }}
+    {owner}
+    campaign={own ? null : campaign}
+    kind="entries"
+    bind:one={() => one, putPage}
+  />
+{/if}
 
 {#if picking}
   <MediaDialog

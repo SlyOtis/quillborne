@@ -5,7 +5,7 @@
   import { navigate, currentRoute, resolvedRoute } from 'sly-svelte-location-router'
   import { getAll, getChildren, getRoots, isResourceKind, RESOURCES, type Resource, type ResourceKind } from '$lib/resources'
   import { user, userDetails, userProfile } from '$lib/stores/auth.store'
-  import { userCampaigns } from '$lib/stores/campaign.store'
+  import { currentCampaignId, userCampaigns } from '$lib/stores/campaign.store'
   import { currentCharacterId, userCharacters } from '$lib/stores/character.store'
   import Fold from '$components/ui/Fold.svelte'
   import Tree, { type TreeRow } from '$components/ui/Tree.svelte'
@@ -94,7 +94,9 @@
       : $userCampaigns[0]?.id ?? ''
   )
 
-  const owner = $derived<Owner | null>(campaignId ? { at: 'campaign', id: campaignId } : $user ? { at: 'user', id: $user.user_id } : null)
+  const table = $derived($userCampaigns.find((one) => one.id === $currentCampaignId) ?? $userCampaigns[0] ?? null)
+  const owner = $derived<Owner | null>(table ? { at: 'campaign', id: table.id } : null)
+  const reader = $derived<Owner | null>($user ? { at: 'user', id: $user.user_id } : null)
 
   let more = $state<Record<string, Resource[]>>({})
 
@@ -109,9 +111,10 @@
 
   $effect(() => {
     const at = owner
+    const own = reader
     let live = true
 
-    if (!at) {
+    if (!own) {
       error = null
       loading = false
       return
@@ -122,9 +125,9 @@
 
     void (async () => {
       try {
-        const entries = await getAll(at, 'entries')
+        const [entries, loose] = await Promise.all([at ? getAll(at, 'entries') : [], getAll(own, 'entries')])
         if (!live) return
-        more = { entries }
+        more = { entries, loose }
       } catch (reason) {
         if (!live) return
         error = reason instanceof Error ? reason.message : String(reason)
@@ -155,6 +158,7 @@
   }
 
   const pages = $derived<TreeRow[]>(twigs(more.entries ?? [], 'entries', 'scroll'))
+  const loose = $derived<TreeRow[]>(twigs(more.loose ?? [], 'entries', 'scroll'))
 
   function openPage(id: string) {
     navigate(`/main/scribe/${id}`)
@@ -247,8 +251,14 @@
         {#if loading}
           <div class="dnd-loading"><span class="dnd-spinner"></span></div>
         {:else}
+          {#if table}
+            <div class="dnd-scroll dnd-menu-pages-tree">
+              <Tree rows={pages} on={scribeOpen} search={hunt} onopen={openPage} />
+            </div>
+          {/if}
+          <h3 class="dnd-label dnd-menu-pages-head">Your own</h3>
           <div class="dnd-scroll dnd-menu-pages-tree">
-            <Tree rows={pages} on={scribeOpen} search={hunt} onopen={openPage} />
+            <Tree rows={loose} on={scribeOpen} search={hunt} onopen={openPage} />
           </div>
         {/if}
       </div>
@@ -456,6 +466,13 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+  }
+
+  .dnd-menu-pages-head {
+    margin: 0;
+    padding-top: var(--space-3);
+    border-top: var(--menu-hair);
+    color: var(--menu-text-muted);
   }
 
   .dnd-menu-note {

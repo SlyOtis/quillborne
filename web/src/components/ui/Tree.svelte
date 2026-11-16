@@ -8,6 +8,8 @@
     mark?: string
     /** The mark drawn before the name; a row with kids draws the folder, the rest the file. */
     glyph?: GlyphName
+    /** Draws the name and its mark struck through, a row about to be taken away. */
+    struck?: boolean
     kids?: TreeRow[]
     [key: string]: unknown
   }
@@ -169,7 +171,7 @@
             <span class="dnd-tree-spacer"></span>
           {/if}
         </span>
-        <button type="button" class="dnd-tree-stem" onclick={() => press(row, expandable)}>
+        <button type="button" class="dnd-tree-stem" class:dnd-tree-stem-struck={row.struck} onclick={() => press(row, expandable)}>
           <span class="dnd-tree-glyph"><Glyph name={glyphOf(row, expandable, expanded)} size="sm" /></span>
           <span class="dnd-tree-text">{row.title}</span>
           {#if row.mark}<span class="dnd-tree-meta">{row.mark}</span>{/if}
@@ -454,7 +456,7 @@
   }
 
   .dnd-tree-meta {
-    flex: 0 1 auto;
+    flex: 0 9999 auto;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -463,6 +465,11 @@
     font-size: var(--text-xs);
     color: var(--ink-faint);
     text-shadow: none;
+  }
+
+  .dnd-tree-stem-struck {
+    text-decoration: line-through;
+    opacity: 0.5;
   }
 
   .dnd-tree-cell {

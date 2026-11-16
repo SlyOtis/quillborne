@@ -19,6 +19,7 @@
     picked,
     options,
     onchange,
+    onquery,
     free,
     more,
     onmore,
@@ -38,6 +39,8 @@
     options: Pick[]
     /** Runs with the new chips whenever one is added or removed. */
     onchange: (picked: Pick[]) => void
+    /** Runs with the typed text as it changes, so a list beside the well can follow it. */
+    onquery?: (query: string) => void
     /** When set, Enter or a comma on typed text that matches nothing makes a chip with this mark. */
     free?: string
     /** Says whether the typed text earns the extra row at the foot of the dropdown. */
@@ -70,6 +73,7 @@
   function take(tag: Pick) {
     onchange([...picked, tag])
     query = ''
+    onquery?.('')
     at = 0
   }
 
@@ -83,7 +87,10 @@
     const same = found.find((entry) => entry.name.toLowerCase() === name.toLowerCase())
     if (same) take(same)
     else if (!picked.some((entry) => entry.mark === free && entry.name.toLowerCase() === name.toLowerCase())) take({ id: name, mark: free, name })
-    else query = ''
+    else {
+      query = ''
+      onquery?.('')
+    }
   }
 
   function step(event: KeyboardEvent) {
@@ -138,6 +145,7 @@
       oninput={() => {
         open = true
         at = 0
+        onquery?.(query)
       }}
       onkeydown={step}
     />
