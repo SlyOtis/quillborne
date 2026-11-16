@@ -338,7 +338,7 @@ import Toast from '$components/ui/Toast.svelte'
       <span class="dnd-shell-ground" aria-hidden="true">{@render $shell.backdrop()}</span>
     {/if}
 
-    <div class="dnd-scroll dnd-shell-scroll" class:dnd-shell-scroll-flush={$shell.flush} bind:this={scroller}>
+    <div class="dnd-scroll dnd-shell-scroll dnd-shell-scroll-{$shell.width}" class:dnd-shell-scroll-flush={$shell.flush} bind:this={scroller}>
       {#if !$shell.backdrop}
         <span class="dnd-shell-veil" aria-hidden="true">
           <span class="dnd-shell-window"><Glass size="xl" /></span>
@@ -357,7 +357,7 @@ import Toast from '$components/ui/Toast.svelte'
         <div class="dnd-shell-band">{@render $shell.band()}</div>
       {/if}
 
-      <div class="dnd-shell-hold dnd-shell-hold-{$shell.width}" class:dnd-shell-hold-flush={$shell.flush}>
+      <div class="dnd-shell-hold" class:dnd-shell-hold-flush={$shell.flush}>
         {@render children?.()}
       </div>
     </div>
@@ -897,6 +897,8 @@ import Toast from '$components/ui/Toast.svelte'
   }
 
   .dnd-shell-scroll {
+    --shell-hold-max: var(--size-page-max);
+    --shell-hold-pad: clamp(var(--space-3), 3cqi, var(--space-6));
     position: relative;
     z-index: 2;
     flex: 1;
@@ -905,14 +907,22 @@ import Toast from '$components/ui/Toast.svelte'
     overscroll-behavior-x: none;
   }
 
+  .dnd-shell-scroll-narrow {
+    --shell-hold-max: 1040px;
+  }
+
+  .dnd-shell-scroll-wide {
+    --shell-hold-max: 1200px;
+  }
+
   .dnd-shell-hold {
     container: page / inline-size;
     display: flex;
     flex-direction: column;
     gap: var(--space-5);
     min-width: 0;
-    padding: clamp(var(--space-4), 3cqi, var(--space-6)) clamp(var(--space-3), 3cqi, var(--space-6)) var(--space-8);
-    max-width: min(100%, var(--size-page-max));
+    padding: clamp(var(--space-4), 3cqi, var(--space-6)) var(--shell-hold-pad) var(--space-8);
+    max-width: min(100%, var(--shell-hold-max));
     margin: 0 auto;
   }
 
@@ -947,14 +957,6 @@ import Toast from '$components/ui/Toast.svelte'
     margin: 0;
     gap: 0;
     padding: 0;
-  }
-
-  .dnd-shell-hold-narrow {
-    max-width: 1040px;
-  }
-
-  .dnd-shell-hold-wide {
-    max-width: 1200px;
   }
 
   .dnd-shell > :global(.dnd-sidebar-start) {

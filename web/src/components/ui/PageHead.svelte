@@ -226,15 +226,22 @@
 <style>
   .dnd-pagehead {
     --pagehead-pad: var(--space-6);
+    --pagehead-hold: calc(var(--shell-hold-pad) + max(0px, (100% - var(--shell-hold-max)) / 2));
     --pagehead-ease: cubic-bezier(0.4, 0, 0.2, 1);
     display: grid;
     align-content: center;
     gap: var(--space-3);
     margin: 0;
-    padding: var(--pagehead-pad);
+    padding: var(--pagehead-pad) 0;
     transition:
       padding var(--pagehead-duration, 0.35s) var(--pagehead-ease),
       row-gap var(--pagehead-duration, 0.35s) var(--pagehead-ease);
+  }
+
+  .dnd-pagehead-line,
+  .dnd-pagehead-fold,
+  .dnd-pagehead-bottom {
+    padding-inline: var(--pagehead-hold);
   }
 
   .dnd-pagehead-tabbed {
@@ -391,7 +398,5 @@
 
   .dnd-pagehead-bottom {
     min-width: 0;
-    margin-inline: calc(var(--pagehead-pad) * -1);
-    padding-inline: var(--pagehead-pad);
   }
 </style>
