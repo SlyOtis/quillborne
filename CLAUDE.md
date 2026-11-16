@@ -73,12 +73,21 @@ Rules in `.claude/rules/`, each read when its paths are touched:
 - `data.md`: `database/**`, `internal/**`, `cmd/**`, `web/src/lib/api/**`, `tygo.yaml`, `web/src/lib/collab.ts`, `web/src/lib/ai.ts`.
 - `cli.md`: `internal/qubo/**`, `internal/state/**`, `cmd/qubo/**`, `test/go/state_test.go`.
 - `registration.md`: `deploy/sauth/**`, the login and redirect pages the deploy uploads to the prophet.
+- `go.md`: `internal/**`, `cmd/**`, `test/go/**`.
+- `claimius.md`: `internal/**`, `cmd/main.go`, `database/**`, `deploy/sauth/**`.
+- `sql.md`: `database/**`, `scripts/build-db.sh`, `scripts/dev-db.sh`, `scripts/migrate.sh`.
+- `tests.md`: `test/**`, `web/test/**`, every `*.spec.ts` and `*.fixture.ts` under `web/src`.
 - `setup.md` and `workflow.md`: everywhere.
+
+Agents in `.claude/agents/`, each consulted before its concern is built and holding the rule file named, `features` skill 5.1 to 5.4:
+
+- `go` (`go.md`), `claimius` (`claimius.md`), `sql` (`sql.md`), `design` (`components.md`, `buttons.md`, `DESIGN.md`) and `tester` (`tests.md`); `reviewer` runs the gate when work is reported done and puts what fails on the board as bug tasks.
 
 Skills in `.claude/skills/`:
 
 - `run`: start Quillborne locally on this worktree's own slot, signed in as the debug user; `.claude/skills/run/scripts/latest.sh` keeps the main checkout on the newest `main` at http://localhost:5175.
 - `features`: take features in as they arrive, one local task under `.claude/tasks/features/`, one worktree and one agent per surface, verify on the main checkout and merge the moment it works. No GitHub issue is made for a task.
+- `debug`: the debug process: the newest `main`, the lint and the type check of a surface, where each error is and which agent owns it, then the fix at the cause; every building agent runs it on its own surface and the `reviewer` on all.
 - `qubo`: the cli, its state export and import and its mcp tools; installed by `just install-cli-skill`.
 - `nimon` and `nimon-pr`: drive the browser through a page or a pull request and record it; installed by `just install`.
 - `git` and `github`: the git cli and everything that talks to GitHub.

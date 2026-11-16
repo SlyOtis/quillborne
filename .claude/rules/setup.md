@@ -52,8 +52,4 @@ A change that adds or alters something a player sees adds or updates its records
 
 ## Tests
 
-`vitest` for the web and `go test` for the service, both run by `just test`. The rules engine and the nimap core are the tested surfaces on the web: the parser, the resolver, the bridge and the store, and the geometry, model and tools of `maps.md`. A new system or a new formula ships with a case. The web `test` script runs `web/test/nimap/tools/performance.spec.ts` alone after the rest, because it measures time.
-
-Every route ships with a Go test of who may and who may not reach it, the way `test/go/access_test.go` proves that a player reads a campaign only once seated and a hidden roll reaches the DM alone. Every stream ships with a test of what it delivers to whom, the way `test/go/stream_test.go` proves a hidden roll never reaches a player's stream.
-
-A file named `*.spec.ts` is a test. A fixture is `*.fixture.ts` and never carries the test suffix.
+`tests.md` carries it: which kind of test proves which thing, the minimum each route, stream, state group and formula ships with, the names, and where a suite may run.
