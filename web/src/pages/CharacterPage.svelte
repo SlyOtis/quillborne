@@ -329,6 +329,8 @@
   const bespokeSlots = ['initiative', 'armorClass', 'speed', 'maxHitPoints']
 
   const slots = $derived($rules.resolved?.derived.filter((entry) => !bespokeSlots.includes(entry.id)) ?? [])
+  const bespoke = (id: string) => $rules.resolved?.derived.find((entry) => entry.id === id)?.value
+  const speeds = $derived($rules.resolved?.speeds.filter((entry) => entry.value > 0) ?? [])
   const hitDice = $derived($rules.resolved?.pools.find((pool) => pool.id === 'hitDice'))
   const slotPlaces = $derived<DynamicGridItem[]>(
     ['initiative', 'armor', 'hitDice', ...slots.map((slot) => slot.id)].map((id, at) => ({ id: `slot/${id}`, x: 6 + at, y: 0, w: 1, h: 4, minW: 1, minH: 3 }))
@@ -581,10 +583,11 @@
                 subTitle="bonus"
                 prefix="+"
       />
-      <PlainBox bind:value={$info.speed}
-                title="Walking"
-                subTitle="speed"
-      />
+      {#each speeds as speed (speed.id)}
+        <PlainBox value="{speed.value}{speed.unit ? ` ${speed.unit}` : ''}" title={speed.title} subTitle="speed" />
+      {:else}
+        <PlainBox value={$info.speed} title="Walking" subTitle="speed" />
+      {/each}
     </div>
 
     <div class="sheet-grid" class:sheet-grid-arranging={arranging} bind:clientWidth={room}>
@@ -616,9 +619,9 @@
           {:else if placed.id === 'defences'}
             {@render group('defences', 'Defences and conditions', defences)}
           {:else if placed.id === 'slot/initiative'}
-            <Initiative bind:initiative={$info.initiative}/>
+            <Initiative initiative={bespoke('initiative') ?? $info.initiative}/>
           {:else if placed.id === 'slot/armor'}
-            <PlainBox bind:value={$info.ac} title="Armor" subTitle="class" />
+            <PlainBox value={bespoke('armorClass') ?? $info.ac} title="Armor" subTitle="class" />
           {:else if placed.id === 'slot/hitDice'}
             <Stat label="Hit dice" value="{hitDice?.remaining ?? 0}/{hitDice?.max ?? '--'}" sub="d{$info.class?.hitDice?.die || 8}" title="Hit dice left to spend" />
           {:else if placed.id.startsWith('slot/')}

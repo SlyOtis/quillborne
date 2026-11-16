@@ -12,7 +12,7 @@ export type RulesState = {
   error: string | null
 }
 
-const SOURCE_KEYS = ['info', 'abilities', 'skills', 'savingThrows', 'special'] as const
+const SOURCE_KEYS = ['info', 'abilities', 'skills', 'savingThrows', 'special', 'inventory'] as const
 
 type Loaded = Pick<RulesState, 'system' | 'error'>
 

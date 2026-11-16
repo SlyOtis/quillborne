@@ -18,6 +18,7 @@ function getContextStub(systems: string[] = ['dnd5e']): CharacterContext {
     skills: writable(lars.skills),
     savingThrows: writable(lars.savingThrows),
     special: writable(lars.special),
+    inventory: writable(lars.inventory),
     systems: writable(systems),
     overlay: writable(null)
   } as unknown as CharacterContext

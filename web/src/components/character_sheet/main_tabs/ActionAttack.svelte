@@ -8,63 +8,13 @@
 
   let {action}: { action: CharacterAction } = $props()
 
-  const {inventory, equipped} = getContext<CharacterContext>('character')
+  const {inventory} = getContext<CharacterContext>('character')
 
   let isRanged = $derived(!!action.range)
 
-  let equippedAmmo = $derived.by(() => {
-    if (!isRanged) return null;
-
-    if (!$equipped || !Array.isArray($equipped)) {
-      console.warn('Equipped is not an array:', $equipped);
-      return null;
-    }
-    
-    const equippedAmmoItem = $equipped.find(equippedItem => {
-      if (!equippedItem) return false;
-
-      if (equippedItem.id === 'ammunition') return true;
-
-      if (equippedItem.title && equippedItem.title.toLowerCase().includes('ammunition')) return true;
-
-      if (equippedItem.type) {
-        const types = equippedItem.type.split(',').map(t => t.trim().toLowerCase());
-        if (types.includes('ammunition')) return true;
-      }
-      
-      return false;
-    });
-    
-    if (!equippedAmmoItem) return null;
-
-    const ammo = $inventory.find(item => 
-      item.id === equippedAmmoItem.id && 
-      item.quantity > 0
-    );
-
-    console.log('=== AMMO CHECK (ARRAY SYSTEM) ===', action.name, {
-      isRanged,
-      actionRange: action.range,
-      equippedItems: $equipped,
-      equippedItemsWithTypes: $equipped.map(item => ({ 
-        id: item.id, 
-        title: item.title, 
-        type: item.type,
-        typesArray: item.type.split(',').map(t => t.trim().toLowerCase())
-      })),
-      equippedAmmoItem,
-      inventoryAmmoItems: $inventory.filter(item => item.type === 'ammunition').map(item => ({
-        id: item.id,
-        title: item.title,
-        type: item.type,
-        quantity: item.quantity
-      })),
-      foundAmmo: ammo ? { id: ammo.id, title: ammo.title, quantity: ammo.quantity } : null,
-      buttonsWillBeDisabled: isRanged && !ammo
-    });
-    
-    return ammo;
-  })
+  let equippedAmmo = $derived(isRanged
+    ? $inventory.find(item => item.equipped && item.quantity > 0 && (item.type === 'ammunition' || item.title.toLowerCase().includes('ammunition')))
+    : undefined)
 
   let buttonsDisabled = $derived(isRanged && !equippedAmmo)
 

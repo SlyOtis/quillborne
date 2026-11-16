@@ -1,7 +1,8 @@
 import { deleteFile, deleteResource, getReachedResources, getResources, isStoredFile, postResource, putResource } from './api'
 import type { Access, Owner } from './api/types'
+import type { CharacterInventoryItem } from './character.types'
 import { dropDoc } from './collab'
-import type { ItemAttribute, ItemGrants } from './rules/item.types'
+import type { ItemAttribute, ItemCharges, ItemGrants, ItemSpell } from './rules/item.types'
 import type { RuleSystem } from './rules/spec.types'
 
 /** A label the writer added to the head, with the line written next to it. */
@@ -332,30 +333,31 @@ export function getGrantLines(grants: ItemGrants, system: RuleSystem): Fact[] {
     ...grants.senses.map((one) => ranged(one, system.senses)),
     ...grants.speeds.map((one) => ranged(one, system.speeds)),
     ...joined('On a hit', grants.damage.map((one) => `${/^[+-]/.test(one.dice) ? one.dice : `+${one.dice}`}${one.damage ? ` ${title(system.damageTypes, one.damage).toLowerCase()}` : ''}${one.note ? `, ${one.note}` : ''}`)),
-    ...grants.spells.map((one) => ({
-      label: one.name,
-      value: [
-        one.level === 0 ? 'Cantrip' : `Level ${one.level}`,
-        one.charges > 0 ? `${one.charges} ${one.charges === 1 ? 'charge' : 'charges'}` : '',
-        one.dc !== undefined ? `save DC ${one.dc}` : '',
-        one.attack !== undefined ? `${signed(one.attack)} to hit` : '',
-        one.note
-      ]
-        .filter(Boolean)
-        .join(', ')
-    })),
+    ...grants.spells.map((one) => ({ label: one.name, value: getItemSpellLine(one) })),
     ...grants.features.map((one) => ({ label: one.name, value: one.text })),
-    ...(charges.max > 0
-      ? [
-          {
-            label: 'Charges',
-            value: [`${charges.max}`, charges.regain ? `regains ${charges.regain}${charges.at ? ` at ${title(system.recharges, charges.at).toLowerCase()}` : ''}` : '', charges.last]
-              .filter(Boolean)
-              .join(', ')
-          }
-        ]
-      : [])
+    ...(charges.max > 0 ? [{ label: 'Charges', value: getChargesLine(charges, system) }] : [])
   ]
+}
+
+/** A spell an item casts written out: its level, what it spends of the charges, its save or attack and its note. */
+export function getItemSpellLine(one: ItemSpell): string {
+  return [
+    one.level === 0 ? 'Cantrip' : `Level ${one.level}`,
+    one.charges > 0 ? `${one.charges} ${one.charges === 1 ? 'charge' : 'charges'}` : '',
+    one.dc !== undefined ? `save DC ${one.dc}` : '',
+    one.attack !== undefined ? `${one.attack < 0 ? one.attack : `+${one.attack}`} to hit` : '',
+    one.note
+  ]
+    .filter(Boolean)
+    .join(', ')
+}
+
+/** The charges an item holds written out, with when they come back in the system's words. */
+export function getChargesLine(charges: ItemCharges, system: RuleSystem): string {
+  const at = system.recharges?.find((one) => one.id === charges.at)?.title ?? charges.at
+  return [`${charges.max}`, charges.regain ? `regains ${charges.regain}${at ? ` at ${at.toLowerCase()}` : ''}` : '', charges.last]
+    .filter(Boolean)
+    .join(', ')
 }
 
 function putItemFields(one: Partial<Item>): Record<string, unknown> {
@@ -393,6 +395,27 @@ export function getItemType(one: Pick<Item, 'category' | 'subtype'>): string {
 export function getItemLine(one: Pick<Item, 'category' | 'subtype' | 'rarity' | 'attunement' | 'attuned_by'>): string {
   const bond = one.attuned_by ? `requires attunement ${one.attuned_by}` : 'requires attunement'
   return `${getItemType(one)}, ${one.rarity}${one.attunement ? ` (${bond})` : ''}`
+}
+
+/** An item of the room as a character carries it: what the sheet shows of it, its grants, and where it came from. */
+export function getCarriedItem(one: Item): CharacterInventoryItem {
+  return {
+    id: crypto.randomUUID(),
+    title: one.title,
+    type: one.consumable ? 'consumable' : one.category === 'tool' || one.category === 'treasure' ? one.category : 'misc',
+    subtype: getItemType(one),
+    rarity: one.rarity,
+    attributes: one.tags,
+    description: one.description,
+    value: { amount: one.value, currency: 'gp' },
+    weight: one.weight,
+    quantity: 1,
+    equippable: !one.consumable,
+    equipped: false,
+    ...(one.attunement ? { attunement: { required: true, attuned: false } } : {}),
+    origin: { source: one.source, id: one.id },
+    grants: one.grants
+  }
 }
 
 /** The token a rarity is written in under the active theme. */

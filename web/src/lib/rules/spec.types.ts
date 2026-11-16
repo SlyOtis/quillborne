@@ -47,6 +47,19 @@ export type MeasureSpec = TitledSpec & {
   unit?: string
 }
 
+export type SpeedSpec = MeasureSpec & {
+  /** What the speed is before anything worn reaches it, zero when it names nothing. */
+  value?: Expression
+}
+
+/** How a character carries items. */
+export type ItemRules = {
+  /** How many items the character may be attuned to at once, against the resolved character. */
+  attunement: Expression
+  /** Whether an item's grants reach the character, against `equipped`, `attuned` and `attunement`, each 1 or 0. */
+  applies: Expression
+}
+
 export type ConditionSpec = TitledSpec & {
   levels?: number
 }
@@ -131,9 +144,10 @@ export type RuleSystem = {
   defences?: TitledSpec[]
   /** The `bonus.<id>` names the formulas read, titled so a choice can name them. */
   bonuses?: TitledSpec[]
-  speeds?: MeasureSpec[]
+  speeds?: SpeedSpec[]
   /** When a thing that spends charges gets them back. */
   recharges?: TitledSpec[]
+  items?: ItemRules
 }
 
 export type RuleSystemOverlay = Partial<Omit<RuleSystem, 'id' | 'title' | 'version'>> & {
@@ -152,6 +166,8 @@ export type CharacterSheet = {
   proficiencies: CharacterProficiencyMap
   pools: Record<string, number>
   bonuses: Record<string, number>
+  /** The least a `sense.<id>` or a `speed.<id>` reaches, from what the character wears. */
+  reaches?: Record<string, number>
 }
 
 export type ResolvedValue = {
@@ -192,6 +208,7 @@ export type ResolvedCharacter = {
   skills: ResolvedSkill[]
   saves: ResolvedSkill[]
   senses: ResolvedValue[]
+  speeds: ResolvedValue[]
   pools: ResolvedPool[]
   derived: ResolvedValue[]
   panels: PanelSpec[]

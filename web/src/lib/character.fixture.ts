@@ -554,7 +554,6 @@ const character: Character = {
     max: 5,
     current: 5
   },
-  equipped: [],
   soundBoard: {
     id: "default_soundboard",
     name: "My Sound Board",

@@ -119,7 +119,7 @@
     { "id": "hitPoints", "title": "Hit Points" }
   ],
   "speeds": [
-    { "id": "walk", "title": "Walking", "unit": "ft" },
+    { "id": "walk", "title": "Walking", "unit": "ft", "value": "derived.speed" },
     { "id": "burrow", "title": "Burrowing", "unit": "ft" },
     { "id": "climb", "title": "Climbing", "unit": "ft" },
     { "id": "fly", "title": "Flying", "unit": "ft" },
@@ -131,6 +131,7 @@
     { "id": "shortRest", "title": "Short Rest" },
     { "id": "longRest", "title": "Long Rest" }
   ],
+  "items": { "attunement": "3", "applies": "equipped && (attuned || !attunement)" },
   "progression": {
     "maxLevel": 20,
     "proficiency": "2 + floor((level - 1) / 4)",

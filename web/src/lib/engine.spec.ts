@@ -361,20 +361,18 @@ describe('conditions and items', () => {
     expect(get(store.info).conditions).toEqual([])
   })
 
-  it('removes an item whose quantity reaches zero and unequips it', () => {
+  it('removes an item whose quantity reaches zero', () => {
     const { store } = opened()
     const item = {
       id: 'rope', title: 'Rope', type: 'misc' as const, rarity: 'common' as const, attributes: [], description: '',
       value: { amount: 1, currency: 'gp' as const }, weight: 10, quantity: 2, equippable: true, equipped: false
     }
     postItem(item)
-    store.equipped.set([{ id: 'rope', title: 'Rope', type: 'misc' }])
     putItem({ ...item, quantity: 1 })
     expect(get(store.inventory)[0].quantity).toBe(1)
 
     putItem({ ...item, quantity: 0 })
     expect(get(store.inventory)).toEqual([])
-    expect(get(store.equipped)).toEqual([])
   })
 
   it('keeps one deletion path for an item', () => {
