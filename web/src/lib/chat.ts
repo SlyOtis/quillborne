@@ -1123,11 +1123,10 @@ async function aiRecommendFeat(action: AiAction) {
 }
 
 export function getUnusedItems(character: Character): InventoryItem[] {
-  const equipped = new Set((character.equipped ?? []).map(one => one.id));
   const used = new Set((character.actions ?? []).map(one => one.itemId).filter(Boolean));
 
   return (character.inventory ?? [])
-    .filter(item => !item.equipped && !equipped.has(item.id) && !used.has(item.id))
+    .filter(item => !item.equipped && !used.has(item.id))
     .sort((a, b) => (b.weight || 0) * (b.quantity || 0) - (a.weight || 0) * (a.quantity || 0));
 }
 

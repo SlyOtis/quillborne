@@ -88,7 +88,8 @@ export function getLevelUp(character: Character, system: RuleSystem, entry: Cata
 export function getStartingCharacter(character: Character, system: RuleSystem, entry: CatalogEntry | null): Character {
   const advancement = getAdvancement(system);
   const level = Math.max(1, Math.min(character.info.level || 1, system.progression.maxLevel));
-  const scope = { ...getResolvedCharacter(system, getSheet(character, system)).scope, die: character.info.class.hitDice.die };
+  // Stored hit points leave out what worn items grant, so they are worked out without the inventory.
+  const scope = { ...getResolvedCharacter(system, getSheet({ ...character, inventory: [] }, system)).scope, die: character.info.class.hitDice.die };
   const first = Math.round(getExpressionValue(advancement.firstHitPoints, scope));
   const hitPoints = first + (level - 1) * Math.round(getExpressionValue(advancement.hitPoints, scope));
   const slots = getSlots(advancement, entry, level);
@@ -142,7 +143,7 @@ export function getLevelledCharacter(
 
   const abilities = getRaisedAbilities(character, system, raised);
   const info = { ...character.info, level: levelUp.level };
-  const scope = getResolvedCharacter(system, getSheet({ ...character, info, abilities }, system)).scope;
+  const scope = getResolvedCharacter(system, getSheet({ ...character, info, abilities, inventory: [] }, system)).scope;
   const gain = Math.round(getExpressionValue(getAdvancement(system).hitPoints, { ...scope, die: levelUp.hitDiceGain.die }));
   const known = new Set(character.feats.map((feat) => feat.id));
 

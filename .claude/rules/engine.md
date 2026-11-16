@@ -8,7 +8,7 @@ paths:
 
 ## The spec
 
-A rule system is a JSON document under `web/public/sources/systems/`. It declares `attributes`, `proficiencyTiers`, `skills`, `saves`, `senses`, `pools`, `derived`, `progression` and `panels`. `web/src/lib/rules/spec.types.ts` is the shape.
+A rule system is a JSON document under `web/public/sources/systems/`. It declares `attributes`, `proficiencyTiers`, `skills`, `saves`, `senses`, `speeds`, `pools`, `derived`, `progression`, `panels` and `items`. `web/src/lib/rules/spec.types.ts` is the shape.
 
 Nothing about 5e is hard coded in a component. A character is data plus the systems it declares.
 
@@ -16,7 +16,7 @@ Nothing about 5e is hard coded in a component. A character is data plus the syst
 
 Every number is an expression evaluated by `web/src/lib/rules/expression.ts` against a flat scope of numbers. Arithmetic, comparisons, ternaries, and `floor`, `ceil`, `round`, `abs`, `sign`, `min`, `max`, `clamp`, `pow`. No `eval`, no code in a system file.
 
-Scope names are `level`, `prof`, `attr.<id>`, `mod.<id>`, `skill.<id>`, `save.<id>`, `sense.<id>`, `pool.<id>.max`, `derived.<id>`, `bonus.<id>` and `step.<key>`. A missing `bonus.` or `step.` name is zero, so an optional input never breaks a system.
+Scope names are `level`, `prof`, `attr.<id>`, `mod.<id>`, `skill.<id>`, `save.<id>`, `sense.<id>`, `speed.<id>`, `pool.<id>.max`, `derived.<id>`, `bonus.<id>` and `step.<key>`. A speed with no `value` of its own is zero. A missing `bonus.` or `step.` name is zero, so an optional input never breaks a system.
 
 A skill or save with no `modifier` of its own uses `mod.<attribute> + prof * tier`, where `tier` is the multiplier of the character's proficiency tier for that entry.
 
@@ -32,7 +32,7 @@ A character can therefore add an attribute, a skill or a point pool nobody else 
 
 ## The bridge
 
-`web/src/lib/rules/sheet.ts` maps the stored `Character` onto the engine input. `getAttributeId` and `getSkillId` turn display titles into system ids, so a display name never reaches a formula. It resolves once to learn the modifiers, then recovers the armour, hit point, initiative and speed bonuses from the stored totals, so nothing double counts.
+`web/src/lib/rules/sheet.ts` maps the stored `Character` onto the engine input. `getAttributeId` and `getSkillId` turn display titles into system ids, so a display name never reaches a formula. It resolves once to learn the modifiers, then recovers the armour, hit point, initiative and speed bonuses from the stored totals, so nothing double counts. The stored totals leave out what worn items grant: the item layer goes on after the recovery, and the spellcasting bonus is read from the worn scores. Whatever writes a stored total, such as level up, works it out without the inventory.
 
 ## Reaching it from a component
 
@@ -46,7 +46,9 @@ A JSON file plus a case in `web/src/lib/rules/derive.spec.ts`. Never a branch in
 
 ## Items
 
-An item's `grants` are a layer over a character, the way an overlay is a layer over a system: `ItemGrants` in `web/src/lib/rules/item.types.ts` names, per entry, the id of the item's `system` and the scope it lands on, `attr.<id>`, `bonus.<id>`, `skill.<id>`, `save.<id>` and `sense.<id>`. A system lists what a grant may name beside its attributes, skills, saves, senses, `damageTypes` and `defences`: `bonuses`, the `bonus.<id>` names its formulas read, `speeds` and `recharges`. `getItemGrants` in `web/src/lib/resources.ts` reads the grants of a general document and of a homebrew page alike, and `getGrantLines` writes them out with the system's titles. No grant is applied to a character yet.
+An item's `grants` are a layer over a character, the way an overlay is a layer over a system: `ItemGrants` in `web/src/lib/rules/item.types.ts` names, per entry, the id of the item's `system` and the scope it lands on, `attr.<id>`, `bonus.<id>`, `skill.<id>`, `save.<id>` and `sense.<id>`. A system lists what a grant may name beside its attributes, skills, saves, senses, `damageTypes` and `defences`: `bonuses`, the `bonus.<id>` names its formulas read, `speeds` and `recharges`. `getItemGrants` in `web/src/lib/resources.ts` reads the grants of a general document and of a homebrew page alike, and `getGrantLines` writes them out with the system's titles.
+
+A character carries an item as a `CharacterInventoryItem`, added from the item room through `getCarriedItem`, which keeps its `grants` and its `origin`, the general item's slug or the homebrew item's id. Carried is not equipped, and attuned is not equipped: `equipped` and `attunement.attuned` are two flags on the item. The system's `items` says when an item applies, `applies` read against `equipped`, `attuned` and `attunement`, and how many items may be attuned at once, `attunement` read against the resolved character. `getSheet` lays the grants of every item that applies over the sheet through `getWornSheet`: a score raised and set on `attr.`, a bonus added on `bonus.`, a proficiency at the higher tier, and the least a `sense.` or a `speed.` reaches through `reaches`. `getAttunedInventory` refuses an attunement past the slots. The sheet shows the defences an applying item grants beside the stored ones, the ranged senses it reaches on Senses, every speed above zero in the speed slot, and its spells and charges in the spells tab.
 
 ## Vehicles
 

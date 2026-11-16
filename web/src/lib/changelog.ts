@@ -175,6 +175,7 @@ export const ChangeActions = {
   SPELL_CHANGE: 'spell_change',
   DEATH_SAVE: 'death_save',
   EQUIPMENT_CHANGE: 'equipment_change',
+  ATTUNEMENT_CHANGE: 'attunement_change',
   PROFICIENCY_CHANGE: 'proficiency_change',
   BACKGROUND_CHANGE: 'background_change',
   THEME_CHANGE: 'theme_change',

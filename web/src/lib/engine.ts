@@ -6,7 +6,7 @@ import {writable, get, type Unsubscriber, type Writable} from "svelte/store";
 import type {Character, CharacterAbility, CharacterCurrency, CharacterInfo, CharacterSpell, ConditionInfo, DefenceInfo, SpellsInfo} from "./character.types";
 import { addChangeLogEntry, ChangeActions, createStateSnapshot, type ChangeAction } from "./changelog";
 import { getResolvedCharacter } from "./rules/derive";
-import { getSheet } from "./rules/sheet";
+import { getAttunedInventory, getSheet } from "./rules/sheet";
 import { getSystemStack } from "./rules/system";
 import type { ResolvedCharacter } from "./rules/spec.types";
 import { user, userProfile } from "./stores/auth.store";
@@ -511,7 +511,6 @@ export function getEmptyCharacter(): Character {
     currency: {},
     background: {title: '', description: ''},
     special: {name: '', regain: '', current: 0, max: 0},
-    equipped: [],
     soundBoard: {id: 'default_soundboard', name: 'Sound Board', clips: []},
     systems: ['dnd5e'],
     overlay: null
@@ -656,12 +655,6 @@ export function getCharacterStore(id: string = characterStoreId ?? 'local', char
     if (extProp) {
       try {
         extProp = JSON.parse(extProp) as Character[keyof Character]
-        
-        // Migration: If equipped is not an array, reset it
-        if (curr === 'equipped' && !Array.isArray(extProp)) {
-          console.warn('Migrating equipped from object to array format');
-          extProp = [];
-        }
       } catch (e) {
         console.warn('Failed to parse localStorage for', curr, '- using default');
         extProp = null;
@@ -1117,15 +1110,29 @@ export function deleteItem(id: string) {
     ChangeActions.INVENTORY_REMOVE,
     'Removed an item'
   )
+}
 
-  if (!get(getCharacterStore().equipped).some(entry => entry.id === id)) return
+export function putEquipped(item: InventoryItem, equipped: boolean) {
+  updateCharacterWithChangeLog(
+    'inventory',
+    inventory => inventory.map(entry => entry.id === item.id ? { ...entry, equipped } : entry),
+    ChangeActions.EQUIPMENT_CHANGE,
+    `${equipped ? 'Equipped' : 'Unequipped'} ${item.title}`
+  )
+}
+
+/** Attunes to an item or ends it, and answers false without a change when every attunement slot is taken. */
+export function putAttunement(item: InventoryItem, attuned: boolean, slots: number): boolean {
+  const next = getAttunedInventory(get(getCharacterStore().inventory), item.id, attuned, slots)
+  if (!next) return false
 
   updateCharacterWithChangeLog(
-    'equipped',
-    equipped => equipped.filter(entry => entry.id !== id),
-    ChangeActions.EQUIPMENT_CHANGE,
-    'Unequipped a removed item'
+    'inventory',
+    () => next,
+    ChangeActions.ATTUNEMENT_CHANGE,
+    `${attuned ? 'Attuned to' : 'Ended attunement to'} ${item.title}`
   )
+  return true
 }
 
 export function putCurrency(currency: CharacterCurrency) {

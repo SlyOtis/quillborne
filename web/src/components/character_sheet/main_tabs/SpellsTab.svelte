@@ -4,6 +4,8 @@
   import type {CharacterContext} from "$lib/types";
   import type {RulesState} from "$lib/rules/store";
   import type {CharacterSpell, Damage} from "$lib/character.types";
+  import {getAppliedItems} from "$lib/rules/sheet";
+  import {getChargesLine, getItemSpellLine} from "$lib/resources";
   import {deleteSpell, postCast, postSpell, putSpell, putSpellcasting} from "$lib/engine";
   import AdditionalSlots from "./AdditionalSlots.svelte";
   import Button from "$components/ui/Button.svelte";
@@ -13,7 +15,7 @@
   import IconBtn from "$components/ui/IconBtn.svelte";
   import Sigil from "$components/ui/Sigil.svelte";
 
-  const {info, spells} = getContext<CharacterContext>('character')
+  const {info, spells, inventory} = getContext<CharacterContext>('character')
   const rules = getContext<Readable<RulesState>>('rules')
 
   const LEVELS = [1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -58,6 +60,8 @@
       .map(level => ({level, entries: ($spells ?? []).filter(spell => (spell.level ?? 0) === level)}))
       .filter(group => group.entries.length)
   )
+
+  const casters = $derived($rules.system ? getAppliedItems($inventory, $rules.system).filter(item => item.grants.spells.length > 0) : [])
 
   const getSlotLevel = (spell: CharacterSpell) =>
     LEVELS.find(level => level >= spell.level && (spellcasting.slots?.[level] ?? 0) > (spellcasting.expended?.[level] ?? 0))
@@ -260,6 +264,19 @@
             </ul>
         {:else}
             <span class="note">No spells yet.</span>
+        {/each}
+        {#each casters as item (item.id)}
+            <div class="divider"><span>{item.title}{item.grants.charges.max > 0 && $rules.system ? ` · charges ${getChargesLine(item.grants.charges, $rules.system)}` : ''}</span></div>
+            <ul>
+                {#each item.grants.spells as spell (spell.name)}
+                    <li class="spell">
+                        <span class="spell-name">
+                            <b>{spell.name}</b>
+                            <span class="spell-sub">{getItemSpellLine(spell)}</span>
+                        </span>
+                    </li>
+                {/each}
+            </ul>
         {/each}
     </div>
 </div>

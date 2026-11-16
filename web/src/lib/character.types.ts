@@ -1,4 +1,5 @@
 import type {FeatureSource} from "./class.types";
+import type {ItemGrants} from "./rules/item.types";
 import type {RuleSystemOverlay} from "./rules/spec.types";
 
 /** Basic D&D currency types (cp, sp, gp, pp) */
@@ -102,8 +103,15 @@ interface Attunement {
   attuned: boolean  // Whether item is currently attuned
 }
 
+/** The item of the item room a carried item was added from */
+export interface ItemOrigin {
+  source: 'general' | 'homebrew'
+  /** A general item's slug or a homebrew item's id */
+  id: string
+}
+
 /** Complete item definition for inventory */
-interface CharacterInventoryItem {
+export interface CharacterInventoryItem {
   id: string
   title: string // Name of the item
   type: ItemType
@@ -115,8 +123,12 @@ interface CharacterInventoryItem {
   weight: number
   quantity: number
   equippable: boolean
+  /** Worn or wielded, so its grants reach the character; carried when not */
   equipped: boolean
   attunement?: Attunement
+  origin?: ItemOrigin
+  /** What it gives the character while it applies, by the rule system's rule for items */
+  grants?: ItemGrants
   properties?: Properties
   requirements?: Requirements
   enchantments?: Enchantment[]
@@ -373,16 +385,6 @@ export interface CharacterSpecial {
   max: number
 }
 
-/** Single equipped item */
-export interface EquippedItem {
-  id: string           // Item ID
-  title: string        // Item name
-  type: string         // Comma-separated types (e.g., "weapon,ammunition" or "armor,shield")
-}
-
-/** Array of equipped items */
-export type EquippedItems = EquippedItem[]
-
 /** Character level progression for each level */
 export interface LevelProgression {
   level: number
@@ -547,9 +549,6 @@ export interface Character {
 
   /** Chi, sorcery points, grit points and so on */
   special: CharacterSpecial
-
-  /** Currently equipped items by type */
-  equipped: EquippedItems
 
   /** Sound board for playing audio clips during gameplay */
   soundBoard: SoundBoard
