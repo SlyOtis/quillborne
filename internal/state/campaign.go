@@ -40,7 +40,7 @@ func getCampaignGroup() nstate.Group[CampaignData] {
 			"description": getProperty("string", "What the campaign is about."),
 			"is_active":   getProperty("boolean", "Whether the campaign is being played."),
 			"settings":    getJSON("Character editing, sheet sharing, private notes and the experience mode."),
-			"player_ids":  getList("The user ids seated at the table, each granted the Players claim."),
+			"player_ids":  getList("The user ids seated at the table, each granted the Player claim."),
 		}, "dm_id", "name"),
 		DependsOn: []string{GroupProfile},
 		Filters:   []string{"user_id"},

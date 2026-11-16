@@ -158,7 +158,7 @@
             "type": "string"
           },
           "player_ids": {
-            "description": "The user ids seated at the table, each granted the Players claim.",
+            "description": "The user ids seated at the table, each granted the Player claim.",
             "items": {
               "format": "uuid",
               "type": "string"

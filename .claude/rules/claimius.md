@@ -60,7 +60,7 @@ The `claimius` agent holds this file. What each row at the table is bound to is 
 33. Good: `postOrganization`, `getClaim`, `getMemberships` and `PostMember` in nimployer's `internal/service/team/team.go`: a team is an organization, its members hold the claim bound on it with the member bit, and the claim is found by the bit.
 34. Good: `PostBookable` in bookable_server's `internal/handler/bookable.go`: EXECUTE on the owning organization, the row and its audit in one transaction, the actor's claim bound through the builder.
 35. Good: `GetCampaign` (`internal/handler/campaign.go:146`): one `MutationAccess`, 404 or 403 from what it answers.
-36. Bad: a claim made to stand in for membership and found by its name, as `playersClaim` is (`internal/handler/campaign.go:35`, `:77`, `:253`). Membership is rule 28.
+36. Bad: a claim found by its name, or its id carried on a model. The campaign's two claims are found by the member bit on the organization's bindings, `getMemberships` (`internal/handler/share.go`). Membership is rule 28.
 37. Bad: an `UPDATE` that sets `sa_root_id`, or a parent under another root. Rule 30.
 38. Bad: `claimius.insert_claim`, `insert_claim_object` or `insert_user_claim` called from the service's SQL or Go. Rule 15.
 39. Bad: a `SELECT` from a `claimius.*` table in a handler, or an `if` on a user id, a role name or a claim name to decide access. The lookups of 17 and 18 decide.

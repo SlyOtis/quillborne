@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"os"
+	"slices"
+	"time"
 
 	"github.com/SlyOtis/quillborne/internal/db"
 	"github.com/google/uuid"
@@ -17,6 +19,13 @@ type Writer struct {
 	ActorID uuid.UUID
 	OwnerID uuid.UUID
 	Access  *sdb.AccessClaim
+}
+
+type membership struct {
+	ownerClaim  *uuid.UUID
+	memberClaim *uuid.UUID
+	owners      []uuid.UUID
+	members     []uuid.UUID
 }
 
 func postWriter(ctx context.Context, actorID uuid.UUID, ownerID *uuid.UUID) (*Writer, error) {
@@ -114,21 +123,65 @@ func putBindings(ctx context.Context, tx bun.Tx, w *Writer, objectType string, o
 	return nil
 }
 
-func getHolders(ctx context.Context, claimID *uuid.UUID) ([]uuid.UUID, error) {
-	holders := make([]uuid.UUID, 0)
-	if claimID == nil {
-		return holders, nil
+func getMemberships(ctx context.Context, campaignIDs []uuid.UUID) (map[uuid.UUID]membership, error) {
+	held := map[uuid.UUID]membership{}
+	if len(campaignIDs) == 0 {
+		return held, nil
 	}
-	grants, err := sdb.Instance().GetGrants(ctx, sdb.GrantFilters{ClaimIDs: []uuid.UUID{*claimID}, NoClients: true})
+	bindings, err := sdb.Instance().GetBindings(ctx, sdb.BindingFilters{ObjectType: sdb.OBJECT_TYPE_ORGANIZATION, ObjectIDs: campaignIDs})
 	if err != nil {
 		return nil, err
 	}
+	slices.SortStableFunc(bindings, func(a, b sdb.ClaimObject) int { return a.CreatedAt.Compare(b.CreatedAt) })
+	bound := map[uuid.UUID][]uuid.UUID{}
+	claims := make([]uuid.UUID, 0)
+	for _, binding := range bindings {
+		if binding.DeletedAt != nil || binding.ObjectID == nil || binding.EffectiveAccess == nil || *binding.EffectiveAccess&sdb.ACCESS_MEMBER == 0 {
+			continue
+		}
+		campaign := held[*binding.ObjectID]
+		claimID := binding.ClaimID
+		if *binding.EffectiveAccess&sdb.ACCESS_OWNER != 0 {
+			if campaign.ownerClaim != nil {
+				continue
+			}
+			campaign.ownerClaim = &claimID
+		} else {
+			if campaign.memberClaim != nil {
+				continue
+			}
+			campaign.memberClaim = &claimID
+		}
+		held[*binding.ObjectID] = campaign
+		if _, ok := bound[claimID]; !ok {
+			claims = append(claims, claimID)
+		}
+		bound[claimID] = append(bound[claimID], *binding.ObjectID)
+	}
+	if len(claims) == 0 {
+		return held, nil
+	}
+	grants, err := sdb.Instance().GetGrants(ctx, sdb.GrantFilters{ClaimIDs: claims, NoClients: true})
+	if err != nil {
+		return nil, err
+	}
+	slices.SortStableFunc(grants, func(a, b sdb.UserClaim) int { return a.CreatedAt.Compare(b.CreatedAt) })
+	now := time.Now()
 	for _, grant := range grants {
-		if grant.DeletedAt == nil {
-			holders = append(holders, grant.UserID)
+		if grant.DeletedAt != nil || (grant.StartsAt != nil && grant.StartsAt.After(now)) || (grant.EndsAt != nil && !grant.EndsAt.After(now)) {
+			continue
+		}
+		for _, campaignID := range bound[grant.ClaimID] {
+			campaign := held[campaignID]
+			if campaign.ownerClaim != nil && *campaign.ownerClaim == grant.ClaimID {
+				campaign.owners = append(campaign.owners, grant.UserID)
+			} else {
+				campaign.members = append(campaign.members, grant.UserID)
+			}
+			held[campaignID] = campaign
 		}
 	}
-	return holders, nil
+	return held, nil
 }
 
 func putGrants(ctx context.Context, tx bun.Tx, w *Writer, claimID uuid.UUID, users []uuid.UUID) error {
@@ -197,8 +250,12 @@ func putShare(ctx context.Context, tx bun.Tx, w *Writer, objectType string, obje
 		if err != nil {
 			return err
 		}
+		memberships, err := getMemberships(ctx, share.ShareCampaigns)
+		if err != nil {
+			return err
+		}
 		for _, campaign := range campaigns {
-			for _, claimID := range []*uuid.UUID{campaign.DmClaimID, campaign.PlayerClaimID} {
+			for _, claimID := range []*uuid.UUID{memberships[campaign.ID].ownerClaim, memberships[campaign.ID].memberClaim} {
 				if claimID == nil {
 					continue
 				}
@@ -232,8 +289,12 @@ func putShare(ctx context.Context, tx bun.Tx, w *Writer, objectType string, obje
 		if err != nil {
 			return err
 		}
+		memberships, err := getMemberships(ctx, previous)
+		if err != nil {
+			return err
+		}
 		for _, campaign := range campaigns {
-			for _, claimID := range []*uuid.UUID{campaign.DmClaimID, campaign.PlayerClaimID} {
+			for _, claimID := range []*uuid.UUID{memberships[campaign.ID].ownerClaim, memberships[campaign.ID].memberClaim} {
 				if claimID != nil {
 					managed = append(managed, *claimID)
 				}
@@ -287,12 +348,16 @@ func getPageShare(ctx context.Context, objectType string, objectIDs []uuid.UUID)
 		if err != nil {
 			return nil, err
 		}
+		memberships, err := getMemberships(ctx, objectIDs)
+		if err != nil {
+			return nil, err
+		}
 		for _, campaign := range campaigns {
-			if campaign.DmClaimID != nil {
-				shared[*campaign.DmClaimID] = shared[*campaign.DmClaimID] | sdb.ACCESS_ALL
+			if ownerClaim := memberships[campaign.ID].ownerClaim; ownerClaim != nil {
+				shared[*ownerClaim] = shared[*ownerClaim] | sdb.ACCESS_ALL
 			}
-			if campaign.PlayerClaimID != nil {
-				shared[*campaign.PlayerClaimID] = shared[*campaign.PlayerClaimID] | sdb.ACCESS_READ
+			if memberClaim := memberships[campaign.ID].memberClaim; memberClaim != nil {
+				shared[*memberClaim] = shared[*memberClaim] | sdb.ACCESS_READ
 			}
 		}
 		return shared, nil

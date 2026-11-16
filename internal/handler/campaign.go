@@ -32,7 +32,10 @@ type BodyPlayer struct {
 
 const defaultCampaignSettings = `{"allow_character_editing":false,"share_character_sheets":true,"private_notes":true,"experience_mode":"individual"}`
 
-const playersClaim = "Players"
+const (
+	ownerAccess  = sdb.ACCESS_ALL | sdb.ACCESS_MEMBER
+	memberAccess = sdb.ACCESS_MEMBER | sdb.ACCESS_READ | sdb.ACCESS_WRITE
+)
 
 func getCampaignView(ctx context.Context, campaigns []db.Campaign) error {
 	if len(campaigns) == 0 {
@@ -46,7 +49,7 @@ func getCampaignView(ctx context.Context, campaigns []db.Campaign) error {
 	if err != nil {
 		return err
 	}
-	claims, err := sdb.Instance().GetClaimsMany(ctx, nil, ids)
+	memberships, err := getMemberships(ctx, ids)
 	if err != nil {
 		return err
 	}
@@ -67,35 +70,16 @@ func getCampaignView(ctx context.Context, campaigns []db.Campaign) error {
 				}
 			}
 		}
-		for _, claim := range claims {
-			if claim.OwnerID != campaigns[i].ID || claim.DeletedAt != nil {
-				continue
-			}
-			claimID := claim.ID
-			if claim.Type == sdb.CLAIM_TYPE_VIRTUAL {
-				campaigns[i].DmClaimID = &claimID
-			} else if claim.Name == playersClaim {
-				campaigns[i].PlayerClaimID = &claimID
-			}
-		}
 		campaigns[i].CharacterIDs = []uuid.UUID{}
 		for _, row := range rows {
 			if row.CampaignID == campaigns[i].ID {
 				campaigns[i].CharacterIDs = append(campaigns[i].CharacterIDs, row.ID)
 			}
 		}
-		masters, err := getHolders(ctx, campaigns[i].DmClaimID)
-		if err != nil {
-			return err
+		if owners := memberships[campaigns[i].ID].owners; len(owners) > 0 {
+			campaigns[i].DmID = owners[0]
 		}
-		if len(masters) > 0 {
-			campaigns[i].UserID = masters[0]
-		}
-		players, err := getHolders(ctx, campaigns[i].PlayerClaimID)
-		if err != nil {
-			return err
-		}
-		campaigns[i].PlayerIDs = players
+		campaigns[i].PlayerIDs = append([]uuid.UUID{}, memberships[campaigns[i].ID].members...)
 	}
 	return nil
 }
@@ -203,7 +187,7 @@ func PostCampaign(ctx echo.Context) error {
 	}
 	kind := "campaign"
 	campaign := db.Campaign{
-		UserID:    actorID,
+		DmID:      actorID,
 		Name:      strings.TrimSpace(*body.Name),
 		IsActive:  true,
 		Settings:  json.RawMessage(defaultCampaignSettings),
@@ -238,26 +222,26 @@ func PostCampaign(ctx echo.Context) error {
 		}
 		inherits := false
 		owner, err := sdb.Instance().CreateClaim(tctx, tx, w.Access, sdb.CreateClaimParams{
-			Name:     campaign.Name + " owner",
-			Access:   sdb.ACCESS_OWNER | sdb.ACCESS_WRITE | sdb.ACCESS_READ | sdb.ACCESS_EXECUTE,
+			Name:     "Owner",
+			Access:   ownerAccess,
 			Inherits: &inherits,
 			Type:     sdb.CLAIM_TYPE_VIRTUAL,
 		})
 		if err != nil {
 			return err
 		}
-		dmClaimID := owner.ID
-		if _, err := postGrant(tctx, tx, w, dmClaimID, actorID); err != nil {
+		ownerClaim := owner.ID
+		if _, err := postGrant(tctx, tx, w, ownerClaim, actorID); err != nil {
 			return err
 		}
-		playerClaimID, err := postClaim(tctx, tx, w, playersClaim, "Plays at the table of "+campaign.Name, sdb.ACCESS_READ|sdb.ACCESS_WRITE)
+		memberClaim, err := postClaim(tctx, tx, w, "Player", "Plays at the table of "+campaign.Name, memberAccess)
 		if err != nil {
 			return err
 		}
-		if err := putBindings(tctx, tx, w, sdb.OBJECT_TYPE_ORGANIZATION, organization.ID, map[uuid.UUID]sdb.ClaimAccess{dmClaimID: owner.Access, playerClaimID: sdb.ACCESS_EXECUTE}, nil); err != nil {
+		if err := putBindings(tctx, tx, w, sdb.OBJECT_TYPE_ORGANIZATION, organization.ID, map[uuid.UUID]sdb.ClaimAccess{ownerClaim: ownerAccess, memberClaim: sdb.ACCESS_MEMBER | sdb.ACCESS_EXECUTE}, nil); err != nil {
 			return err
 		}
-		if err := putBindings(tctx, tx, w, db.OBJECT_TYPE_CAMPAIGN, campaign.ID, map[uuid.UUID]sdb.ClaimAccess{dmClaimID: sdb.ACCESS_ALL, playerClaimID: sdb.ACCESS_READ}, nil); err != nil {
+		if err := putBindings(tctx, tx, w, db.OBJECT_TYPE_CAMPAIGN, campaign.ID, map[uuid.UUID]sdb.ClaimAccess{ownerClaim: sdb.ACCESS_ALL, memberClaim: sdb.ACCESS_READ}, nil); err != nil {
 			return err
 		}
 		folder, err := postFolder(tctx, tx, w, "PostCampaign", campaign.Name, "campaign-"+campaign.ID.String())
@@ -267,11 +251,9 @@ func PostCampaign(ctx echo.Context) error {
 		if err := postOwnerBinding(tctx, tx, w, db.OBJECT_TYPE_ASSET, folder.ID, sdb.ACCESS_MEMBER); err != nil {
 			return err
 		}
-		if err := putBindings(tctx, tx, w, db.OBJECT_TYPE_ASSET, folder.ID, map[uuid.UUID]sdb.ClaimAccess{dmClaimID: sdb.ACCESS_ALL, playerClaimID: sdb.ACCESS_READ}, nil); err != nil {
+		if err := putBindings(tctx, tx, w, db.OBJECT_TYPE_ASSET, folder.ID, map[uuid.UUID]sdb.ClaimAccess{ownerClaim: sdb.ACCESS_ALL, memberClaim: sdb.ACCESS_READ}, nil); err != nil {
 			return err
 		}
-		campaign.DmClaimID = &dmClaimID
-		campaign.PlayerClaimID = &playerClaimID
 		return nil
 	}); err != nil {
 		ctx.Logger().Errorf("PostCampaign: %v", err)
@@ -457,25 +439,26 @@ func PostCampaignPlayer(ctx echo.Context) error {
 		ctx.Logger().Errorf("PostCampaignPlayer: %v", err)
 		return respond.ErrorInternal(ctx)
 	}
-	if found.UserID == campaign.UserID {
+	if found.UserID == campaign.DmID {
 		return respond.Error(ctx, http.StatusBadRequest, "That is the dungeon master.")
 	}
-	players, err := getHolders(rctx, campaign.PlayerClaimID)
+	memberships, err := getMemberships(rctx, []uuid.UUID{campaign.ID})
 	if err != nil {
 		ctx.Logger().Errorf("PostCampaignPlayer: %v", err)
 		return respond.ErrorInternal(ctx)
 	}
-	for _, player := range players {
+	memberClaim := memberships[campaign.ID].memberClaim
+	for _, player := range memberships[campaign.ID].members {
 		if player == found.UserID {
 			return respond.Error(ctx, http.StatusConflict, "They are already at the table.")
 		}
 	}
 	w, err := postWriter(rctx, actorID, &campaign.ID)
-	if err != nil || campaign.PlayerClaimID == nil {
+	if err != nil || memberClaim == nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
-		if _, err := postGrant(tctx, tx, w, *campaign.PlayerClaimID, found.UserID); err != nil {
+		if _, err := postGrant(tctx, tx, w, *memberClaim, found.UserID); err != nil {
 			return err
 		}
 		if _, err := tx.NewUpdate().Model(&campaign).Set("sa_updated_at = NOW()").WherePK().Exec(tctx); err != nil {
@@ -513,8 +496,14 @@ func DeleteCampaignPlayer(ctx echo.Context) error {
 	if err := getCampaign(rctx, &campaign); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
+	memberships, err := getMemberships(rctx, []uuid.UUID{campaign.ID})
+	if err != nil {
+		ctx.Logger().Errorf("DeleteCampaignPlayer: %v", err)
+		return respond.ErrorInternal(ctx)
+	}
+	memberClaim := memberships[campaign.ID].memberClaim
 	w, err := postWriter(rctx, actorID, &campaign.ID)
-	if err != nil || campaign.PlayerClaimID == nil {
+	if err != nil || memberClaim == nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
@@ -527,7 +516,7 @@ func DeleteCampaignPlayer(ctx echo.Context) error {
 				return err
 			}
 		}
-		if err := deleteGrant(tctx, tx, w, *campaign.PlayerClaimID, playerID); err != nil {
+		if err := deleteGrant(tctx, tx, w, *memberClaim, playerID); err != nil {
 			return err
 		}
 		if _, err := tx.NewUpdate().Model(&campaign).Set("sa_updated_at = NOW()").WherePK().Exec(tctx); err != nil {
@@ -621,15 +610,19 @@ func PostCampaignCharacter(ctx echo.Context) error {
 		if _, err := tx.NewUpdate().Model(&character).Set("campaign_id = ?", campaignID).Set("sa_owner_id = ?", campaign.ID).Set("sa_updated_at = NOW()").WherePK().Exec(tctx); err != nil {
 			return err
 		}
+		memberships, err := getMemberships(tctx, []uuid.UUID{campaign.ID})
+		if err != nil {
+			return err
+		}
 		want := map[uuid.UUID]sdb.ClaimAccess{}
 		managed := make([]uuid.UUID, 0, 2)
-		if campaign.DmClaimID != nil {
-			want[*campaign.DmClaimID] = sdb.ACCESS_READ | sdb.ACCESS_WRITE
-			managed = append(managed, *campaign.DmClaimID)
+		if ownerClaim := memberships[campaign.ID].ownerClaim; ownerClaim != nil {
+			want[*ownerClaim] = sdb.ACCESS_READ | sdb.ACCESS_WRITE
+			managed = append(managed, *ownerClaim)
 		}
-		if campaign.PlayerClaimID != nil {
-			want[*campaign.PlayerClaimID] = sdb.ACCESS_READ
-			managed = append(managed, *campaign.PlayerClaimID)
+		if memberClaim := memberships[campaign.ID].memberClaim; memberClaim != nil {
+			want[*memberClaim] = sdb.ACCESS_READ
+			managed = append(managed, *memberClaim)
 		}
 		if err := putBindings(tctx, tx, w, db.OBJECT_TYPE_CHARACTER, characterID, want, managed); err != nil {
 			return err
@@ -686,8 +679,12 @@ func DeleteCampaignCharacter(ctx echo.Context) error {
 }
 
 func deleteCampaignCharacterTx(ctx context.Context, tx bun.Tx, w *Writer, campaign *db.Campaign, characterID uuid.UUID) error {
+	memberships, err := getMemberships(ctx, []uuid.UUID{campaign.ID})
+	if err != nil {
+		return err
+	}
 	managed := make([]uuid.UUID, 0, 2)
-	for _, claimID := range []*uuid.UUID{campaign.DmClaimID, campaign.PlayerClaimID} {
+	for _, claimID := range []*uuid.UUID{memberships[campaign.ID].ownerClaim, memberships[campaign.ID].memberClaim} {
 		if claimID != nil {
 			managed = append(managed, *claimID)
 		}

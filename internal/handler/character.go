@@ -205,12 +205,16 @@ func PostCharacter(ctx echo.Context) error {
 		if campaign == nil {
 			return nil
 		}
-		want := map[uuid.UUID]sdb.ClaimAccess{}
-		if campaign.DmClaimID != nil {
-			want[*campaign.DmClaimID] = sdb.ACCESS_READ | sdb.ACCESS_WRITE
+		memberships, err := getMemberships(tctx, []uuid.UUID{campaign.ID})
+		if err != nil {
+			return err
 		}
-		if campaign.PlayerClaimID != nil {
-			want[*campaign.PlayerClaimID] = sdb.ACCESS_READ
+		want := map[uuid.UUID]sdb.ClaimAccess{}
+		if ownerClaim := memberships[campaign.ID].ownerClaim; ownerClaim != nil {
+			want[*ownerClaim] = sdb.ACCESS_READ | sdb.ACCESS_WRITE
+		}
+		if memberClaim := memberships[campaign.ID].memberClaim; memberClaim != nil {
+			want[*memberClaim] = sdb.ACCESS_READ
 		}
 		return putBindings(tctx, tx, w, db.OBJECT_TYPE_CHARACTER, character.ID, want, nil)
 	}); err != nil {

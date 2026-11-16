@@ -265,24 +265,23 @@ func TestACampaignIsAnOrganizationThatOwnsItsRows(t *testing.T) {
 	if view.DmID != dungeonMaster.String() || len(view.PlayerIDs) != 1 || view.PlayerIDs[0] != player.String() || !view.IsActive {
 		t.Fatalf("the claims do not name the dungeon master and the players: %+v", view)
 	}
-	claims, err := sdb.Instance().GetClaimsMany(ctx, nil, []uuid.UUID{organization.ID})
+	bindings, err := sdb.Instance().GetBindings(ctx, sdb.BindingFilters{ObjectType: sdb.OBJECT_TYPE_ORGANIZATION, ObjectIDs: []uuid.UUID{organization.ID}})
 	if err != nil {
-		t.Fatalf("claims: %v", err)
+		t.Fatalf("bindings: %v", err)
 	}
 	owners, seats := 0, 0
-	for _, claim := range claims {
-		if claim.DeletedAt != nil {
+	for _, binding := range bindings {
+		if binding.DeletedAt != nil || binding.EffectiveAccess == nil || *binding.EffectiveAccess&sdb.ACCESS_MEMBER == 0 {
 			continue
 		}
-		if claim.Type == sdb.CLAIM_TYPE_VIRTUAL {
+		if *binding.EffectiveAccess&sdb.ACCESS_OWNER != 0 {
 			owners++
-		}
-		if claim.Name == "Players" {
+		} else {
 			seats++
 		}
 	}
 	if owners != 1 || seats != 1 {
-		t.Fatalf("the organization owns %d owner claims and %d Players claims", owners, seats)
+		t.Fatalf("the organization binds %d owner claims and %d member claims", owners, seats)
 	}
 	if status, answer := call(t, dungeonMaster, http.MethodPut, "/", `{"is_active":false,"settings":{"experience_mode":"milestone"}}`, params, handler.PutCampaign); status != http.StatusOK {
 		t.Fatalf("PutCampaign settings: %d %+v", status, answer.Error)

@@ -286,11 +286,15 @@ func PostVehicle(ctx echo.Context) error {
 		}
 		want := map[uuid.UUID]sdb.ClaimAccess{crewClaimID: sdb.ACCESS_READ | sdb.ACCESS_WRITE}
 		if campaign != nil {
-			if campaign.DmClaimID != nil {
-				want[*campaign.DmClaimID] = sdb.ACCESS_ALL
+			memberships, err := getMemberships(tctx, []uuid.UUID{campaign.ID})
+			if err != nil {
+				return err
 			}
-			if campaign.PlayerClaimID != nil {
-				want[*campaign.PlayerClaimID] = sdb.ACCESS_READ | sdb.ACCESS_WRITE
+			if ownerClaim := memberships[campaign.ID].ownerClaim; ownerClaim != nil {
+				want[*ownerClaim] = sdb.ACCESS_ALL
+			}
+			if memberClaim := memberships[campaign.ID].memberClaim; memberClaim != nil {
+				want[*memberClaim] = sdb.ACCESS_READ | sdb.ACCESS_WRITE
 			}
 		}
 		if err := putBindings(tctx, tx, w, db.OBJECT_TYPE_VEHICLE, item.ID, want, nil); err != nil {
