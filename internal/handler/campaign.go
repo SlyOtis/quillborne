@@ -32,6 +32,8 @@ type BodyPlayer struct {
 
 const defaultCampaignSettings = `{"allow_character_editing":false,"share_character_sheets":true,"private_notes":true,"experience_mode":"individual"}`
 
+const playersClaim = "Players"
+
 func getCampaignView(ctx context.Context, campaigns []db.Campaign) error {
 	if len(campaigns) == 0 {
 		return nil
@@ -39,6 +41,14 @@ func getCampaignView(ctx context.Context, campaigns []db.Campaign) error {
 	ids := make([]uuid.UUID, 0, len(campaigns))
 	for _, campaign := range campaigns {
 		ids = append(ids, campaign.ID)
+	}
+	organizations, err := sdb.Instance().GetOrganizationsMany(ctx, ids, nil, nil)
+	if err != nil {
+		return err
+	}
+	claims, err := sdb.Instance().GetClaimsMany(ctx, nil, ids)
+	if err != nil {
+		return err
 	}
 	type held struct {
 		ID         uuid.UUID `bun:"id"`
@@ -49,11 +59,37 @@ func getCampaignView(ctx context.Context, campaigns []db.Campaign) error {
 		return err
 	}
 	for i := range campaigns {
+		for _, organization := range organizations {
+			if organization.ID == campaigns[i].ID {
+				campaigns[i].Name = organization.Name
+				if organization.Description != nil {
+					campaigns[i].Description = *organization.Description
+				}
+			}
+		}
+		for _, claim := range claims {
+			if claim.OwnerID != campaigns[i].ID || claim.DeletedAt != nil {
+				continue
+			}
+			claimID := claim.ID
+			if claim.Type == sdb.CLAIM_TYPE_VIRTUAL {
+				campaigns[i].DmClaimID = &claimID
+			} else if claim.Name == playersClaim {
+				campaigns[i].PlayerClaimID = &claimID
+			}
+		}
 		campaigns[i].CharacterIDs = []uuid.UUID{}
 		for _, row := range rows {
 			if row.CampaignID == campaigns[i].ID {
 				campaigns[i].CharacterIDs = append(campaigns[i].CharacterIDs, row.ID)
 			}
+		}
+		masters, err := getHolders(ctx, campaigns[i].DmClaimID)
+		if err != nil {
+			return err
+		}
+		if len(masters) > 0 {
+			campaigns[i].UserID = masters[0]
 		}
 		players, err := getHolders(ctx, campaigns[i].PlayerClaimID)
 		if err != nil {
@@ -61,6 +97,29 @@ func getCampaignView(ctx context.Context, campaigns []db.Campaign) error {
 		}
 		campaigns[i].PlayerIDs = players
 	}
+	return nil
+}
+
+func getCampaigns(ctx context.Context, ids []uuid.UUID) ([]db.Campaign, error) {
+	campaigns := make([]db.Campaign, 0)
+	if len(ids) == 0 {
+		return campaigns, nil
+	}
+	if err := db.Instance().NewSelect().Model(&campaigns).Where("id IN (?)", bun.In(ids)).Scan(ctx); err != nil {
+		return nil, err
+	}
+	return campaigns, getCampaignView(ctx, campaigns)
+}
+
+func getCampaign(ctx context.Context, campaign *db.Campaign) error {
+	campaigns, err := getCampaigns(ctx, []uuid.UUID{campaign.ID})
+	if err != nil {
+		return err
+	}
+	if len(campaigns) == 0 {
+		return sql.ErrNoRows
+	}
+	*campaign = campaigns[0]
 	return nil
 }
 
@@ -101,7 +160,7 @@ func GetCampaign(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
 	campaign := db.Campaign{ID: campaignID}
-	if err := db.Instance().NewSelect().Model(&campaign).WherePK().Scan(rctx); err != nil {
+	if err := getCampaign(rctx, &campaign); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
@@ -164,11 +223,11 @@ func PostCampaign(ctx echo.Context) error {
 		if err := sdb.Instance().NewInsert().Model(&organization).Access(w.Access).Conn(tx).Scan(tctx, &organization); err != nil {
 			return err
 		}
-		campaign.OrganizationID = organization.ID
+		campaign.ID = organization.ID
 		campaign.OwnerID = organization.ID
 		w.OwnerID = organization.ID
 		w.Access.OwnerID = organization.ID
-		if _, err := tx.NewInsert().Model(&campaign).ExcludeColumn("id", "sa_created_at", "sa_updated_at", "sa_deleted_at").Returning("*").Exec(tctx); err != nil {
+		if _, err := tx.NewInsert().Model(&campaign).ExcludeColumn("sa_created_at", "sa_updated_at", "sa_deleted_at").Returning("*").Exec(tctx); err != nil {
 			return err
 		}
 		if err := sdb.Write(tctx, tx, "PostCampaign", "create", db.OBJECT_TYPE_CAMPAIGN, campaign.ID, campaign.OwnerID, w.Access.UserClaimID, campaign.Name); err != nil {
@@ -177,21 +236,28 @@ func PostCampaign(ctx echo.Context) error {
 		if err := postOwnerBinding(tctx, tx, w, db.OBJECT_TYPE_CAMPAIGN, campaign.ID, sdb.ACCESS_MEMBER); err != nil {
 			return err
 		}
-		dmClaimID, err := postClaim(tctx, tx, w, "Dungeon master", "Runs the table of "+campaign.Name, sdb.ACCESS_ALL)
+		inherits := false
+		owner, err := sdb.Instance().CreateClaim(tctx, tx, w.Access, sdb.CreateClaimParams{
+			Name:     campaign.Name + " owner",
+			Access:   sdb.ACCESS_OWNER | sdb.ACCESS_WRITE | sdb.ACCESS_READ | sdb.ACCESS_EXECUTE,
+			Inherits: &inherits,
+			Type:     sdb.CLAIM_TYPE_VIRTUAL,
+		})
 		if err != nil {
 			return err
 		}
-		playerClaimID, err := postClaim(tctx, tx, w, "Players", "Plays at the table of "+campaign.Name, sdb.ACCESS_READ|sdb.ACCESS_WRITE)
+		dmClaimID := owner.ID
+		if _, err := postGrant(tctx, tx, w, dmClaimID, actorID); err != nil {
+			return err
+		}
+		playerClaimID, err := postClaim(tctx, tx, w, playersClaim, "Plays at the table of "+campaign.Name, sdb.ACCESS_READ|sdb.ACCESS_WRITE)
 		if err != nil {
 			return err
 		}
-		if err := putBindings(tctx, tx, w, sdb.OBJECT_TYPE_ORGANIZATION, organization.ID, map[uuid.UUID]sdb.ClaimAccess{dmClaimID: sdb.ACCESS_ALL, playerClaimID: sdb.ACCESS_EXECUTE}, nil); err != nil {
+		if err := putBindings(tctx, tx, w, sdb.OBJECT_TYPE_ORGANIZATION, organization.ID, map[uuid.UUID]sdb.ClaimAccess{dmClaimID: owner.Access, playerClaimID: sdb.ACCESS_EXECUTE}, nil); err != nil {
 			return err
 		}
 		if err := putBindings(tctx, tx, w, db.OBJECT_TYPE_CAMPAIGN, campaign.ID, map[uuid.UUID]sdb.ClaimAccess{dmClaimID: sdb.ACCESS_ALL, playerClaimID: sdb.ACCESS_READ}, nil); err != nil {
-			return err
-		}
-		if _, err := postGrant(tctx, tx, w, dmClaimID, actorID); err != nil {
 			return err
 		}
 		folder, err := postFolder(tctx, tx, w, "PostCampaign", campaign.Name, "campaign-"+campaign.ID.String())
@@ -206,8 +272,7 @@ func PostCampaign(ctx echo.Context) error {
 		}
 		campaign.DmClaimID = &dmClaimID
 		campaign.PlayerClaimID = &playerClaimID
-		_, err = tx.NewUpdate().Model(&campaign).Column("dm_claim_id", "player_claim_id").WherePK().Exec(tctx)
-		return err
+		return nil
 	}); err != nil {
 		ctx.Logger().Errorf("PostCampaign: %v", err)
 		return respond.ErrorInternal(ctx)
@@ -239,7 +304,7 @@ func PutCampaign(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
 	campaign := db.Campaign{ID: campaignID}
-	if err := db.Instance().NewSelect().Model(&campaign).WherePK().Scan(rctx); err != nil {
+	if err := getCampaign(rctx, &campaign); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
@@ -252,11 +317,9 @@ func PutCampaign(ctx echo.Context) error {
 			return respond.Error(ctx, http.StatusBadRequest, "name cannot be empty")
 		}
 		campaign.Name = strings.TrimSpace(*body.Name)
-		columns = append(columns, "name")
 	}
 	if body.Description != nil {
 		campaign.Description = *body.Description
-		columns = append(columns, "description")
 	}
 	if body.IsActive != nil {
 		campaign.IsActive = *body.IsActive
@@ -272,11 +335,11 @@ func PutCampaign(ctx echo.Context) error {
 			return err
 		}
 		if body.Name != nil || body.Description != nil {
-			w, err := postWriter(tctx, actorID, &campaign.OrganizationID)
+			w, err := postWriter(tctx, actorID, &campaign.ID)
 			if err != nil {
 				return err
 			}
-			organization := sdb.Organization{ID: campaign.OrganizationID, Name: campaign.Name, Description: &campaign.Description}
+			organization := sdb.Organization{ID: campaign.ID, Name: campaign.Name, Description: &campaign.Description}
 			if _, err := sdb.Instance().NewUpdate().Model(&organization).Access(w.Access).ID(organization.ID).Column("name", "description").Conn(tx).Returning("*").Exec(tctx); err != nil {
 				return err
 			}
@@ -312,14 +375,14 @@ func DeleteCampaign(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
 	campaign := db.Campaign{ID: campaignID}
-	if err := db.Instance().NewSelect().Model(&campaign).WherePK().Scan(rctx); err != nil {
+	if err := getCampaign(rctx, &campaign); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
 		ctx.Logger().Errorf("DeleteCampaign: %v", err)
 		return respond.ErrorInternal(ctx)
 	}
-	w, err := postWriter(rctx, actorID, &campaign.OrganizationID)
+	w, err := postWriter(rctx, actorID, &campaign.ID)
 	if err != nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
@@ -347,7 +410,7 @@ func DeleteCampaign(ctx echo.Context) error {
 		if _, err := tx.NewUpdate().Model(&campaign).Set("sa_deleted_at = NOW()").WherePK().Exec(tctx); err != nil {
 			return err
 		}
-		organization := sdb.Organization{ID: campaign.OrganizationID}
+		organization := sdb.Organization{ID: campaign.ID}
 		if err := sdb.Instance().NewDelete().Model(&organization).Access(w.Access).Conn(tx).Scan(tctx, &organization); err != nil {
 			return err
 		}
@@ -380,7 +443,7 @@ func PostCampaignPlayer(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
 	campaign := db.Campaign{ID: campaignID}
-	if err := db.Instance().NewSelect().Model(&campaign).WherePK().Scan(rctx); err != nil {
+	if err := getCampaign(rctx, &campaign); err != nil {
 		ctx.Logger().Errorf("PostCampaignPlayer: %v", err)
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
@@ -407,7 +470,7 @@ func PostCampaignPlayer(ctx echo.Context) error {
 			return respond.Error(ctx, http.StatusConflict, "They are already at the table.")
 		}
 	}
-	w, err := postWriter(rctx, actorID, &campaign.OrganizationID)
+	w, err := postWriter(rctx, actorID, &campaign.ID)
 	if err != nil || campaign.PlayerClaimID == nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
@@ -447,10 +510,10 @@ func DeleteCampaignPlayer(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
 	campaign := db.Campaign{ID: campaignID}
-	if err := db.Instance().NewSelect().Model(&campaign).WherePK().Scan(rctx); err != nil {
+	if err := getCampaign(rctx, &campaign); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
-	w, err := postWriter(rctx, actorID, &campaign.OrganizationID)
+	w, err := postWriter(rctx, actorID, &campaign.ID)
 	if err != nil || campaign.PlayerClaimID == nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
@@ -535,10 +598,10 @@ func PostCampaignCharacter(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
 	campaign := db.Campaign{ID: campaignID}
-	if err := db.Instance().NewSelect().Model(&campaign).WherePK().Scan(rctx); err != nil {
+	if err := getCampaign(rctx, &campaign); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
-	w, err := postWriter(rctx, actorID, &campaign.OrganizationID)
+	w, err := postWriter(rctx, actorID, &campaign.ID)
 	if err != nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
@@ -549,13 +612,13 @@ func PostCampaignCharacter(ctx echo.Context) error {
 		}
 		if character.CampaignID != nil && *character.CampaignID != campaignID {
 			previous := db.Campaign{ID: *character.CampaignID}
-			if err := tx.NewSelect().Model(&previous).WherePK().Scan(tctx); err == nil {
+			if err := getCampaign(tctx, &previous); err == nil {
 				if err := deleteCampaignCharacterTx(tctx, tx, w, &previous, characterID); err != nil {
 					return err
 				}
 			}
 		}
-		if _, err := tx.NewUpdate().Model(&character).Set("campaign_id = ?", campaignID).Set("sa_owner_id = ?", campaign.OrganizationID).Set("sa_updated_at = NOW()").WherePK().Exec(tctx); err != nil {
+		if _, err := tx.NewUpdate().Model(&character).Set("campaign_id = ?", campaignID).Set("sa_owner_id = ?", campaign.ID).Set("sa_updated_at = NOW()").WherePK().Exec(tctx); err != nil {
 			return err
 		}
 		want := map[uuid.UUID]sdb.ClaimAccess{}
@@ -604,10 +667,10 @@ func DeleteCampaignCharacter(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
 	campaign := db.Campaign{ID: campaignID}
-	if err := db.Instance().NewSelect().Model(&campaign).WherePK().Scan(rctx); err != nil {
+	if err := getCampaign(rctx, &campaign); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
-	w, err := postWriter(rctx, actorID, &campaign.OrganizationID)
+	w, err := postWriter(rctx, actorID, &campaign.ID)
 	if err != nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}

@@ -292,10 +292,10 @@ func PostResource(ctx echo.Context) error {
 			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 		}
 		campaign := db.Campaign{ID: campaignID}
-		if err := db.Instance().NewSelect().Model(&campaign).WherePK().Scan(rctx); err != nil {
+		if err := getCampaign(rctx, &campaign); err != nil {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		ownerID = &campaign.OrganizationID
+		ownerID = &campaign.ID
 		resource.CampaignID = &campaignID
 	}
 	if raw, ok := body["parent_id"].(string); ok && raw != "" {

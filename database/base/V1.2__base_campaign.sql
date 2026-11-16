@@ -1,13 +1,7 @@
 CREATE TABLE IF NOT EXISTS campaign (
-    id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id          UUID NOT NULL,
-    name             TEXT NOT NULL,
-    description      TEXT NOT NULL DEFAULT '',
+    id               UUID PRIMARY KEY,
     is_active        BOOLEAN NOT NULL DEFAULT TRUE,
     settings         JSONB NOT NULL DEFAULT '{}'::jsonb,
-    dm_claim_id      UUID,
-    player_claim_id  UUID,
-    organization_id  UUID NOT NULL,
     sa_owner_id      UUID NOT NULL,
     sa_created_by    UUID,
     sa_created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -15,17 +9,11 @@ CREATE TABLE IF NOT EXISTS campaign (
     sa_deleted_at    TIMESTAMPTZ
 );
 
-COMMENT ON TABLE campaign IS 'A table of play: the dungeon master who created it and the players granted its player claim';
-COMMENT ON COLUMN campaign.id IS 'The campaign id';
-COMMENT ON COLUMN campaign.user_id IS 'The dungeon master, samna_user.user_id';
-COMMENT ON COLUMN campaign.name IS 'The campaign name';
-COMMENT ON COLUMN campaign.description IS 'What the campaign is about';
+COMMENT ON TABLE campaign IS 'The settings of a table of play, one row per claimius.organization of kind campaign: the organization holds the name and the description, its owner claim the dungeon master and its Players claim the players';
+COMMENT ON COLUMN campaign.id IS 'The campaign id, the id of its organization';
 COMMENT ON COLUMN campaign.is_active IS 'Whether the campaign is being played';
 COMMENT ON COLUMN campaign.settings IS 'Character editing, sheet sharing, private notes and the experience mode';
-COMMENT ON COLUMN campaign.dm_claim_id IS 'The claim the dungeon master holds on the campaign and everything in it';
-COMMENT ON COLUMN campaign.player_claim_id IS 'The claim every player at the table holds, read on what the table shares';
-COMMENT ON COLUMN campaign.organization_id IS 'The claimius.organization of kind campaign that the campaign is, owner of the campaign row and of every row the table keeps';
-COMMENT ON COLUMN campaign.sa_owner_id IS 'The owning organization, the campaign''s own';
+COMMENT ON COLUMN campaign.sa_owner_id IS 'The claimius.organization of kind campaign the row belongs to, one row per organization, owner of every row the table keeps';
 COMMENT ON COLUMN campaign.sa_created_by IS 'The user_claim of the dungeon master who created it';
 COMMENT ON COLUMN campaign.sa_created_at IS 'When the row was created';
 COMMENT ON COLUMN campaign.sa_updated_at IS 'When the row last changed';

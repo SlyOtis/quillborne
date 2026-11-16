@@ -242,12 +242,54 @@ func TestACampaignIsAnOrganizationThatOwnsItsRows(t *testing.T) {
 	if err := db.Instance().NewSelect().Model(&campaign).WherePK().Scan(ctx); err != nil {
 		t.Fatalf("campaign: %v", err)
 	}
-	organization, err := sdb.Instance().GetOrganization(ctx, campaign.OrganizationID)
+	organization, err := sdb.Instance().GetOrganization(ctx, campaign.ID)
 	if err != nil {
 		t.Fatalf("the campaign has no organization: %v", err)
 	}
-	if organization.OwnerID != home || organization.Kind == nil || *organization.Kind != "campaign" || organization.Name != campaign.Name {
+	var view struct {
+		DmID      string   `json:"dm_id"`
+		Name      string   `json:"name"`
+		IsActive  bool     `json:"is_active"`
+		PlayerIDs []string `json:"player_ids"`
+		Settings  struct {
+			ExperienceMode string `json:"experience_mode"`
+		} `json:"settings"`
+	}
+	_, read := call(t, player, http.MethodGet, "/", "", params, handler.GetCampaign)
+	if err := json.Unmarshal(read.Data, &view); err != nil {
+		t.Fatalf("GetCampaign: %v", err)
+	}
+	if campaign.OwnerID != campaign.ID || organization.OwnerID != home || organization.Kind == nil || *organization.Kind != "campaign" || organization.Name != view.Name {
 		t.Fatalf("the organization is not the campaign under the home organization: %+v", organization)
+	}
+	if view.DmID != dungeonMaster.String() || len(view.PlayerIDs) != 1 || view.PlayerIDs[0] != player.String() || !view.IsActive {
+		t.Fatalf("the claims do not name the dungeon master and the players: %+v", view)
+	}
+	claims, err := sdb.Instance().GetClaimsMany(ctx, nil, []uuid.UUID{organization.ID})
+	if err != nil {
+		t.Fatalf("claims: %v", err)
+	}
+	owners, seats := 0, 0
+	for _, claim := range claims {
+		if claim.DeletedAt != nil {
+			continue
+		}
+		if claim.Type == sdb.CLAIM_TYPE_VIRTUAL {
+			owners++
+		}
+		if claim.Name == "Players" {
+			seats++
+		}
+	}
+	if owners != 1 || seats != 1 {
+		t.Fatalf("the organization owns %d owner claims and %d Players claims", owners, seats)
+	}
+	if status, answer := call(t, dungeonMaster, http.MethodPut, "/", `{"is_active":false,"settings":{"experience_mode":"milestone"}}`, params, handler.PutCampaign); status != http.StatusOK {
+		t.Fatalf("PutCampaign settings: %d %+v", status, answer.Error)
+	}
+	_, read = call(t, player, http.MethodGet, "/", "", params, handler.GetCampaign)
+	if err := json.Unmarshal(read.Data, &view); err != nil || view.IsActive || view.Settings.ExperienceMode != "milestone" {
+		t.Fatalf("the campaign row did not keep its settings: %+v %v", view, err)
 	}
 	if _, err := sdb.Instance().MutationAccess(ctx, dungeonMaster, organization.ID, sdb.OBJECT_TYPE_ORGANIZATION, sdb.ACCESS_OWNER); err != nil {
 		t.Fatalf("the dungeon master does not hold the organization: %v", err)
@@ -288,6 +330,13 @@ func TestACampaignIsAnOrganizationThatOwnsItsRows(t *testing.T) {
 	if owner("resource", ownID) != home {
 		t.Fatalf("a player's own page left the home organization")
 	}
+	keptID := postResource(t, player, `{"kind":"items","name":"Kept blade","body":"{}","campaign_id":"`+campaignID+`"}`)
+	if owner("resource", keptID) != organization.ID {
+		t.Fatalf("a kept item is not owned by the campaign's organization")
+	}
+	if status, _ := call(t, dungeonMaster, http.MethodGet, "/", "", map[string]string{"id": keptID}, handler.GetResource); status == http.StatusOK {
+		t.Fatalf("the owner claim opened an item its maker kept from the table")
+	}
 	if status, answer := call(t, player, http.MethodDelete, "/", "", map[string]string{"id": campaignID, "character_id": sheetID}, handler.DeleteCampaignCharacter); status != http.StatusOK {
 		t.Fatalf("DeleteCampaignCharacter: %d %+v", status, answer.Error)
 	}
@@ -301,13 +350,13 @@ func TestACampaignIsAnOrganizationThatOwnsItsRows(t *testing.T) {
 	if status, answer := call(t, dungeonMaster, http.MethodPut, "/", `{"name":"Renamed table"}`, params, handler.PutCampaign); status != http.StatusOK {
 		t.Fatalf("PutCampaign: %d %+v", status, answer.Error)
 	}
-	if organization, err = sdb.Instance().GetOrganization(ctx, campaign.OrganizationID); err != nil || organization.Name != "Renamed table" {
+	if organization, err = sdb.Instance().GetOrganization(ctx, campaign.ID); err != nil || organization.Name != "Renamed table" {
 		t.Fatalf("the organization did not take the campaign's name: %v", err)
 	}
 	if status, answer := call(t, dungeonMaster, http.MethodDelete, "/", "", params, handler.DeleteCampaign); status != http.StatusOK {
 		t.Fatalf("DeleteCampaign: %d %+v", status, answer.Error)
 	}
-	if organization, err = sdb.Instance().GetOrganization(ctx, campaign.OrganizationID); err == nil && organization.DeletedAt == nil {
+	if organization, err = sdb.Instance().GetOrganization(ctx, campaign.ID); err == nil && organization.DeletedAt == nil {
 		t.Fatalf("a closed campaign left its organization live")
 	}
 }

@@ -98,7 +98,7 @@ func GetMaps(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	if err := db.Instance().NewSelect().Model(campaign).WherePK().Scan(ctx.Request().Context()); err != nil {
+	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
 	maps := make([]db.CampaignMap, 0)
@@ -132,7 +132,7 @@ func PostMap(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	if err := db.Instance().NewSelect().Model(campaign).WherePK().Scan(ctx.Request().Context()); err != nil {
+	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
 	var body BodyMap
@@ -140,7 +140,7 @@ func PostMap(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusBadRequest, "Invalid JSON body")
 	}
 	rctx := ctx.Request().Context()
-	w, err := postWriter(rctx, actorID, &campaign.OrganizationID)
+	w, err := postWriter(rctx, actorID, &campaign.ID)
 	if err != nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
@@ -228,7 +228,7 @@ func PutMap(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	if err := db.Instance().NewSelect().Model(campaign).WherePK().Scan(ctx.Request().Context()); err != nil {
+	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
 	mapID, err := uuid.Parse(ctx.Param("map_id"))
@@ -317,7 +317,7 @@ func DeleteMap(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	if err := db.Instance().NewSelect().Model(campaign).WherePK().Scan(ctx.Request().Context()); err != nil {
+	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
 	mapID, err := uuid.Parse(ctx.Param("map_id"))
@@ -364,7 +364,7 @@ func GetEncounters(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	if err := db.Instance().NewSelect().Model(campaign).WherePK().Scan(ctx.Request().Context()); err != nil {
+	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
 	encounters := make([]db.Encounter, 0)
@@ -392,7 +392,7 @@ func PostEncounter(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	if err := db.Instance().NewSelect().Model(campaign).WherePK().Scan(ctx.Request().Context()); err != nil {
+	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
 	var body BodyEncounter
@@ -400,7 +400,7 @@ func PostEncounter(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusBadRequest, "Invalid JSON body")
 	}
 	rctx := ctx.Request().Context()
-	w, err := postWriter(rctx, actorID, &campaign.OrganizationID)
+	w, err := postWriter(rctx, actorID, &campaign.ID)
 	if err != nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
@@ -469,7 +469,7 @@ func PutEncounter(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	if err := db.Instance().NewSelect().Model(campaign).WherePK().Scan(ctx.Request().Context()); err != nil {
+	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
 	encounterID, err := uuid.Parse(ctx.Param("encounter_id"))
@@ -561,7 +561,7 @@ func DeleteEncounter(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	if err := db.Instance().NewSelect().Model(campaign).WherePK().Scan(ctx.Request().Context()); err != nil {
+	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
 	encounterID, err := uuid.Parse(ctx.Param("encounter_id"))
@@ -608,7 +608,7 @@ func GetSongs(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	if err := db.Instance().NewSelect().Model(campaign).WherePK().Scan(ctx.Request().Context()); err != nil {
+	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
 	songs := make([]db.Song, 0)
@@ -636,7 +636,7 @@ func PostSong(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	if err := db.Instance().NewSelect().Model(campaign).WherePK().Scan(ctx.Request().Context()); err != nil {
+	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
 	var body BodySong
@@ -644,7 +644,7 @@ func PostSong(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusBadRequest, "Invalid JSON body")
 	}
 	rctx := ctx.Request().Context()
-	w, err := postWriter(rctx, actorID, &campaign.OrganizationID)
+	w, err := postWriter(rctx, actorID, &campaign.ID)
 	if err != nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
@@ -693,7 +693,7 @@ func PutSong(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	if err := db.Instance().NewSelect().Model(campaign).WherePK().Scan(ctx.Request().Context()); err != nil {
+	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
 	songID, err := uuid.Parse(ctx.Param("song_id"))
@@ -771,7 +771,7 @@ func DeleteSong(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	if err := db.Instance().NewSelect().Model(campaign).WherePK().Scan(ctx.Request().Context()); err != nil {
+	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
 	songID, err := uuid.Parse(ctx.Param("song_id"))
@@ -818,7 +818,7 @@ func GetChatEntries(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	if err := db.Instance().NewSelect().Model(campaign).WherePK().Scan(ctx.Request().Context()); err != nil {
+	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
 	entries := make([]db.ChatEntry, 0)
@@ -846,7 +846,7 @@ func PostChatEntry(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	if err := db.Instance().NewSelect().Model(campaign).WherePK().Scan(ctx.Request().Context()); err != nil {
+	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
 	var body BodyChatEntry
@@ -854,7 +854,7 @@ func PostChatEntry(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusBadRequest, "Invalid JSON body")
 	}
 	rctx := ctx.Request().Context()
-	w, err := postWriter(rctx, actorID, &campaign.OrganizationID)
+	w, err := postWriter(rctx, actorID, &campaign.ID)
 	if err != nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
@@ -936,7 +936,7 @@ func PutChatEntry(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	if err := db.Instance().NewSelect().Model(campaign).WherePK().Scan(ctx.Request().Context()); err != nil {
+	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
 	entryID, err := uuid.Parse(ctx.Param("entry_id"))
@@ -1002,7 +1002,7 @@ func DeleteChatEntry(ctx echo.Context) error {
 		}
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
-	if err := db.Instance().NewSelect().Model(campaign).WherePK().Scan(ctx.Request().Context()); err != nil {
+	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
 	entryID, err := uuid.Parse(ctx.Param("entry_id"))
