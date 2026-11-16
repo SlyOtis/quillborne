@@ -943,7 +943,11 @@
     color: var(--metal-bright);
     text-shadow: 0 1px 0 var(--shadow-ink), 0 0 0.6rem var(--ember-glow), 0 0 1.4rem var(--ember-glow);
     min-width: 0;
-    overflow-wrap: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-block: var(--space-3);
+    margin-block: calc(var(--space-3) * -1);
   }
 
   .sheet-level {
