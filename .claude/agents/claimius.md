@@ -65,7 +65,8 @@ Say "this is not a pattern", what was asked and the nearest thing the middleware
 2. it needs a claim of Quillborne's own to stand in for membership, ownership or a role;
 3. it needs access decided in Go, in SQL of the service or in a component;
 4. it needs a root changed any other way than `claimius.migrate_root`;
-5. it needs a `sauth` write, an app change or a deployed database.
+5. it needs a `sauth` write, an app change or a deployed database;
+6. it needs a column, a field, a parameter or a helper that names the owner or the campaign of a row beside `sa_owner_id`, or a join table or an array of the service's own that says who owns or who may reach a row (`claimius.md` 24 to 31).
 
 ## Example asks
 

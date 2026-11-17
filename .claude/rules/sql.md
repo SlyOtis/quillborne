@@ -15,7 +15,7 @@ The `sql` agent holds this file. What the tables mean is `data.md` The tables, w
 
 1. A table is singular snake_case, `campaign_map`, with `id UUID PRIMARY KEY DEFAULT gen_random_uuid()` unless it shares another row's id, as `campaign` shares its organization's (`database/base/V1.2__base_campaign.sql:1`, `:23`).
 2. `sa_` is claimius's: `sa_owner_id`, `sa_created_by`, `sa_created_at`, `sa_updated_at`, `sa_deleted_at`, and `sa_parent_id` with `sa_root_id` both or neither. No column of the service takes the prefix.
-3. A flag is `is_<state>`, a reference `<table>_id`, an index `idx_<table>_<columns>` (`database/base/V1.2__base_campaign.sql:44`).
+3. A flag is `is_<state>`, a reference to a row that is not the owner `<table>_id`, an index `idx_<table>_<columns>` (`database/base/V1.2__base_campaign.sql:44`).
 4. A file is `V<version>__<slug>_<name>.sql`, the slug the step declares in `database/migrate.yml`: `V1.9__base_monster.sql`. A file is never renumbered or reordered once merged.
 5. A column, a table and a function name are the user's: proposed, and written once said.
 
@@ -36,27 +36,29 @@ The `sql` agent holds this file. What the tables mean is `data.md` The tables, w
 15. `COMMENT ON` every table, every column and every function, and a function comment carries its argument signature (`database/base/V1.2__base_campaign.sql:12`). No `--` and no `/* */` anywhere.
 16. The claimius functions the service's SQL calls are `upsert_table_info`, `delete_table_info`, `upsert_disciple_state` and `upsert_search_source`, and nothing reads a `claimius.*` table. `debug/` alone writes its identity, claims, bindings and grants directly (`database/debug/V1.0__debug_bootstrap_identity.sql`).
 17. A delete is soft, `sa_deleted_at`. Never `DELETE FROM` a registered table, and never `session_replication_role`.
+18. A table names its organization only by `sa_owner_id`. No `campaign_id`, `organization_id` or other column duplicates it: a campaign is its organization and shares its id, so `sa_owner_id` is the row's campaign (`claimius.md` 24 to 31).
 
 ## Which database
 
-18. The local database is the session's: `just build-db` removes the container and the volume and builds the image from `database/` with this checkout's files (`scripts/build-db.sh:7`), the image runs `smig upgrade` and `smig up` on first start (`database/Dockerfile:27`), `just dev-db` starts it and `just migrate <smig args>` runs smig against it. It is rebuilt freely and without asking.
-19. A deployed database is the owner's. It is migrated by the deploy's migrate job, the smig binary inside the environment, which `scripts/migrate.sh` refuses to start while `SAUTH_DEBUG_USER_ID` is set (`scripts/migrate.sh:7`). A session never runs smig, `psql` or `just migrate` against it.
-20. `smig lint` before a commit. `smig check` writes to the ledger and runs against the local database only. `smig test` is never run.
-21. A middleware pin moves `go.mod` and the `ref` of the `Claimius Schema` step in one commit.
-22. No row a player sees is seeded by SQL. It is a record in `database/state/local.ndjson`, made by the handlers on import, so every claim is made the way a player makes it.
+19. The local database is the session's: `just build-db` removes the container and the volume and builds the image from `database/` with this checkout's files (`scripts/build-db.sh:7`), the image runs `smig upgrade` and `smig up` on first start (`database/Dockerfile:27`), `just dev-db` starts it and `just migrate <smig args>` runs smig against it. It is rebuilt freely and without asking.
+20. A deployed database is the owner's. It is migrated by the deploy's migrate job, the smig binary inside the environment, which `scripts/migrate.sh` refuses to start while `SAUTH_DEBUG_USER_ID` is set (`scripts/migrate.sh:7`). A session never runs smig, `psql` or `just migrate` against it.
+21. `smig lint` before a commit. `smig check` writes to the ledger and runs against the local database only. `smig test` is never run.
+22. A middleware pin moves `go.mod` and the `ref` of the `Claimius Schema` step in one commit.
+23. No row a player sees is seeded by SQL. It is a record in `database/state/local.ndjson`, made by the handlers on import, so every claim is made the way a player makes it.
 
 ## Good and bad
 
-23. Good: `database/base/V1.9__base_monster.sql`, one table in its final shape, every column commented, registered on its last line.
-24. Good: `database/base/V1.8__base_state.sql`, a table outside claimius that names why in its comment.
-25. Bad: `ALTER TABLE campaign ADD COLUMN ...` in a base file. The column goes into the `CREATE TABLE`, rule 7, and what a deployed table then lacks is rule 28.
-26. Bad: a base or system file calling `claimius.insert_claim`, `insert_claim_object` or `insert_user_claim`, or inserting into `claimius.claim`. Rule 16; a claim is made by a handler.
-27. Bad: a column without its `COMMENT ON`, or a `--` line explaining it.
+24. Good: `database/base/V1.9__base_monster.sql`, one table in its final shape, every column commented, registered on its last line.
+25. Good: `database/base/V1.8__base_state.sql`, a table outside claimius that names why in its comment.
+26. Bad: `ALTER TABLE campaign ADD COLUMN ...` in a base file. The column goes into the `CREATE TABLE`, rule 7, and what a deployed table then lacks is rule 30.
+27. Bad: a base or system file calling `claimius.insert_claim`, `insert_claim_object` or `insert_user_claim`, or inserting into `claimius.claim`. Rule 16; a claim is made by a handler.
+28. Bad: a column without its `COMMENT ON`, or a `--` line explaining it.
+29. Bad: `campaign_id UUID REFERENCES campaign(id)` or an `organization_id` on a registered table, or an index on one. The row's campaign is its `sa_owner_id`, rule 18.
 
 ## Do and don't
 
-28. Do stop and say so when a change alters or drops a column of a table that is deployed: name the table, the column and that rule 9 keeps it from the deployed database. How it reaches there is the owner's call.
-29. Do rebuild the local database after a base file changes, `just build-db` then `just dev`, and read that the import still lands.
-30. Do keep the Go model, the state group and `database/state/local.ndjson` moving with the table (`go.md` 13 and 15).
-31. Don't add a folder under `database/` that no step names, or a step, without the user naming it.
-32. Don't put logic in a seed. Don't write an access check in SQL of the service's own.
+30. Do stop and say so when a change alters or drops a column of a table that is deployed: name the table, the column and that rule 9 keeps it from the deployed database. How it reaches there is the owner's call.
+31. Do rebuild the local database after a base file changes, `just build-db` then `just dev`, and read that the import still lands.
+32. Do keep the Go model, the state group and `database/state/local.ndjson` moving with the table (`go.md` 13 and 15).
+33. Don't add a folder under `database/` that no step names, or a step, without the user naming it.
+34. Don't put logic in a seed. Don't write an access check in SQL of the service's own.

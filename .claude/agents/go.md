@@ -64,7 +64,8 @@ Say "this is not a pattern", what was asked and the nearest thing that is, and h
 1. no handler on disk does what is asked;
 2. it needs a route, a parameter, a body field, a response field, a status, a column or a name the user did not say;
 3. it needs a required field made optional or a shared check loosened;
-4. it needs a recipe added or changed.
+4. it needs a recipe added or changed;
+5. it needs a model field, a body or response field, a parameter, a where or a helper that names the owner or the campaign of a row beside `sa_owner_id` (`claimius.md` 24 to 31).
 
 ## Example asks
 

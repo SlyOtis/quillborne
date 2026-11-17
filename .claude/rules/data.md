@@ -12,23 +12,23 @@ paths:
 
 ## Casing
 
-The schema and the api are snake_case throughout: `user_id`, `campaign_id`, `character_ids`, `is_active`, `is_hidden`, `share_users`, `sa_owner_id`. A camelCase reader is a bug, not a variant.
+The schema and the api are snake_case throughout: `user_id`, `character_ids`, `is_active`, `is_hidden`, `share_users`, `sa_owner_id`. A camelCase reader is a bug, not a variant.
 
 `Character` nests identity under `info`. `character.info.name`, never `character.name`.
 
 ## The tables
 
-`database/base/` holds them, one file per concern, migrated by smig through `database/migrate.yml` after the claimius schema of `samna-auth-middleware`. Every table that holds what a player owns carries the claimius columns (`sa_owner_id`, `sa_created_by`, `sa_created_at`, `sa_updated_at`, `sa_deleted_at`) and ends with `SELECT claimius.upsert_table_info('public.<table>')`, so claims can bind it. `sa_owner_id` is the organization the row lives in: the campaign's own organization for everything a table keeps, and Knights of the Cauldron, `SERVER_OWNER_ID`, for everything else. A delete is soft: it sets `sa_deleted_at`.
+`database/base/` holds them, one file per concern, migrated by smig through `database/migrate.yml` after the claimius schema of `samna-auth-middleware`. Every table that holds what a player owns carries the claimius columns (`sa_owner_id`, `sa_created_by`, `sa_created_at`, `sa_updated_at`, `sa_deleted_at`) and ends with `SELECT claimius.upsert_table_info('public.<table>')`, so claims can bind it. `sa_owner_id` is the organization the row lives in: the campaign's own organization for everything a table keeps, and Knights of the Cauldron, `SERVER_OWNER_ID`, for everything else. A campaign is its organization and shares its id, so a row's `sa_owner_id` is its campaign, and no table carries a `campaign_id` or any other column naming its organization beside it: `claimius.md` 24 to 31 is the rule. A delete is soft: it sets `sa_deleted_at`.
 
 - `profile`: a player's name, picture, preferences and friends, and `key_claim_id`, the claim their integration keys are bound to.
 - `character` and its sources: the sheet as stored data.
 - `campaign`: what a table of play holds beside its organization, one row per campaign organization with the same `id`: `is_active` and `settings`. It has no name, no description, no dungeon master and no claim id of its own.
-- Under a campaign by `campaign_id`: `campaign_map`, `encounter`, `chat_entry` and `song`. A `campaign_map` holds its picture, `layers` and `markers`, and an optional drawn `plan`, the nimap document of `maps.md`.
-- `resource`: every kind of lore, by `kind`, with `title`, the rest of the page in `fields`, a `campaign_id` when a campaign keeps it, and sub pages through `sa_parent_id` and `sa_root_id` under the one root row of its campaign or its player. `resource_update` holds the Yjs updates of live editing.
+- A campaign's own, each row the campaign's because its `sa_owner_id` is the campaign's organization: `campaign_map`, `encounter`, `chat_entry` and `song`. A `campaign_map` holds its picture, `layers` and `markers`, and an optional drawn `plan`, the nimap document of `maps.md`.
+- `resource`: every kind of lore, by `kind`, with `title`, the rest of the page in `fields`, the campaign's organization as its `sa_owner_id` when a campaign keeps it, and sub pages through `sa_parent_id` and `sa_root_id` under the one root row of its campaign or its player. `resource_update` holds the Yjs updates of live editing.
 - `asset`: a file, a block document or a folder, in nimployer's model. A folder is `inode/directory` with type `folder`; a block document is `application/vnd.mar.document+json` with its body in `document`; a file's bytes sit in blob storage under `blob_url`. Folders nest through `sa_parent_id` and `sa_root_id`; the roots are a campaign's folder, slug `campaign-<campaign id>`, and a player's Personal folder, slug `user-<user id>`.
 - `object_asset`: attaches an asset to any row by `object_type` and `object_id`; its `properties` override the asset's key by key. `tag` and `tag_object` tag any row the same way.
 - `catalog_entry`: the shared class and race readings.
-- `vehicle`: a vessel the table sails, with a `campaign_id` when a campaign sails it: its vehicle `system`, `template` and `layout` keys, the installed `components`, the `states` of each, `stats`, `rulings`, the homebrew `overlay`, the `crew`, the `revision` and its `history`, and its `crew_claim_id`.
+- `vehicle`: a vessel the table sails, with the campaign's organization as its `sa_owner_id` when a campaign sails it: its vehicle `system`, `template` and `layout` keys, the installed `components`, the `states` of each, `stats`, `rulings`, the homebrew `overlay`, the `crew`, the `revision` and its `history`, and its `crew_claim_id`.
 - `monster`: a creature to fight, with no campaign: its monster `system`, `name`, `size`, `type`, `alignment` and `challenge` as columns for the list to sort and filter on, the rest of the stat block in `stats`, its lore in `description` as a block document, its portrait's asset address in `image`, and `is_public`. Its monster tags are `tag_object` rows with object type `public.monster`.
 - `state_key`: the key a `/api/state` import named a row by, `group`, `key` and `object_id`, so the next import of the same key finds the row. Written by the import alone and not registered with claimius.
 
@@ -38,7 +38,7 @@ Every table holds application data, so nothing is aged and there is no `public.p
 
 The campaign is the one grouping at the table. Every player seated in it, every holder of its Player claim, is the party, and there is no party apart from the campaign.
 
-Everything the party lives through is a `resource` row of one of the seven kinds, held by the campaign through `campaign_id`. A player's own lore is the same row without one. The campaign kinds the table reads:
+Everything the party lives through is a `resource` row of one of the seven kinds, the campaign's because its `sa_owner_id` is the campaign's organization. A player's own lore is the same row under Knights of the Cauldron. The campaign kinds the table reads:
 
 - `sessions` is the log: a number, a title, a play date, a summary, and who was present.
 - `locations` is every **Place** charted, its kind, and the map and marker that fix its position.
@@ -56,13 +56,13 @@ A map pin holds `record_kind` and `record_id` rather than its own prose. A place
 
 ## A campaign is an organization
 
-A campaign is a claimius organization of kind `campaign`, a child of Knights of the Cauldron, made by `PostCampaign` through `sdb.Instance().NewInsert()` the way nimployer makes a team. The organization holds the `name` and the `description`; the `campaign` row holds `is_active` and `settings` and shares the organization's id, so a `campaign_id` on any table names both. The api under `/api/campaign` answers the two as one campaign, with `dm_id` and `player_ids` read from the holders of the two claims bound on the organization with the member bit: the one that also carries owner, and the Player claim.
+A campaign is a claimius organization of kind `campaign`, a child of Knights of the Cauldron, made by `PostCampaign` through `sdb.Instance().NewInsert()` the way nimployer makes a team. The organization holds the `name` and the `description`; the `campaign` row holds `is_active` and `settings` and shares the organization's id, so the campaign of any row is that row's `sa_owner_id`. The api under `/api/campaign` answers the two as one campaign, with `dm_id` and `player_ids` read from the holders of the two claims bound on the organization with the member bit: the one that also carries owner, and the Player claim.
 
 - Everything a table keeps is owned by its organization: the campaign row, its maps, encounters, chat and songs, its pages, its vehicles, the sheets seated at it, its folder and every file under it. A handler takes its writer with `postWriter(ctx, actorID, &campaign.ID)` to make a row there, and with the row's own `sa_owner_id` to change one; `postWriter(ctx, actorID, nil)` writes under Knights of the Cauldron.
 - A row that joins or leaves a campaign changes owner with it: a sheet takes the organization as `sa_owner_id` when it is seated and returns to Knights of the Cauldron when it leaves. Both sit under one root, so the move is a plain update.
 - What a player keeps for themselves, a page, a sheet, a vehicle or a file with no campaign, stays under Knights of the Cauldron and is theirs alone through the grant it was created under, until they share it.
 - The Owner claim and the Player claim are bound on the organization with the member bit, owner beside it on the one and execute on the other, and neither inherits: holding the organization opens no row in it. Every row is still bound by itself, as below.
-- A new kind of campaign row carries `campaign_id` and the claimius columns, is made with the campaign's writer, bound to the Owner claim and to the Player claim with the masks the table should have, soft deleted in `DeleteCampaign`, and given its `/api/state` group.
+- A new kind of campaign row carries the claimius columns and no column naming its campaign, is made with the campaign's writer so its `sa_owner_id` is the campaign's organization, bound to the Owner claim and to the Player claim with the masks the table should have, soft deleted in `DeleteCampaign`, and given its `/api/state` group.
 - Closing a campaign soft deletes its organization with the rows `DeleteCampaign` names.
 
 ## The page tree
