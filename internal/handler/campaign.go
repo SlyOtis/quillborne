@@ -141,7 +141,11 @@ func GetCampaign(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("GetCampaign: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	campaign := db.Campaign{ID: campaignID}
 	if err := getCampaign(rctx, &campaign); err != nil {
@@ -283,7 +287,11 @@ func PutCampaign(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutCampaign: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	campaign := db.Campaign{ID: campaignID}
 	if err := getCampaign(rctx, &campaign); err != nil {
@@ -354,7 +362,11 @@ func DeleteCampaign(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteCampaign: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	campaign := db.Campaign{ID: campaignID}
 	if err := getCampaign(rctx, &campaign); err != nil {
@@ -422,12 +434,19 @@ func PostCampaignPlayer(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostCampaignPlayer: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	campaign := db.Campaign{ID: campaignID}
 	if err := getCampaign(rctx, &campaign); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
 		ctx.Logger().Errorf("PostCampaignPlayer: %v", err)
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		return respond.ErrorInternal(ctx)
 	}
 	var found db.Profile
 	q := db.Instance().NewSelect().Model(&found).Where("lower(email) = ?", strings.TrimSpace(strings.ToLower(body.Email))).Limit(1)
@@ -490,11 +509,19 @@ func DeleteCampaignPlayer(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteCampaignPlayer: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	campaign := db.Campaign{ID: campaignID}
 	if err := getCampaign(rctx, &campaign); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("DeleteCampaignPlayer: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	memberships, err := getMemberships(rctx, []uuid.UUID{campaign.ID})
 	if err != nil {
@@ -544,7 +571,11 @@ func GetCampaignCharacters(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("GetCampaignCharacters: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	characters := make([]db.Character, 0)
 	q := db.Instance().NewSelect().Model(&characters).Where("campaign_id = ?", campaignID)
@@ -577,18 +608,30 @@ func PostCampaignCharacter(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostCampaignCharacter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	ac, err := sdb.Instance().MutationAccess(rctx, actorID, characterID, db.OBJECT_TYPE_CHARACTER, sdb.ACCESS_WRITE)
 	if err != nil || ac == nil {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostCampaignCharacter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	campaign := db.Campaign{ID: campaignID}
 	if err := getCampaign(rctx, &campaign); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("PostCampaignCharacter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	w, err := postWriter(rctx, actorID, &campaign.ID)
 	if err != nil {
@@ -657,11 +700,19 @@ func DeleteCampaignCharacter(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusNotFound, "Not found")
 	}
 	if campaignErr != nil && character.UserID != actorID {
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(campaignErr, sdb.ErrNotFound) || errors.Is(campaignErr, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteCampaignCharacter: %v", campaignErr)
+		return respond.ErrorInternal(ctx)
 	}
 	campaign := db.Campaign{ID: campaignID}
 	if err := getCampaign(rctx, &campaign); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("DeleteCampaignCharacter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	w, err := postWriter(rctx, actorID, &campaign.ID)
 	if err != nil {

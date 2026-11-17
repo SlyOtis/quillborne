@@ -53,7 +53,11 @@ func GetProfile(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("GetProfile: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	return respond.JSON(ctx, http.StatusOK, profile, 1)
 }
@@ -109,7 +113,11 @@ func GetProfileUser(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	if _, err := sdb.Instance().MutationAccess(rctx, actorID, profile.ID, db.OBJECT_TYPE_PROFILE, sdb.ACCESS_READ); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("GetProfileUser: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	return respond.JSON(ctx, http.StatusOK, profile, 1)
 }
@@ -195,7 +203,11 @@ func PutProfile(ctx echo.Context) error {
 	}
 	ac, err := sdb.Instance().MutationAccess(rctx, actorID, profile.ID, db.OBJECT_TYPE_PROFILE, sdb.ACCESS_WRITE)
 	if err != nil || ac == nil {
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutProfile: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	columns := []string{"sa_updated_at"}
 	if body.Email != nil {
@@ -252,7 +264,11 @@ func PostProfileFriend(ctx echo.Context) error {
 	}
 	ac, err := sdb.Instance().MutationAccess(rctx, actorID, profile.ID, db.OBJECT_TYPE_PROFILE, sdb.ACCESS_WRITE)
 	if err != nil || ac == nil {
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostProfileFriend: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	var found db.Profile
 	q := db.Instance().NewSelect().Model(&found).Where("lower(email) = ?", strings.TrimSpace(strings.ToLower(body.Email))).Limit(1)
@@ -303,7 +319,11 @@ func DeleteProfileFriend(ctx echo.Context) error {
 	}
 	ac, err := sdb.Instance().MutationAccess(rctx, actorID, profile.ID, db.OBJECT_TYPE_PROFILE, sdb.ACCESS_WRITE)
 	if err != nil || ac == nil {
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteProfileFriend: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		if _, err := tx.NewUpdate().Model(&profile).
@@ -336,7 +356,11 @@ func GetProfileDetails(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	if _, err := sdb.Instance().MutationAccess(rctx, actorID, profile.ID, db.OBJECT_TYPE_PROFILE, sdb.ACCESS_WRITE); err != nil {
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("GetProfileDetails: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	secrets, err := sdb.Instance().GetSecrets(rctx, actorID, sdb.ACCESS_READ, nil, 0)
 	if err != nil {
@@ -378,7 +402,11 @@ func PutProfileDetails(ctx echo.Context) error {
 	}
 	ac, err := sdb.Instance().MutationAccess(rctx, actorID, profile.ID, db.OBJECT_TYPE_PROFILE, sdb.ACCESS_WRITE)
 	if err != nil || ac == nil {
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutProfileDetails: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {

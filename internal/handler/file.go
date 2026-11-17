@@ -162,7 +162,11 @@ func GetAsset(ctx echo.Context) error {
 	}
 	rctx := ctx.Request().Context()
 	if ac, err := sdb.Instance().MutationAccess(rctx, actorID, id, db.OBJECT_TYPE_ASSET, sdb.ACCESS_READ); err != nil || ac == nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if err == nil || errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("GetAsset: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	var asset db.Asset
 	if err := db.Instance().NewSelect().Model(&asset).ColumnExpr("asset.*").ColumnExpr(assetBannerProperties).Where("asset.id = ?", id).Scan(rctx); err != nil {
@@ -186,7 +190,11 @@ func GetAssetData(ctx echo.Context) error {
 	}
 	rctx := ctx.Request().Context()
 	if ac, err := sdb.Instance().MutationAccess(rctx, actorID, id, db.OBJECT_TYPE_ASSET, sdb.ACCESS_READ); err != nil || ac == nil {
-		return ctx.NoContent(http.StatusNotFound)
+		if err == nil || errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return ctx.NoContent(http.StatusNotFound)
+		}
+		ctx.Logger().Errorf("GetAssetData: %v", err)
+		return ctx.NoContent(http.StatusInternalServerError)
 	}
 	asset := db.Asset{ID: id}
 	if err := db.Instance().NewSelect().Model(&asset).WherePK().Scan(rctx); err != nil {
@@ -335,14 +343,22 @@ func PostAsset(ctx echo.Context) error {
 			if errors.Is(err, sdb.ErrNotFound) {
 				return respond.Error(ctx, http.StatusNotFound, "Not found")
 			}
-			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			if errors.Is(err, sdb.ErrNoAccess) {
+				return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			}
+			ctx.Logger().Errorf("PostAsset: %v", err)
+			return respond.ErrorInternal(ctx)
 		}
 	} else if campaignID != nil {
 		if _, err := sdb.Instance().MutationAccess(rctx, actorID, *campaignID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_READ); err != nil {
 			if errors.Is(err, sdb.ErrNotFound) {
 				return respond.Error(ctx, http.StatusNotFound, "Not found")
 			}
-			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			if errors.Is(err, sdb.ErrNoAccess) {
+				return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			}
+			ctx.Logger().Errorf("PostAsset: %v", err)
+			return respond.ErrorInternal(ctx)
 		}
 		var folder db.Asset
 		if err := db.Instance().NewSelect().Model(&folder).Column("id").Where("slug = ?", "campaign-"+campaignID.String()).Scan(rctx); err != nil {
@@ -459,7 +475,11 @@ func PostAssetUpload(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostAssetUpload: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	asset := db.Asset{ID: id}
 	if err := db.Instance().NewSelect().Model(&asset).WherePK().Scan(rctx); err != nil {
@@ -564,7 +584,11 @@ func PutAsset(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutAsset: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	asset := db.Asset{ID: id}
 	if err := db.Instance().NewSelect().Model(&asset).WherePK().Scan(rctx); err != nil {
@@ -630,7 +654,11 @@ func PutAsset(ctx echo.Context) error {
 			if errors.Is(err, sdb.ErrNotFound) {
 				return respond.Error(ctx, http.StatusNotFound, "Not found")
 			}
-			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			if errors.Is(err, sdb.ErrNoAccess) {
+				return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			}
+			ctx.Logger().Errorf("PutAsset: %v", err)
+			return respond.ErrorInternal(ctx)
 		}
 		target := db.Asset{ID: *body.ParentID}
 		if err := db.Instance().NewSelect().Model(&target).WherePK().Scan(rctx); err != nil {
@@ -702,7 +730,11 @@ func DeleteAsset(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteAsset: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	asset := db.Asset{ID: id}
 	if err := db.Instance().NewSelect().Model(&asset).WherePK().Scan(rctx); err != nil {
@@ -750,7 +782,11 @@ func PostAssetMove(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostAssetMove: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	target := db.Asset{ID: *body.TargetID}
 	if err := db.Instance().NewSelect().Model(&target).WherePK().Scan(rctx); err != nil {
@@ -767,7 +803,11 @@ func PostAssetMove(ctx echo.Context) error {
 			if errors.Is(err, sdb.ErrNotFound) {
 				return respond.Error(ctx, http.StatusNotFound, "Not found")
 			}
-			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			if errors.Is(err, sdb.ErrNoAccess) {
+				return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			}
+			ctx.Logger().Errorf("PostAssetMove: %v", err)
+			return respond.ErrorInternal(ctx)
 		}
 		item := db.Asset{ID: id}
 		if err := db.Instance().NewSelect().Model(&item).WherePK().Scan(rctx); err != nil {
@@ -849,7 +889,11 @@ func GetFile(ctx echo.Context) error {
 	}
 	rctx := ctx.Request().Context()
 	if ac, err := sdb.Instance().MutationAccess(rctx, actorID, id, db.OBJECT_TYPE_ASSET, sdb.ACCESS_READ); err != nil || ac == nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if err == nil || errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("GetFile: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	file := db.Asset{ID: id}
 	if err := db.Instance().NewSelect().Model(&file).WherePK().Scan(rctx); err != nil {
@@ -885,7 +929,11 @@ func GetObjectAssets(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("GetObjectAssets: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	items := make([]*db.ObjectAsset, 0)
 	if err := db.Instance().NewSelect().
@@ -916,7 +964,11 @@ func PostObjectAsset(ctx echo.Context) error {
 	}
 	rctx := ctx.Request().Context()
 	if ac, err := sdb.Instance().MutationAccess(rctx, actorID, assetID, db.OBJECT_TYPE_ASSET, sdb.ACCESS_READ); err != nil || ac == nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if err == nil || errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("PostObjectAsset: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	table, known := getObjectTable(*body.ObjectType)
 	if !known {
@@ -926,7 +978,11 @@ func PostObjectAsset(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostObjectAsset: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
@@ -983,7 +1039,11 @@ func PutObjectAsset(ctx echo.Context) error {
 	}
 	rctx := ctx.Request().Context()
 	if ac, err := sdb.Instance().MutationAccess(rctx, actorID, assetID, db.OBJECT_TYPE_ASSET, sdb.ACCESS_READ); err != nil || ac == nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if err == nil || errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("PutObjectAsset: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	table, known := getObjectTable(*body.ObjectType)
 	if !known {
@@ -993,7 +1053,11 @@ func PutObjectAsset(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutObjectAsset: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
@@ -1066,7 +1130,11 @@ func DeleteObjectAsset(ctx echo.Context) error {
 	}
 	rctx := ctx.Request().Context()
 	if ac, err := sdb.Instance().MutationAccess(rctx, actorID, assetID, db.OBJECT_TYPE_ASSET, sdb.ACCESS_READ); err != nil || ac == nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if err == nil || errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("DeleteObjectAsset: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	item := db.ObjectAsset{ID: id}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("asset_id = ?", assetID).Scan(rctx); err != nil {
@@ -1085,7 +1153,11 @@ func DeleteObjectAsset(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteObjectAsset: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
@@ -1176,7 +1248,11 @@ func GetTag(ctx echo.Context) error {
 	}
 	rctx := ctx.Request().Context()
 	if ac, err := sdb.Instance().MutationAccess(rctx, actorID, id, db.OBJECT_TYPE_TAG, sdb.ACCESS_READ); err != nil || ac == nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if err == nil || errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("GetTag: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	tag := db.Tag{ID: id}
 	if err := db.Instance().NewSelect().Model(&tag).WherePK().Scan(rctx); err != nil {
@@ -1248,7 +1324,11 @@ func PutTag(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutTag: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	tag := db.Tag{ID: id, Name: strings.TrimSpace(*body.Name)}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
@@ -1278,7 +1358,11 @@ func DeleteTag(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteTag: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	tag := db.Tag{ID: id}
 	if err := db.Instance().NewSelect().Model(&tag).WherePK().Scan(rctx); err != nil {
@@ -1319,13 +1403,21 @@ func PostTagObject(ctx echo.Context) error {
 	}
 	rctx := ctx.Request().Context()
 	if ac, err := sdb.Instance().MutationAccess(rctx, actorID, id, db.OBJECT_TYPE_TAG, sdb.ACCESS_READ); err != nil || ac == nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if err == nil || errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("PostTagObject: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if _, err := sdb.Instance().MutationAccess(rctx, actorID, *body.ObjectID, objectType, sdb.ACCESS_WRITE); err != nil {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostTagObject: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
@@ -1377,7 +1469,11 @@ func DeleteTagObject(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteTagObject: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	var link db.TagObject
 	if err := db.Instance().NewSelect().Model(&link).Where("tag_id = ?", id).Where("object_type = ?", objectType).Where("object_id = ?", objectID).Limit(1).Scan(rctx); err != nil {

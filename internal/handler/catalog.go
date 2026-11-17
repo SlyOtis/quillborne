@@ -73,7 +73,11 @@ func GetCatalogEntry(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	if _, err := sdb.Instance().MutationAccess(rctx, actorID, entry.ID, db.OBJECT_TYPE_CATALOG_ENTRY, sdb.ACCESS_READ); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("GetCatalogEntry: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	return respond.JSON(ctx, http.StatusOK, getCatalogRecord(entry), 1)
 }
@@ -108,7 +112,11 @@ func PutCatalogEntry(ctx echo.Context) error {
 	if err == nil {
 		ac, accessErr := sdb.Instance().MutationAccess(rctx, actorID, entry.ID, db.OBJECT_TYPE_CATALOG_ENTRY, sdb.ACCESS_WRITE)
 		if accessErr != nil || ac == nil {
-			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			if accessErr == nil || errors.Is(accessErr, sdb.ErrNotFound) || errors.Is(accessErr, sdb.ErrNoAccess) {
+				return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			}
+			ctx.Logger().Errorf("PutCatalogEntry: %v", accessErr)
+			return respond.ErrorInternal(ctx)
 		}
 		entry.Name = name
 		entry.Description = description
