@@ -490,7 +490,7 @@
   {/if}
 {/snippet}
 
-<BaseDialog bind:isOpen {title} width="42rem" zIndex={9999}>
+<BaseDialog bind:isOpen {title} width="42rem">
   <div class="access">
     {#if error}
       <p class="access-alarm" role="alert">{error}</p>

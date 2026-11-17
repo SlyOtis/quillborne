@@ -829,7 +829,7 @@
     {/if}
 
     {#if dropOpen}
-      <BaseDialog bind:isOpen={dropOpen} title="Delete {shape.word}" zIndex={9999}>
+      <BaseDialog bind:isOpen={dropOpen} title="Delete {shape.word}">
         <div class="page-drop">
           <p class="page-drop-lede">{one.title} goes for good, with its pictures and every edit written into it. Its sub pages stay on the roll.</p>
           <div class="page-drop-acts">

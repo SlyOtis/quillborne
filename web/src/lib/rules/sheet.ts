@@ -158,3 +158,14 @@ export function getAttunedInventory(
   if (attuned && others >= slots) return null
   return inventory.map((item) => (item.id === id && item.attunement ? { ...item, attunement: { ...item.attunement, attuned } } : item))
 }
+
+/** The inventory with one attunement ended and another begun in its place, or null when that would still pass the slots. */
+export function getReplacedAttunement(
+  inventory: CharacterInventoryItem[],
+  ending: string,
+  beginning: string,
+  slots: number
+): CharacterInventoryItem[] | null {
+  const freed = getAttunedInventory(inventory, ending, false, slots)
+  return freed && getAttunedInventory(freed, beginning, true, slots)
+}

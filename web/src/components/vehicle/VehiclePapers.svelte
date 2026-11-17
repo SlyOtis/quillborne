@@ -298,7 +298,7 @@
 </div>
 
 {#if scuttling}
-  <BaseDialog bind:isOpen={scuttling} title="Scuttle {vehicle.name}" zIndex={9999}>
+  <BaseDialog bind:isOpen={scuttling} title="Scuttle {vehicle.name}">
     <div class="vp-drop">
       <p class="vp-quiet">The vessel goes for good, with its history. The crew keep their sheets and their perks.</p>
       <div class="vp-acts">

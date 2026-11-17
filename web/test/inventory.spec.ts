@@ -3,12 +3,12 @@ import { component, tabs } from './tables.fixture'
 
 const tab = component(`${tabs}/InventoryTab.svelte`)
 
-const headers = ['Active', 'Name', 'Weight', 'Qty', 'Cost (gp)', 'Notes']
-const cells = ['equippable', 'name', 'weight', 'qty', 'cost', 'notes']
+const headers = ['Active', 'Name', 'Qty', 'Cost (gp)', 'Notes']
+const cells = ['equippable', 'name', 'qty', 'cost', 'notes']
 
 describe('the inventory table lays one column per header', () => {
   it('flexes the name and the notes and fits the rest', () => {
-    expect(tab.tracks('ul')).toEqual(['auto', '2fr', 'auto', 'auto', 'auto', '3fr'])
+    expect(tab.tracks('ul')).toEqual(['auto', '3fr', 'auto', 'auto', '2fr'])
     expect(tab.tracks('ul')).toHaveLength(headers.length)
   })
 
@@ -16,7 +16,7 @@ describe('the inventory table lays one column per header', () => {
     expect(tab.style('ul')?.['justify-items']).toBeUndefined()
   })
 
-  it('heads the list with six columns', () => {
+  it('heads the list with five columns', () => {
     const heads = tab.listed('li', 'items-header')
 
     expect(heads).toHaveLength(1)
@@ -47,15 +47,15 @@ describe('a column header reads in full', () => {
     expect(tab.style('ul')?.overflow).toBeUndefined()
   })
 
-  it('never wraps the weight, the quantity or the cost in their auto tracks', () => {
-    expect(tab.tracks('ul').slice(2, 5)).toEqual(['auto', 'auto', 'auto'])
+  it('never wraps the quantity or the cost in their auto tracks', () => {
+    expect(tab.tracks('ul').slice(2, 4)).toEqual(['auto', 'auto'])
     expect(tab.style('.center')?.['white-space']).toBe('nowrap')
   })
 })
 
 describe('an item name occupies one line', () => {
   it('lets the name cell shrink below its content', () => {
-    expect(tab.tracks('ul')[1]).toBe('2fr')
+    expect(tab.tracks('ul')[1]).toBe('3fr')
     expect(tab.style('.name')).toMatchObject({ 'min-width': '0', overflow: 'hidden' })
   })
 
@@ -80,7 +80,7 @@ describe('an item name occupies one line', () => {
 
 describe('a note occupies one line', () => {
   it('lets the notes cell shrink below its content', () => {
-    expect(tab.tracks('ul')[5]).toBe('3fr')
+    expect(tab.tracks('ul')[4]).toBe('2fr')
     expect(tab.style('.notes')).toMatchObject({ 'min-width': '0', overflow: 'hidden' })
   })
 

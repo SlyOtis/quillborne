@@ -37,7 +37,7 @@
   }
 </script>
 
-<BaseDialog bind:isOpen title="Short rest" width="420px" zIndex={9999}>
+<BaseDialog bind:isOpen title="Short rest" width="420px">
   <div class="dnd-shortrest">
     <p class="dnd-shortrest-note">
       Choose how many hit dice to roll for the rest. {remaining} of {hitDice?.max ?? 0} d{die} left.

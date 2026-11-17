@@ -1,19 +1,21 @@
 <script lang="ts">
-  import {getContext} from "svelte";
+  import {getContext, tick} from "svelte";
   import type {Readable} from "svelte/store";
   import type {CharacterContext} from "$lib/types";
   import type {Character, CharacterCurrency, Currency, ItemType} from "$lib/character.types";
   import type {RulesState} from "$lib/rules/store";
   import {getAttunement, isItemApplied} from "$lib/rules/sheet";
-  import {getCarriedItem, getGrantLines, getItemLine, getItemRoom, type Item} from "$lib/resources";
-  import {addCurrencies, asGold, deleteItem, postItem, putAttunement, putCurrency, putEquipped, putItem} from "$lib/engine";
+  import {getCarriedItem, getEmptyItemFilter, getGrantLines, getItemRoom, getRarityInk, isItemShown, type Item} from "$lib/resources";
+  import {addCurrencies, asGold, deleteItem, postItem, putAttunement, putCurrency, putEquipped, putItem, putReplacedAttunement} from "$lib/engine";
+  import BaseDialog from "$components/BaseDialog.svelte";
+  import ItemFilters from "$components/campaign/ItemFilters.svelte";
+  import ItemRow from "$components/campaign/ItemRow.svelte";
   import Button from "$components/ui/Button.svelte";
   import Chip from "$components/ui/Chip.svelte";
   import Field from "$components/ui/Field.svelte";
   import Glyph, {type GlyphName} from "$components/ui/Glyph.svelte";
   import IconBtn from "$components/ui/IconBtn.svelte";
   import Pool from "$components/ui/Pool.svelte";
-  import Row from "$components/ui/Row.svelte";
   import SearchInput from "$components/ui/SearchInput.svelte";
   import Sigil from "$components/ui/Sigil.svelte";
 
@@ -51,21 +53,23 @@
   let carried = $derived(filteredItems.filter(item => !item.equipped))
 
   let attunement = $derived($rules.resolved?.system.items ? getAttunement($inventory, $rules.resolved) : null)
-  let note = $state('')
+  let attunable = $derived($inventory.filter(item => item.attunement?.required))
+  let waitingId = $state('')
+  let waiting = $derived($inventory.find(item => item.id === waitingId && item.attunement?.required && !item.attunement.attuned) ?? null)
+  let bonds = $state<HTMLElement>()
 
-  let finding = $state(false)
+  let adding = $state(false)
   let room = $state<Item[] | null>(null)
   let roomError = $state('')
-  let roomQuery = $state('')
-  let found = $derived.by(() => {
-    const words = roomQuery.trim().toLowerCase()
-    return (room ?? []).filter(one => !one.locked && (!words ||
-      [one.title, one.category, one.subtype, one.rarity, one.notes, ...one.tags].some(text => text.toLowerCase().includes(words))))
-  })
+  let filter = $state(getEmptyItemFilter())
+  let added = $state('')
+  let reached = $derived((room ?? []).filter(one => !one.locked))
+  let found = $derived(reached.filter(one => isItemShown(one, filter)).sort((a, b) => a.title.localeCompare(b.title)))
 
   function openRoom() {
-    finding = !finding
-    if (!finding || room) return
+    adding = true
+    added = ''
+    if (room) return
     roomError = ''
     getItemRoom()
       .then(items => (room = items))
@@ -74,7 +78,12 @@
 
   function addFromRoom(one: Item) {
     postItem(getCarriedItem(one))
-    note = `${one.title} is in the pack.`
+    added = `${one.title} is in the pack.`
+  }
+
+  function writeOwn() {
+    adding = false
+    openItem()
   }
 
   function getGives(item: InventoryItem): string {
@@ -83,17 +92,25 @@
   }
 
   function getTypeLine(item: InventoryItem): string {
-    const type = item.origin ? item.subtype ?? item.type : getDisplayType(item)
-    return item.equipped && item.attunement?.required && !item.attunement.attuned ? `${type} · not attuned` : type
+    return item.origin ? item.subtype ?? item.type : getDisplayType(item)
   }
 
-  function attune(item: InventoryItem) {
-    const attuned = !item.attunement?.attuned
-    if (putAttunement(item, attuned, attunement?.slots ?? 0)) {
-      note = ''
+  async function attune(item: InventoryItem) {
+    if (putAttunement(item, true, attunement?.slots ?? 0)) {
+      waitingId = ''
       return
     }
-    note = `All ${attunement?.slots ?? 0} attunement slots are taken. End an attunement before attuning to ${item.title}.`
+    waitingId = item.id
+    await tick()
+    bonds?.scrollIntoView({behavior: 'smooth', block: 'nearest'})
+  }
+
+  function endAttunement(item: InventoryItem) {
+    putAttunement(item, false, attunement?.slots ?? 0)
+  }
+
+  function replace(item: InventoryItem) {
+    if (waiting && putReplacedAttunement(item, waiting, attunement?.slots ?? 0)) waitingId = ''
   }
 
   function getEquipIcon(itemType: string): GlyphName {
@@ -178,9 +195,6 @@
                 {/if}
             </span>
         </div>
-        {#if attunement}
-            <Pool title="Attunement" note="{Math.max(0, attunement.slots - attunement.used)} free" max={attunement.slots} current={attunement.used} view="pips" />
-        {/if}
         <div class="currency">
             <span class="coins">
                 {#each COINS as coin (coin)}
@@ -194,42 +208,9 @@
         </div>
     </div>
     <div class="search">
-        <input placeholder="search" bind:value={searchInput}/>
-        <Button variant="secondary" size="sm" title="Find an item in the item room" onclick={openRoom}>{finding ? 'Done' : 'Find an item'}</Button>
-        <Button variant="secondary" size="sm" title="Add an item" onclick={() => openItem()}>Add item</Button>
+        <SearchInput bind:value={searchInput} placeholder="Search the inventory..." label="Search the inventory" />
+        <Button variant="secondary" size="sm" title="Add an item to the inventory" onclick={openRoom}>Add item</Button>
     </div>
-    {#if finding}
-        <div class="room">
-            <SearchInput bind:value={roomQuery} placeholder="Search the item room" autofocus />
-            {#if roomError}
-                <span class="room-note" role="alert">{roomError}</span>
-            {:else if !room}
-                <span class="room-note">Opening the item room</span>
-            {:else}
-                <div class="room-list">
-                    {#each found as one (one.id)}
-                        <Row
-                            title={one.title}
-                            sub={getItemLine(one)}
-                            rarity={one.rarity}
-                            tone={one.source === 'general' ? 'verdigris' : 'metal'}
-                            image={one.image}
-                            mark="Add"
-                            onclick={() => addFromRoom(one)}
-                        >
-                            <Chip still glyph={one.source === 'general' ? 'gem' : 'edit'}>{one.source === 'general' ? 'General' : 'Homebrew'}</Chip>
-                            {#if one.notes}<span>{one.notes}</span>{/if}
-                        </Row>
-                    {:else}
-                        <span class="room-note">No item in the room answers to that.</span>
-                    {/each}
-                </div>
-            {/if}
-        </div>
-    {/if}
-    {#if note}
-        <span class="note" role="status">{note}</span>
-    {/if}
     {#if draft}
         <form class="draft" onsubmit={event => { event.preventDefault(); saveItem() }}>
             <Field label="Name" id="item-title" required>
@@ -275,7 +256,6 @@
             <li class="items-header">
                 <span>Active</span>
                 <span>Name</span>
-                <span>Weight</span>
                 <span>Qty</span>
                 <span>Cost (gp)</span>
                 <span>Notes</span>
@@ -295,8 +275,66 @@
                 {@render row(item)}
             {/each}
         </ul>
+        {#if attunement}
+            <section class="bonds" aria-label="Attunement" bind:this={bonds}>
+                <Pool title="Attunement" note="{Math.max(0, attunement.slots - attunement.used)} free" max={attunement.slots} current={attunement.used} view="pips" />
+                {#if waiting}
+                    <div class="bonds-ask" role="alert">
+                        <span>All {attunement.slots} attunement slots are taken. Replace one to attune to <b style:--item-ink={getRarityInk(waiting.rarity)}>{waiting.title}</b>.</span>
+                        <Button variant="ghost" size="sm" onclick={() => (waitingId = '')}>Cancel</Button>
+                    </div>
+                {/if}
+                <ul class="bonds-list">
+                    {#each attunable as item (item.id)}
+                        {@const attuned = Boolean(item.attunement?.attuned)}
+                        <li class="bond" class:bond-on={attuned} class:bond-waiting={item.id === waiting?.id}>
+                            <span class="bond-name">
+                                <b style:--item-ink={getRarityInk(item.rarity)}>{item.title}</b>
+                                <span>{getTypeLine(item)}</span>
+                            </span>
+                            <span class="bond-state">{attuned ? 'Attuned' : item.id === waiting?.id ? 'Needs a slot' : 'Not attuned'}</span>
+                            {#if attuned && waiting}
+                                <Button variant="primary" size="sm" title="End attunement to {item.title} and attune to {waiting.title}" label="Replace {item.title}" onclick={() => replace(item)}>Replace</Button>
+                            {:else if attuned}
+                                <Button variant="ghost" size="sm" title="End attunement to {item.title}" label="End attunement to {item.title}" onclick={() => endAttunement(item)}>End attunement</Button>
+                            {:else if item.id !== waiting?.id}
+                                <Button variant="secondary" size="sm" title="Attune to {item.title}" label="Attune to {item.title}" onclick={() => attune(item)}>Attune</Button>
+                            {/if}
+                        </li>
+                    {:else}
+                        <li class="bond bonds-none">Nothing in the inventory requires attunement.</li>
+                    {/each}
+                </ul>
+            </section>
+        {/if}
     </div>
 </div>
+
+<BaseDialog bind:isOpen={adding} title="Add an item" width="min(56rem, 94vw)" maxHeight="88vh">
+    <div class="picker">
+        <SearchInput bind:value={filter.name} placeholder="Search the items you reach..." label="Search the items you reach" autofocus />
+        <ItemFilters bind:filter facets={['source']} />
+        {#if roomError}
+            <span class="picker-note" role="alert">{roomError}</span>
+        {:else if !room}
+            <div class="dnd-loading"><span class="dnd-spinner"></span></div>
+        {:else}
+            <span class="picker-count">{found.length} of {reached.length}</span>
+            <div class="picker-list">
+                {#each found as one (one.id)}
+                    <ItemRow item={one} room mark="Add" onclick={() => addFromRoom(one)} />
+                {:else}
+                    <span class="picker-note">No item you reach answers to that.</span>
+                {/each}
+            </div>
+        {/if}
+        <div class="picker-foot">
+            <span class="picker-note" role="status">{added}</span>
+            <Button variant="ghost" size="sm" title="Write an item of your own" onclick={writeOwn}>Write your own</Button>
+            <Button variant="secondary" size="sm" onclick={() => (adding = false)}>Done</Button>
+        </div>
+    </div>
+</BaseDialog>
 
 {#snippet row(item: InventoryItem)}
     {@const gives = getGives(item)}
@@ -324,28 +362,22 @@
                     <Glyph name={isAmmunition(item) ? 'ammunition' : getEquipIcon(item.type)} size="sm" />
                 </Sigil>
             {/if}
-            {#if item.attunement?.required}
-                <Sigil
-                    frame="ring"
-                    size="sm"
-                    tone="arcane"
-                    active={item.attunement.attuned}
-                    title="{item.attunement.attuned ? 'End attunement to' : 'Attune to'} {item.title}"
-                    onclick={() => attune(item)}
-                >
-                    <Glyph name="sparkles" size="sm" />
-                </Sigil>
-            {/if}
         </div>
         <div class="name">
-            <h4 title={item.title}>{item.title}</h4>
-            <span>{getTypeLine(item)}</span>
+            <h4 title={item.title} style:--item-ink={getRarityInk(item.rarity)}>{item.title}</h4>
+            <span class="kind">
+                <span class="kind-type">{getTypeLine(item)}</span>
+                {#if attunement && item.attunement?.required}
+                    {#if item.attunement.attuned}
+                        <Chip still glyph="sparkles">Attuned</Chip>
+                    {:else}
+                        <Button variant="plain" size="sm" title="Attune to {item.title}" label="Attune to {item.title}" onclick={() => attune(item)}>Attune</Button>
+                    {/if}
+                {/if}
+            </span>
             {#if gives}
                 <span class="gives" class:gives-on={$rules.system && isItemApplied(item, $rules.system)} title={gives}>{gives}</span>
             {/if}
-        </div>
-        <div class="weight center">
-            <span><b>{item.weight}</b> lb.</span>
         </div>
         <div class="qty center">
             <span class="stepper">
@@ -489,32 +521,6 @@
         gap: var(--space-2);
     }
 
-    .search > input {
-        position: relative;
-        width: 100%;
-        min-width: 0;
-        height: 100%;
-        padding: var(--space-2) var(--space-3);
-        background: var(--texture-noise), linear-gradient(180deg, var(--ground-deep) 0%, var(--ground) 100%);
-        border: var(--border-hair) solid var(--metal-dim);
-        border-radius: var(--radius-sm);
-        box-shadow: var(--bevel-down);
-        outline: none;
-        color: var(--ink);
-        font-family: var(--font-body);
-        transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    }
-
-    .search > input::placeholder {
-        color: var(--ink-faint);
-        font-style: italic;
-    }
-
-    .search > input:focus {
-        border-color: var(--metal-bright);
-        box-shadow: var(--bevel-down), var(--glow-metal);
-    }
-
     ul {
         position: relative;
         width: 100%;
@@ -524,7 +530,7 @@
         list-style: none;
         display: grid;
         align-items: center;
-        grid-template-columns: auto 2fr auto auto auto 3fr;
+        grid-template-columns: auto 3fr auto auto 2fr;
         grid-auto-rows: auto;
         grid-column-gap: 0;
         grid-row-gap: var(--space-1);
@@ -568,7 +574,6 @@
     }
 
     .item:hover h4 {
-        color: var(--metal-bright);
         text-shadow: var(--glow-text);
     }
 
@@ -622,7 +627,7 @@
         font-family: var(--font-display);
         font-size: var(--text-sm);
         font-weight: 700;
-        color: var(--ink);
+        color: var(--item-ink);
         text-shadow: 0 1px 0 var(--shadow-ink);
         transition: color 0.15s ease, text-shadow 0.15s ease;
     }
@@ -631,6 +636,21 @@
         font-size: var(--text-xs);
         font-style: italic;
         color: var(--ink-faint);
+    }
+
+    .name .kind {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0 var(--space-2);
+        overflow: visible;
+        font-style: normal;
+    }
+
+    .kind-type {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .notes {
@@ -686,24 +706,142 @@
         text-shadow: 0 1px 0 var(--shadow-ink);
     }
 
-    .room {
+    .bonds {
         display: flex;
         flex-direction: column;
-        gap: var(--space-2);
-        width: 100%;
-        min-height: 0;
+        gap: var(--space-3);
+        margin-top: var(--space-5);
+        padding: var(--space-3);
+        scroll-margin: var(--space-3);
     }
 
-    .room-list {
+    .bonds-ask {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-3);
+        border: var(--border-hair) solid var(--state-bad);
+        border-radius: var(--radius-sm);
+        background: var(--texture-noise), linear-gradient(180deg, color-mix(in srgb, var(--state-bad) 14%, var(--ground-raised)), var(--ground-deep));
+        box-shadow: var(--bevel-down);
+        font-size: var(--text-sm);
+        color: var(--ink);
+    }
+
+    .bonds-ask b,
+    .bond-name b {
+        font-family: var(--font-display);
+        font-weight: 700;
+        color: var(--item-ink);
+        text-shadow: 0 1px 0 var(--shadow-ink);
+    }
+
+    .bonds-list {
         display: flex;
         flex-direction: column;
         gap: var(--space-1);
-        max-height: 40vh;
-        overflow-y: auto;
+        padding: 0;
     }
 
-    .room-note,
-    .note {
+    .bond {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        min-height: var(--space-7);
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--radius-sm);
+        box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--metal-dim) 40%, transparent);
+    }
+
+    .bond-on {
+        background: linear-gradient(90deg, color-mix(in srgb, var(--ember) 12%, transparent) 0%, transparent 85%);
+    }
+
+    .bond-waiting {
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--metal-dim) 70%, transparent), inset 0 0 0.75rem var(--ember-glow);
+    }
+
+    .bond-name {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .bond-name > * {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .bond-name b {
+        font-size: var(--text-sm);
+    }
+
+    .bond-name span {
+        font-size: var(--text-xs);
+        font-style: italic;
+        color: var(--ink-faint);
+    }
+
+    .bond-state {
+        flex: none;
+        font-family: var(--font-display);
+        font-size: var(--text-xs);
+        letter-spacing: var(--tracking-caps);
+        text-transform: uppercase;
+        color: var(--ink-faint);
+    }
+
+    .bond-on .bond-state {
+        color: var(--ember-core);
+        text-shadow: 0 0 0.5rem var(--ember-glow);
+    }
+
+    .bonds-none {
+        font-size: var(--text-xs);
+        font-style: italic;
+        color: var(--ink-faint);
+    }
+
+    .picker {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        padding: var(--space-4) var(--space-5) var(--space-5);
+    }
+
+    .picker-count {
+        font-family: var(--font-figures);
+        font-size: var(--text-xs);
+        color: var(--ink-faint);
+    }
+
+    .picker-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        max-height: min(32rem, 52vh);
+        overflow-y: auto;
+        padding: var(--space-1);
+    }
+
+    .picker-foot {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: var(--space-2);
+    }
+
+    .picker-foot > .picker-note {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .picker-note {
         font-size: var(--text-xs);
         font-style: italic;
         color: var(--ink-dim);

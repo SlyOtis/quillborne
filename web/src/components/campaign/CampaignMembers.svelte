@@ -289,7 +289,7 @@
 </div>
 
 {#if dropOpen}
-  <BaseDialog bind:isOpen={dropOpen} title="Delete {campaign.name}" zIndex={9999}>
+  <BaseDialog bind:isOpen={dropOpen} title="Delete {campaign.name}">
     <div class="table-drop">
       <p class="table-note">
         The campaign goes for good, with its maps, its encounters and everything you wrote in it. Every character

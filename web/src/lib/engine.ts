@@ -6,7 +6,7 @@ import {writable, get, type Unsubscriber, type Writable} from "svelte/store";
 import type {Character, CharacterAbility, CharacterCurrency, CharacterInfo, CharacterSpell, ConditionInfo, DefenceInfo, SpellsInfo} from "./character.types";
 import { addChangeLogEntry, ChangeActions, createStateSnapshot, type ChangeAction } from "./changelog";
 import { getResolvedCharacter } from "./rules/derive";
-import { getAttunedInventory, getSheet } from "./rules/sheet";
+import { getAttunedInventory, getReplacedAttunement, getSheet } from "./rules/sheet";
 import { getSystemStack } from "./rules/system";
 import type { ResolvedCharacter } from "./rules/spec.types";
 import { user, userProfile } from "./stores/auth.store";
@@ -1131,6 +1131,20 @@ export function putAttunement(item: InventoryItem, attuned: boolean, slots: numb
     () => next,
     ChangeActions.ATTUNEMENT_CHANGE,
     `${attuned ? 'Attuned to' : 'Ended attunement to'} ${item.title}`
+  )
+  return true
+}
+
+/** Ends one attunement and attunes to another in its place as one change, and answers false without a change when that would pass the slots. */
+export function putReplacedAttunement(ending: InventoryItem, beginning: InventoryItem, slots: number): boolean {
+  const next = getReplacedAttunement(get(getCharacterStore().inventory), ending.id, beginning.id, slots)
+  if (!next) return false
+
+  updateCharacterWithChangeLog(
+    'inventory',
+    () => next,
+    ChangeActions.ATTUNEMENT_CHANGE,
+    `Attuned to ${beginning.title} in place of ${ending.title}`
   )
   return true
 }
