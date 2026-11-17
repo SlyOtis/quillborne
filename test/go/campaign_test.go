@@ -165,27 +165,27 @@ func TestASongReachesTheTableOnlyWhenShared(t *testing.T) {
 	requireStack(t)
 	campaignID := postCampaign(t)
 	seatPlayer(t, campaignID)
-	params := map[string]string{"id": campaignID}
-	if status, _ := call(t, uuid.New(), http.MethodPost, "/", `{"title":"Dirge"}`, params, handler.PostSong); status == http.StatusCreated {
+	target := "/api/song?owner_id=" + campaignID
+	if status, _ := call(t, uuid.New(), http.MethodPost, "/api/song", `{"title":"Dirge","owner_id":"`+campaignID+`"}`, nil, handler.PostSong); status == http.StatusCreated {
 		t.Fatalf("a stranger added a song to the table")
 	}
-	status, made := call(t, dungeonMaster, http.MethodPost, "/", `{"title":"Dirge","address":"https://example.test/dirge.ogg","duration":120}`, params, handler.PostSong)
+	status, made := call(t, dungeonMaster, http.MethodPost, "/api/song", `{"title":"Dirge","address":"https://example.test/dirge.ogg","duration":120,"owner_id":"`+campaignID+`"}`, nil, handler.PostSong)
 	if status != http.StatusCreated {
 		t.Fatalf("PostSong: %d %+v", status, made.Error)
 	}
 	songID := id(t, made)
-	songParams := map[string]string{"id": campaignID, "song_id": songID}
-	if status, _ := call(t, uuid.New(), http.MethodGet, "/", "", params, handler.GetSongs); status == http.StatusOK {
+	songParams := map[string]string{"id": songID}
+	if status, _ := call(t, uuid.New(), http.MethodGet, target, "", nil, handler.GetSongs); status == http.StatusOK {
 		t.Fatalf("a stranger listed the table's songs")
 	}
-	_, hidden := call(t, player, http.MethodGet, "/", "", params, handler.GetSongs)
+	_, hidden := call(t, player, http.MethodGet, target, "", nil, handler.GetSongs)
 	if listed(t, hidden, songID) {
 		t.Fatalf("a player read a song the dungeon master kept to themself")
 	}
 	if status, answer := call(t, dungeonMaster, http.MethodPut, "/", `{"share_campaigns":["`+campaignID+`"]}`, songParams, handler.PutSong); status != http.StatusOK {
 		t.Fatalf("PutSong share: %d %+v", status, answer.Error)
 	}
-	_, shared := call(t, player, http.MethodGet, "/", "", params, handler.GetSongs)
+	_, shared := call(t, player, http.MethodGet, target, "", nil, handler.GetSongs)
 	if !listed(t, shared, songID) {
 		t.Fatalf("a seated player misses a song shared with the table")
 	}
@@ -198,9 +198,90 @@ func TestASongReachesTheTableOnlyWhenShared(t *testing.T) {
 	if status, _ := call(t, dungeonMaster, http.MethodDelete, "/", "", songParams, handler.DeleteSong); status != http.StatusOK {
 		t.Fatalf("the dungeon master could not remove their song: %d", status)
 	}
-	_, after := call(t, dungeonMaster, http.MethodGet, "/", "", params, handler.GetSongs)
+	_, after := call(t, dungeonMaster, http.MethodGet, target, "", nil, handler.GetSongs)
 	if listed(t, after, songID) {
 		t.Fatalf("a removed song is still listed")
+	}
+}
+
+func TestASeatedPlayerListsACampaignsSongsAndAddsOne(t *testing.T) {
+	requireStack(t)
+	campaignID := postCampaign(t)
+	seatPlayer(t, campaignID)
+	target := "/api/song?owner_id=" + campaignID
+	status, made := call(t, dungeonMaster, http.MethodPost, "/api/song", `{"title":"Overture","owner_id":"`+campaignID+`","share_campaigns":["`+campaignID+`"]}`, nil, handler.PostSong)
+	if status != http.StatusCreated {
+		t.Fatalf("PostSong: %d %+v", status, made.Error)
+	}
+	status, table := call(t, player, http.MethodGet, target, "", nil, handler.GetSongs)
+	if status != http.StatusOK || !listed(t, table, id(t, made)) {
+		t.Fatalf("a seated player's list of the table lacks its song: %d %+v", status, table.Error)
+	}
+	status, added := call(t, player, http.MethodPost, "/api/song", `{"title":"Refrain","owner_id":"`+campaignID+`"}`, nil, handler.PostSong)
+	if status != http.StatusCreated {
+		t.Fatalf("a seated player could not add a song to the table: %d %+v", status, added.Error)
+	}
+	var song struct {
+		OwnerID string `json:"owner_id"`
+		UserID  string `json:"user_id"`
+	}
+	if err := json.Unmarshal(added.Data, &song); err != nil || song.OwnerID != campaignID || song.UserID != player.String() {
+		t.Fatalf("a song added to the table answered %s", string(added.Data))
+	}
+	if _, theirs := call(t, player, http.MethodGet, target, "", nil, handler.GetSongs); !listed(t, theirs, id(t, added)) {
+		t.Fatalf("the seated player's list of the table lacks the song they added")
+	}
+	if _, own := call(t, player, http.MethodGet, "/api/song", "", nil, handler.GetSongs); listed(t, own, id(t, added)) {
+		t.Fatalf("a song kept by the table is listed among the player's own")
+	}
+}
+
+func TestAPlayerWhoIsNotSeatedIsRefusedACampaignsSongs(t *testing.T) {
+	requireStack(t)
+	campaignID := postCampaign(t)
+	target := "/api/song?owner_id=" + campaignID
+	if status, _ := call(t, player, http.MethodGet, target, "", nil, handler.GetSongs); status != http.StatusForbidden {
+		t.Fatalf("a player away from the table listed its songs: %d", status)
+	}
+	if status, _ := call(t, player, http.MethodPost, "/api/song", `{"title":"Stowaway","owner_id":"`+campaignID+`"}`, nil, handler.PostSong); status != http.StatusForbidden {
+		t.Fatalf("a player away from the table added a song to it: %d", status)
+	}
+}
+
+func TestAPlayersOwnSongIsListedForThemAlone(t *testing.T) {
+	requireStack(t)
+	ensureProfile(t, player, "pip@quillborne.local")
+	campaignID := postCampaign(t)
+	status, made := call(t, dungeonMaster, http.MethodPost, "/api/song", `{"title":"Lullaby","address":"https://example.test/lullaby.ogg","duration":60}`, nil, handler.PostSong)
+	if status != http.StatusCreated {
+		t.Fatalf("PostSong: %d %+v", status, made.Error)
+	}
+	songID := id(t, made)
+	params := map[string]string{"id": songID}
+	var song struct {
+		OwnerID string `json:"owner_id"`
+		UserID  string `json:"user_id"`
+	}
+	if err := json.Unmarshal(made.Data, &song); err != nil || song.OwnerID != os.Getenv("SERVER_OWNER_ID") || song.UserID != dungeonMaster.String() {
+		t.Fatalf("a player's own song answered %s", string(made.Data))
+	}
+	if _, mine := call(t, dungeonMaster, http.MethodGet, "/api/song", "", nil, handler.GetSongs); !listed(t, mine, songID) {
+		t.Fatalf("the player's own list lacks their song")
+	}
+	if _, table := call(t, dungeonMaster, http.MethodGet, "/api/song?owner_id="+campaignID, "", nil, handler.GetSongs); listed(t, table, songID) {
+		t.Fatalf("a player's own song is listed among a campaign's")
+	}
+	if _, theirs := call(t, player, http.MethodGet, "/api/song", "", nil, handler.GetSongs); listed(t, theirs, songID) {
+		t.Fatalf("another player's list holds the song")
+	}
+	if status, _ := call(t, player, http.MethodPut, "/", `{"title":"Mine"}`, params, handler.PutSong); status != http.StatusForbidden {
+		t.Fatalf("another player changed the song: %d", status)
+	}
+	if status, _ := call(t, player, http.MethodDelete, "/", "", params, handler.DeleteSong); status != http.StatusForbidden {
+		t.Fatalf("another player removed the song: %d", status)
+	}
+	if status, _ := call(t, dungeonMaster, http.MethodDelete, "/", "", params, handler.DeleteSong); status != http.StatusOK {
+		t.Fatalf("the player could not remove their own song: %d", status)
 	}
 }
 
@@ -208,11 +289,11 @@ func TestARequestWhoseClientLeftIsNeverAnsweredAsARefusal(t *testing.T) {
 	requireStack(t)
 	campaignID := postCampaign(t)
 	seatPlayer(t, campaignID)
-	params := map[string]string{"id": campaignID}
-	if status, answer := call(t, player, http.MethodGet, "/", "", params, handler.GetSongs); status != http.StatusOK {
+	target := "/api/song?owner_id=" + campaignID
+	if status, answer := call(t, player, http.MethodGet, target, "", nil, handler.GetSongs); status != http.StatusOK {
 		t.Fatalf("a seated player could not list the table's songs: %d %+v", status, answer.Error)
 	}
-	status, _ := call(t, player, http.MethodGet, "/", "", params, func(ctx echo.Context) error {
+	status, _ := call(t, player, http.MethodGet, target, "", nil, func(ctx echo.Context) error {
 		left, cancel := context.WithCancel(ctx.Request().Context())
 		cancel()
 		ctx.SetRequest(ctx.Request().WithContext(left))

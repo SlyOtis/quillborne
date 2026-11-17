@@ -45,21 +45,23 @@ Every resource command is `qubo <resource> <verb> [id...] [--data '{...}' | --fi
 
 4. `monster get [id]`, `create`, `replace <id>`, `delete <id>`. A monster body names its `system`; `size`, `type`, `alignment` and `challenge` are columns, and the rest of the stat block sits in `stats`. `is_public` true lets every player read it; false keeps it the maker's homebrew, and only the maker changes or deletes it. Its monster tags are `tag object create <tag_id>` with `object_type` `public.monster`.
 
-5. `campaign get [id]`, `create`, `replace <id>`, `delete <id>`, `stream <id>`; `campaign player create <campaign_id>` with `{email}`, `campaign player delete <campaign_id> <user_id>`; `campaign character get|create|delete <campaign_id> [character_id]`; `campaign map|encounter|song|chat get|create|replace|delete <campaign_id> [id]`.
+5. `song get`, `song get --query owner_id=<campaign_id>`, `create`, `replace <id>`, `delete <id>`. Without `owner_id` the list is your own songs; with it, the songs of that campaign you read. A body is `title`, `address`, `duration`, `share_users`, `share_campaigns`, and `owner_id` on create to keep the song in a campaign you are seated at.
 
-6. `resource get [id] --query kind=items --query owner_id=...`, `create`, `replace <id>`, `delete <id>`, `stream <id>`; `resource update get|create|replace|delete <resource_id>`. A page body is its columns, `kind`, `name`, `description`, `owner_id`, `parent_id`, `share_users`, `share_campaigns`, and every other key lands in `fields`; an item's `grants` is one of them. `--query reach=all` lists every page of the kind you read wherever it is kept, and with `kind=items` also each item a table you sit at keeps from you, as its head alone with `locked` true.
+6. `campaign get [id]`, `create`, `replace <id>`, `delete <id>`, `stream <id>`; `campaign player create <campaign_id>` with `{email}`, `campaign player delete <campaign_id> <user_id>`; `campaign character get|create|delete <campaign_id> [character_id]`; `campaign map|encounter|chat get|create|replace|delete <campaign_id> [id]`.
 
-7. `asset get [id]`, `asset create --upload picture.png --set name=... --set mime_type=image/png [--set owner_id=...]` or a json body for a folder or a block document, `replace <id>`, `delete <id>`, `data <id>`, `upload <id> --upload file`, `move`; `asset object get|create|replace|delete`; `file get [id]`.
+7. `resource get [id] --query kind=items --query owner_id=...`, `create`, `replace <id>`, `delete <id>`, `stream <id>`; `resource update get|create|replace|delete <resource_id>`. A page body is its columns, `kind`, `name`, `description`, `owner_id`, `parent_id`, `share_users`, `share_campaigns`, and every other key lands in `fields`; an item's `grants` is one of them. `--query reach=all` lists every page of the kind you read wherever it is kept, and with `kind=items` also each item a table you sit at keeps from you, as its head alone with `locked` true.
 
-8. `tag get [id]`, `create`, `replace <id>`, `delete <id>`; `tag object create <tag_id>`, `tag object delete <tag_id> --query object_type=... --query object_id=...`.
+8. `asset get [id]`, `asset create --upload picture.png --set name=... --set mime_type=image/png [--set owner_id=...]` or a json body for a folder or a block document, `replace <id>`, `delete <id>`, `data <id>`, `upload <id> --upload file`, `move`; `asset object get|create|replace|delete`; `file get [id]`.
 
-9. `catalog get <kind> [slug]`, `catalog replace <kind> <slug>`.
+9. `tag get [id]`, `create`, `replace <id>`, `delete <id>`; `tag object create <tag_id>`, `tag object delete <tag_id> --query object_type=... --query object_id=...`.
 
-10. `search get --query q=...` or `search search` with a body.
+10. `catalog get <kind> [slug]`, `catalog replace <kind> <slug>`.
 
-11. `claim get <id>`, `claim create`; `claim user create|delete`; `claim object get <type> <id>`, `claim object create|delete`.
+11. `search get --query q=...` or `search search` with a body.
 
-12. `api <method> <path>` reaches any other route with the same identity.
+12. `claim get <id>`, `claim create`; `claim user create|delete`; `claim object get <type> <id>`, `claim object create|delete`.
+
+13. `api <method> <path>` reaches any other route with the same identity.
 
 ## State
 

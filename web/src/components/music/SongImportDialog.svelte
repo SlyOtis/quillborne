@@ -5,6 +5,7 @@
   import Glyph from '$components/ui/Glyph.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
   import { postSong } from '$lib/music'
+  import { userCampaigns } from '$lib/stores/campaign.store'
 
   type Lot = {
     file: File
@@ -19,9 +20,9 @@
   }: {
     /** Whether the dialog is showing. */
     isOpen: boolean
-    /** The campaign the songs land in. */
+    /** The campaign the songs land in; empty for the reader's own songs. */
     campaignId: string
-    /** Files handed in before the dialog opened, from a drop on the playlist. */
+    /** Files handed in before the dialog opened, from a drop on a group of the playlist. */
     files?: File[]
   } = $props()
 
@@ -31,6 +32,9 @@
   let picker = $state<HTMLInputElement>()
 
   const left = $derived(lots.filter((lot) => lot.state !== 'done').length)
+  const title = $derived(
+    campaignId ? `Import songs to ${$userCampaigns.find((one) => one.id === campaignId)?.name ?? 'the campaign'}` : 'Import your own songs'
+  )
 
   function add(more: FileList | null) {
     if (!more) return
@@ -75,7 +79,7 @@
   }
 </script>
 
-<BaseDialog bind:isOpen title="Import songs" width="560px" zIndex={9999} closeOnBackdropClick={!busy} closeOnEscape={!busy}>
+<BaseDialog bind:isOpen {title} width="560px" zIndex={9999} closeOnBackdropClick={!busy} closeOnEscape={!busy}>
   <div class="dnd-songimport">
     <div
       class="dnd-songimport-drop"
@@ -138,7 +142,7 @@
 
     <footer class="dnd-songimport-foot">
       <Button variant="ghost" disabled={busy} onclick={() => (isOpen = false)}>Cancel</Button>
-      <Button variant="primary" loading={busy} disabled={!campaignId || left === 0} onclick={send}>
+      <Button variant="primary" loading={busy} disabled={left === 0} onclick={send}>
         Import {left} {left === 1 ? 'song' : 'songs'}
       </Button>
     </footer>

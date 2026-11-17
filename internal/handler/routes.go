@@ -45,6 +45,12 @@ func PutRoutes(api *echo.Group, userAuth echo.MiddlewareFunc) {
 	monster.PUT("/:id", PutMonster)
 	monster.DELETE("/:id", DeleteMonster)
 
+	song := api.Group("/song", userAuth)
+	song.GET("", GetSongs)
+	song.POST("", PostSong)
+	song.PUT("/:id", PutSong)
+	song.DELETE("/:id", DeleteSong)
+
 	campaign := api.Group("/campaign", userAuth)
 	campaign.GET("", GetCampaigns)
 	campaign.POST("", PostCampaign)
@@ -65,10 +71,6 @@ func PutRoutes(api *echo.Group, userAuth echo.MiddlewareFunc) {
 	campaign.POST("/:id/encounter", PostEncounter)
 	campaign.PUT("/:id/encounter/:encounter_id", PutEncounter)
 	campaign.DELETE("/:id/encounter/:encounter_id", DeleteEncounter)
-	campaign.GET("/:id/song", GetSongs)
-	campaign.POST("/:id/song", PostSong)
-	campaign.PUT("/:id/song/:song_id", PutSong)
-	campaign.DELETE("/:id/song/:song_id", DeleteSong)
 	campaign.GET("/:id/chat", GetChatEntries)
 	campaign.POST("/:id/chat", PostChatEntry)
 	campaign.PUT("/:id/chat/:entry_id", PutChatEntry)
