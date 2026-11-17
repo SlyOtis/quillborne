@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getCampaign, getCampaignCharacters, getCharacter, getCharacters, getProfiles, getVehicleStream, putCharacter, putVehicle } from '$lib/api'
+  import { getCampaign, getCampaignCharacters, getCampaignId, getCharacter, getCharacters, getProfiles, getVehicleStream, putCharacter, putVehicle } from '$lib/api'
   import type { Campaign, Character, Vehicle, VehicleFields } from '$lib/api/types'
   import { onMount, setContext } from 'svelte'
   import { navigate, resolvedRoute } from 'sly-svelte-location-router'
@@ -18,7 +18,7 @@
   } from '$lib/rules/vehicle'
   import type { ComponentState, Crewman, CrewPerk, OverlayKey, VehicleSystem } from '$lib/rules/vehicle.types'
   import type { ResolvedCharacter } from '$lib/rules/spec.types'
-  import { user } from '$lib/stores/auth.store'
+  import { user, userProfile } from '$lib/stores/auth.store'
   import { anyDialogOpen, uiStore } from '$lib/stores/ui.store'
   import Button from '$components/ui/Button.svelte'
   import Field from '$components/ui/Field.svelte'
@@ -131,7 +131,7 @@
   })
 
   $effect(() => {
-    const id = vehicle?.campaign_id ?? null
+    const id = vehicle ? getCampaignId(vehicle, $userProfile) : null
     if (!id) {
       campaign = null
       table = []
@@ -171,7 +171,7 @@
   })
 
   const me = $derived($user?.user_id ?? '')
-  const steward = $derived(Boolean(vehicle && me && (vehicle.owner_id === me || campaign?.dm_id === me)))
+  const steward = $derived(Boolean(vehicle && me && (vehicle.user_id === me || campaign?.dm_id === me)))
   const system = $derived(base && vehicle ? getMergedVehicleSystem(base, vehicle.overlay) : null)
   const layout = $derived(system && vehicle ? (getLayout(system, vehicle.layout) ?? null) : null)
   const ctx = $derived(
@@ -196,7 +196,7 @@
   const choices = $derived(
     [...mine].sort((a, b) => {
       const crewed = (doc: Character) => Number(Boolean(vehicle?.crew.some((entry) => entry.character_id === doc.id)))
-      const seated = (doc: Character) => Number(Boolean(vehicle?.campaign_id && doc.campaign_id === vehicle.campaign_id))
+      const seated = (doc: Character) => Number(Boolean(vehicle && getCampaignId(vehicle, $userProfile) && doc.owner_id === vehicle.owner_id))
       const trained = (doc: Character) => Number(Boolean(vehicle && doc.character?.crew?.[vehicle.system]))
       const played = (doc: Character) => Date.parse(String(doc.metadata.last_played_at ?? '')) || 0
       return crewed(b) - crewed(a) || seated(b) - seated(a) || trained(b) - trained(a) || played(b) - played(a)
@@ -261,7 +261,10 @@
   }
 
   const toneOf = (tone: string | undefined) => (tone === 'bad' ? 'bane' : tone === 'good' ? 'verdigris' : tone === 'warn' ? 'ember' : 'metal')
-  const back = $derived(dock?.base ?? (vehicle?.campaign_id ? `/main/campaign/${vehicle.campaign_id}/vehicles` : '/main/vehicles'))
+  const back = $derived.by(() => {
+    const campaignId = vehicle ? getCampaignId(vehicle, $userProfile) : null
+    return dock?.base ?? (campaignId ? `/main/campaign/${campaignId}/vehicles` : '/main/vehicles')
+  })
 </script>
 
 {#if dock}

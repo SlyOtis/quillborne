@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -25,7 +26,7 @@ var (
 
 type BodyVehicle struct {
 	Name            *string          `json:"name"`
-	CampaignID      *uuid.UUID       `json:"campaign_id"`
+	OwnerID         *uuid.UUID       `json:"owner_id"`
 	System          *string          `json:"system"`
 	Template        *string          `json:"template"`
 	TemplateVersion *int             `json:"template_version"`
@@ -140,8 +141,8 @@ func getCrew(ctx context.Context, raw json.RawMessage) (json.RawMessage, []uuid.
 
 func postVehicleEvents(ctx context.Context, item *db.Vehicle, op string) {
 	broker.Post(ctx, broker.VehicleTopic(item.ID), broker.KindVehicle, item.ID.String(), op)
-	if item.CampaignID != nil {
-		broker.Post(ctx, broker.CampaignTopic(*item.CampaignID), broker.KindVehicle, item.ID.String(), op)
+	if home, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID")); err == nil && item.OwnerID != home {
+		broker.Post(ctx, broker.CampaignTopic(item.OwnerID), broker.KindVehicle, item.ID.String(), op)
 	}
 }
 
@@ -152,12 +153,12 @@ func GetVehicles(ctx echo.Context) error {
 	}
 	vehicles := make([]db.Vehicle, 0)
 	q := db.Instance().NewSelect().Model(&vehicles)
-	if raw := ctx.QueryParam("campaign_id"); raw != "" {
-		campaignID, ok := getUUID(raw)
+	if raw := ctx.QueryParam("owner_id"); raw != "" {
+		ownerID, ok := getUUID(raw)
 		if !ok {
-			return respond.Error(ctx, http.StatusBadRequest, "Invalid campaign_id, expected UUID")
+			return respond.Error(ctx, http.StatusBadRequest, "Invalid owner_id, expected UUID")
 		}
-		q = q.Where("vehicle.campaign_id = ?", campaignID)
+		q = q.Where("vehicle.sa_owner_id = ?", ownerID)
 	}
 	q = sdb.ObjectWhere(q, actorID, db.OBJECT_TYPE_VEHICLE, sdb.ACCESS_READ, nil, nil, 0)
 	if err := q.OrderExpr("vehicle.sa_updated_at DESC").Scan(ctx.Request().Context()); err != nil {
@@ -210,8 +211,8 @@ func PostVehicle(ctx echo.Context) error {
 	rctx := ctx.Request().Context()
 	var campaign *db.Campaign
 	var ownerID *uuid.UUID
-	if body.CampaignID != nil {
-		if _, err := sdb.Instance().MutationAccess(rctx, actorID, *body.CampaignID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_READ); err != nil {
+	if body.OwnerID != nil {
+		if _, err := sdb.Instance().MutationAccess(rctx, actorID, *body.OwnerID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_READ); err != nil {
 			if errors.Is(err, sdb.ErrNotFound) {
 				return respond.Error(ctx, http.StatusNotFound, "Not found")
 			}
@@ -221,7 +222,7 @@ func PostVehicle(ctx echo.Context) error {
 			ctx.Logger().Errorf("PostVehicle: %v", err)
 			return respond.ErrorInternal(ctx)
 		}
-		campaign = &db.Campaign{ID: *body.CampaignID}
+		campaign = &db.Campaign{ID: *body.OwnerID}
 		if err := getCampaign(rctx, campaign); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return respond.Error(ctx, http.StatusNotFound, "Not found")
@@ -245,7 +246,6 @@ func PostVehicle(ctx echo.Context) error {
 	}
 	item := db.Vehicle{
 		UserID:     actorID,
-		CampaignID: body.CampaignID,
 		Name:       "Unnamed vessel",
 		Components: json.RawMessage(`[]`),
 		States:     json.RawMessage(`{}`),

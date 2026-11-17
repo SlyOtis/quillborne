@@ -105,15 +105,15 @@
             "description": "The display name.",
             "type": "string"
           },
-          "owner_id": {
+          "slug": {
+            "description": "The address name of the entry.",
+            "type": "string"
+          },
+          "user_id": {
             "description": "The player whose upload the entry was read from.",
             "format": "uuid",
             "type": "string",
             "x-immutable": true
-          },
-          "slug": {
-            "description": "The address name of the entry.",
-            "type": "string"
           }
         },
         "required": [
@@ -129,7 +129,7 @@
       "fields": {
         "sensitive": [],
         "immutable": [
-          "/owner_id"
+          "/user_id"
         ],
         "server_default": [],
         "sensitive_by": {}
@@ -195,10 +195,6 @@
       "name": "character",
       "schema": {
         "properties": {
-          "campaign_id": {
-            "description": "The key of the campaign record.",
-            "type": "string"
-          },
           "character": {
             "description": "The whole sheet as the rules engine reads it."
           },
@@ -210,6 +206,10 @@
             "description": "Name, level, class, race, status, tags, version and the template flag shown in lists."
           },
           "owner_id": {
+            "description": "The key of the campaign record.",
+            "type": "string"
+          },
+          "user_id": {
             "description": "The player the character belongs to.",
             "format": "uuid",
             "type": "string",
@@ -217,7 +217,7 @@
           }
         },
         "required": [
-          "owner_id",
+          "user_id",
           "character"
         ],
         "type": "object"
@@ -226,16 +226,16 @@
         "campaign"
       ],
       "refs": {
-        "campaign_id": "campaign"
+        "owner_id": "campaign"
       },
       "filters": [
-        "campaign_id",
+        "owner_id",
         "user_id"
       ],
       "fields": {
         "sensitive": [],
         "immutable": [
-          "/owner_id"
+          "/user_id"
         ],
         "server_default": [],
         "sensitive_by": {}
@@ -245,10 +245,6 @@
       "name": "vehicle",
       "schema": {
         "properties": {
-          "campaign_id": {
-            "description": "The key of the campaign record.",
-            "type": "string"
-          },
           "components": {
             "description": "The installed components."
           },
@@ -267,10 +263,8 @@
             "description": "The homebrew catalogue entries this vehicle alone carries."
           },
           "owner_id": {
-            "description": "The player who built it.",
-            "format": "uuid",
-            "type": "string",
-            "x-immutable": true
+            "description": "The key of the campaign record.",
+            "type": "string"
           },
           "rulings": {
             "description": "The option chosen for each rules ambiguity by its id."
@@ -292,10 +286,16 @@
           "template_version": {
             "description": "The version of the template it was built from.",
             "type": "integer"
+          },
+          "user_id": {
+            "description": "The player who built it.",
+            "format": "uuid",
+            "type": "string",
+            "x-immutable": true
           }
         },
         "required": [
-          "owner_id",
+          "user_id",
           "system",
           "layout"
         ],
@@ -306,16 +306,16 @@
         "character"
       ],
       "refs": {
-        "campaign_id": "campaign"
+        "owner_id": "campaign"
       },
       "filters": [
-        "campaign_id",
+        "owner_id",
         "user_id"
       ],
       "fields": {
         "sensitive": [],
         "immutable": [
-          "/owner_id"
+          "/user_id"
         ],
         "server_default": [],
         "sensitive_by": {}
@@ -349,12 +349,6 @@
             "description": "The monster name.",
             "type": "string"
           },
-          "owner_id": {
-            "description": "The player who made it.",
-            "format": "uuid",
-            "type": "string",
-            "x-immutable": true
-          },
           "size": {
             "description": "The size id from the monster system.",
             "type": "string"
@@ -369,10 +363,16 @@
           "type": {
             "description": "The creature type id from the monster system.",
             "type": "string"
+          },
+          "user_id": {
+            "description": "The player who made it.",
+            "format": "uuid",
+            "type": "string",
+            "x-immutable": true
           }
         },
         "required": [
-          "owner_id",
+          "user_id",
           "system",
           "name"
         ],
@@ -386,7 +386,7 @@
       "fields": {
         "sensitive": [],
         "immutable": [
-          "/owner_id"
+          "/user_id"
         ],
         "server_default": [],
         "sensitive_by": {}
@@ -396,10 +396,6 @@
       "name": "resource",
       "schema": {
         "properties": {
-          "campaign_id": {
-            "description": "The key of the campaign record.",
-            "type": "string"
-          },
           "description": {
             "description": "The lede under the name.",
             "type": "string"
@@ -416,10 +412,8 @@
             "type": "string"
           },
           "owner_id": {
-            "description": "The player who wrote it down.",
-            "format": "uuid",
-            "type": "string",
-            "x-immutable": true
+            "description": "The key of the campaign record.",
+            "type": "string"
           },
           "parent_id": {
             "description": "The key of the resource record.",
@@ -440,11 +434,17 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "user_id": {
+            "description": "The player who wrote it down.",
+            "format": "uuid",
+            "type": "string",
+            "x-immutable": true
           }
         },
         "required": [
           "kind",
-          "owner_id",
+          "user_id",
           "name"
         ],
         "type": "object"
@@ -453,17 +453,17 @@
         "campaign"
       ],
       "refs": {
-        "campaign_id": "campaign",
+        "owner_id": "campaign",
         "parent_id": "resource"
       },
       "filters": [
-        "campaign_id",
+        "owner_id",
         "user_id"
       ],
       "fields": {
         "sensitive": [],
         "immutable": [
-          "/owner_id"
+          "/user_id"
         ],
         "server_default": [],
         "sensitive_by": {}
@@ -473,10 +473,6 @@
       "name": "campaign_map",
       "schema": {
         "properties": {
-          "campaign_id": {
-            "description": "The key of the campaign record.",
-            "type": "string"
-          },
           "image_url": {
             "description": "The stored address of the map picture.",
             "type": "string"
@@ -500,10 +496,8 @@
             "type": "number"
           },
           "owner_id": {
-            "description": "The dungeon master who drew it.",
-            "format": "uuid",
-            "type": "string",
-            "x-immutable": true
+            "description": "The key of the campaign record.",
+            "type": "string"
           },
           "parent_map_id": {
             "description": "The key of the campaign_map record.",
@@ -515,11 +509,17 @@
           "title": {
             "description": "The map title.",
             "type": "string"
+          },
+          "user_id": {
+            "description": "The dungeon master who drew it.",
+            "format": "uuid",
+            "type": "string",
+            "x-immutable": true
           }
         },
         "required": [
-          "campaign_id",
           "owner_id",
+          "user_id",
           "title"
         ],
         "type": "object"
@@ -530,16 +530,16 @@
         "resource"
       ],
       "refs": {
-        "campaign_id": "campaign",
+        "owner_id": "campaign",
         "parent_map_id": "campaign_map"
       },
       "filters": [
-        "campaign_id"
+        "owner_id"
       ],
       "fields": {
         "sensitive": [],
         "immutable": [
-          "/owner_id"
+          "/user_id"
         ],
         "server_default": [],
         "sensitive_by": {}
@@ -549,10 +549,6 @@
       "name": "encounter",
       "schema": {
         "properties": {
-          "campaign_id": {
-            "description": "The key of the campaign record.",
-            "type": "string"
-          },
           "combatants": {
             "description": "Every combatant with its kind, initiative, hit points and conditions; character ids are those of the export and are mapped on import."
           },
@@ -561,10 +557,8 @@
             "type": "boolean"
           },
           "owner_id": {
-            "description": "The player who set it up.",
-            "format": "uuid",
-            "type": "string",
-            "x-immutable": true
+            "description": "The key of the campaign record.",
+            "type": "string"
           },
           "round": {
             "description": "The current round.",
@@ -593,11 +587,17 @@
           "turn": {
             "description": "The index of the combatant whose turn it is.",
             "type": "integer"
+          },
+          "user_id": {
+            "description": "The player who set it up.",
+            "format": "uuid",
+            "type": "string",
+            "x-immutable": true
           }
         },
         "required": [
-          "campaign_id",
           "owner_id",
+          "user_id",
           "title"
         ],
         "type": "object"
@@ -607,15 +607,15 @@
         "character"
       ],
       "refs": {
-        "campaign_id": "campaign"
+        "owner_id": "campaign"
       },
       "filters": [
-        "campaign_id"
+        "owner_id"
       ],
       "fields": {
         "sensitive": [],
         "immutable": [
-          "/owner_id"
+          "/user_id"
         ],
         "server_default": [],
         "sensitive_by": {}
@@ -629,19 +629,13 @@
             "description": "The stored address of the audio file.",
             "type": "string"
           },
-          "campaign_id": {
-            "description": "The key of the campaign record.",
-            "type": "string"
-          },
           "duration": {
             "description": "The length in seconds.",
             "type": "number"
           },
           "owner_id": {
-            "description": "The player who added it.",
-            "format": "uuid",
-            "type": "string",
-            "x-immutable": true
+            "description": "The key of the campaign record.",
+            "type": "string"
           },
           "share_campaigns": {
             "description": "The campaigns whose tables hear it.",
@@ -662,11 +656,17 @@
           "title": {
             "description": "The song title.",
             "type": "string"
+          },
+          "user_id": {
+            "description": "The player who added it.",
+            "format": "uuid",
+            "type": "string",
+            "x-immutable": true
           }
         },
         "required": [
-          "campaign_id",
           "owner_id",
+          "user_id",
           "title"
         ],
         "type": "object"
@@ -675,15 +675,15 @@
         "campaign"
       ],
       "refs": {
-        "campaign_id": "campaign"
+        "owner_id": "campaign"
       },
       "filters": [
-        "campaign_id"
+        "owner_id"
       ],
       "fields": {
         "sensitive": [],
         "immutable": [
-          "/owner_id"
+          "/user_id"
         ],
         "server_default": [],
         "sensitive_by": {}
@@ -707,10 +707,6 @@
             "description": "The message text.",
             "type": "string"
           },
-          "campaign_id": {
-            "description": "The key of the campaign record.",
-            "type": "string"
-          },
           "card_kind": {
             "description": "The card the entry is drawn as.",
             "type": "string"
@@ -728,6 +724,10 @@
           },
           "kind": {
             "description": "message or roll.",
+            "type": "string"
+          },
+          "owner_id": {
+            "description": "The key of the campaign record.",
             "type": "string"
           },
           "query": {
@@ -748,7 +748,7 @@
           }
         },
         "required": [
-          "campaign_id",
+          "owner_id",
           "author_id",
           "kind"
         ],
@@ -758,10 +758,10 @@
         "campaign"
       ],
       "refs": {
-        "campaign_id": "campaign"
+        "owner_id": "campaign"
       },
       "filters": [
-        "campaign_id"
+        "owner_id"
       ],
       "fields": {
         "sensitive": [],
@@ -778,10 +778,6 @@
         "properties": {
           "banner_id": {
             "description": "The key of the asset record.",
-            "type": "string"
-          },
-          "campaign_id": {
-            "description": "The key of the campaign record.",
             "type": "string"
           },
           "description": {
@@ -805,6 +801,10 @@
           },
           "name": {
             "description": "The display name.",
+            "type": "string"
+          },
+          "owner_id": {
+            "description": "The key of the campaign record.",
             "type": "string"
           },
           "parent_id": {
@@ -837,11 +837,11 @@
       ],
       "refs": {
         "banner_id": "asset",
-        "campaign_id": "campaign",
+        "owner_id": "campaign",
         "parent_id": "asset"
       },
       "filters": [
-        "campaign_id"
+        "owner_id"
       ],
       "fields": {
         "sensitive": [],

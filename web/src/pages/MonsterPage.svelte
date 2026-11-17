@@ -69,7 +69,7 @@
     }
   })
 
-  const owned = $derived(Boolean(monster && monster.owner_id === me))
+  const owned = $derived(Boolean(monster && monster.user_id === me))
   const held = $derived(monster ? tags.filter((tag) => tag.object_ids?.includes(monster?.id ?? '')) : [])
   const habitats = $derived(system && monster ? getMonsterBlock(system, monster).habitats : [])
   const lore = $derived(monster?.description.trim() ?? '')

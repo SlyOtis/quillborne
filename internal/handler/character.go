@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/SlyOtis/quillborne/internal/broker"
@@ -18,9 +19,9 @@ import (
 )
 
 type BodyCharacter struct {
-	Character  *json.RawMessage `json:"character"`
-	Metadata   map[string]any   `json:"metadata"`
-	CampaignID *uuid.UUID       `json:"campaign_id"`
+	Character *json.RawMessage `json:"character"`
+	Metadata  map[string]any   `json:"metadata"`
+	OwnerID   *uuid.UUID       `json:"owner_id"`
 }
 
 type BodySources struct {
@@ -164,15 +165,15 @@ func PostCharacter(ctx echo.Context) error {
 	rctx := ctx.Request().Context()
 	var campaign *db.Campaign
 	var ownerID *uuid.UUID
-	if body.CampaignID != nil {
-		if _, err := sdb.Instance().MutationAccess(rctx, actorID, *body.CampaignID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_READ); err != nil {
+	if body.OwnerID != nil {
+		if _, err := sdb.Instance().MutationAccess(rctx, actorID, *body.OwnerID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_READ); err != nil {
 			if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
 				return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 			}
 			ctx.Logger().Errorf("PostCharacter: %v", err)
 			return respond.ErrorInternal(ctx)
 		}
-		campaign = &db.Campaign{ID: *body.CampaignID}
+		campaign = &db.Campaign{ID: *body.OwnerID}
 		if err := getCampaign(rctx, campaign); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return respond.Error(ctx, http.StatusNotFound, "Not found")
@@ -196,13 +197,12 @@ func PostCharacter(ctx echo.Context) error {
 	}
 	metadata, public := getStoredMetadata(body.Metadata)
 	character := db.Character{
-		UserID:     actorID,
-		CampaignID: body.CampaignID,
-		Sheet:      *body.Character,
-		Metadata:   metadata,
-		Sources:    json.RawMessage(`[]`),
-		OwnerID:    w.OwnerID,
-		CreatedBy:  w.Access.UserClaimID,
+		UserID:    actorID,
+		Sheet:     *body.Character,
+		Metadata:  metadata,
+		Sources:   json.RawMessage(`[]`),
+		OwnerID:   w.OwnerID,
+		CreatedBy: w.Access.UserClaimID,
 	}
 	if public != nil {
 		character.IsPublic = *public
@@ -324,8 +324,8 @@ func PutCharacter(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	broker.Post(rctx, broker.CharacterTopic(character.ID), broker.KindCharacter, character.ID.String(), broker.OpUpdate)
-	if character.CampaignID != nil {
-		broker.Post(rctx, broker.CampaignTopic(*character.CampaignID), broker.KindCharacter, character.ID.String(), broker.OpUpdate)
+	if home, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID")); err == nil && character.OwnerID != home {
+		broker.Post(rctx, broker.CampaignTopic(character.OwnerID), broker.KindCharacter, character.ID.String(), broker.OpUpdate)
 	}
 	putCharacterMetadata(&character)
 	return respond.JSON(ctx, http.StatusOK, character, 1)
@@ -397,8 +397,8 @@ func DeleteCharacter(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	broker.Post(rctx, broker.CharacterTopic(character.ID), broker.KindCharacter, character.ID.String(), broker.OpDelete)
-	if character.CampaignID != nil {
-		broker.Post(rctx, broker.CampaignTopic(*character.CampaignID), broker.KindCharacter, character.ID.String(), broker.OpDelete)
+	if home, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID")); err == nil && character.OwnerID != home {
+		broker.Post(rctx, broker.CampaignTopic(character.OwnerID), broker.KindCharacter, character.ID.String(), broker.OpDelete)
 	}
 	return respond.NoContent(ctx, http.StatusOK)
 }

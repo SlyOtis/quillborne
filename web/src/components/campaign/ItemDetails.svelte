@@ -33,7 +33,7 @@
   })
 
   $effect(() => {
-    const ownerId = one.owner_id
+    const ownerId = one.user_id
     maker = ''
     if (one.source === 'general' || !ownerId || ownerId === $user?.user_id) return
     let live = true
@@ -49,7 +49,7 @@
   const origin = $derived(
     one.source === 'general'
       ? `General${one.book ? `, ${one.book}` : ''}`
-      : `Homebrew by ${one.owner_id === $user?.user_id ? 'you' : maker || 'another player'}`
+      : `Homebrew by ${one.user_id === $user?.user_id ? 'you' : maker || 'another player'}`
   )
 
   function first(list: { id: string }[] | undefined): string {

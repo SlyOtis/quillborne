@@ -63,7 +63,7 @@
   function seat() {
     const sheet = characters.find((entry) => entry.id === bring)
     if (!sheet) return
-    void write([...vehicle.crew, { character_id: sheet.id, user_id: sheet.owner_id, role: role || roles[roles.length - 1] || 'Crew' }]).then(() => {
+    void write([...vehicle.crew, { character_id: sheet.id, user_id: sheet.user_id, role: role || roles[roles.length - 1] || 'Crew' }]).then(() => {
       bring = ''
       role = ''
     })
@@ -126,7 +126,7 @@
           <select id="crew-bring" bind:value={bring} disabled={busy}>
             <option value="">Choose a sheet</option>
             {#each free as entry (entry.id)}
-              <option value={entry.id}>{entry.metadata.name}{entry.owner_id !== me ? ' (a player’s)' : ''}</option>
+              <option value={entry.id}>{entry.metadata.name}{entry.user_id !== me ? ' (a player’s)' : ''}</option>
             {/each}
           </select>
         </Field>
@@ -150,7 +150,7 @@
       <span class="vcrew-run"></span>
     </header>
     {#if crewman}
-      <CrewPerks {system} {crewman} {rulings} editable={characters.some((entry) => entry.id === crewman.id && entry.owner_id === me)} onsave={onperks} />
+      <CrewPerks {system} {crewman} {rulings} editable={characters.some((entry) => entry.id === crewman.id && entry.user_id === me)} onsave={onperks} />
     {:else}
       <p class="vcrew-quiet">Choose the character you sail as on the deck, and their {system.crew.level} and perks appear here.</p>
     {/if}

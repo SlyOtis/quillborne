@@ -111,7 +111,7 @@
   const traced = $derived(one.frame in SHAPES ? (one.frame as PortraitFrame) : null)
 
   const canWrite = $derived(
-    fixed ? false : fresh || !one.owner_id ? Boolean($user) : Boolean($user && one.owner_id === $user.user_id)
+    fixed ? false : fresh || !one.user_id ? Boolean($user) : Boolean($user && one.user_id === $user.user_id)
   )
   let editing = $state(false)
   const writing = $derived(editing || fresh)

@@ -12,7 +12,7 @@ import (
 const GroupMonster = "monster"
 
 type MonsterData struct {
-	OwnerID     string          `json:"owner_id"`
+	UserID      string          `json:"user_id"`
 	IsPublic    bool            `json:"is_public"`
 	System      string          `json:"system"`
 	Name        string          `json:"name"`
@@ -29,7 +29,7 @@ func getMonsterGroup() nstate.Group[MonsterData] {
 	return nstate.Group[MonsterData]{
 		Name: GroupMonster,
 		Schema: getSchema(map[string]any{
-			"owner_id":    getOwner("The player who made it."),
+			"user_id":     getOwner("The player who made it."),
 			"is_public":   getProperty("boolean", "Whether every signed in player reads it; a private monster is its maker's homebrew."),
 			"system":      getProperty("string", "The monster rule system id."),
 			"name":        getProperty("string", "The monster name."),
@@ -40,7 +40,7 @@ func getMonsterGroup() nstate.Group[MonsterData] {
 			"stats":       getJSON("The rest of the stat block: sub-types, armor class, hit dice, speeds, abilities, proficiencies, senses, languages, defences, habitats, the legendary, mythic and lair flags, traits and actions."),
 			"description": getProperty("string", "The lore as a block document."),
 			"image":       getProperty("string", "The portrait as an asset address."),
-		}, "owner_id", "system", "name"),
+		}, "user_id", "system", "name"),
 		Filters: []string{"user_id"},
 		Export:  exportMonsters,
 		Import:  importMonster,
@@ -55,7 +55,7 @@ func exportMonsters(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[Mo
 	}
 	return getRecords(ctx, GroupMonster, query, rows, func(row db.Monster) uuid.UUID { return row.ID }, func(row db.Monster) MonsterData {
 		return MonsterData{
-			OwnerID:     row.UserID.String(),
+			UserID:      row.UserID.String(),
 			IsPublic:    row.IsPublic,
 			System:      row.System,
 			Name:        row.Name,
@@ -71,7 +71,7 @@ func exportMonsters(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[Mo
 }
 
 func importMonster(ctx *nstate.Context, record nstate.Record[MonsterData]) (string, error) {
-	owner, err := getOptionalID(&record.Data.OwnerID, "owner_id")
+	owner, err := getOptionalID(&record.Data.UserID, "user_id")
 	if err != nil {
 		return "", err
 	}

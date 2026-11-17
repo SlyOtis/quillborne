@@ -21,7 +21,6 @@ COMMENT ON COLUMN campaign.sa_deleted_at IS 'When the row was soft deleted';
 
 CREATE TABLE IF NOT EXISTS campaign_map (
     id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    campaign_id    UUID NOT NULL REFERENCES campaign(id),
     user_id        UUID NOT NULL,
     title          TEXT NOT NULL DEFAULT '',
     image_url      TEXT NOT NULL DEFAULT '',
@@ -40,11 +39,10 @@ CREATE TABLE IF NOT EXISTS campaign_map (
     sa_deleted_at  TIMESTAMPTZ
 );
 
-CREATE INDEX IF NOT EXISTS idx_campaign_map_campaign ON campaign_map (campaign_id);
+CREATE INDEX IF NOT EXISTS idx_campaign_map_owner ON campaign_map (sa_owner_id);
 
 COMMENT ON TABLE campaign_map IS 'A map of a campaign with its layers and markers, nested under a parent map';
 COMMENT ON COLUMN campaign_map.id IS 'The map id';
-COMMENT ON COLUMN campaign_map.campaign_id IS 'The campaign the map belongs to';
 COMMENT ON COLUMN campaign_map.user_id IS 'The dungeon master who drew it';
 COMMENT ON COLUMN campaign_map.title IS 'The map title';
 COMMENT ON COLUMN campaign_map.image_url IS 'The stored address of the map picture';
@@ -54,7 +52,7 @@ COMMENT ON COLUMN campaign_map.is_visible IS 'Whether the players see the map';
 COMMENT ON COLUMN campaign_map.min_zoom IS 'The smallest zoom the map allows';
 COMMENT ON COLUMN campaign_map.max_zoom IS 'The largest zoom the map allows';
 COMMENT ON COLUMN campaign_map.plan IS 'The drawn plan of the map as a stored nimap document, shown in 3D, null when none is drawn';
-COMMENT ON COLUMN campaign_map.sa_owner_id IS 'The owning organization';
+COMMENT ON COLUMN campaign_map.sa_owner_id IS 'The organization that owns the map, the organization of the campaign the map belongs to';
 COMMENT ON COLUMN campaign_map.sa_parent_id IS 'The map this map sits inside, itself for a top map';
 COMMENT ON COLUMN campaign_map.sa_root_id IS 'The top map of the tree';
 COMMENT ON COLUMN campaign_map.sa_created_by IS 'The user_claim of the creator';
@@ -64,7 +62,6 @@ COMMENT ON COLUMN campaign_map.sa_deleted_at IS 'When the row was soft deleted';
 
 CREATE TABLE IF NOT EXISTS encounter (
     id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    campaign_id       UUID NOT NULL REFERENCES campaign(id),
     user_id           UUID NOT NULL,
     title             TEXT NOT NULL DEFAULT '',
     combatants        JSONB NOT NULL DEFAULT '[]'::jsonb,
@@ -81,11 +78,10 @@ CREATE TABLE IF NOT EXISTS encounter (
     sa_deleted_at     TIMESTAMPTZ
 );
 
-CREATE INDEX IF NOT EXISTS idx_encounter_campaign ON encounter (campaign_id);
+CREATE INDEX IF NOT EXISTS idx_encounter_owner ON encounter (sa_owner_id);
 
 COMMENT ON TABLE encounter IS 'A fight in a campaign: the combatants in initiative order, the round and whose turn it is';
 COMMENT ON COLUMN encounter.id IS 'The encounter id';
-COMMENT ON COLUMN encounter.campaign_id IS 'The campaign the encounter is played in';
 COMMENT ON COLUMN encounter.user_id IS 'The player who set it up';
 COMMENT ON COLUMN encounter.title IS 'The encounter title';
 COMMENT ON COLUMN encounter.combatants IS 'Every combatant with its kind, initiative, hit points and conditions';
@@ -95,7 +91,7 @@ COMMENT ON COLUMN encounter.is_active IS 'Whether the encounter is running';
 COMMENT ON COLUMN encounter.share_users IS 'The players it is shared with by name';
 COMMENT ON COLUMN encounter.share_campaigns IS 'The campaigns whose tables read it';
 COMMENT ON COLUMN encounter.reader_claim_id IS 'The claim the players it is shared with by name hold';
-COMMENT ON COLUMN encounter.sa_owner_id IS 'The owning organization';
+COMMENT ON COLUMN encounter.sa_owner_id IS 'The organization that owns the encounter, the organization of the campaign it is played in';
 COMMENT ON COLUMN encounter.sa_created_by IS 'The user_claim of the creator';
 COMMENT ON COLUMN encounter.sa_created_at IS 'When the row was created';
 COMMENT ON COLUMN encounter.sa_updated_at IS 'When the row last changed';
@@ -103,7 +99,6 @@ COMMENT ON COLUMN encounter.sa_deleted_at IS 'When the row was soft deleted';
 
 CREATE TABLE IF NOT EXISTS chat_entry (
     id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    campaign_id    UUID NOT NULL REFERENCES campaign(id),
     author_id      UUID NOT NULL,
     author_name    TEXT NOT NULL DEFAULT '',
     kind           TEXT NOT NULL DEFAULT 'message' CHECK (kind IN ('message', 'roll')),
@@ -123,11 +118,10 @@ CREATE TABLE IF NOT EXISTS chat_entry (
     sa_deleted_at  TIMESTAMPTZ
 );
 
-CREATE INDEX IF NOT EXISTS idx_chat_entry_campaign ON chat_entry (campaign_id, sa_created_at);
+CREATE INDEX IF NOT EXISTS idx_chat_entry_owner ON chat_entry (sa_owner_id, sa_created_at);
 
 COMMENT ON TABLE chat_entry IS 'A message or a dice roll posted to a campaign''s table, a hidden roll read by the dungeon master and its author alone';
 COMMENT ON COLUMN chat_entry.id IS 'The entry id';
-COMMENT ON COLUMN chat_entry.campaign_id IS 'The campaign the entry is posted to';
 COMMENT ON COLUMN chat_entry.author_id IS 'The user id of the author';
 COMMENT ON COLUMN chat_entry.author_name IS 'The name the author posted under';
 COMMENT ON COLUMN chat_entry.kind IS 'message or roll';
@@ -140,7 +134,7 @@ COMMENT ON COLUMN chat_entry.formula IS 'The dice formula rolled';
 COMMENT ON COLUMN chat_entry.dice IS 'Each die as it landed';
 COMMENT ON COLUMN chat_entry.roll IS 'The sum of the dice';
 COMMENT ON COLUMN chat_entry.total IS 'The roll with its modifiers';
-COMMENT ON COLUMN chat_entry.sa_owner_id IS 'The owning organization';
+COMMENT ON COLUMN chat_entry.sa_owner_id IS 'The organization that owns the entry, the organization of the campaign it is posted to';
 COMMENT ON COLUMN chat_entry.sa_created_by IS 'The user_claim of the author';
 COMMENT ON COLUMN chat_entry.sa_created_at IS 'When the entry was posted';
 COMMENT ON COLUMN chat_entry.sa_updated_at IS 'When the entry last changed';
@@ -148,7 +142,6 @@ COMMENT ON COLUMN chat_entry.sa_deleted_at IS 'When the entry was soft deleted';
 
 CREATE TABLE IF NOT EXISTS song (
     id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    campaign_id       UUID NOT NULL REFERENCES campaign(id),
     user_id           UUID NOT NULL,
     title             TEXT NOT NULL DEFAULT '',
     address           TEXT NOT NULL DEFAULT '',
@@ -163,11 +156,10 @@ CREATE TABLE IF NOT EXISTS song (
     sa_deleted_at     TIMESTAMPTZ
 );
 
-CREATE INDEX IF NOT EXISTS idx_song_campaign ON song (campaign_id);
+CREATE INDEX IF NOT EXISTS idx_song_owner ON song (sa_owner_id);
 
 COMMENT ON TABLE song IS 'A track in a campaign''s music library';
 COMMENT ON COLUMN song.id IS 'The song id';
-COMMENT ON COLUMN song.campaign_id IS 'The campaign whose library holds the song';
 COMMENT ON COLUMN song.user_id IS 'The player who added it';
 COMMENT ON COLUMN song.title IS 'The song title';
 COMMENT ON COLUMN song.address IS 'The stored address of the audio file';
@@ -175,7 +167,7 @@ COMMENT ON COLUMN song.duration IS 'The length in seconds';
 COMMENT ON COLUMN song.share_users IS 'The players it is shared with by name';
 COMMENT ON COLUMN song.share_campaigns IS 'The campaigns whose tables hear it';
 COMMENT ON COLUMN song.reader_claim_id IS 'The claim the players it is shared with by name hold';
-COMMENT ON COLUMN song.sa_owner_id IS 'The owning organization';
+COMMENT ON COLUMN song.sa_owner_id IS 'The organization that owns the song, the organization of the campaign whose library holds it';
 COMMENT ON COLUMN song.sa_created_by IS 'The user_claim of the creator';
 COMMENT ON COLUMN song.sa_created_at IS 'When the row was created';
 COMMENT ON COLUMN song.sa_updated_at IS 'When the row last changed';

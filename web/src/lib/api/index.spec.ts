@@ -252,7 +252,7 @@ describe('the service asset store', () => {
     const form = calls[0].init.body as FormData
     expect(form.get('name')).toBe('theme.mp3')
     expect(form.get('mime_type')).toBe('audio/mpeg')
-    expect(form.get('campaign_id')).toBe('c1')
+    expect(form.get('owner_id')).toBe('c1')
     expect((form.get('file') as File).name).toBe('theme.mp3')
     expect((calls[0].init.headers as Record<string, string>)['SAuth-CSRF-Token']).toBe('tok')
     expect((calls[0].init.headers as Record<string, string>)['Content-Type']).toBeUndefined()
@@ -263,7 +263,7 @@ describe('the service asset store', () => {
     const file = new File([new Uint8Array([1])], 'portrait.webp', { type: 'image/webp' })
 
     expect((await postFile(file, { kind: 'user' })).url).toBe('/api/asset/a2/data')
-    expect((calls[0].init.body as FormData).has('campaign_id')).toBe(false)
+    expect((calls[0].init.body as FormData).has('owner_id')).toBe(false)
   })
 
   it('posts any type of file to a campaign folder', async () => {
@@ -271,7 +271,7 @@ describe('the service asset store', () => {
     const file = new File([new Uint8Array([1])], 'clip.webm', { type: 'video/webm' })
 
     expect((await postFile(file, { kind: 'campaignFile', campaignId: 'c1' })).url).toBe('/api/asset/a3/data')
-    expect((calls[0].init.body as FormData).get('campaign_id')).toBe('c1')
+    expect((calls[0].init.body as FormData).get('owner_id')).toBe('c1')
   })
 
   it('carries the service refusal as an UploadError', async () => {
@@ -412,7 +412,8 @@ const sheet = (name: string, imageUrl = '') =>
 
 const row = (fields: Partial<Character> = {}): Character => ({
   id: 'char-1',
-  owner_id: 'lars',
+  user_id: 'lars',
+  owner_id: 'home',
   name: 'Lyra',
   description: '',
   character: sheet('Lyra'),
@@ -479,7 +480,7 @@ describe('characters', () => {
     expect(wire.calls[0]).toMatchObject({
       method: 'POST',
       path: '/character',
-      body: { campaign_id: 'camp-1', metadata: { name: 'Brann', level: 2, class: 'Bard', race: 'Gnome', tags: ['dwarf'] } }
+      body: { owner_id: 'camp-1', metadata: { name: 'Brann', level: 2, class: 'Bard', race: 'Gnome', tags: ['dwarf'] } }
     })
   })
 
@@ -514,6 +515,7 @@ describe('characters', () => {
 
   it('copies the sources along only for the owner', async () => {
     wire.replies.set('GET /character/char-1', row())
+    wire.replies.set('GET /profile', { owner_id: 'home' })
     wire.replies.set('POST /character', { id: 'copy-1' })
     wire.replies.set('GET /character/char-1/sources', ['a.pdf'])
 
@@ -521,7 +523,7 @@ describe('characters', () => {
     expect(wire.calls.find((call) => call.path === '/character/copy-1/sources')).toMatchObject({ method: 'PUT', body: { sources: ['a.pdf'] } })
 
     wire.calls.length = 0
-    wire.replies.set('GET /character/char-1', row({ owner_id: 'dis' }))
+    wire.replies.set('GET /character/char-1', row({ user_id: 'dis' }))
     await postCharacterCopy('char-1')
     expect(wire.calls.some((call) => call.path.endsWith('/sources'))).toBe(false)
   })
@@ -547,8 +549,8 @@ describe('the table', () => {
   it('removes the stored map pictures and the songs it added before the campaign', async () => {
     wire.replies.set('GET /campaign/camp-1/map', [{ image_url: '/api/asset/0a1/data', layers: [{ image_url: '/api/asset/0b2/data' }, { image_url: 'https://x' }] }])
     wire.replies.set('GET /campaign/camp-1/song', [
-      { owner_id: 'lars', address: '/api/asset/0c3/data' },
-      { owner_id: 'dis', address: '/api/asset/0d4/data' }
+      { user_id: 'lars', address: '/api/asset/0c3/data' },
+      { user_id: 'dis', address: '/api/asset/0d4/data' }
     ])
 
     await deleteCampaign('camp-1')
@@ -560,7 +562,7 @@ describe('the table', () => {
 
 describe('the parts a campaign or a player keeps', () => {
   it('lists a kind under the campaign or under the player', async () => {
-    wire.replies.set('GET /resource?kind=sessions&campaign_id=camp-1', [{ id: 'b', title: 'Zed' }, { id: 'a', title: 'Ann' }])
+    wire.replies.set('GET /resource?kind=sessions&owner_id=camp-1', [{ id: 'b', title: 'Zed' }, { id: 'a', title: 'Ann' }])
     wire.replies.set('GET /resource?kind=entries&user_id=lars', [])
 
     const found = await getResources({ at: 'campaign', id: 'camp-1' }, 'sessions')
@@ -576,7 +578,7 @@ describe('the parts a campaign or a player keeps', () => {
     await putResource('q-1', { title: 'Found' })
 
     expect(wire.calls).toEqual([
-      { method: 'POST', path: '/resource', body: { title: 'Find the ladle', kind: 'quests', campaign_id: 'camp-1' } },
+      { method: 'POST', path: '/resource', body: { title: 'Find the ladle', kind: 'quests', owner_id: 'camp-1' } },
       { method: 'POST', path: '/campaign/camp-1/song', body: { title: 'Drums' } },
       { method: 'PUT', path: '/resource/q-1', body: { title: 'Found' } }
     ])

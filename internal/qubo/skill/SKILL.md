@@ -47,9 +47,9 @@ Every resource command is `qubo <resource> <verb> [id...] [--data '{...}' | --fi
 
 5. `campaign get [id]`, `create`, `replace <id>`, `delete <id>`, `stream <id>`; `campaign player create <campaign_id>` with `{email}`, `campaign player delete <campaign_id> <user_id>`; `campaign character get|create|delete <campaign_id> [character_id]`; `campaign map|encounter|song|chat get|create|replace|delete <campaign_id> [id]`.
 
-6. `resource get [id] --query kind=items --query campaign_id=...`, `create`, `replace <id>`, `delete <id>`, `stream <id>`; `resource update get|create|replace|delete <resource_id>`. A page body is its columns, `kind`, `name`, `description`, `campaign_id`, `parent_id`, `share_users`, `share_campaigns`, and every other key lands in `fields`; an item's `grants` is one of them. `--query reach=all` lists every page of the kind you read wherever it is kept, and with `kind=items` also each item a table you sit at keeps from you, as its head alone with `locked` true.
+6. `resource get [id] --query kind=items --query owner_id=...`, `create`, `replace <id>`, `delete <id>`, `stream <id>`; `resource update get|create|replace|delete <resource_id>`. A page body is its columns, `kind`, `name`, `description`, `owner_id`, `parent_id`, `share_users`, `share_campaigns`, and every other key lands in `fields`; an item's `grants` is one of them. `--query reach=all` lists every page of the kind you read wherever it is kept, and with `kind=items` also each item a table you sit at keeps from you, as its head alone with `locked` true.
 
-7. `asset get [id]`, `asset create --upload picture.png --set name=... --set mime_type=image/png [--set campaign_id=...]` or a json body for a folder or a block document, `replace <id>`, `delete <id>`, `data <id>`, `upload <id> --upload file`, `move`; `asset object get|create|replace|delete`; `file get [id]`.
+7. `asset get [id]`, `asset create --upload picture.png --set name=... --set mime_type=image/png [--set owner_id=...]` or a json body for a folder or a block document, `replace <id>`, `delete <id>`, `data <id>`, `upload <id> --upload file`, `move`; `asset object get|create|replace|delete`; `file get [id]`.
 
 8. `tag get [id]`, `create`, `replace <id>`, `delete <id>`; `tag object create <tag_id>`, `tag object delete <tag_id> --query object_type=... --query object_id=...`.
 
@@ -69,7 +69,7 @@ Every resource command is `qubo <resource> <verb> [id...] [--data '{...}' | --fi
 
 3. `qubo state import table.ndjson` upserts every record by its key: a record seen before is updated, a new one created, in dependency order. `--dry-run` lists every outcome and writes nothing; `--mode sync` also deletes what the targets reach and the file lacks.
 
-4. On a local run the import acts as each record's owner, `dm_id`, `owner_id`, `author_id` or `user_id`, so a table exported from tst comes up with its players intact; on a deployed server every row is made by the caller.
+4. On a local run the import acts as each record's owner, `dm_id`, `author_id` or `user_id`, so a table exported from tst comes up with its players intact; on a deployed server every row is made by the caller.
 
 5. `database/state/<name>.ndjson` is the table a local run starts with: `just seed-state <name>` imports it against the running local service.
 

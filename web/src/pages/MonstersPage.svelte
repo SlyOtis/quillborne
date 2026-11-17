@@ -207,7 +207,7 @@
           block: getMonsterBlock(held, monster),
           tags: tags.filter((tag) => tag.object_ids?.includes(monster.id)),
           glyph: (held.types.find((one) => one.id === monster.type)?.glyph ?? held.typeGlyph) as GlyphName,
-          homebrew: monster.owner_id === $user?.user_id && !monster.is_public
+          homebrew: monster.user_id === $user?.user_id && !monster.is_public
         }
       ]
     })

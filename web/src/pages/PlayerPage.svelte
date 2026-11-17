@@ -59,7 +59,7 @@
       {:else}
         <div class="player-tiles">
           {#each characters as entry (entry.id)}
-            {@const mine = entry.owner_id === $user?.user_id}
+            {@const mine = entry.user_id === $user?.user_id}
             <Card
               layout="tile"
               frame={mine ? 'heavy' : 'thin'}

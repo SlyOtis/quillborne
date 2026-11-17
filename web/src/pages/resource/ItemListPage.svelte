@@ -4,6 +4,8 @@
   import Button from '$components/ui/Button.svelte'
   import Chip from '$components/ui/Chip.svelte'
   import Row from '$components/ui/Row.svelte'
+  import { getCampaignId } from '$lib/api'
+  import { userProfile } from '$lib/stores/auth.store'
   import { userCampaigns } from '$lib/stores/campaign.store'
   import { getChoices, getItemRoom, getItemType, type Item, type Rarity, type Resource } from '$lib/resources'
 
@@ -31,14 +33,15 @@
       (!bond || it.attunement === (bond === 'required')) &&
       (!source || it.source === source) &&
       (!lock || it.locked === (lock === 'locked')) &&
-      (!table || it.campaign_id === table)
+      (!table || it.owner_id === table)
     )
   }
 
   function address(one: Resource): string | null {
     const it = one as Item
     if (it.locked) return null
-    return it.campaign_id ? `/main/campaign/${it.campaign_id}/items/${it.id}` : `/main/items/${it.id}`
+    const campaignId = getCampaignId(it, $userProfile)
+    return campaignId ? `/main/campaign/${campaignId}/items/${it.id}` : `/main/items/${it.id}`
   }
 
   function toggle(rarity: Rarity) {
@@ -122,7 +125,7 @@
       {#if it.attunement}<span>Requires attunement</span>{/if}
       {#if it.grants.charges.max > 0}<span>{it.grants.charges.max} {it.grants.charges.max === 1 ? 'charge' : 'charges'}</span>{/if}
       {#if it.value}<span>{it.value} gp</span>{/if}
-      {#if room && it.campaign_id && tables[it.campaign_id]}<span>{tables[it.campaign_id]}</span>{/if}
+      {#if room && tables[it.owner_id]}<span>{tables[it.owner_id]}</span>{/if}
       {#if one.tags.length > 0}
         <span class="roll-tags">
           {#each one.tags as tag (tag)}<span class="roll-tag">#{tag}</span>{/each}

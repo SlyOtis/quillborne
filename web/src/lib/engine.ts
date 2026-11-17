@@ -370,7 +370,7 @@ export function consumeAmmunition(ammoId: string) {
   });
 }
 
-export type ChatEntryFields = Omit<ChatEntry, 'id' | 'campaign_id' | 'created_at' | 'updated_at'>
+export type ChatEntryFields = Omit<ChatEntry, 'id' | 'owner_id' | 'created_at' | 'updated_at'>
 
 export function getAuthor(): { author_id: string, author_name: string } {
   const account = get(user);

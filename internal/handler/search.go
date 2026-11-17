@@ -42,7 +42,7 @@ type ResponseSearch struct {
 	Rank        float32    `json:"rank" bun:"rank"`
 	TotalCount  int        `json:"-" bun:"total_count"`
 	Kind        *string    `json:"kind,omitempty" bun:"-"`
-	CampaignID  *uuid.UUID `json:"campaign_id,omitempty" bun:"-"`
+	OwnerID     *uuid.UUID `json:"owner_id,omitempty" bun:"-"`
 }
 
 func GetSearch(ctx echo.Context) error {
@@ -124,7 +124,7 @@ func GetSearch(ctx echo.Context) error {
 	}
 	if len(resourceIDs) > 0 {
 		resources := make([]db.Resource, 0)
-		if err := db.Instance().NewSelect().Model(&resources).Column("id", "kind", "campaign_id").Where("id IN (?)", bun.In(resourceIDs)).Scan(rctx); err != nil {
+		if err := db.Instance().NewSelect().Model(&resources).Column("id", "kind", "sa_owner_id").Where("id IN (?)", bun.In(resourceIDs)).Scan(rctx); err != nil {
 			ctx.Logger().Errorf("GetSearch: %v", err)
 			return respond.ErrorInternal(ctx)
 		}
@@ -133,7 +133,8 @@ func GetSearch(ctx echo.Context) error {
 				if resource.ID == rows[i].ID {
 					kind := resource.Kind
 					rows[i].Kind = &kind
-					rows[i].CampaignID = resource.CampaignID
+					ownerID := resource.OwnerID
+					rows[i].OwnerID = &ownerID
 				}
 			}
 		}

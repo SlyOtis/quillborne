@@ -3,6 +3,7 @@ package state
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 
 	"github.com/SlyOtis/quillborne/internal/db"
 	"github.com/google/uuid"
@@ -13,26 +14,26 @@ import (
 const GroupCharacter = "character"
 
 type CharacterData struct {
-	OwnerID    string          `json:"owner_id"`
-	CampaignID *string         `json:"campaign_id,omitempty"`
-	Character  json.RawMessage `json:"character"`
-	Metadata   json.RawMessage `json:"metadata,omitempty"`
-	IsPublic   bool            `json:"is_public"`
+	UserID    string          `json:"user_id"`
+	OwnerID   *string         `json:"owner_id,omitempty"`
+	Character json.RawMessage `json:"character"`
+	Metadata  json.RawMessage `json:"metadata,omitempty"`
+	IsPublic  bool            `json:"is_public"`
 }
 
 func getCharacterGroup() nstate.Group[CharacterData] {
 	return nstate.Group[CharacterData]{
 		Name: GroupCharacter,
 		Schema: getSchema(map[string]any{
-			"owner_id":    getOwner("The player the character belongs to."),
-			"campaign_id": getRef(GroupCampaign),
-			"character":   getJSON("The whole sheet as the rules engine reads it."),
-			"metadata":    getJSON("Name, level, class, race, status, tags, version and the template flag shown in lists."),
-			"is_public":   getProperty("boolean", "Whether anyone signed in may read the sheet."),
-		}, "owner_id", "character"),
+			"user_id":   getOwner("The player the character belongs to."),
+			"owner_id":  getRef(GroupCampaign),
+			"character": getJSON("The whole sheet as the rules engine reads it."),
+			"metadata":  getJSON("Name, level, class, race, status, tags, version and the template flag shown in lists."),
+			"is_public": getProperty("boolean", "Whether anyone signed in may read the sheet."),
+		}, "user_id", "character"),
 		DependsOn: []string{GroupCampaign},
-		Refs:      map[string]string{"campaign_id": GroupCampaign},
-		Filters:   []string{"campaign_id", "user_id"},
+		Refs:      map[string]string{"owner_id": GroupCampaign},
+		Filters:   []string{"owner_id", "user_id"},
 		Export:    exportCharacters,
 		Import:    importCharacter,
 		Delete:    deleteCharacter,
@@ -45,13 +46,16 @@ func exportCharacters(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[
 		return nil, err
 	}
 	return getRecords(ctx, GroupCharacter, query, rows, func(row db.Character) uuid.UUID { return row.ID }, func(row db.Character) CharacterData {
-		return CharacterData{
-			OwnerID:    row.UserID.String(),
-			CampaignID: getText(row.CampaignID),
-			Character:  getRaw(row.Sheet),
-			Metadata:   getRaw(row.Metadata),
-			IsPublic:   row.IsPublic,
+		data := CharacterData{
+			UserID:    row.UserID.String(),
+			Character: getRaw(row.Sheet),
+			Metadata:  getRaw(row.Metadata),
+			IsPublic:  row.IsPublic,
 		}
+		if home, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID")); err == nil && row.OwnerID != home {
+			data.OwnerID = getText(&row.OwnerID)
+		}
+		return data
 	})
 }
 
@@ -67,7 +71,7 @@ func getMetadata(record CharacterData) (map[string]any, error) {
 }
 
 func importCharacter(ctx *nstate.Context, record nstate.Record[CharacterData]) (string, error) {
-	owner, err := getOptionalID(&record.Data.OwnerID, "owner_id")
+	owner, err := getOptionalID(&record.Data.UserID, "user_id")
 	if err != nil {
 		return "", err
 	}
@@ -82,7 +86,7 @@ func importCharacter(ctx *nstate.Context, record nstate.Record[CharacterData]) (
 	if err != nil {
 		return "", err
 	}
-	campaignID, err := getOptionalID(record.Data.CampaignID, "campaign_id")
+	campaignID, err := getOptionalID(record.Data.OwnerID, "owner_id")
 	if err != nil {
 		return "", err
 	}
@@ -90,7 +94,7 @@ func importCharacter(ctx *nstate.Context, record nstate.Record[CharacterData]) (
 	body := map[string]any{"character": record.Data.Character, "metadata": metadata}
 	if record.ID == "" {
 		if campaignID != nil {
-			body["campaign_id"] = campaignID
+			body["owner_id"] = campaignID
 		}
 		data, err := call(ctx, actor, http.MethodPost, "/api/character", body)
 		if err != nil {
@@ -109,17 +113,21 @@ func importCharacter(ctx *nstate.Context, record nstate.Record[CharacterData]) (
 	if _, err := call(ctx, actor, http.MethodPut, "/api/character/"+record.ID, body); err != nil {
 		return "", err
 	}
+	home, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID"))
+	if err != nil {
+		return "", err
+	}
 	current := db.Character{ID: id}
-	if err := db.Instance().NewSelect().Model(&current).Column("campaign_id").WherePK().Scan(rctx); err != nil {
+	if err := db.Instance().NewSelect().Model(&current).Column("sa_owner_id").WherePK().Scan(rctx); err != nil {
 		return "", err
 	}
 	switch {
-	case campaignID != nil && (current.CampaignID == nil || *current.CampaignID != *campaignID):
+	case campaignID != nil && current.OwnerID != *campaignID:
 		if _, err := call(ctx, actor, http.MethodPost, "/api/campaign/"+campaignID.String()+"/character/"+record.ID, nil); err != nil {
 			return "", err
 		}
-	case campaignID == nil && current.CampaignID != nil:
-		if _, err := call(ctx, actor, http.MethodDelete, "/api/campaign/"+current.CampaignID.String()+"/character/"+record.ID, nil); err != nil {
+	case campaignID == nil && current.OwnerID != home:
+		if _, err := call(ctx, actor, http.MethodDelete, "/api/campaign/"+current.OwnerID.String()+"/character/"+record.ID, nil); err != nil {
 			return "", err
 		}
 	}

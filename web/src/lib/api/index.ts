@@ -144,6 +144,10 @@ export function isNpc(character: Character): boolean {
   return (character.metadata.tags ?? []).some((tag) => tag.toLowerCase() === NPC_TAG)
 }
 
+export function getCampaignId(row: { owner_id?: string }, profile: Profile | null): string | null {
+  return profile && row.owner_id && row.owner_id !== profile.owner_id ? row.owner_id : null
+}
+
 export type DerivedMetadata = Pick<CharacterMetadata, 'name' | 'level' | 'class' | 'race' | 'status'>
 
 export function getCharacterMetadata(sheet: CharacterSheet): DerivedMetadata {
@@ -165,7 +169,7 @@ export async function postCharacter(
 ): Promise<string> {
   const created = await apiPost<Character>('character', {
     character: sheet,
-    campaign_id: campaignId || undefined,
+    owner_id: campaignId || undefined,
     metadata: {
       ...getCharacterMetadata(sheet),
       version: '1.0.0',
@@ -208,9 +212,9 @@ export async function postCharacterCopy(characterId: string): Promise<string> {
     info: { ...held.character.info, name: `${held.character.info.name} (copy)` }
   }
 
-  const copyId = await postCharacter(sheet, { tags: held.metadata.tags ?? [], is_template: false }, held.campaign_id)
+  const copyId = await postCharacter(sheet, { tags: held.metadata.tags ?? [], is_template: false }, getCampaignId(held, await getProfile()) ?? undefined)
 
-  if (held.owner_id !== getSessionId()) return copyId
+  if (held.user_id !== getSessionId()) return copyId
 
   const sources = await getCharacterSources(characterId)
   if (sources.length > 0) await putCharacterSources(copyId, sources)
@@ -243,7 +247,7 @@ export const putCharacterSources = (characterId: string, sources: string[]) =>
 export const getCharacterSources = (characterId: string) =>
   apiGet<string[]>(`character/${characterId}/sources`).catch((error) => getAbsent(error, [] as string[]))
 
-export const getVehicles = (campaignId?: string) => apiGet<Vehicle[]>(path('vehicle', { campaign_id: campaignId }))
+export const getVehicles = (campaignId?: string) => apiGet<Vehicle[]>(path('vehicle', { owner_id: campaignId }))
 
 export const getVehicle = (vehicleId: string) =>
   apiGet<Vehicle>(`vehicle/${vehicleId}`).catch((error) => getAbsent(error, null))
@@ -275,7 +279,7 @@ export const putMonster = (monsterId: string, updates: MonsterFields) => apiPut<
 
 export const deleteMonster = (monsterId: string) => apiDelete(`monster/${monsterId}`)
 
-export async function postCampaign(fields: Omit<Campaign, 'id' | 'created_at' | 'updated_at'>): Promise<string> {
+export async function postCampaign(fields: Omit<Campaign, 'id' | 'owner_id' | 'created_at' | 'updated_at'>): Promise<string> {
   const created = await apiPost<Campaign>('campaign', {
     name: fields.name,
     description: fields.description,
@@ -304,7 +308,7 @@ export async function deleteCampaign(campaignId: string): Promise<void> {
 
   const addresses = [
     ...maps.flatMap((map) => [map.image_url, ...map.layers.map((layer) => layer.image_url)]),
-    ...songs.filter((song) => song.owner_id === self).map((song) => song.address)
+    ...songs.filter((song) => song.user_id === self).map((song) => song.address)
   ].filter(isStoredFile)
 
   await Promise.all(addresses.map((address) => deleteFile(address)))
@@ -397,7 +401,7 @@ export const getCampaignChat = (campaignId: string) => apiGet<ChatEntry[]>(`camp
 
 export async function postCampaignChat(
   campaignId: string,
-  entry: Omit<ChatEntry, 'id' | 'campaign_id' | 'created_at' | 'updated_at'>
+  entry: Omit<ChatEntry, 'id' | 'owner_id' | 'created_at' | 'updated_at'>
 ): Promise<string> {
   const created = await apiPost<ChatEntry>(`campaign/${campaignId}/chat`, entry)
   return created.id
@@ -409,7 +413,7 @@ export const getCampaignChatStream = (campaignId: string, onChange: (entries: Ch
   )
 
 function getOwnerQuery(owner: Owner, kind: string): Record<string, string> {
-  return owner.at === 'campaign' ? { kind, campaign_id: owner.id } : { kind, user_id: owner.id }
+  return owner.at === 'campaign' ? { kind, owner_id: owner.id } : { kind, user_id: owner.id }
 }
 
 export async function getResources<T extends Row>(owner: Owner, kind: string): Promise<T[]> {
@@ -428,7 +432,7 @@ export async function postResource(owner: Owner, kind: string, values: Record<st
   const created = await apiPost<Row>('resource', {
     ...values,
     kind,
-    campaign_id: owner.at === 'campaign' ? owner.id : undefined
+    owner_id: owner.at === 'campaign' ? owner.id : undefined
   })
   return created.id
 }
@@ -583,7 +587,7 @@ export async function postFile(file: File, scope: UploadScope): Promise<MediaAss
   const form = new FormData()
   form.set('name', file.name)
   form.set('mime_type', file.type || 'application/octet-stream')
-  if (scope.kind !== 'user') form.set('campaign_id', scope.campaignId)
+  if (scope.kind !== 'user') form.set('owner_id', scope.campaignId)
   form.set('file', file)
 
   const created = await apiPost<Asset>('asset', form).catch((error) => {
@@ -648,7 +652,7 @@ export interface SearchHit {
   description: string | null
   rank: number
   kind?: string
-  campaign_id?: string
+  owner_id?: string
 }
 
 export interface SearchBody {

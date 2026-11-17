@@ -61,8 +61,8 @@ describe('deleteOne', () => {
 
 describe('deleteResources', () => {
   it('deletes only what the named owner wrote, on every roll', async () => {
-    wire.stored['campaign/camp-1/locations'] = [{ id: 'place-1', owner_id: 'lars' }, { id: 'place-2', owner_id: 'dis' }]
-    wire.stored['campaign/camp-1/sessions'] = [{ id: 'session-1', owner_id: 'lars' }]
+    wire.stored['campaign/camp-1/locations'] = [{ id: 'place-1', user_id: 'lars' }, { id: 'place-2', user_id: 'dis' }]
+    wire.stored['campaign/camp-1/sessions'] = [{ id: 'session-1', user_id: 'lars' }]
 
     const count = await deleteResources({ at: 'campaign', id: 'camp-1' }, 'lars')
 

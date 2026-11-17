@@ -196,7 +196,7 @@
         parent_id: '',
         group: true,
         group_id: '',
-        owner_id: $user?.user_id ?? '',
+        user_id: $user?.user_id ?? '',
         share_campaigns: campaignId ? [campaignId] : [],
         share_users: []
       }

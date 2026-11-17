@@ -32,7 +32,8 @@ vi.mock('sly-svelte-location-router', async () => {
   return { currentRoute: writable(null) }
 })
 
-vi.mock('./api', () => ({
+vi.mock('./api', async (original) => ({
+  getCampaignId: (await original<typeof import('./api')>()).getCampaignId,
   postCampaignChat: (campaignId: string, entry: Record<string, unknown>) => {
     wire.posted.push({ campaignId, entry })
     return Promise.resolve('entry-1')
@@ -41,8 +42,8 @@ vi.mock('./api', () => ({
     wire.listeners.push({ campaignId, onChange })
     return () => wire.stopped.push(campaignId)
   },
-  getCharacter: () => Promise.resolve({ campaign_id: null }),
-  getVehicle: (id: string) => Promise.resolve(id === 'ship-1' ? { campaign_id: 'camp-9' } : null),
+  getCharacter: () => Promise.resolve({ owner_id: 'home' }),
+  getVehicle: (id: string) => Promise.resolve(id === 'ship-1' ? { owner_id: 'camp-9' } : null),
   getCsrfHeaders: () => ({})
 }))
 
@@ -65,7 +66,7 @@ const stamp = (at: string) => at
 
 const shared = (fields: Partial<ChatEntry>): ChatEntry => ({
   id: 'shared-1',
-  campaign_id: 'camp-1',
+  owner_id: 'camp-1',
   author_id: 'dis',
   author_name: 'Dis',
   kind: 'roll',
@@ -597,6 +598,7 @@ describe('the roll log aboard a vehicle', () => {
     const log = getChatLog()
     close = log.unsubscribeChat
 
+    userProfile.set({ owner_id: 'home' } as unknown as Profile)
     ;(currentRoute as unknown as Writable<unknown>).set({ path: '/main/vehicles/ship-1', params: { id: 'ship-1' } })
     await Promise.resolve()
     await Promise.resolve()

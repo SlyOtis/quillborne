@@ -100,7 +100,7 @@
 
   let more = $state<Record<string, Resource[]>>({})
 
-  const mine = $derived($userCharacters.filter((entry) => entry.owner_id === $user?.user_id && !isNpc(entry) && entry.campaign_id === campaignId))
+  const mine = $derived($userCharacters.filter((entry) => entry.user_id === $user?.user_id && !isNpc(entry) && entry.owner_id === campaignId))
   const activeId = $derived($userProfile?.preferences?.active_characters?.[campaignId])
   const current = $derived(
     $userCharacters.find((one) => one.id === ($currentCharacterId ?? activeId ?? $userProfile?.preferences?.recent_characters?.[0])) ?? null
