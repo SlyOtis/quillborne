@@ -26,7 +26,7 @@ Quillborne is the table's character sheets, campaigns, maps and vessels as a hos
 
 ## Claims decide who reads what
 
-11. Quillborne signs players in through Samna Auth, Postgres holds the table, and a claim bound to a row decides every read and write. No access check lives in a component or a query of its own. Ownership and relation are claimius too: a campaign is its organization, a row's campaign is its `sa_owner_id`, and there is no `campaign_id`, `claimius.md` 24 to 31. `data.md` carries the whole model.
+11. Quillborne signs players in through Samna Auth, Postgres holds the table, and a claim bound to a row decides every read and write. No access check lives in a component or a query of its own. Ownership and relation are claimius too: a campaign is its organization, a row's campaign is its `sa_owner_id`, and there is no `campaign_id`, `claimius.md` 1 to 7. `data.md` carries the whole model.
 
 ## Every feature is reached three ways
 
