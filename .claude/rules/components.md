@@ -52,11 +52,11 @@ A piece brought in from another library takes no prefix from it and is brought u
 
 ## The one of each
 
-One dialog shell, `web/src/components/BaseDialog.svelte`. One tooltip, drawn top most by `web/src/components/Frame.svelte`; no component draws its own with `[title]::after`. One page head, `PageHead` in `web/src/components/ui/`, which collapses on scroll. A second of any of them is drift to remove.
+One dialog shell, `web/src/components/BaseDialog.svelte`. A full screen stage, the picture gallery and the plan editor, is not a dialog: it covers the page and draws no dialog chrome. One tooltip, drawn top most by `web/src/components/Frame.svelte`; no component draws its own with `[title]::after`. One page head, `PageHead` in `web/src/components/ui/`, which collapses on scroll. A second of any of them is drift to remove.
 
 ## Layout
 
-A layout is relative: flexbox or grid, a fraction, a percentage or `fr`, clamped with `min-*`, `max-*` or `clamp()`. Never a measured pixel size. The row decides how large a control is; a size is a property of where a primitive sits, `buttons.md`.
+A layout is relative: flexbox or grid, a fraction, a percentage or `fr`, clamped with `min-*`, `max-*` or `clamp()`. Never a measured pixel size. The row decides how large a glyph control is, and a primitive that takes a size takes one the design system names, `buttons.md`.
 
 ## Good and bad
 

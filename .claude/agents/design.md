@@ -42,7 +42,7 @@ Another agent or the table consults you before a component or a page is written,
 ```
 just check                                               svelte-check and tsc: zero errors, zero warnings, a11y included
 grep -rnE "#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(" <files changed>     no literal colour
-grep -n "size" <primitive changed>                       no size prop
+grep -n "size" <primitive changed>                       only the sizes DESIGN.md names; a glyph button takes none
 grep -rn "data-theme" web/src/components web/src/pages   no component knows the theme
 just walk                                                the pages still open, against the running stack
 ```
