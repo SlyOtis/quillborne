@@ -69,7 +69,8 @@ Say "this is not a pattern", what was asked and why, and hand it to the user, wh
 2. it needs a step or a folder under `database/` that `migrate.yml` does not name;
 3. it needs SQL of the service to write claimius, or a row a player sees seeded by SQL;
 4. it needs a table, column or function name the user has not said;
-5. it needs anything run against a deployed database.
+5. it needs anything run against a deployed database;
+6. it needs a column, an index or a join table that names the owner or the campaign of a row beside `sa_owner_id`, a `campaign_id` or an `organization_id` (`sql.md` 18).
 
 ## Example asks
 

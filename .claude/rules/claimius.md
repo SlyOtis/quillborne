@@ -9,7 +9,7 @@ paths:
 
 # Claimius, Samna Auth and the middleware
 
-The `claimius` agent holds this file. What each row at the table is bound to is `data.md` Claims decide every read and write; this file is the system under it. A path marked `mw:` is inside the pinned middleware, relative to `go list -m -f '{{.Dir}}' github.com/nimling/samna-auth-middleware/v2`; `database/migrate.yml` pins the same ref in its `Claimius Schema` step and the two move together. The SQL wins over any page, this one included.
+The `claimius` agent holds this file. What each row at the table is bound to is `data.md` Claims decide every read and write; this file is the system under it. A path marked `mw:` is inside the pinned middleware, relative to `go list -m -f '{{.Dir}}' github.com/nimling/samna-auth-middleware/v2`; `database/migrate.yml` pins the same ref in its `Claimius Schema` step and the two move together. The SQL wins over any page, this one included. Ownership, relation and access between all rows are claimius and nothing else, without exception: rules 24 to 31.
 
 ## How claimius is built
 
@@ -35,7 +35,7 @@ The `claimius` agent holds this file. What each row at the table is bound to is 
 ## The middleware from Go
 
 16. One handle, `sdb.Instance()`, initialised once in `cmd/main.go:88`. A consumer imports `disciple/sdb`, `disciple/echo`, `disciple/sam` and `smw`, never `shared` (`mw:.nimpress/claimius/middleware/index.md` Packages).
-17. One row: `sdb.Instance().MutationAccess(ctx, actor, id, type, required)` answers an `AccessClaim`, `ErrNotFound` or `ErrNoAccess`, so one round trip is 200, 404 or 403 (`mw:shared/access.go:41`; `internal/handler/campaign.go:156`).
+17. One row: `sdb.Instance().MutationAccess(ctx, actor, id, type, required)` answers an `AccessClaim`, `ErrNotFound`, `ErrNoAccess` or a fault, and the three are mapped apart: `ErrNotFound` is 404, `ErrNoAccess` is 403, and any other error is a database fault, logged and answered 500. `ErrInternalServer` maps to 500 and `ErrNoAccess` is never a 500 (`mw:shared/access.go:19`, `:41`, `mw:.nimpress/claimius/middleware/access.md` Status codes come from the database; `GetSongs` in `internal/handler/campaign_part.go`). The Go of it is `go.md` 9.
 18. A list: the service's own bun query through `sdb.ObjectWhere(q, actor, type, required, nil, nil, 0)` (`mw:shared/query.go:118`; `internal/handler/campaign.go:134`). A listing carries no grant; acting on a row in it goes through `MutationAccess`.
 19. A write to a claimius type: `sdb.Instance().NewInsert().Model(&m).Access(ac).Conn(tx)`, and `NewUpdate` and `NewDelete` the same. `.Access(ac)` is the only thing that stamps the actor, and `.Conn(tx)` puts the local part in the caller's transaction (`mw:shared/query.go:351`; `internal/handler/share.go:54`).
 20. A claim: `sdb.Instance().CreateClaim(ctx, tx, ac, sdb.CreateClaimParams{...})`, which is of type virtual unless `Type` says otherwise, and `CreateVirtualClaim`, which makes the claim, binds it to one object and grants it to one user (`mw:shared/methods_claim.go:15`, `mw:shared/claims.go:537`).
@@ -43,34 +43,48 @@ The `claimius` agent holds this file. What each row at the table is bound to is 
 22. The audit: `sdb.Write(ctx, tx, operation, kind, type, id, ownerID, createdBy, message)` in the transaction of the change (`mw:disciple/sdb/db.go:36`).
 23. Sign in, the callback, sign out and `/api/auth/me` are the middleware's handlers behind `smw.UserAuthMiddleware`, mounted in `cmd/main.go:111`.
 
+## Ownership, relation and access
+
+24. Ownership, relation and access between all rows are claimius and nothing else. Every resource is done this way, there is no exception, and anything else is a workaround and is refused.
+25. The owner of a row and its relation to its campaign are one column, `sa_owner_id`. A campaign is its organization and shares its id: `PostCampaign` sets `campaign.ID = organization.ID` and `campaign.OwnerID = organization.ID` (`internal/handler/campaign.go`), so the campaign of any row is that row's `sa_owner_id`.
+26. A row no campaign keeps has `sa_owner_id` Knights of the Cauldron, `SERVER_OWNER_ID`, written by `postWriter(ctx, actorID, nil)` (`internal/handler/share.go`), and is its maker's through the grant it was created under, rule 9.
+27. No table, model, body, response or query of the service carries a `campaign_id`, or any other column or field naming the owning organization, beside `sa_owner_id`. bookable_server keeps no organization column beside `sa_owner_id` on `bookable` or `booking`, and nimployer keeps a second organization column only where it means something other than the owner.
+28. No join table, array column or helper of the service's own says who owns a row or who may reach it. Who owns is `sa_owner_id`, and who may reach is a claim bound to the row.
+29. The rows of one campaign are listed by a where on `sa_owner_id` on the service's own query, beside `sdb.ObjectWhere`, which has no owner argument (`mw:shared/query.go:118`), as `GetBookables` in bookable_server's `internal/handler/bookable.go` does with `bookable.sa_owner_id IN (?)`.
+30. The rows no campaign keeps are the same list with `sa_owner_id` Knights of the Cauldron, and `ObjectWhere` answers of them what the player's grants reach.
+31. A row that joins or leaves a campaign changes `sa_owner_id`, and nothing else records the move (`data.md` A campaign is an organization).
+
 ## What Quillborne does with it
 
-24. Nothing new is ever added to Samna Auth or the middleware for Quillborne: no function, no column, no route. A need is met by what the pinned middleware already gives.
-25. When Quillborne and the middleware disagree, Quillborne is wrong, and Quillborne changes.
-26. A campaign is an organization of kind `campaign` under Knights of the Cauldron, inserted through the builder (`internal/handler/campaign.go:222`); `data.md` A campaign is an organization.
-27. The dungeon master is the owner of that organization. The owner invites people into it and gives each the access they need.
-28. Membership is the organization's Member claim: a claim bound on the organization with `sdb.ACCESS_MEMBER`, found by that bit, granted to the member.
-29. A handler takes its writer with `postWriter` and binds the creator with `postOwnerBinding` (`internal/handler/share.go:22`, `:42`); a claim, a binding and a grant are made only with the helpers of that file and the claim routes (`internal/handler/routes.go:128`).
-30. A page changes root only through `claimius.migrate_root` (`internal/handler/resource.go:402`, `:434`). claimius cannot make a child a root, so a top level is a shared root (`data.md` The page tree).
-31. No SQL of the service writes claimius. The functions its SQL calls are `upsert_table_info`, `delete_table_info`, `upsert_disciple_state` and `upsert_search_source`; `database/debug/` alone defines its identity directly, because it runs only where `SAUTH_DEBUG_USER_ID` is set.
-32. A Samna Auth app change and a deployed database are the owner's (`workflow.md` 8). The live app is read with `sauth app manifest`, never from a file here.
+32. Nothing new is ever added to Samna Auth or the middleware for Quillborne: no function, no column, no route. A need is met by what the pinned middleware already gives.
+33. When Quillborne and the middleware disagree, Quillborne is wrong, and Quillborne changes.
+34. A campaign is an organization of kind `campaign` under Knights of the Cauldron, inserted through the builder (`internal/handler/campaign.go:222`); `data.md` A campaign is an organization.
+35. The dungeon master is the owner of that organization. The owner invites people into it and gives each the access they need.
+36. Membership is the organization's Member claim: a claim bound on the organization with `sdb.ACCESS_MEMBER`, found by that bit, granted to the member.
+37. A handler takes its writer with `postWriter` and binds the creator with `postOwnerBinding` (`internal/handler/share.go:22`, `:42`); a claim, a binding and a grant are made only with the helpers of that file and the claim routes (`internal/handler/routes.go:128`).
+38. A page changes root only through `claimius.migrate_root` (`internal/handler/resource.go:402`, `:434`). claimius cannot make a child a root, so a top level is a shared root (`data.md` The page tree).
+39. No SQL of the service writes claimius. The functions its SQL calls are `upsert_table_info`, `delete_table_info`, `upsert_disciple_state` and `upsert_search_source`; `database/debug/` alone defines its identity directly, because it runs only where `SAUTH_DEBUG_USER_ID` is set.
+40. A Samna Auth app change and a deployed database are the owner's (`workflow.md` 8). The live app is read with `sauth app manifest`, never from a file here.
 
 ## Good and bad
 
-33. Good: `postOrganization`, `getClaim`, `getMemberships` and `PostMember` in nimployer's `internal/service/team/team.go`: a team is an organization, its members hold the claim bound on it with the member bit, and the claim is found by the bit.
-34. Good: `PostBookable` in bookable_server's `internal/handler/bookable.go`: EXECUTE on the owning organization, the row and its audit in one transaction, the actor's claim bound through the builder.
-35. Good: `GetCampaign` (`internal/handler/campaign.go:146`): one `MutationAccess`, 404 or 403 from what it answers.
-36. Bad: a claim found by its name, or its id carried on a model. The campaign's two claims are found by the member bit on the organization's bindings, `getMemberships` (`internal/handler/share.go`). Membership is rule 28.
-37. Bad: an `UPDATE` that sets `sa_root_id`, or a parent under another root. Rule 30.
-38. Bad: `claimius.insert_claim`, `insert_claim_object` or `insert_user_claim` called from the service's SQL or Go. Rule 15.
-39. Bad: a `SELECT` from a `claimius.*` table in a handler, or an `if` on a user id, a role name or a claim name to decide access. The lookups of 17 and 18 decide.
-40. Bad: asking for a new middleware function because a case is awkward. Rule 24.
+41. Good: `postOrganization`, `getClaim`, `getMemberships` and `PostMember` in nimployer's `internal/service/team/team.go`: a team is an organization, its members hold the claim bound on it with the member bit, and the claim is found by the bit.
+42. Good: `PostBookable` in bookable_server's `internal/handler/bookable.go`: EXECUTE on the owning organization, the row and its audit in one transaction, the actor's claim bound through the builder.
+43. Good: `GetCampaign` (`internal/handler/campaign.go`): one `MutationAccess`, 404 for `ErrNotFound`, 403 for `ErrNoAccess`, and 500 for any other error. Rule 17.
+44. Bad: a claim found by its name, or its id carried on a model. The campaign's two claims are found by the member bit on the organization's bindings, `getMemberships` (`internal/handler/share.go`). Membership is rule 36.
+45. Bad: an `UPDATE` that sets `sa_root_id`, or a parent under another root. Rule 38.
+46. Bad: `claimius.insert_claim`, `insert_claim_object` or `insert_user_claim` called from the service's SQL or Go. Rule 15.
+47. Bad: a `SELECT` from a `claimius.*` table in a handler, or an `if` on a user id, a role name or a claim name to decide access. The lookups of 17 and 18 decide.
+48. Bad: asking for a new middleware function because a case is awkward. Rule 32.
+49. Bad: a `campaign_id`, an `organization_id` or any other column, model field, body field, response field or where that names the owning organization beside `sa_owner_id`. Rule 27; the where is on `sa_owner_id`, rule 29.
+50. Bad: a join table, an array column or a helper of the service's own that says who owns a row or who may reach it. Rule 28.
 
 ## Do and don't
 
-41. Do read the SQL, then the Go, then the two reference services before saying a capability exists or not, and cite each.
-42. Do bind every new row before anything reads it, with the mask the table should have and nothing wider.
-43. Do write the access test beside the route: who may, and who may not (`test/go/access_test.go`).
-44. Don't decide access in a component, a query or a helper of Quillborne's own.
-45. Don't assume another user's access right after a write; they settle on their next read.
-46. Don't run a `sauth` write or smig against a deployed environment without the owner's word.
+51. Do read the SQL, then the Go, then the two reference services before saying a capability exists or not, and cite each.
+52. Do bind every new row before anything reads it, with the mask the table should have and nothing wider.
+53. Do write the access test beside the route: who may, and who may not (`test/go/access_test.go`).
+54. Don't decide access in a component, a query or a helper of Quillborne's own.
+55. Don't name the owner or the campaign of a row by anything but `sa_owner_id`.
+56. Don't assume another user's access right after a write; they settle on their next read.
+57. Don't run a `sauth` write or smig against a deployed environment without the owner's word.
