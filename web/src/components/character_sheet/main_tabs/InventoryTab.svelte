@@ -294,11 +294,11 @@
                             </span>
                             <span class="bond-state">{attuned ? 'Attuned' : item.id === waiting?.id ? 'Needs a slot' : 'Not attuned'}</span>
                             {#if attuned && waiting}
-                                <Button variant="primary" size="sm" title="End attunement to {item.title} and attune to {waiting.title}" onclick={() => replace(item)}>Replace</Button>
+                                <Button variant="primary" size="sm" title="End attunement to {item.title} and attune to {waiting.title}" label="Replace {item.title}" onclick={() => replace(item)}>Replace</Button>
                             {:else if attuned}
-                                <Button variant="ghost" size="sm" title="End attunement to {item.title}" onclick={() => endAttunement(item)}>End attunement</Button>
+                                <Button variant="ghost" size="sm" title="End attunement to {item.title}" label="End attunement to {item.title}" onclick={() => endAttunement(item)}>End attunement</Button>
                             {:else if item.id !== waiting?.id}
-                                <Button variant="secondary" size="sm" title="Attune to {item.title}" onclick={() => attune(item)}>Attune</Button>
+                                <Button variant="secondary" size="sm" title="Attune to {item.title}" label="Attune to {item.title}" onclick={() => attune(item)}>Attune</Button>
                             {/if}
                         </li>
                     {:else}
@@ -371,7 +371,7 @@
                     {#if item.attunement.attuned}
                         <Chip still glyph="sparkles">Attuned</Chip>
                     {:else}
-                        <Button variant="plain" size="sm" title="Attune to {item.title}" onclick={() => attune(item)}>Attune</Button>
+                        <Button variant="plain" size="sm" title="Attune to {item.title}" label="Attune to {item.title}" onclick={() => attune(item)}>Attune</Button>
                     {/if}
                 {/if}
             </span>

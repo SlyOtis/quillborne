@@ -9,6 +9,7 @@
     fill = false,
     loading = false,
     title,
+    label,
     onclick,
     children
   }: {
@@ -26,6 +27,8 @@
     loading?: boolean
     /** Native tooltip text. */
     title?: string
+    /** The accessible name, for when the words alone do not say what is pressed; it holds the words. */
+    label?: string
     /** Runs when the button is pressed. */
     onclick?: (event: MouseEvent) => void
     /** The label content. */
@@ -36,6 +39,7 @@
 <button
   {type}
   {title}
+  aria-label={label}
   class="dnd-button dnd-button-{variant} dnd-button-{size}"
   class:dnd-button-fill={fill}
   class:dnd-button-loading={loading}
