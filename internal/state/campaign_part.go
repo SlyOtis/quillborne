@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"os"
 
 	"github.com/SlyOtis/quillborne/internal/db"
 	"github.com/google/uuid"
@@ -52,7 +53,7 @@ type EncounterData struct {
 }
 
 type SongData struct {
-	OwnerID        string   `json:"owner_id"`
+	OwnerID        *string  `json:"owner_id,omitempty"`
 	UserID         string   `json:"user_id"`
 	Title          string   `json:"title"`
 	Address        string   `json:"address"`
@@ -312,15 +313,13 @@ func getSongGroup() nstate.Group[SongData] {
 			"duration":        getProperty("number", "The length in seconds."),
 			"share_users":     getList("The players it is shared with by name."),
 			"share_campaigns": getList("The campaigns whose tables hear it."),
-		}, "owner_id", "user_id", "title"),
+		}, "user_id", "title"),
 		DependsOn: []string{GroupCampaign},
 		Refs:      map[string]string{"owner_id": GroupCampaign},
 		Filters:   []string{"owner_id"},
 		Export:    exportSongs,
 		Import:    importSong,
-		Delete: func(ctx *nstate.Context, id string) error {
-			return deletePart(ctx, id, "song", func(row *db.Song) uuid.UUID { return row.OwnerID })
-		},
+		Delete:    deleteSong,
 	}
 }
 
@@ -330,8 +329,7 @@ func exportSongs(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[SongD
 		return nil, err
 	}
 	return getRecords(ctx, GroupSong, query, rows, func(row db.Song) uuid.UUID { return row.ID }, func(row db.Song) SongData {
-		return SongData{
-			OwnerID:        row.OwnerID.String(),
+		data := SongData{
 			UserID:         row.UserID.String(),
 			Title:          row.Title,
 			Address:        row.Address,
@@ -339,6 +337,10 @@ func exportSongs(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[SongD
 			ShareUsers:     getStrings(row.ShareUsers),
 			ShareCampaigns: getShareKeys(ctx.Request().Context(), row.ShareCampaigns),
 		}
+		if home, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID")); err == nil && row.OwnerID != home {
+			data.OwnerID = getText(&row.OwnerID)
+		}
+		return data
 	})
 }
 
@@ -347,14 +349,42 @@ func importSong(ctx *nstate.Context, record nstate.Record[SongData]) (string, er
 	if err != nil {
 		return "", err
 	}
-	body, err := getShare(ctx.Request().Context(), record.Data.ShareUsers, record.Data.ShareCampaigns)
+	actor, err := getActor(ctx, owner)
+	if err != nil {
+		return "", err
+	}
+	rctx := ctx.Request().Context()
+	body, err := getShare(rctx, record.Data.ShareUsers, record.Data.ShareCampaigns)
 	if err != nil {
 		return "", err
 	}
 	body["title"] = record.Data.Title
 	body["address"] = record.Data.Address
 	body["duration"] = record.Data.Duration
-	return importPart(ctx, GroupSong, owner, record.Data.OwnerID, record.ID, record.Key, "song", body)
+	target, method := "/api/song", http.MethodPost
+	if record.ID != "" {
+		target, method = "/api/song/"+record.ID, http.MethodPut
+	} else if record.Data.OwnerID != nil {
+		body["owner_id"] = *record.Data.OwnerID
+	}
+	data, err := call(ctx, actor, method, target, body)
+	if err != nil {
+		return "", err
+	}
+	id, err := getID(data)
+	if err != nil {
+		return "", err
+	}
+	return id.String(), putKey(rctx, GroupSong, record.Key, id)
+}
+
+func deleteSong(ctx *nstate.Context, id string) error {
+	actor, err := getCaller(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = call(ctx, actor, http.MethodDelete, "/api/song/"+id, nil)
+	return err
 }
 
 func getChatEntryGroup() nstate.Group[ChatEntryData] {

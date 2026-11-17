@@ -1,4 +1,4 @@
-import { getCampaignSongsStream, getFileUrl, postCampaignSong, postFile } from './api'
+import * as api from './api'
 import type { Song } from './api/types'
 import { get, writable } from 'svelte/store'
 
@@ -17,6 +17,9 @@ let audio: HTMLAudioElement | null = null
 let played: Song[] = []
 let held = ''
 let stop: (() => void) | null = null
+let kept: Song[] = []
+let own: Song[] = []
+let asked = 0
 
 function getAudio(): HTMLAudioElement {
   if (audio) return audio
@@ -63,20 +66,40 @@ export function getClock(seconds: number): string {
   return `${minutes}:${rest < 10 ? '0' : ''}${rest}`
 }
 
+function setLibrary(): void {
+  library.set([...kept, ...own].sort((a, b) => a.title.localeCompare(b.title)))
+}
+
+async function getOwnSongs(): Promise<void> {
+  const mine = ++asked
+  const songs = await api.getSongs().catch((error) => {
+    console.error('Own songs did not load:', error)
+    return null
+  })
+  if (!songs || mine !== asked) return
+
+  own = songs
+  setLibrary()
+}
+
 export function openLibrary(campaignId: string): void {
+  void getOwnSongs()
+
   if (campaignId === held) return
   held = campaignId
 
   stop?.()
   stop = null
-  library.set([])
+  kept = []
+  setLibrary()
   musicScope.set(campaignId)
 
   if (!campaignId) return
 
-  stop = getCampaignSongsStream(campaignId, (songs) =>
-    library.set([...songs].sort((a, b) => a.title.localeCompare(b.title)))
-  )
+  stop = api.getCampaignSongsStream(campaignId, (songs) => {
+    kept = songs
+    setLibrary()
+  })
 }
 
 export async function playSong(song: Song): Promise<void> {
@@ -86,7 +109,7 @@ export async function playSong(song: Song): Promise<void> {
   track.set(song)
   progress.set({ at: 0, length: song.duration })
 
-  const url = await getFileUrl(song.address)
+  const url = await api.getFileUrl(song.address)
   if (!url || get(track)?.id !== song.id) return
 
   const player = getAudio()
@@ -166,13 +189,19 @@ export function moveSong(index: number, by: -1 | 1): void {
 export async function postSong(campaignId: string, file: File): Promise<void> {
   if (!file.type.startsWith('audio/')) throw new Error(`${file.name} is not an audio file.`)
 
-  const [duration, { url: address }] = await Promise.all([getDuration(file), postFile(file, { kind: 'campaignAudio', campaignId })])
+  const [duration, { url: address }] = await Promise.all([
+    getDuration(file),
+    api.postFile(file, campaignId ? { kind: 'campaignAudio', campaignId } : { kind: 'user' })
+  ])
 
-  await postCampaignSong(campaignId, {
+  await api.postSong({
     title: file.name.replace(/\.[^.]+$/, ''),
     address,
     duration,
-    share_campaigns: [campaignId],
+    owner_id: campaignId || undefined,
+    share_campaigns: campaignId ? [campaignId] : [],
     share_users: []
   })
+
+  if (!campaignId) await getOwnSongs()
 }

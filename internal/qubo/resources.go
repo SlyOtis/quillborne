@@ -147,6 +147,16 @@ func Resources() []cli.Resource {
 			},
 		},
 		{
+			Name:  "song",
+			Short: "The music library: a campaign's songs and each player's own",
+			Verbs: []cli.Verb{
+				getOp("List your own songs, or a campaign's with --query owner_id=...", apiPrefix+"/song"),
+				createOp("Add a song, body {title, address, duration, owner_id, share_users, share_campaigns}", apiPrefix+"/song"),
+				replaceOp("Change a song", "", apiPrefix+"/song/{id}"),
+				deleteOp("Delete a song", "", apiPrefix+"/song/{id}"),
+			},
+		},
+		{
 			Name:  "campaign",
 			Short: "Campaigns, the tables of play",
 			Verbs: []cli.Verb{
@@ -192,16 +202,6 @@ func Resources() []cli.Resource {
 						createOp("Set up an encounter, body {title, combatants, round, turn, is_active, share_users, share_campaigns}", "", apiPrefix+"/campaign/{campaign_id}/encounter"),
 						replaceOp("Change an encounter", "", "", apiPrefix+"/campaign/{campaign_id}/encounter/{encounter_id}"),
 						deleteOp("Delete an encounter", "", "", apiPrefix+"/campaign/{campaign_id}/encounter/{encounter_id}"),
-					},
-				},
-				{
-					Name:  "song",
-					Short: "The music library of a campaign",
-					Verbs: []cli.Verb{
-						getOp("List the songs of a campaign", "", apiPrefix+"/campaign/{campaign_id}/song"),
-						createOp("Add a song, body {title, address, duration, share_users, share_campaigns}", "", apiPrefix+"/campaign/{campaign_id}/song"),
-						replaceOp("Change a song", "", "", apiPrefix+"/campaign/{campaign_id}/song/{song_id}"),
-						deleteOp("Delete a song", "", "", apiPrefix+"/campaign/{campaign_id}/song/{song_id}"),
 					},
 				},
 				{

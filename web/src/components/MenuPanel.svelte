@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { SoundBoard } from '$lib/character.types'
   import { uiStore, menuView, soundBoard } from '$lib/stores/ui.store'
-  import { currentCampaignId, userCampaigns } from '$lib/stores/campaign.store'
+  import { currentCampaignId } from '$lib/stores/campaign.store'
   import { openLibrary } from '$lib/music'
   import Glyph from '$components/ui/Glyph.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
@@ -9,23 +9,20 @@
   import MainMenu from '$components/MainMenu.svelte'
   import SoundBoardComponent from '$components/soundboard/SoundBoard.svelte'
   import Playlist from '$components/music/Playlist.svelte'
-  import SongImportDialog from '$components/music/SongImportDialog.svelte'
+
+  const { onimport }: {
+    /** Runs with the campaign an import goes to, empty for the reader's own songs, and the files handed in with it. */
+    onimport?: (campaignId: string, files: File[]) => void
+  } = $props()
 
   const soundBoardStore = $derived($soundBoard)
 
   let search = $state('')
-  let importOpen = $state(false)
-  let dropped = $state<File[]>([])
 
-  function openImport(files: File[] = []) {
-    dropped = files
-    importOpen = true
-  }
-
-  const scope = $derived($currentCampaignId || $userCampaigns[0]?.id || '')
+  const scope = $derived($currentCampaignId ?? '')
 
   $effect(() => {
-    openLibrary(scope)
+    if ($menuView === 'music') openLibrary(scope)
   })
 
   function handleSoundBoardChange(soundBoard: SoundBoard) {
@@ -42,17 +39,11 @@
   {:else if $menuView === 'music'}
     <header class="dnd-menupanel-rail">
       {@render back()}
-      <IconBtn title="Import songs" disabled={!scope} onclick={() => openImport()}>
-        <Glyph name="upload" size="sm" />
-      </IconBtn>
     </header>
     <SearchInput bind:value={search} placeholder="Search the songs..." label="Search songs" variant="band" />
     <div class="dnd-menupanel-body dnd-menupanel-body-flush">
-      <Playlist campaignId={scope} {search} onimport={openImport} />
+      <Playlist campaignId={scope} {search} {onimport} />
     </div>
-    {#if importOpen}
-      <SongImportDialog bind:isOpen={importOpen} campaignId={scope} files={dropped} />
-    {/if}
   {:else}
     <MainMenu />
   {/if}
