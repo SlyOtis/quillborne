@@ -12,7 +12,6 @@
   let loading = true
 
   const removeOutermostTags = (html: string) => {
-    // Match an opening tag at the start, capture content, then match corresponding closing tag
     const regex = /^(?:\s*)<([a-z][a-z0-9]*)[^>]*>([\s\S]*)<\/\1>(?:\s*)$/i;
     const match = regex.exec(html);
     if (match) {
@@ -31,10 +30,8 @@
 
     const renderer = new Renderer()
 
-    // Match any opening tag at the start, capture everything in between, then match the corresponding closing tag
     const regex = /^<([a-z][a-z0-9]*)[^>]*>([\s\S]*)<\/\1>$/i;
     renderer.link = ({href, title, tokens}) => {
-      // TODO:: Remember that this can't be nested and then will fail
       const htmlContent = marked.parser(tokens)
       return `<a href="${href}" class="marked-link" ${title ? `title="${title}"` : ''}>${removeOutermostTags(htmlContent)}</a>`
     };
@@ -56,7 +53,6 @@
       renderer
     })
 
-    // Emojis from github
     const octokit = new Octokit();
     const {data: emojis} = await octokit.rest.emojis.get();
     const emojiOptions = {
@@ -65,10 +61,8 @@
     };
     marked.use(markedEmoji(emojiOptions));
 
-    // Fix closing tags
     marked.use(markedXhtml());
 
-    // Fix heading ids
     const headingsOptions = {
       prefix: "_nim-io-",
     };
@@ -127,19 +121,19 @@
     }
 
     :global(.marked-root h1) {
-        font-size: 1.2rem;
+        font-size: var(--text-lg);
     }
 
     :global(.marked-root h2) {
-        font-size: 1rem;
+        font-size: var(--text-md);
     }
 
     :global(.marked-root h3) {
-        font-size: 0.8rem;
+        font-size: var(--text-sm);
     }
 
     :global(.marked-root h4) {
-        font-size: 0.6rem;
+        font-size: var(--text-xs);
     }
 
 </style>

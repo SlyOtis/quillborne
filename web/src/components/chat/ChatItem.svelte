@@ -4,7 +4,6 @@
     import type {LogItem} from "../../lib/chat";
     let {logItem, showHidden}: {logItem: LogItem, showHidden: boolean} = $props()
 
-    // Configure marked for better formatting
     marked.setOptions({
         breaks: true,
         gfm: true
@@ -297,7 +296,7 @@
     .formatted-content :global(h2),
     .formatted-content :global(h3),
     .formatted-content :global(h4) {
-        margin: 0.8rem 0 0.4rem 0;
+        margin: var(--space-3) 0 var(--space-2);
         font-family: var(--font-display);
         font-weight: 700;
         letter-spacing: var(--tracking-wide);
@@ -329,12 +328,12 @@
 
     .formatted-content :global(ul),
     .formatted-content :global(ol) {
-        margin: 0.5rem 0;
-        padding-left: 1.5rem;
+        margin: var(--space-2) 0;
+        padding-left: var(--space-5);
     }
 
     .formatted-content :global(li) {
-        margin: 0.3rem 0;
+        margin: var(--space-1) 0;
         color: var(--ink);
     }
 
@@ -343,20 +342,20 @@
     }
 
     .formatted-content :global(p) {
-        margin: 0.5rem 0;
+        margin: var(--space-2) 0;
         color: var(--ink);
     }
 
     .formatted-content :global(img) {
         max-width: 100%;
         height: auto;
-        margin: 0.5rem 0;
+        margin: var(--space-2) 0;
         border-radius: var(--radius-sm);
         box-shadow: var(--rim-thin), var(--shadow-sm);
     }
 
     .formatted-content :global(code) {
-        padding: 0.1rem 0.3rem;
+        padding: var(--space-0) var(--space-1);
         background: var(--ground-deep);
         border: var(--border-hair) solid var(--metal-dim);
         border-radius: var(--radius-sm);
@@ -382,7 +381,7 @@
     }
 
     .formatted-content :global(blockquote) {
-        margin: 1rem 0;
+        margin: var(--space-4) 0;
         padding: var(--space-2) var(--space-4);
         border-block: var(--border-hair) solid var(--metal-dim);
         background: linear-gradient(180deg, var(--sheen-soft), transparent);

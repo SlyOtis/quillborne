@@ -12,6 +12,7 @@
 
 <script lang="ts">
   import Glyph from './Glyph.svelte'
+  import IconBtn from './IconBtn.svelte'
   const {
     id,
     label,
@@ -125,7 +126,7 @@
       <span class="dnd-picker-tag" class:dnd-picker-tag-group={tag.tone === 'group'} class:dnd-picker-tag-person={tag.tone === 'person'} class:dnd-picker-tag-thing={tag.tone === 'thing'}>
         <span class="dnd-picker-mark">{tag.word ?? tag.mark}</span>
         {tag.name}
-        <button type="button" class="dnd-picker-drop" title="Remove" {disabled} onclick={() => drop(tag)}><Glyph name="close" size="sm" /></button>
+        <IconBtn title="Remove" tone="ink" {disabled} onclick={() => drop(tag)}><Glyph name="close" size="sm" /></IconBtn>
       </span>
     {/each}
     <input
@@ -269,22 +270,6 @@
     font-size: var(--text-xs);
     letter-spacing: var(--tracking-wide);
     color: var(--metal);
-  }
-
-  .dnd-picker-drop {
-    padding: 0 var(--space-1);
-    border: none;
-    background: none;
-    font-size: var(--text-sm);
-    line-height: 1;
-    color: var(--ink-faint);
-    cursor: pointer;
-    transition: color 0.15s ease, text-shadow 0.15s ease;
-  }
-
-  .dnd-picker-drop:hover {
-    color: var(--state-bad);
-    text-shadow: 0 0 6px var(--state-bad);
   }
 
   .dnd-picker-host {

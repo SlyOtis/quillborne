@@ -253,7 +253,7 @@
           console.error('Error in Whisper polling:', error)
           reject(error)
         }
-      }, 2000) // Poll every 2 seconds
+      }, 2000)
     }
     
     poll()
@@ -264,7 +264,7 @@
       const reader = new FileReader()
       reader.onload = () => {
         const result = reader.result as string
-        resolve(result.split(',')[1]) // Remove data:audio/webm;base64, prefix
+        resolve(result.split(',')[1])
       }
       reader.onerror = reject
       reader.readAsDataURL(blob)
@@ -487,7 +487,7 @@
         align-self: stretch;
         gap: 0;
         margin: var(--space-2) var(--space-3);
-        padding: 0.2rem;
+        padding: var(--space-1);
         border-radius: var(--radius-sm);
         background: var(--texture-noise), var(--ground-deep);
         box-shadow: var(--rim-thin), var(--bevel-down);

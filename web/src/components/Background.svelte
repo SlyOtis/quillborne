@@ -64,7 +64,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: radial-gradient(ellipse 70% 50% at 50% 0%, color-mix(in srgb, var(--ember) 14%, transparent) 0%, transparent 70%), linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.82) 100%);
+        background: radial-gradient(ellipse 70% 50% at 50% 0%, color-mix(in srgb, var(--ember) 14%, transparent) 0%, transparent 70%), linear-gradient(180deg, color-mix(in srgb, var(--shadow-ink) 55%, transparent) 0%, color-mix(in srgb, var(--shadow-ink) 82%, transparent) 100%);
         opacity: 1;
     }
 

@@ -406,14 +406,9 @@
                   <Glyph name="remove" size="sm" />
                 </IconBtn>
               {/if}
-              <button
-                type="button"
-                class="roll-group-caret"
-                class:roll-group-caret-open={open}
-                aria-expanded={open}
-                aria-label={open ? `Fold ${limb.group.title}` : `Unfold ${limb.group.title}`}
-                onclick={() => (shut = { ...shut, [limb.group.id]: open })}
-              ></button>
+              <IconBtn title={open ? `Fold ${limb.group.title}` : `Unfold ${limb.group.title}`} expanded={open} onclick={() => (shut = { ...shut, [limb.group.id]: open })}>
+                <Glyph name={open ? 'fold' : 'unfold'} size="sm" />
+              </IconBtn>
             </header>
 
             <div class="roll-group-body" class:roll-group-body-open={open} inert={!open}>
@@ -524,26 +519,6 @@
     gap: var(--space-3);
     min-height: var(--space-7);
     min-width: 0;
-  }
-
-  .roll-group-caret {
-    --roll-caret: 0.32rem;
-    flex: none;
-    width: 0;
-    height: 0;
-    padding: 0;
-    border: none;
-    border-left: var(--roll-caret) solid transparent;
-    border-right: var(--roll-caret) solid transparent;
-    border-top: calc(var(--roll-caret) * 1.6) solid var(--metal);
-    background: none;
-    cursor: pointer;
-    transform: rotate(-90deg);
-    transition: transform 0.15s ease;
-  }
-
-  .roll-group-caret-open {
-    transform: rotate(0);
   }
 
   .roll-group-title,

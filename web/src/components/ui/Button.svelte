@@ -267,7 +267,7 @@
   .dnd-button-spinner {
     width: 1em;
     height: 1em;
-    border: 2px solid currentColor;
+    border: var(--border-width) solid currentColor;
     border-top-color: transparent;
     border-radius: var(--radius-pill);
     animation: dnd-button-spin 0.7s linear infinite;
