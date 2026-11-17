@@ -15,7 +15,7 @@ const GroupCatalogEntry = "catalog_entry"
 type CatalogEntryData struct {
 	Kind        string          `json:"kind"`
 	Slug        string          `json:"slug"`
-	OwnerID     string          `json:"owner_id"`
+	UserID      string          `json:"user_id"`
 	Name        string          `json:"name"`
 	Description string          `json:"description"`
 	Digest      string          `json:"digest"`
@@ -28,7 +28,7 @@ func getCatalogEntryGroup() nstate.Group[CatalogEntryData] {
 		Schema: getSchema(map[string]any{
 			"kind":        getProperty("string", "classes or races."),
 			"slug":        getProperty("string", "The address name of the entry."),
-			"owner_id":    getOwner("The player whose upload the entry was read from."),
+			"user_id":     getOwner("The player whose upload the entry was read from."),
 			"name":        getProperty("string", "The display name."),
 			"description": getProperty("string", "What the entry is."),
 			"digest":      getProperty("string", "The digest of the source the entry was read from."),
@@ -49,7 +49,7 @@ func exportCatalogEntries(ctx *nstate.Context, query nstate.Query) ([]nstate.Rec
 		return CatalogEntryData{
 			Kind:        row.Kind,
 			Slug:        row.Slug,
-			OwnerID:     row.UserID.String(),
+			UserID:      row.UserID.String(),
 			Name:        row.Name,
 			Description: row.Description,
 			Digest:      row.Digest,
@@ -59,7 +59,7 @@ func exportCatalogEntries(ctx *nstate.Context, query nstate.Query) ([]nstate.Rec
 }
 
 func importCatalogEntry(ctx *nstate.Context, record nstate.Record[CatalogEntryData]) (string, error) {
-	owner, err := getOptionalID(&record.Data.OwnerID, "owner_id")
+	owner, err := getOptionalID(&record.Data.UserID, "user_id")
 	if err != nil {
 		return "", err
 	}

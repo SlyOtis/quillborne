@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getCampaigns, getCampaignVehiclesStream, getVehicles, postVehicle } from '$lib/api'
+  import { getCampaignId, getCampaigns, getCampaignVehiclesStream, getVehicles, postVehicle } from '$lib/api'
   import type { Campaign, Vehicle } from '$lib/api/types'
   import { onMount, setContext } from 'svelte'
   import { navigate, resolvedRoute } from 'sly-svelte-location-router'
@@ -17,7 +17,7 @@
     type VehiclePackage
   } from '$lib/rules/vehicle'
   import type { VehicleSystem } from '$lib/rules/vehicle.types'
-  import { user } from '$lib/stores/auth.store'
+  import { user, userProfile } from '$lib/stores/auth.store'
   import { anyDialogOpen, uiStore } from '$lib/stores/ui.store'
   import BaseDialog from '$components/BaseDialog.svelte'
   import Button from '$components/ui/Button.svelte'
@@ -107,14 +107,14 @@
   )
   const groups = $derived.by(() => {
     const out: { id: string; title: string; vehicles: Vehicle[] }[] = []
-    const own = vehicles.filter((entry) => !entry.campaign_id)
+    const own = vehicles.filter((entry) => !getCampaignId(entry, $userProfile))
     if (!campaignId && own.length) out.push({ id: 'own', title: 'Your own', vehicles: own })
-    const ids = [...new Set(vehicles.map((entry) => entry.campaign_id).filter((id): id is string => Boolean(id)))]
+    const ids = [...new Set(vehicles.map((entry) => getCampaignId(entry, $userProfile)).filter((id): id is string => Boolean(id)))]
     for (const id of ids) {
       out.push({
         id,
         title: campaigns.find((entry) => entry.id === id)?.name ?? 'A campaign',
-        vehicles: vehicles.filter((entry) => entry.campaign_id === id)
+        vehicles: vehicles.filter((entry) => entry.owner_id === id)
       })
     }
     return out
@@ -148,7 +148,7 @@
     try {
       const made = await postVehicle({
         name: name.trim(),
-        campaign_id: harbour || null,
+        owner_id: harbour || undefined,
         system: chosen.system.id,
         template: chosen.template?.key ?? '',
         template_version: chosen.template?.version ?? 0,
@@ -181,7 +181,7 @@
       }
       const made = await postVehicle({
         name: pkg.name,
-        campaign_id: campaignId || null,
+        owner_id: campaignId || undefined,
         system: pkg.system,
         template: pkg.template,
         template_version: pkg.template_version,
@@ -281,7 +281,7 @@
                   title={entry.name}
                   sub={summary(entry)}
                   badge={entry.crew.length ? `${entry.crew.length} crew` : undefined}
-                  tone={entry.owner_id === $user?.user_id ? 'ember' : 'verdigris'}
+                  tone={entry.user_id === $user?.user_id ? 'ember' : 'verdigris'}
                   onclick={() => navigate(`${vessels}/${entry.id}`)}
                 />
               {/each}

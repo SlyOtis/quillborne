@@ -48,12 +48,12 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { navigate, resolvedRoute, Router, type Routes } from 'sly-svelte-location-router'
-  import { assetBannerUrl, deleteObjectAsset, getAssets, getCampaigns, getObjectAssets, IMAGE_TYPE_BANNER, postFile, postObjectAsset, putAsset } from '$lib/api'
+  import { assetBannerUrl, deleteObjectAsset, getAssets, getCampaignId, getCampaigns, getObjectAssets, IMAGE_TYPE_BANNER, postFile, postObjectAsset, putAsset } from '$lib/api'
   import type { ObjectAsset } from '$lib/api/types'
   import type { MediaAsset } from '$lib/blocks'
   import { getAll, getChildren, getRoots, getTrail, postOne, putOne } from '$lib/resources'
   import { currentCampaignId, userCampaigns } from '$lib/stores/campaign.store'
-  import { user } from '$lib/stores/auth.store'
+  import { user, userProfile } from '$lib/stores/auth.store'
   import { postNotice } from '$lib/stores/ui.store'
   import Shell from '$components/ui/Shell.svelte'
   import PageHead, { type Crumb } from '$components/ui/PageHead.svelte'
@@ -242,7 +242,7 @@
   }
 
   function loreOf(one: Resource): string {
-    return `${campaign && one.campaign_id ? `/main/campaign/${campaign.id}` : '/main'}/entries/${one.id}`
+    return `${campaign && getCampaignId(one, $userProfile) ? `/main/campaign/${campaign.id}` : '/main'}/entries/${one.id}`
   }
 
   function putPage(next: Resource) {

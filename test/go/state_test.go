@@ -134,7 +134,7 @@ func TestTheStateImportUpsertsByKeyAndTheExportAnswersIt(t *testing.T) {
 	server := requireStateServer(t, dungeonMaster)
 	key := "state-test-" + uuid.NewString()[:8]
 	campaign := `{"group":"campaign","key":"` + key + `","data":{"dm_id":"` + dungeonMaster.String() + `","name":"State Test","description":"An import","is_active":true,"player_ids":["` + player.String() + `"]}}`
-	character := `{"group":"character","key":"` + key + `-pc","data":{"owner_id":"` + player.String() + `","character":{"info":{"name":"Imported"}},"metadata":{"name":"Imported"},"is_public":false},"refs":{"campaign_id":"` + key + `"}}`
+	character := `{"group":"character","key":"` + key + `-pc","data":{"user_id":"` + player.String() + `","character":{"info":{"name":"Imported"}},"metadata":{"name":"Imported"},"is_public":false},"refs":{"owner_id":"` + key + `"}}`
 	first := server.importLines(campaign, character)
 	if first.Counts[nstate.OutcomeCreated] != 2 {
 		t.Fatalf("first import: %+v", first)
@@ -159,11 +159,11 @@ func TestTheStateImportUpsertsByKeyAndTheExportAnswersIt(t *testing.T) {
 		if line.Key != key+"-pc" {
 			continue
 		}
-		if line.Refs["campaign_id"] != key {
+		if line.Refs["owner_id"] != key {
 			t.Fatalf("the character is not at the table: %v", line.Refs)
 		}
-		if line.Data["owner_id"] != player.String() {
-			t.Fatalf("the character belongs to %v, not the player", line.Data["owner_id"])
+		if line.Data["user_id"] != player.String() {
+			t.Fatalf("the character belongs to %v, not the player", line.Data["user_id"])
 		}
 		return
 	}

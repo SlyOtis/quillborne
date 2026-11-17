@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { deleteVehicle, postVehicle } from '$lib/api'
+  import { deleteVehicle, getCampaignId, postVehicle } from '$lib/api'
   import type { Vehicle, VehicleFields } from '$lib/api/types'
+  import { userProfile } from '$lib/stores/auth.store'
   import { navigate } from 'sly-svelte-location-router'
   import { getDef, getTemplateDrift, getVehiclePackage } from '$lib/rules/vehicle'
   import type { ComponentDef, InstalledComponent, VehicleSystem } from '$lib/rules/vehicle.types'
@@ -138,7 +139,7 @@
     try {
       const made = await postVehicle({
         name: `${vehicle.name} (copy)`,
-        campaign_id: vehicle.campaign_id,
+        owner_id: getCampaignId(vehicle, $userProfile) ?? undefined,
         system: vehicle.system,
         template: vehicle.template,
         template_version: vehicle.template_version,
@@ -162,7 +163,8 @@
     try {
       await deleteVehicle(vehicle.id)
       scuttling = false
-      navigate(vehicle.campaign_id ? `/main/campaign/${vehicle.campaign_id}/vehicles` : '/main/vehicles')
+      const campaignId = getCampaignId(vehicle, $userProfile)
+      navigate(campaignId ? `/main/campaign/${campaignId}/vehicles` : '/main/vehicles')
     } catch (reason) {
       error = reason instanceof Error ? reason.message : String(reason)
     } finally {

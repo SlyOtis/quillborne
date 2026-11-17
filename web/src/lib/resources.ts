@@ -32,8 +32,8 @@ export interface Resource extends Access {
   group_id: string
   /** The resource this one is a sub page of. */
   parent_id: string
-  /** The campaign that keeps it, or none. */
-  campaign_id: string
+  /** The organization that keeps it, a campaign or the one every row no campaign keeps is under. */
+  owner_id: string
   /** When it was written down, which is what orders a chronicle. */
   created_at: string | null
 }
@@ -123,9 +123,9 @@ function getShared(stored: Stored): Resource {
     frame: String(stored.frame ?? ''),
     content: String(stored.body ?? ''),
     parent_id: String(stored.parent_id ?? ''),
-    campaign_id: String(stored.campaign_id ?? ''),
     group: Boolean(stored.group),
     group_id: String(stored.group_id ?? ''),
+    user_id: String(stored.user_id ?? ''),
     owner_id: String(stored.owner_id ?? ''),
     share_campaigns: Array.isArray(stored.share_campaigns) ? (stored.share_campaigns as string[]) : [],
     share_users: Array.isArray(stored.share_users) ? (stored.share_users as string[]) : [],
@@ -146,7 +146,7 @@ function putShared(one: Partial<Resource>): Record<string, unknown> {
     parent_id: one.parent_id ?? '',
     group: one.group ?? false,
     group_id: one.group_id ?? '',
-    owner_id: one.owner_id ?? '',
+    user_id: one.user_id ?? '',
     share_campaigns: one.share_campaigns ?? [],
     share_users: one.share_users ?? []
   }
@@ -792,7 +792,7 @@ export function isResourceKind(value: string | undefined): value is ResourceKind
 }
 
 /** A fresh resource of a kind, owned by whoever is writing it, opened on the kind's example page. */
-export function getBlank(kind: ResourceKind, ownerId: string): Record<string, unknown> & Resource {
+export function getBlank(kind: ResourceKind, userId: string): Record<string, unknown> & Resource {
   return {
     ...(kind === 'items' ? { ...ITEM, grants: getItemGrants({}) } : {}),
     id: '',
@@ -805,10 +805,10 @@ export function getBlank(kind: ResourceKind, ownerId: string): Record<string, un
     frame: '',
     content: RESOURCES[kind].example,
     parent_id: '',
-    campaign_id: '',
     group: false,
     group_id: '',
-    owner_id: ownerId,
+    user_id: userId,
+    owner_id: '',
     share_campaigns: [],
     share_users: [],
     created_at: null
@@ -868,12 +868,12 @@ export async function deleteOne(owner: Owner, kind: ResourceKind, one: Resource)
   await deleteResource(one.id)
 }
 
-/** Removes every resource of every kind the owner holds that ownerId wrote, which a campaign does before it is deleted. */
-export async function deleteResources(owner: Owner, ownerId: string): Promise<number> {
+/** Removes every resource of every kind the owner holds that userId wrote, which a campaign does before it is deleted. */
+export async function deleteResources(owner: Owner, userId: string): Promise<number> {
   const kinds = Object.keys(RESOURCES) as ResourceKind[]
   const rolls = await Promise.all(kinds.map((kind) => getEvery(owner, kind)))
   const held = kinds.flatMap((kind, index) =>
-    rolls[index].filter((one) => one.owner_id === ownerId).map((one) => ({ kind, one }))
+    rolls[index].filter((one) => one.user_id === userId).map((one) => ({ kind, one }))
   )
 
   await Promise.all(held.map((entry) => deleteOne(owner, entry.kind, entry.one)))

@@ -167,7 +167,7 @@ func TestAFileIsReadOnlyByThoseItsClaimsReach(t *testing.T) {
 	ensureProfile(t, dungeonMaster, "testy@quillborne.local")
 	ensureProfile(t, player, "pip@quillborne.local")
 	campaignID := postCampaign(t)
-	status, stored := postStoredFile(t, dungeonMaster, map[string]string{"name": "map.png", "mime_type": "image/png", "campaign_id": campaignID}, "map bytes")
+	status, stored := postStoredFile(t, dungeonMaster, map[string]string{"name": "map.png", "mime_type": "image/png", "owner_id": campaignID}, "map bytes")
 	if status != http.StatusCreated {
 		t.Fatalf("PostAsset: %d", status)
 	}
@@ -231,13 +231,13 @@ func TestAFileIsPostedOnlyWhereTheWriterMayWrite(t *testing.T) {
 	ensureProfile(t, dungeonMaster, "testy@quillborne.local")
 	ensureProfile(t, player, "pip@quillborne.local")
 	campaignID := postCampaign(t)
-	status, first := postStoredFile(t, dungeonMaster, map[string]string{"name": "map.png", "mime_type": "image/png", "campaign_id": campaignID}, "map")
+	status, first := postStoredFile(t, dungeonMaster, map[string]string{"name": "map.png", "mime_type": "image/png", "owner_id": campaignID}, "map")
 	if status != http.StatusCreated {
 		t.Fatalf("PostAsset: %d", status)
 	}
 	folderID := first.ParentID
 
-	if status, _ := postStoredFile(t, player, map[string]string{"name": "song.ogg", "mime_type": "audio/ogg", "campaign_id": campaignID}, "song"); status != http.StatusForbidden {
+	if status, _ := postStoredFile(t, player, map[string]string{"name": "song.ogg", "mime_type": "audio/ogg", "owner_id": campaignID}, "song"); status != http.StatusForbidden {
 		t.Fatalf("a player away from the table posted to the campaign: %d", status)
 	}
 	seatPlayer(t, campaignID)
@@ -247,7 +247,7 @@ func TestAFileIsPostedOnlyWhereTheWriterMayWrite(t *testing.T) {
 	if status, _ := postStoredFile(t, dungeonMaster, map[string]string{"name": "second.png", "mime_type": "image/png", "parent_id": folderID}, "map"); status != http.StatusCreated {
 		t.Fatalf("the dungeon master was refused the campaign folder: %d", status)
 	}
-	status, song := postStoredFile(t, player, map[string]string{"name": "song.ogg", "mime_type": "audio/ogg", "campaign_id": campaignID}, "song")
+	status, song := postStoredFile(t, player, map[string]string{"name": "song.ogg", "mime_type": "audio/ogg", "owner_id": campaignID}, "song")
 	if status != http.StatusCreated || song.ParentID != folderID {
 		t.Fatalf("a seated player was refused a campaign upload: %d", status)
 	}
@@ -272,7 +272,7 @@ func TestAnAttachmentNeedsReadOnTheAssetAndWriteOnTheRow(t *testing.T) {
 	ensureProfile(t, dungeonMaster, "testy@quillborne.local")
 	ensureProfile(t, player, "pip@quillborne.local")
 	campaignID := postCampaign(t)
-	status, stored := postStoredFile(t, dungeonMaster, map[string]string{"name": "map.png", "mime_type": "image/png", "campaign_id": campaignID}, "map")
+	status, stored := postStoredFile(t, dungeonMaster, map[string]string{"name": "map.png", "mime_type": "image/png", "owner_id": campaignID}, "map")
 	if status != http.StatusCreated {
 		t.Fatalf("PostAsset: %d", status)
 	}
@@ -342,7 +342,7 @@ func TestAnAssetMovesOnlyWithinItsOwnTree(t *testing.T) {
 	}
 
 	campaignID := postCampaign(t)
-	status, campaignFile := postStoredFile(t, dungeonMaster, map[string]string{"name": "map.png", "mime_type": "image/png", "campaign_id": campaignID}, "map")
+	status, campaignFile := postStoredFile(t, dungeonMaster, map[string]string{"name": "map.png", "mime_type": "image/png", "owner_id": campaignID}, "map")
 	if status != http.StatusCreated {
 		t.Fatalf("PostAsset: %d", status)
 	}

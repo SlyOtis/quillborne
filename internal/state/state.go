@@ -367,12 +367,12 @@ func getRows[R any](ctx *nstate.Context, query nstate.Query, objectType, table s
 		return err
 	}
 	q := db.Instance().NewSelect().Model(rows).Where("?.sa_deleted_at IS NULL", bun.Ident(table))
-	if campaignID, ok := query.Filter["campaign_id"]; ok {
+	if campaignID, ok := query.Filter["owner_id"]; ok {
 		parsed, err := uuid.Parse(campaignID)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, "campaign_id invalid")
+			return echo.NewHTTPError(http.StatusBadRequest, "owner_id invalid")
 		}
-		q = q.Where("?.campaign_id = ?", bun.Ident(table), parsed)
+		q = q.Where("?.sa_owner_id = ?", bun.Ident(table), parsed)
 	}
 	if userID, ok := query.Filter["user_id"]; ok {
 		parsed, err := uuid.Parse(userID)

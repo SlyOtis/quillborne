@@ -39,7 +39,7 @@
 
   const name = $derived($userDetails?.display_name || $userProfile?.display_name || 'Adventurer');
   const newestCharacter = $derived(getRecentFirst($userCharacters, $userProfile?.preferences?.recent_characters ?? [])[0] ?? null);
-  const heroCampaign = $derived($userCampaigns.find((one) => one.id === newestCharacter?.campaign_id) ?? null);
+  const heroCampaign = $derived($userCampaigns.find((one) => one.id === newestCharacter?.owner_id) ?? null);
 
   onMount(async () => {
     setTheme(getTheme());

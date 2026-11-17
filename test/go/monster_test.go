@@ -33,12 +33,12 @@ func TestAHomebrewMonsterIsReadByItsCreatorAlone(t *testing.T) {
 		t.Fatalf("the creator was refused their monster: %d %+v", status, answer.Error)
 	}
 	var view struct {
-		OwnerID   string         `json:"owner_id"`
+		UserID    string         `json:"user_id"`
 		IsPublic  bool           `json:"is_public"`
 		Challenge float64        `json:"challenge"`
 		Stats     map[string]any `json:"stats"`
 	}
-	if err := json.Unmarshal(answer.Data, &view); err != nil || view.OwnerID != dungeonMaster.String() || view.IsPublic || view.Challenge != 0.25 || view.Stats["ac"] != float64(12) {
+	if err := json.Unmarshal(answer.Data, &view); err != nil || view.UserID != dungeonMaster.String() || view.IsPublic || view.Challenge != 0.25 || view.Stats["ac"] != float64(12) {
 		t.Fatalf("a new monster answered %s", string(answer.Data))
 	}
 	if _, mine := call(t, dungeonMaster, http.MethodGet, "/api/monster", "", nil, handler.GetMonsters); !listed(t, mine, monsterID) {

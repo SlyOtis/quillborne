@@ -41,7 +41,7 @@ type BodyAsset struct {
 	Type        *string         `json:"type"`
 	Icon        *string         `json:"icon"`
 	ParentID    *uuid.UUID      `json:"parent_id"`
-	CampaignID  *uuid.UUID      `json:"campaign_id"`
+	OwnerID     *uuid.UUID      `json:"owner_id"`
 	BannerID    *uuid.UUID      `json:"banner_id"`
 	Properties  json.RawMessage `json:"properties"`
 	Document    json.RawMessage `json:"document"`
@@ -293,7 +293,7 @@ func PostAsset(ctx echo.Context) error {
 		if body.ParentID != nil {
 			asset.ParentID = *body.ParentID
 		}
-		campaignID = body.CampaignID
+		campaignID = body.OwnerID
 		document = body.Document
 	} else {
 		if formFile.Size > limit {
@@ -323,10 +323,10 @@ func PostAsset(ctx echo.Context) error {
 				return respond.Error(ctx, http.StatusBadRequest, "Invalid parent_id, expected UUID")
 			}
 		}
-		if params.Has("campaign_id") {
-			parsed, err := uuid.Parse(params.Get("campaign_id"))
+		if params.Has("owner_id") {
+			parsed, err := uuid.Parse(params.Get("owner_id"))
 			if err != nil {
-				return respond.Error(ctx, http.StatusBadRequest, "Invalid campaign_id, expected UUID")
+				return respond.Error(ctx, http.StatusBadRequest, "Invalid owner_id, expected UUID")
 			}
 			campaignID = &parsed
 		}

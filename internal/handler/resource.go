@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 	"slices"
 	"strings"
 	"time"
@@ -31,7 +32,7 @@ var lockedHeads = map[string][]string{
 }
 
 var resourceColumns = map[string]bool{
-	"id": true, "kind": true, "name": true, "description": true, "owner_id": true, "campaign_id": true, "created_at": true, "updated_at": true,
+	"id": true, "kind": true, "name": true, "description": true, "user_id": true, "owner_id": true, "created_at": true, "updated_at": true,
 	"share_users": true, "share_campaigns": true, "readers": true,
 }
 
@@ -44,16 +45,14 @@ func getResourceRecord(resource db.Resource) map[string]any {
 	_ = json.Unmarshal(resource.Fields, &record)
 	record["id"] = resource.ID
 	record["kind"] = resource.Kind
-	record["owner_id"] = resource.UserID
+	record["user_id"] = resource.UserID
+	record["owner_id"] = resource.OwnerID
 	record["name"] = resource.Name
 	record["description"] = resource.Description
 	record["share_users"] = resource.ShareUsers
 	record["share_campaigns"] = resource.ShareCampaigns
 	record["created_at"] = resource.CreatedAt
 	record["updated_at"] = resource.UpdatedAt
-	if resource.CampaignID != nil {
-		record["campaign_id"] = *resource.CampaignID
-	}
 	if resource.ParentID != resource.RootID {
 		record["parent_id"] = resource.ParentID
 	} else {
@@ -150,12 +149,12 @@ func GetResources(ctx echo.Context) error {
 	rctx := ctx.Request().Context()
 	resources := make([]db.Resource, 0)
 	q := db.Instance().NewSelect().Model(&resources).Where("kind = ?", kind).Where("resource.sa_parent_id <> resource.id")
-	if raw := ctx.QueryParam("campaign_id"); raw != "" {
-		campaignID, err := uuid.Parse(raw)
+	if raw := ctx.QueryParam("owner_id"); raw != "" {
+		ownerID, err := uuid.Parse(raw)
 		if err != nil {
-			return respond.Error(ctx, http.StatusBadRequest, "Invalid campaign_id, expected UUID")
+			return respond.Error(ctx, http.StatusBadRequest, "Invalid owner_id, expected UUID")
 		}
-		if _, err := sdb.Instance().MutationAccess(rctx, actorID, campaignID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_READ); err != nil {
+		if _, err := sdb.Instance().MutationAccess(rctx, actorID, ownerID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_READ); err != nil {
 			if errors.Is(err, sdb.ErrNotFound) {
 				return respond.Error(ctx, http.StatusNotFound, "Not found")
 			}
@@ -165,7 +164,7 @@ func GetResources(ctx echo.Context) error {
 			ctx.Logger().Errorf("GetResources: %v", err)
 			return respond.ErrorInternal(ctx)
 		}
-		q = q.Where("campaign_id = ?", campaignID)
+		q = q.Where("resource.sa_owner_id = ?", ownerID)
 	} else {
 		userID := actorID
 		if raw := ctx.QueryParam("user_id"); raw != "" {
@@ -175,7 +174,12 @@ func GetResources(ctx echo.Context) error {
 			}
 			userID = parsed
 		}
-		q = q.Where("campaign_id IS NULL").Where("user_id = ?", userID)
+		home, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID"))
+		if err != nil {
+			ctx.Logger().Error(errNoOwner)
+			return respond.ErrorInternal(ctx)
+		}
+		q = q.Where("resource.sa_owner_id = ?", home).Where("user_id = ?", userID)
 	}
 	q = sdb.ObjectWhere(q, actorID, db.OBJECT_TYPE_RESOURCE, sdb.ACCESS_READ, nil, nil, 0)
 	if err := q.OrderExpr("resource.name").Scan(rctx); err != nil {
@@ -219,7 +223,7 @@ func getReachedResources(ctx echo.Context, actorID uuid.UUID, kind string) error
 func getLockedResources(ctx context.Context, actorID uuid.UUID, kind string, read []uuid.UUID) ([]db.Resource, error) {
 	tables := sdb.ObjectWhere(db.Instance().NewSelect().Model((*db.Campaign)(nil)).Column("id"), actorID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_READ, nil, nil, 0)
 	locked := make([]db.Resource, 0)
-	q := db.Instance().NewSelect().Model(&locked).Where("kind = ?", kind).Where("resource.sa_parent_id <> resource.id").Where("campaign_id IN (?)", tables).Where("COALESCE((fields->>'group')::boolean, false) = false")
+	q := db.Instance().NewSelect().Model(&locked).Where("kind = ?", kind).Where("resource.sa_parent_id <> resource.id").Where("resource.sa_owner_id IN (?)", tables).Where("COALESCE((fields->>'group')::boolean, false) = false")
 	if len(read) > 0 {
 		q = q.Where("resource.id NOT IN (?)", bun.In(read))
 	}
@@ -229,7 +233,7 @@ func getLockedResources(ctx context.Context, actorID uuid.UUID, kind string, rea
 func getLockedRecord(resource db.Resource, head []string) map[string]any {
 	fields := map[string]any{}
 	_ = json.Unmarshal(resource.Fields, &fields)
-	record := map[string]any{"id": resource.ID, "kind": resource.Kind, "name": resource.Name, "campaign_id": resource.CampaignID, "locked": true}
+	record := map[string]any{"id": resource.ID, "kind": resource.Kind, "name": resource.Name, "owner_id": resource.OwnerID, "locked": true}
 	for _, key := range head {
 		if value, ok := fields[key]; ok {
 			record[key] = value
@@ -288,10 +292,10 @@ func PostResource(ctx echo.Context) error {
 	rctx := ctx.Request().Context()
 	resource := db.Resource{ID: uuid.New(), Kind: kind, UserID: actorID, Fields: json.RawMessage(`{}`)}
 	var ownerID *uuid.UUID
-	if raw, ok := body["campaign_id"].(string); ok && raw != "" {
+	if raw, ok := body["owner_id"].(string); ok && raw != "" {
 		campaignID, err := uuid.Parse(raw)
 		if err != nil {
-			return respond.Error(ctx, http.StatusBadRequest, "Invalid campaign_id, expected UUID")
+			return respond.Error(ctx, http.StatusBadRequest, "Invalid owner_id, expected UUID")
 		}
 		if _, err := sdb.Instance().MutationAccess(rctx, actorID, campaignID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_READ); err != nil {
 			if errors.Is(err, sdb.ErrNotFound) {
@@ -312,7 +316,6 @@ func PostResource(ctx echo.Context) error {
 			return respond.ErrorInternal(ctx)
 		}
 		ownerID = &campaign.ID
-		resource.CampaignID = &campaignID
 	}
 	if raw, ok := body["parent_id"].(string); ok && raw != "" {
 		parentID, err := uuid.Parse(raw)
@@ -350,7 +353,7 @@ func PostResource(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	if resource.ParentID == uuid.Nil {
-		if resource.RootID, err = putResourceRoot(rctx, w, resource.UserID, resource.CampaignID); err != nil {
+		if resource.RootID, err = putResourceRoot(rctx, w, resource.UserID); err != nil {
 			ctx.Logger().Errorf("PostResource: %v", err)
 			return respond.ErrorInternal(ctx)
 		}
@@ -424,7 +427,7 @@ func PutResource(ctx echo.Context) error {
 			return respond.Error(ctx, http.StatusBadRequest, "Invalid parent_id, expected UUID")
 		}
 		if text == "" {
-			if resource.ParentID != getResourceRootID(resource.UserID, resource.CampaignID) {
+			if resource.ParentID != getResourceRootID(resource.UserID, resource.OwnerID) {
 				if w, err = postWriter(rctx, actorID, &resource.OwnerID); err != nil {
 					if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) || errors.Is(err, errNoOwner) {
 						return respond.Error(ctx, http.StatusForbidden, "Forbidden")
@@ -432,7 +435,7 @@ func PutResource(ctx echo.Context) error {
 					ctx.Logger().Errorf("PutResource: %v", err)
 					return respond.ErrorInternal(ctx)
 				}
-				rootID, err := putResourceRoot(rctx, w, resource.UserID, resource.CampaignID)
+				rootID, err := putResourceRoot(rctx, w, resource.UserID)
 				if err != nil {
 					ctx.Logger().Errorf("PutResource: %v", err)
 					return respond.ErrorInternal(ctx)
@@ -704,21 +707,21 @@ func DeleteResourceUpdates(ctx echo.Context) error {
 	return respond.NoContent(ctx, http.StatusOK)
 }
 
-func getResourceRootID(userID uuid.UUID, campaignID *uuid.UUID) uuid.UUID {
+func getResourceRootID(userID uuid.UUID, ownerID uuid.UUID) uuid.UUID {
 	key := userID
-	if campaignID != nil {
-		key = *campaignID
+	if home, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID")); err == nil && ownerID != home {
+		key = ownerID
 	}
 	return uuid.UUID(md5.Sum([]byte("quillborne:resource-root:" + key.String())))
 }
 
-func putResourceRoot(ctx context.Context, w *Writer, userID uuid.UUID, campaignID *uuid.UUID) (uuid.UUID, error) {
-	root := db.Resource{ID: getResourceRootID(userID, campaignID)}
+func putResourceRoot(ctx context.Context, w *Writer, userID uuid.UUID) (uuid.UUID, error) {
+	root := db.Resource{ID: getResourceRootID(userID, w.OwnerID)}
 	err := db.Instance().NewSelect().Model(&root).Column("id").WherePK().Scan(ctx)
 	if err == nil || !errors.Is(err, sql.ErrNoRows) {
 		return root.ID, err
 	}
-	root = db.Resource{ID: root.ID, Kind: "entries", UserID: userID, CampaignID: campaignID, Fields: json.RawMessage(`{"group":true}`), OwnerID: w.OwnerID, ParentID: root.ID, RootID: root.ID, CreatedBy: w.Access.UserClaimID}
+	root = db.Resource{ID: root.ID, Kind: "entries", UserID: userID, Fields: json.RawMessage(`{"group":true}`), OwnerID: w.OwnerID, ParentID: root.ID, RootID: root.ID, CreatedBy: w.Access.UserClaimID}
 	putShareBody(&root.Share, BodyShare{})
 	err = db.Instance().RunInTx(ctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		if _, err := tx.NewInsert().Model(&root).ExcludeColumn("sa_created_at", "sa_updated_at", "sa_deleted_at", "reader_claim_id").Exec(tctx); err != nil {
@@ -730,7 +733,7 @@ func putResourceRoot(ctx context.Context, w *Writer, userID uuid.UUID, campaignI
 		return postOwnerBinding(tctx, tx, w, db.OBJECT_TYPE_RESOURCE, root.ID, sdb.ACCESS_MEMBER)
 	})
 	if err != nil && strings.Contains(err.Error(), "resource_pkey") {
-		return putResourceRoot(ctx, w, userID, campaignID)
+		return putResourceRoot(ctx, w, userID)
 	}
 	return root.ID, err
 }

@@ -98,7 +98,7 @@
         ])
         campaigns = foundCampaigns
         held = kinds.flatMap((entry, index) =>
-          rolls[index].filter((found) => found.owner_id === $user?.user_id).map((found) => ({ kind: entry, one: found }))
+          rolls[index].filter((found) => found.user_id === $user?.user_id).map((found) => ({ kind: entry, one: found }))
         )
 
         const uids = new Set<string>([

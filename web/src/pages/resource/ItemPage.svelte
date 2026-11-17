@@ -18,7 +18,7 @@
   const steps = $derived($resolvedRoute.path.split('/').filter(Boolean).slice(1))
   const recordId = $derived(steps[0] === 'campaign' ? steps[3] : steps[1])
   const fixed = $derived(
-    room?.find((one) => one.id === recordId && one.owner_id !== $user?.user_id) as (Record<string, unknown> & Item) | undefined
+    room?.find((one) => one.id === recordId && one.user_id !== $user?.user_id) as (Record<string, unknown> & Item) | undefined
   )
 
   onMount(() => {

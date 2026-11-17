@@ -24,7 +24,7 @@ func getCatalogRecord(entry db.CatalogEntry) map[string]any {
 	record["name"] = entry.Name
 	record["description"] = entry.Description
 	record["digest"] = entry.Digest
-	record["owner_id"] = entry.UserID
+	record["user_id"] = entry.UserID
 	return record
 }
 
@@ -99,7 +99,7 @@ func PutCatalogEntry(ctx echo.Context) error {
 	name, _ := body["name"].(string)
 	description, _ := body["description"].(string)
 	digest, _ := body["digest"].(string)
-	for _, key := range []string{"id", "name", "description", "digest", "owner_id", "created_at"} {
+	for _, key := range []string{"id", "name", "description", "digest", "user_id", "created_at"} {
 		delete(body, key)
 	}
 	encoded, err := json.Marshal(body)

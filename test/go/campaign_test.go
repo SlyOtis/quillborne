@@ -342,7 +342,7 @@ func TestACampaignIsAnOrganizationThatOwnsItsRows(t *testing.T) {
 		t.Fatalf("PostMap: %d %+v", status, made.Error)
 	}
 	mapID := id(t, made)
-	pageID := postResource(t, player, `{"kind":"entries","name":"Table note","body":"{}","campaign_id":"`+campaignID+`"}`)
+	pageID := postResource(t, player, `{"kind":"entries","name":"Table note","body":"{}","owner_id":"`+campaignID+`"}`)
 	ownID := postResource(t, player, `{"kind":"entries","name":"Own note","body":"{}"}`)
 	sheetID := postCharacter(t, player, "Joiner")
 	postCampaignCharacter(t, player, campaignID, sheetID)
@@ -366,7 +366,7 @@ func TestACampaignIsAnOrganizationThatOwnsItsRows(t *testing.T) {
 	if owner("resource", ownID) != home {
 		t.Fatalf("a player's own page left the home organization")
 	}
-	keptID := postResource(t, player, `{"kind":"items","name":"Kept blade","body":"{}","campaign_id":"`+campaignID+`"}`)
+	keptID := postResource(t, player, `{"kind":"items","name":"Kept blade","body":"{}","owner_id":"`+campaignID+`"}`)
 	if owner("resource", keptID) != organization.ID {
 		t.Fatalf("a kept item is not owned by the campaign's organization")
 	}

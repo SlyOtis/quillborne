@@ -26,8 +26,8 @@ var markerGroups = map[string]string{
 }
 
 type CampaignMapData struct {
-	CampaignID  string          `json:"campaign_id"`
 	OwnerID     string          `json:"owner_id"`
+	UserID      string          `json:"user_id"`
 	Title       string          `json:"title"`
 	ImageURL    string          `json:"image_url,omitempty"`
 	Layers      json.RawMessage `json:"layers,omitempty"`
@@ -40,8 +40,8 @@ type CampaignMapData struct {
 }
 
 type EncounterData struct {
-	CampaignID     string          `json:"campaign_id"`
 	OwnerID        string          `json:"owner_id"`
+	UserID         string          `json:"user_id"`
 	Title          string          `json:"title"`
 	Combatants     json.RawMessage `json:"combatants,omitempty"`
 	Round          int             `json:"round"`
@@ -52,8 +52,8 @@ type EncounterData struct {
 }
 
 type SongData struct {
-	CampaignID     string   `json:"campaign_id"`
 	OwnerID        string   `json:"owner_id"`
+	UserID         string   `json:"user_id"`
 	Title          string   `json:"title"`
 	Address        string   `json:"address"`
 	Duration       float64  `json:"duration"`
@@ -62,7 +62,7 @@ type SongData struct {
 }
 
 type ChatEntryData struct {
-	CampaignID string          `json:"campaign_id"`
+	OwnerID    string          `json:"owner_id"`
 	AuthorID   string          `json:"author_id"`
 	AuthorName string          `json:"author_name"`
 	Kind       string          `json:"kind"`
@@ -113,7 +113,7 @@ func importPart(ctx *nstate.Context, group string, owner *uuid.UUID, campaignID 
 		return "", err
 	}
 	if _, err := uuid.Parse(campaignID); err != nil {
-		return "", echo.NewHTTPError(http.StatusBadRequest, "campaign_id invalid")
+		return "", echo.NewHTTPError(http.StatusBadRequest, "owner_id invalid")
 	}
 	target, method := "/api/campaign/"+campaignID+"/"+part, http.MethodPost
 	if record != "" {
@@ -151,8 +151,8 @@ func getCampaignMapGroup() nstate.Group[CampaignMapData] {
 	return nstate.Group[CampaignMapData]{
 		Name: GroupCampaignMap,
 		Schema: getSchema(map[string]any{
-			"campaign_id":   getRef(GroupCampaign),
-			"owner_id":      getOwner("The dungeon master who drew it."),
+			"owner_id":      getRef(GroupCampaign),
+			"user_id":       getOwner("The dungeon master who drew it."),
 			"title":         getProperty("string", "The map title."),
 			"image_url":     getProperty("string", "The stored address of the map picture."),
 			"layers":        getJSON("The image layers drawn over the map."),
@@ -162,14 +162,14 @@ func getCampaignMapGroup() nstate.Group[CampaignMapData] {
 			"max_zoom":      getProperty("number", "The largest zoom the map allows."),
 			"plan":          getJSON("The drawn plan as a nimap document, shown in 3D."),
 			"parent_map_id": getRef(GroupCampaignMap),
-		}, "campaign_id", "owner_id", "title"),
+		}, "owner_id", "user_id", "title"),
 		DependsOn: []string{GroupCampaign, GroupCharacter, GroupResource},
-		Refs:      map[string]string{"campaign_id": GroupCampaign, "parent_map_id": GroupCampaignMap},
-		Filters:   []string{"campaign_id"},
+		Refs:      map[string]string{"owner_id": GroupCampaign, "parent_map_id": GroupCampaignMap},
+		Filters:   []string{"owner_id"},
 		Export:    exportCampaignMaps,
 		Import:    importCampaignMap,
 		Delete: func(ctx *nstate.Context, id string) error {
-			return deletePart(ctx, id, "map", func(row *db.CampaignMap) uuid.UUID { return row.CampaignID })
+			return deletePart(ctx, id, "map", func(row *db.CampaignMap) uuid.UUID { return row.OwnerID })
 		},
 	}
 }
@@ -181,16 +181,16 @@ func exportCampaignMaps(ctx *nstate.Context, query nstate.Query) ([]nstate.Recor
 	}
 	return getRecords(ctx, GroupCampaignMap, query, rows, func(row db.CampaignMap) uuid.UUID { return row.ID }, func(row db.CampaignMap) CampaignMapData {
 		data := CampaignMapData{
-			CampaignID: row.CampaignID.String(),
-			OwnerID:    row.UserID.String(),
-			Title:      row.Title,
-			ImageURL:   row.ImageURL,
-			Layers:     getRaw(row.Layers),
-			Markers:    getRaw(row.Markers),
-			IsVisible:  row.IsVisible,
-			MinZoom:    row.MinZoom,
-			MaxZoom:    row.MaxZoom,
-			Plan:       getRaw(row.Plan),
+			OwnerID:   row.OwnerID.String(),
+			UserID:    row.UserID.String(),
+			Title:     row.Title,
+			ImageURL:  row.ImageURL,
+			Layers:    getRaw(row.Layers),
+			Markers:   getRaw(row.Markers),
+			IsVisible: row.IsVisible,
+			MinZoom:   row.MinZoom,
+			MaxZoom:   row.MaxZoom,
+			Plan:      getRaw(row.Plan),
 		}
 		if row.ParentID != row.ID && row.ParentID != uuid.Nil {
 			data.ParentMapID = getText(&row.ParentID)
@@ -200,7 +200,7 @@ func exportCampaignMaps(ctx *nstate.Context, query nstate.Query) ([]nstate.Recor
 }
 
 func importCampaignMap(ctx *nstate.Context, record nstate.Record[CampaignMapData]) (string, error) {
-	owner, err := getOptionalID(&record.Data.OwnerID, "owner_id")
+	owner, err := getOptionalID(&record.Data.UserID, "user_id")
 	if err != nil {
 		return "", err
 	}
@@ -230,15 +230,15 @@ func importCampaignMap(ctx *nstate.Context, record nstate.Record[CampaignMapData
 	if record.Data.ParentMapID != nil {
 		body["parent_map_id"] = *record.Data.ParentMapID
 	}
-	return importPart(ctx, GroupCampaignMap, owner, record.Data.CampaignID, record.ID, record.Key, "map", body)
+	return importPart(ctx, GroupCampaignMap, owner, record.Data.OwnerID, record.ID, record.Key, "map", body)
 }
 
 func getEncounterGroup() nstate.Group[EncounterData] {
 	return nstate.Group[EncounterData]{
 		Name: GroupEncounter,
 		Schema: getSchema(map[string]any{
-			"campaign_id":     getRef(GroupCampaign),
-			"owner_id":        getOwner("The player who set it up."),
+			"owner_id":        getRef(GroupCampaign),
+			"user_id":         getOwner("The player who set it up."),
 			"title":           getProperty("string", "The encounter title."),
 			"combatants":      getJSON("Every combatant with its kind, initiative, hit points and conditions; character ids are those of the export and are mapped on import."),
 			"round":           getProperty("integer", "The current round."),
@@ -246,14 +246,14 @@ func getEncounterGroup() nstate.Group[EncounterData] {
 			"is_active":       getProperty("boolean", "Whether the encounter is running."),
 			"share_users":     getList("The players it is shared with by name."),
 			"share_campaigns": getList("The campaigns whose tables read it."),
-		}, "campaign_id", "owner_id", "title"),
+		}, "owner_id", "user_id", "title"),
 		DependsOn: []string{GroupCampaign, GroupCharacter},
-		Refs:      map[string]string{"campaign_id": GroupCampaign},
-		Filters:   []string{"campaign_id"},
+		Refs:      map[string]string{"owner_id": GroupCampaign},
+		Filters:   []string{"owner_id"},
 		Export:    exportEncounters,
 		Import:    importEncounter,
 		Delete: func(ctx *nstate.Context, id string) error {
-			return deletePart(ctx, id, "encounter", func(row *db.Encounter) uuid.UUID { return row.CampaignID })
+			return deletePart(ctx, id, "encounter", func(row *db.Encounter) uuid.UUID { return row.OwnerID })
 		},
 	}
 }
@@ -265,8 +265,8 @@ func exportEncounters(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[
 	}
 	return getRecords(ctx, GroupEncounter, query, rows, func(row db.Encounter) uuid.UUID { return row.ID }, func(row db.Encounter) EncounterData {
 		return EncounterData{
-			CampaignID:     row.CampaignID.String(),
-			OwnerID:        row.UserID.String(),
+			OwnerID:        row.OwnerID.String(),
+			UserID:         row.UserID.String(),
 			Title:          row.Title,
 			Combatants:     getRaw(row.Combatants),
 			Round:          row.Round,
@@ -279,7 +279,7 @@ func exportEncounters(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[
 }
 
 func importEncounter(ctx *nstate.Context, record nstate.Record[EncounterData]) (string, error) {
-	owner, err := getOptionalID(&record.Data.OwnerID, "owner_id")
+	owner, err := getOptionalID(&record.Data.UserID, "user_id")
 	if err != nil {
 		return "", err
 	}
@@ -298,28 +298,28 @@ func importEncounter(ctx *nstate.Context, record nstate.Record[EncounterData]) (
 	if combatants != nil {
 		body["combatants"] = combatants
 	}
-	return importPart(ctx, GroupEncounter, owner, record.Data.CampaignID, record.ID, record.Key, "encounter", body)
+	return importPart(ctx, GroupEncounter, owner, record.Data.OwnerID, record.ID, record.Key, "encounter", body)
 }
 
 func getSongGroup() nstate.Group[SongData] {
 	return nstate.Group[SongData]{
 		Name: GroupSong,
 		Schema: getSchema(map[string]any{
-			"campaign_id":     getRef(GroupCampaign),
-			"owner_id":        getOwner("The player who added it."),
+			"owner_id":        getRef(GroupCampaign),
+			"user_id":         getOwner("The player who added it."),
 			"title":           getProperty("string", "The song title."),
 			"address":         getProperty("string", "The stored address of the audio file."),
 			"duration":        getProperty("number", "The length in seconds."),
 			"share_users":     getList("The players it is shared with by name."),
 			"share_campaigns": getList("The campaigns whose tables hear it."),
-		}, "campaign_id", "owner_id", "title"),
+		}, "owner_id", "user_id", "title"),
 		DependsOn: []string{GroupCampaign},
-		Refs:      map[string]string{"campaign_id": GroupCampaign},
-		Filters:   []string{"campaign_id"},
+		Refs:      map[string]string{"owner_id": GroupCampaign},
+		Filters:   []string{"owner_id"},
 		Export:    exportSongs,
 		Import:    importSong,
 		Delete: func(ctx *nstate.Context, id string) error {
-			return deletePart(ctx, id, "song", func(row *db.Song) uuid.UUID { return row.CampaignID })
+			return deletePart(ctx, id, "song", func(row *db.Song) uuid.UUID { return row.OwnerID })
 		},
 	}
 }
@@ -331,8 +331,8 @@ func exportSongs(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[SongD
 	}
 	return getRecords(ctx, GroupSong, query, rows, func(row db.Song) uuid.UUID { return row.ID }, func(row db.Song) SongData {
 		return SongData{
-			CampaignID:     row.CampaignID.String(),
-			OwnerID:        row.UserID.String(),
+			OwnerID:        row.OwnerID.String(),
+			UserID:         row.UserID.String(),
 			Title:          row.Title,
 			Address:        row.Address,
 			Duration:       row.Duration,
@@ -343,7 +343,7 @@ func exportSongs(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[SongD
 }
 
 func importSong(ctx *nstate.Context, record nstate.Record[SongData]) (string, error) {
-	owner, err := getOptionalID(&record.Data.OwnerID, "owner_id")
+	owner, err := getOptionalID(&record.Data.UserID, "user_id")
 	if err != nil {
 		return "", err
 	}
@@ -354,14 +354,14 @@ func importSong(ctx *nstate.Context, record nstate.Record[SongData]) (string, er
 	body["title"] = record.Data.Title
 	body["address"] = record.Data.Address
 	body["duration"] = record.Data.Duration
-	return importPart(ctx, GroupSong, owner, record.Data.CampaignID, record.ID, record.Key, "song", body)
+	return importPart(ctx, GroupSong, owner, record.Data.OwnerID, record.ID, record.Key, "song", body)
 }
 
 func getChatEntryGroup() nstate.Group[ChatEntryData] {
 	return nstate.Group[ChatEntryData]{
 		Name: GroupChatEntry,
 		Schema: getSchema(map[string]any{
-			"campaign_id": getRef(GroupCampaign),
+			"owner_id":    getRef(GroupCampaign),
 			"author_id":   getOwner("The user id of the author."),
 			"author_name": getProperty("string", "The name the author posted under."),
 			"kind":        getProperty("string", "message or roll."),
@@ -374,14 +374,14 @@ func getChatEntryGroup() nstate.Group[ChatEntryData] {
 			"dice":        getJSON("Each die as it landed."),
 			"roll":        getProperty("number", "The sum of the dice."),
 			"total":       getProperty("number", "The roll with its modifiers."),
-		}, "campaign_id", "author_id", "kind"),
+		}, "owner_id", "author_id", "kind"),
 		DependsOn: []string{GroupCampaign},
-		Refs:      map[string]string{"campaign_id": GroupCampaign},
-		Filters:   []string{"campaign_id"},
+		Refs:      map[string]string{"owner_id": GroupCampaign},
+		Filters:   []string{"owner_id"},
 		Export:    exportChatEntries,
 		Import:    importChatEntry,
 		Delete: func(ctx *nstate.Context, id string) error {
-			return deletePart(ctx, id, "chat", func(row *db.ChatEntry) uuid.UUID { return row.CampaignID })
+			return deletePart(ctx, id, "chat", func(row *db.ChatEntry) uuid.UUID { return row.OwnerID })
 		},
 	}
 }
@@ -393,7 +393,7 @@ func exportChatEntries(ctx *nstate.Context, query nstate.Query) ([]nstate.Record
 	}
 	return getRecords(ctx, GroupChatEntry, query, rows, func(row db.ChatEntry) uuid.UUID { return row.ID }, func(row db.ChatEntry) ChatEntryData {
 		return ChatEntryData{
-			CampaignID: row.CampaignID.String(),
+			OwnerID:    row.OwnerID.String(),
 			AuthorID:   row.AuthorID.String(),
 			AuthorName: row.AuthorName,
 			Kind:       row.Kind,
@@ -430,5 +430,5 @@ func importChatEntry(ctx *nstate.Context, record nstate.Record[ChatEntryData]) (
 	if record.Data.Dice != nil {
 		body["dice"] = record.Data.Dice
 	}
-	return importPart(ctx, GroupChatEntry, author, record.Data.CampaignID, record.ID, record.Key, "chat", body)
+	return importPart(ctx, GroupChatEntry, author, record.Data.OwnerID, record.ID, record.Key, "chat", body)
 }

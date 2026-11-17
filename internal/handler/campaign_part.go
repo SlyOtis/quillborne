@@ -110,7 +110,7 @@ func GetMaps(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	maps := make([]db.CampaignMap, 0)
-	q := db.Instance().NewSelect().Model(&maps).Where("campaign_id = ?", campaign.ID)
+	q := db.Instance().NewSelect().Model(&maps).Where("campaign_map.sa_owner_id = ?", campaign.ID)
 	q = sdb.ObjectWhere(q, actorID, db.OBJECT_TYPE_CAMPAIGN_MAP, sdb.ACCESS_READ, nil, nil, 0)
 	if err := q.OrderExpr("campaign_map.sa_created_at").Scan(ctx.Request().Context()); err != nil {
 		ctx.Logger().Errorf("GetMaps: %v", err)
@@ -165,21 +165,20 @@ func PostMap(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	item := db.CampaignMap{
-		ID:         uuid.New(),
-		CampaignID: campaign.ID,
-		UserID:     actorID,
-		Layers:     json.RawMessage(`[]`),
-		Markers:    json.RawMessage(`[]`),
-		MinZoom:    1,
-		MaxZoom:    8,
-		OwnerID:    w.OwnerID,
-		CreatedBy:  w.Access.UserClaimID,
+		ID:        uuid.New(),
+		UserID:    actorID,
+		Layers:    json.RawMessage(`[]`),
+		Markers:   json.RawMessage(`[]`),
+		MinZoom:   1,
+		MaxZoom:   8,
+		OwnerID:   w.OwnerID,
+		CreatedBy: w.Access.UserClaimID,
 	}
 	item.ParentID = item.ID
 	item.RootID = item.ID
 	if body.ParentMapID != nil {
 		parent := db.CampaignMap{ID: *body.ParentMapID}
-		if err := db.Instance().NewSelect().Model(&parent).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
+		if err := db.Instance().NewSelect().Model(&parent).WherePK().Where("sa_owner_id = ?", campaign.ID).Scan(rctx); err != nil {
 			return respond.Error(ctx, http.StatusBadRequest, "parent_map_id is not a map of this campaign")
 		}
 		item.ParentID = parent.ID
@@ -284,7 +283,7 @@ func PutMap(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	item := db.CampaignMap{ID: mapID}
-	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
+	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("sa_owner_id = ?", campaign.ID).Scan(rctx); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
@@ -385,7 +384,7 @@ func DeleteMap(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	item := db.CampaignMap{ID: mapID}
-	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
+	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("sa_owner_id = ?", campaign.ID).Scan(rctx); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
@@ -432,7 +431,7 @@ func GetEncounters(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	encounters := make([]db.Encounter, 0)
-	q := db.Instance().NewSelect().Model(&encounters).Where("campaign_id = ?", campaign.ID)
+	q := db.Instance().NewSelect().Model(&encounters).Where("encounter.sa_owner_id = ?", campaign.ID)
 	q = sdb.ObjectWhere(q, actorID, db.OBJECT_TYPE_ENCOUNTER, sdb.ACCESS_READ, nil, nil, 0)
 	if err := q.OrderExpr("encounter.sa_created_at DESC").Scan(ctx.Request().Context()); err != nil {
 		ctx.Logger().Errorf("GetEncounters: %v", err)
@@ -481,7 +480,6 @@ func PostEncounter(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	item := db.Encounter{
-		CampaignID: campaign.ID,
 		UserID:     actorID,
 		Title:      "Untitled encounter",
 		Combatants: json.RawMessage(`[]`),
@@ -581,7 +579,7 @@ func PutEncounter(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	item := db.Encounter{ID: encounterID}
-	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
+	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("sa_owner_id = ?", campaign.ID).Scan(rctx); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
@@ -693,7 +691,7 @@ func DeleteEncounter(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	item := db.Encounter{ID: encounterID}
-	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
+	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("sa_owner_id = ?", campaign.ID).Scan(rctx); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
@@ -740,7 +738,7 @@ func GetSongs(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	songs := make([]db.Song, 0)
-	q := db.Instance().NewSelect().Model(&songs).Where("campaign_id = ?", campaign.ID)
+	q := db.Instance().NewSelect().Model(&songs).Where("song.sa_owner_id = ?", campaign.ID)
 	q = sdb.ObjectWhere(q, actorID, db.OBJECT_TYPE_SONG, sdb.ACCESS_READ, nil, nil, 0)
 	if err := q.OrderExpr("song.title").Scan(ctx.Request().Context()); err != nil {
 		ctx.Logger().Errorf("GetSongs: %v", err)
@@ -788,7 +786,7 @@ func PostSong(ctx echo.Context) error {
 		ctx.Logger().Errorf("PostSong: %v", err)
 		return respond.ErrorInternal(ctx)
 	}
-	item := db.Song{CampaignID: campaign.ID, UserID: actorID, OwnerID: w.OwnerID, CreatedBy: w.Access.UserClaimID}
+	item := db.Song{UserID: actorID, OwnerID: w.OwnerID, CreatedBy: w.Access.UserClaimID}
 	if body.Title != nil {
 		item.Title = *body.Title
 	}
@@ -865,7 +863,7 @@ func PutSong(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	item := db.Song{ID: songID}
-	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
+	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("sa_owner_id = ?", campaign.ID).Scan(rctx); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
@@ -959,7 +957,7 @@ func DeleteSong(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	item := db.Song{ID: songID}
-	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
+	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("sa_owner_id = ?", campaign.ID).Scan(rctx); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
@@ -1006,7 +1004,7 @@ func GetChatEntries(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	entries := make([]db.ChatEntry, 0)
-	q := db.Instance().NewSelect().Model(&entries).Where("campaign_id = ?", campaign.ID)
+	q := db.Instance().NewSelect().Model(&entries).Where("chat_entry.sa_owner_id = ?", campaign.ID)
 	q = sdb.ObjectWhere(q, actorID, db.OBJECT_TYPE_CHAT_ENTRY, sdb.ACCESS_READ, nil, nil, 0)
 	if err := q.OrderExpr("chat_entry.sa_created_at").Scan(ctx.Request().Context()); err != nil {
 		ctx.Logger().Errorf("GetChatEntries: %v", err)
@@ -1054,7 +1052,7 @@ func PostChatEntry(ctx echo.Context) error {
 		ctx.Logger().Errorf("PostChatEntry: %v", err)
 		return respond.ErrorInternal(ctx)
 	}
-	entry := db.ChatEntry{CampaignID: campaign.ID, AuthorID: actorID, Kind: "message", Dice: json.RawMessage(`[]`), OwnerID: w.OwnerID, CreatedBy: w.Access.UserClaimID}
+	entry := db.ChatEntry{AuthorID: actorID, Kind: "message", Dice: json.RawMessage(`[]`), OwnerID: w.OwnerID, CreatedBy: w.Access.UserClaimID}
 	if body.AuthorName != nil {
 		entry.AuthorName = *body.AuthorName
 	}
@@ -1157,7 +1155,7 @@ func PutChatEntry(ctx echo.Context) error {
 	}
 	rctx := ctx.Request().Context()
 	entry := db.ChatEntry{ID: entryID}
-	if err := db.Instance().NewSelect().Model(&entry).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
+	if err := db.Instance().NewSelect().Model(&entry).WherePK().Where("sa_owner_id = ?", campaign.ID).Scan(rctx); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
@@ -1231,7 +1229,7 @@ func DeleteChatEntry(ctx echo.Context) error {
 	}
 	rctx := ctx.Request().Context()
 	entry := db.ChatEntry{ID: entryID}
-	if err := db.Instance().NewSelect().Model(&entry).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
+	if err := db.Instance().NewSelect().Model(&entry).WherePK().Where("sa_owner_id = ?", campaign.ID).Scan(rctx); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
