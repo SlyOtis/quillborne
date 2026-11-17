@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/SlyOtis/quillborne/internal/broker"
@@ -44,9 +45,10 @@ type BodyEncounter struct {
 }
 
 type BodySong struct {
-	Title    *string  `json:"title"`
-	Address  *string  `json:"address"`
-	Duration *float64 `json:"duration"`
+	Title    *string    `json:"title"`
+	OwnerID  *uuid.UUID `json:"owner_id"`
+	Address  *string    `json:"address"`
+	Duration *float64   `json:"duration"`
 	BodyShare
 }
 
@@ -716,31 +718,42 @@ func GetSongs(ctx echo.Context) error {
 	if !ok {
 		return respond.Error(ctx, http.StatusUnauthorized, "Unauthorized")
 	}
-	campaign := &db.Campaign{}
-	if campaign.ID, ok = getUUID(ctx.Param("id")); !ok {
-		return respond.Error(ctx, http.StatusBadRequest, "Invalid id, expected UUID")
-	}
-	if _, err := sdb.Instance().MutationAccess(ctx.Request().Context(), actorID, campaign.ID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_READ); err != nil {
-		if errors.Is(err, sdb.ErrNotFound) {
-			return respond.Error(ctx, http.StatusNotFound, "Not found")
-		}
-		if errors.Is(err, sdb.ErrNoAccess) {
-			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
-		}
-		ctx.Logger().Errorf("GetSongs: %v", err)
-		return respond.ErrorInternal(ctx)
-	}
-	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return respond.Error(ctx, http.StatusNotFound, "Not found")
-		}
-		ctx.Logger().Errorf("GetSongs: %v", err)
-		return respond.ErrorInternal(ctx)
-	}
+	rctx := ctx.Request().Context()
 	songs := make([]db.Song, 0)
-	q := db.Instance().NewSelect().Model(&songs).Where("song.sa_owner_id = ?", campaign.ID)
+	q := db.Instance().NewSelect().Model(&songs)
+	if raw := ctx.QueryParam("owner_id"); raw != "" {
+		campaign := &db.Campaign{}
+		if campaign.ID, ok = getUUID(raw); !ok {
+			return respond.Error(ctx, http.StatusBadRequest, "Invalid owner_id, expected UUID")
+		}
+		if _, err := sdb.Instance().MutationAccess(rctx, actorID, campaign.ID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_READ); err != nil {
+			if errors.Is(err, sdb.ErrNotFound) {
+				return respond.Error(ctx, http.StatusNotFound, "Not found")
+			}
+			if errors.Is(err, sdb.ErrNoAccess) {
+				return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			}
+			ctx.Logger().Errorf("GetSongs: %v", err)
+			return respond.ErrorInternal(ctx)
+		}
+		if err := getCampaign(rctx, campaign); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return respond.Error(ctx, http.StatusNotFound, "Not found")
+			}
+			ctx.Logger().Errorf("GetSongs: %v", err)
+			return respond.ErrorInternal(ctx)
+		}
+		q = q.Where("song.sa_owner_id = ?", campaign.ID)
+	} else {
+		home, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID"))
+		if err != nil {
+			ctx.Logger().Error(errNoOwner)
+			return respond.ErrorInternal(ctx)
+		}
+		q = q.Where("song.sa_owner_id = ?", home).Where("song.user_id = ?", actorID)
+	}
 	q = sdb.ObjectWhere(q, actorID, db.OBJECT_TYPE_SONG, sdb.ACCESS_READ, nil, nil, 0)
-	if err := q.OrderExpr("song.title").Scan(ctx.Request().Context()); err != nil {
+	if err := q.OrderExpr("song.title").Scan(rctx); err != nil {
 		ctx.Logger().Errorf("GetSongs: %v", err)
 		return respond.ErrorInternal(ctx)
 	}
@@ -752,33 +765,34 @@ func PostSong(ctx echo.Context) error {
 	if !ok {
 		return respond.Error(ctx, http.StatusUnauthorized, "Unauthorized")
 	}
-	campaign := &db.Campaign{}
-	if campaign.ID, ok = getUUID(ctx.Param("id")); !ok {
-		return respond.Error(ctx, http.StatusBadRequest, "Invalid id, expected UUID")
-	}
-	if _, err := sdb.Instance().MutationAccess(ctx.Request().Context(), actorID, campaign.ID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_READ); err != nil {
-		if errors.Is(err, sdb.ErrNotFound) {
-			return respond.Error(ctx, http.StatusNotFound, "Not found")
-		}
-		if errors.Is(err, sdb.ErrNoAccess) {
-			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
-		}
-		ctx.Logger().Errorf("PostSong: %v", err)
-		return respond.ErrorInternal(ctx)
-	}
-	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return respond.Error(ctx, http.StatusNotFound, "Not found")
-		}
-		ctx.Logger().Errorf("PostSong: %v", err)
-		return respond.ErrorInternal(ctx)
-	}
 	var body BodySong
 	if err := ctx.Bind(&body); err != nil {
 		return respond.Error(ctx, http.StatusBadRequest, "Invalid JSON body")
 	}
 	rctx := ctx.Request().Context()
-	w, err := postWriter(rctx, actorID, &campaign.ID)
+	var ownerID *uuid.UUID
+	if body.OwnerID != nil {
+		if _, err := sdb.Instance().MutationAccess(rctx, actorID, *body.OwnerID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_READ); err != nil {
+			if errors.Is(err, sdb.ErrNotFound) {
+				return respond.Error(ctx, http.StatusNotFound, "Not found")
+			}
+			if errors.Is(err, sdb.ErrNoAccess) {
+				return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			}
+			ctx.Logger().Errorf("PostSong: %v", err)
+			return respond.ErrorInternal(ctx)
+		}
+		campaign := &db.Campaign{ID: *body.OwnerID}
+		if err := getCampaign(rctx, campaign); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return respond.Error(ctx, http.StatusNotFound, "Not found")
+			}
+			ctx.Logger().Errorf("PostSong: %v", err)
+			return respond.ErrorInternal(ctx)
+		}
+		ownerID = &campaign.ID
+	}
+	w, err := postWriter(rctx, actorID, ownerID)
 	if err != nil {
 		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) || errors.Is(err, errNoOwner) {
 			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
@@ -812,7 +826,9 @@ func PostSong(ctx echo.Context) error {
 		ctx.Logger().Errorf("PostSong: %v", err)
 		return respond.ErrorInternal(ctx)
 	}
-	broker.Post(ctx.Request().Context(), broker.CampaignTopic(campaign.ID), broker.KindSong, item.ID.String(), broker.OpCreate)
+	if home, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID")); err == nil && item.OwnerID != home {
+		broker.Post(rctx, broker.CampaignTopic(item.OwnerID), broker.KindSong, item.ID.String(), broker.OpCreate)
+	}
 	return respond.JSON(ctx, http.StatusCreated, item, 1)
 }
 
@@ -821,30 +837,9 @@ func PutSong(ctx echo.Context) error {
 	if !ok {
 		return respond.Error(ctx, http.StatusUnauthorized, "Unauthorized")
 	}
-	campaign := &db.Campaign{}
-	if campaign.ID, ok = getUUID(ctx.Param("id")); !ok {
-		return respond.Error(ctx, http.StatusBadRequest, "Invalid id, expected UUID")
-	}
-	if _, err := sdb.Instance().MutationAccess(ctx.Request().Context(), actorID, campaign.ID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_READ); err != nil {
-		if errors.Is(err, sdb.ErrNotFound) {
-			return respond.Error(ctx, http.StatusNotFound, "Not found")
-		}
-		if errors.Is(err, sdb.ErrNoAccess) {
-			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
-		}
-		ctx.Logger().Errorf("PutSong: %v", err)
-		return respond.ErrorInternal(ctx)
-	}
-	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return respond.Error(ctx, http.StatusNotFound, "Not found")
-		}
-		ctx.Logger().Errorf("PutSong: %v", err)
-		return respond.ErrorInternal(ctx)
-	}
-	songID, err := uuid.Parse(ctx.Param("song_id"))
+	songID, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
-		return respond.Error(ctx, http.StatusBadRequest, "Invalid song_id, expected UUID")
+		return respond.Error(ctx, http.StatusBadRequest, "Invalid id, expected UUID")
 	}
 	var body BodySong
 	if err := ctx.Bind(&body); err != nil {
@@ -863,7 +858,7 @@ func PutSong(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	item := db.Song{ID: songID}
-	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("sa_owner_id = ?", campaign.ID).Scan(rctx); err != nil {
+	if err := db.Instance().NewSelect().Model(&item).WherePK().Scan(rctx); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
@@ -910,7 +905,9 @@ func PutSong(ctx echo.Context) error {
 		ctx.Logger().Errorf("PutSong: %v", err)
 		return respond.ErrorInternal(ctx)
 	}
-	broker.Post(ctx.Request().Context(), broker.CampaignTopic(campaign.ID), broker.KindSong, item.ID.String(), broker.OpUpdate)
+	if home, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID")); err == nil && item.OwnerID != home {
+		broker.Post(rctx, broker.CampaignTopic(item.OwnerID), broker.KindSong, item.ID.String(), broker.OpUpdate)
+	}
 	return respond.JSON(ctx, http.StatusOK, item, 1)
 }
 
@@ -919,30 +916,9 @@ func DeleteSong(ctx echo.Context) error {
 	if !ok {
 		return respond.Error(ctx, http.StatusUnauthorized, "Unauthorized")
 	}
-	campaign := &db.Campaign{}
-	if campaign.ID, ok = getUUID(ctx.Param("id")); !ok {
-		return respond.Error(ctx, http.StatusBadRequest, "Invalid id, expected UUID")
-	}
-	if _, err := sdb.Instance().MutationAccess(ctx.Request().Context(), actorID, campaign.ID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_READ); err != nil {
-		if errors.Is(err, sdb.ErrNotFound) {
-			return respond.Error(ctx, http.StatusNotFound, "Not found")
-		}
-		if errors.Is(err, sdb.ErrNoAccess) {
-			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
-		}
-		ctx.Logger().Errorf("DeleteSong: %v", err)
-		return respond.ErrorInternal(ctx)
-	}
-	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return respond.Error(ctx, http.StatusNotFound, "Not found")
-		}
-		ctx.Logger().Errorf("DeleteSong: %v", err)
-		return respond.ErrorInternal(ctx)
-	}
-	songID, err := uuid.Parse(ctx.Param("song_id"))
+	songID, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
-		return respond.Error(ctx, http.StatusBadRequest, "Invalid song_id, expected UUID")
+		return respond.Error(ctx, http.StatusBadRequest, "Invalid id, expected UUID")
 	}
 	rctx := ctx.Request().Context()
 	ac, err := sdb.Instance().MutationAccess(rctx, actorID, songID, db.OBJECT_TYPE_SONG, sdb.ACCESS_WRITE)
@@ -957,7 +933,7 @@ func DeleteSong(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	item := db.Song{ID: songID}
-	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("sa_owner_id = ?", campaign.ID).Scan(rctx); err != nil {
+	if err := db.Instance().NewSelect().Model(&item).WherePK().Scan(rctx); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
@@ -973,7 +949,9 @@ func DeleteSong(ctx echo.Context) error {
 		ctx.Logger().Errorf("DeleteSong: %v", err)
 		return respond.ErrorInternal(ctx)
 	}
-	broker.Post(ctx.Request().Context(), broker.CampaignTopic(campaign.ID), broker.KindSong, item.ID.String(), broker.OpDelete)
+	if home, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID")); err == nil && item.OwnerID != home {
+		broker.Post(rctx, broker.CampaignTopic(item.OwnerID), broker.KindSong, item.ID.String(), broker.OpDelete)
+	}
 	return respond.NoContent(ctx, http.StatusOK)
 }
 

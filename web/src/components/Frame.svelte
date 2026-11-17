@@ -20,6 +20,7 @@ import { currentCharacterId, userCharacters } from '$lib/stores/character.store'
   import StoredImage from '$components/ui/StoredImage.svelte'
 import Toast from '$components/ui/Toast.svelte'
   import MenuPanel from '$components/MenuPanel.svelte'
+  import SongImportDialog from '$components/music/SongImportDialog.svelte'
   import Chat from '$chat/Chat.svelte'
 
   const { children }: { children?: Snippet } = $props()
@@ -30,6 +31,16 @@ import Toast from '$components/ui/Toast.svelte'
     },
     setDialogState: uiStore.setDialogState
   })
+
+  let importOpen = $state(false)
+  let importTo = $state('')
+  let dropped = $state<File[]>([])
+
+  function openImport(campaignId: string, files: File[] = []) {
+    importTo = campaignId
+    dropped = files
+    importOpen = true
+  }
 
   const character = $derived($userCharacters.find((one) => one.id === ($currentCharacterId ?? $userProfile?.preferences?.active_characters?.[$currentCampaignId ?? $userCampaigns[0]?.id ?? ''] ?? $userProfile?.preferences?.recent_characters?.[0])) ?? null)
   const campaign = $derived($userCampaigns.find((one) => one.id === ($currentCampaignId ?? character?.owner_id)) ?? $userCampaigns[0] ?? null)
@@ -330,7 +341,7 @@ import Toast from '$components/ui/Toast.svelte'
     </div>
   {/if}
 
-  <Sidebar side="start" open={$shell.drawers && $menuOpen} run="var(--size-menu-max)" edge="none"><MenuPanel /></Sidebar>
+  <Sidebar side="start" open={$shell.drawers && $menuOpen} run="var(--size-menu-max)" edge="none"><MenuPanel onimport={openImport} /></Sidebar>
   <span class="dnd-shell-stud dnd-shell-stud-start" aria-hidden="true"></span>
 
   <div class="dnd-shell-content">
@@ -366,6 +377,9 @@ import Toast from '$components/ui/Toast.svelte'
   <Sidebar side="end" open={$shell.drawers && $chatOpen} run="var(--size-chat-max)" edge="none"><Chat /></Sidebar>
   <span class="dnd-shell-stud dnd-shell-stud-end" aria-hidden="true"></span>
   <Toast />
+  {#if importOpen}
+    <SongImportDialog bind:isOpen={importOpen} campaignId={importTo} files={dropped} />
+  {/if}
 </main>
 
 <style>

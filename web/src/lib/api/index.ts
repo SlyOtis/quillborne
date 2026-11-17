@@ -304,7 +304,7 @@ export const putCampaign = (campaignId: string, updates: Partial<Campaign>) => a
 
 export async function deleteCampaign(campaignId: string): Promise<void> {
   const self = getSessionId()
-  const [maps, songs] = await Promise.all([getCampaignMaps(campaignId), getCampaignSongs(campaignId).catch(() => [] as Song[])])
+  const [maps, songs] = await Promise.all([getCampaignMaps(campaignId), getSongs(campaignId).catch(() => [] as Song[])])
 
   const addresses = [
     ...maps.flatMap((map) => [map.image_url, ...map.layers.map((layer) => layer.image_url)]),
@@ -361,13 +361,12 @@ export const getCampaignMapsStream = (campaignId: string, onChange: (maps: Campa
     console.error('Campaign maps did not load:', error)
   )
 
-export const getCampaignSongs = (campaignId: string) => apiGet<Song[]>(`campaign/${campaignId}/song`)
+export const getSongs = (campaignId?: string) => apiGet<Song[]>(path('song', { owner_id: campaignId }))
 
-export const postCampaignSong = async (campaignId: string, song: Partial<Song>): Promise<string> =>
-  (await apiPost<Row>(`campaign/${campaignId}/song`, song)).id
+export const postSong = async (song: Partial<Song>): Promise<string> => (await apiPost<Row>('song', song)).id
 
 export const getCampaignSongsStream = (campaignId: string, onChange: (songs: Song[]) => void): Unsubscribe =>
-  getStream(`campaign/${campaignId}/stream`, 'song', () => getCampaignSongs(campaignId), onChange, (error) =>
+  getStream(`campaign/${campaignId}/stream`, 'song', () => getSongs(campaignId), onChange, (error) =>
     console.error('Campaign songs did not load:', error)
   )
 

@@ -4,6 +4,7 @@
   import FrameBtn from '$components/ui/FrameBtn.svelte'
   import Glyph from '$components/ui/Glyph.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
+  import { userCampaigns } from '$lib/stores/campaign.store'
   import {
     cycleRepeat,
     dequeueSong,
@@ -26,27 +27,43 @@
   } from '$lib/music'
 
   const { campaignId, search = '', onimport }: {
-    /** The campaign whose playlist is shown. */
+    /** The selected campaign, whose songs are the first group; empty when none is selected. */
     campaignId: string
-    /** The text the song list is filtered on. */
+    /** The text both song groups are filtered on. */
     search?: string
-    /** Runs with the files dropped on the list so the host can open the import. */
-    onimport?: (files: File[]) => void
+    /** Runs with the campaign an import goes to, empty for the reader's own songs, and the files dropped on that group. */
+    onimport?: (campaignId: string, files: File[]) => void
   } = $props()
 
-  let dragging = $state(false)
+  let dragging = $state<string | null>(null)
   let queueOpen = $state(true)
-  let songsOpen = $state(true)
+  let shut = $state<string[]>([])
 
-  const found = $derived(
-    $library.filter((one) => one.title.toLowerCase().includes(search.trim().toLowerCase()))
-  )
+  const term = $derived(search.trim().toLowerCase())
+  const table = $derived($userCampaigns.find((one) => one.id === campaignId) ?? null)
+  const groups = $derived([
+    ...(campaignId
+      ? [
+          {
+            id: campaignId,
+            title: table?.name ?? 'Campaign',
+            add: `Import songs to ${table?.name ?? 'the campaign'}`,
+            songs: $library.filter((one) => one.owner_id === campaignId)
+          }
+        ]
+      : []),
+    { id: '', title: 'Your own', add: 'Import your own songs', songs: $library.filter((one) => one.owner_id !== campaignId) }
+  ])
 
-  function drop(event: DragEvent) {
+  function toggle(id: string) {
+    shut = shut.includes(id) ? shut.filter((one) => one !== id) : [...shut, id]
+  }
+
+  function drop(event: DragEvent, id: string) {
     event.preventDefault()
-    dragging = false
+    dragging = null
     const files = Array.from(event.dataTransfer?.files ?? [])
-    if (files.length > 0) onimport?.(files)
+    if (files.length > 0) onimport?.(id, files)
   }
 
   function press(song: Song) {
@@ -55,80 +72,93 @@
   }
 </script>
 
-<div
-  class="dnd-playlist"
-  class:dnd-playlist-live={dragging}
-  role="region"
-  aria-label="Song drop zone"
-  ondragover={(event) => {
-    event.preventDefault()
-    dragging = true
-  }}
-  ondragleave={() => (dragging = false)}
-  ondrop={drop}
->
+<div class="dnd-playlist">
   <div class="dnd-scroll dnd-playlist-body">
-    {#if !campaignId}
-      <p class="dnd-playlist-empty">No campaign is in scope.</p>
-    {:else}
-      <Fold title="Queue" count={$queue.length} variant="row" open={queueOpen} ontoggle={() => (queueOpen = !queueOpen)}>
-        {#if $queue.length === 0}
-          <p class="dnd-playlist-empty">Nothing is queued.</p>
-        {:else}
-          <ol class="dnd-playlist-rows">
-            {#each $queue as song, index (index)}
-              <li class="dnd-playlist-row">
-                <span class="dnd-playlist-name">{song.title}</span>
-                <span class="dnd-playlist-time">{getClock(song.duration)}</span>
-                <span class="dnd-playlist-acts">
-                  <IconBtn title="Move up" disabled={index === 0} onclick={() => moveSong(index, -1)}>
-                    <Glyph name="unfold" size="sm" />
-                  </IconBtn>
-                  <IconBtn title="Move down" disabled={index === $queue.length - 1} onclick={() => moveSong(index, 1)}>
-                    <Glyph name="fold" size="sm" />
-                  </IconBtn>
-                  <IconBtn title="Remove from the queue" tone="ink" onclick={() => dequeueSong(index)}>
-                    <Glyph name="close" size="sm" />
-                  </IconBtn>
-                </span>
-              </li>
-            {/each}
-          </ol>
-        {/if}
-      </Fold>
+    <Fold title="Queue" count={$queue.length} variant="row" open={queueOpen} ontoggle={() => (queueOpen = !queueOpen)}>
+      {#if $queue.length === 0}
+        <p class="dnd-playlist-empty">Nothing is queued.</p>
+      {:else}
+        <ol class="dnd-playlist-rows">
+          {#each $queue as song, index (index)}
+            <li class="dnd-playlist-row">
+              <span class="dnd-playlist-name">{song.title}</span>
+              <span class="dnd-playlist-time">{getClock(song.duration)}</span>
+              <span class="dnd-playlist-acts">
+                <IconBtn title="Move up" disabled={index === 0} onclick={() => moveSong(index, -1)}>
+                  <Glyph name="unfold" size="sm" />
+                </IconBtn>
+                <IconBtn title="Move down" disabled={index === $queue.length - 1} onclick={() => moveSong(index, 1)}>
+                  <Glyph name="fold" size="sm" />
+                </IconBtn>
+                <IconBtn title="Remove from the queue" tone="ink" onclick={() => dequeueSong(index)}>
+                  <Glyph name="close" size="sm" />
+                </IconBtn>
+              </span>
+            </li>
+          {/each}
+        </ol>
+      {/if}
+    </Fold>
 
-      <Fold title="Songs" count={found.length} variant="row" open={songsOpen} ontoggle={() => (songsOpen = !songsOpen)}>
-        {#if $library.length === 0}
-          <p class="dnd-playlist-empty">Nothing has been uploaded. Drop songs here.</p>
-        {:else if found.length === 0}
-          <p class="dnd-playlist-empty">No song answers to that.</p>
-        {:else}
-          <ol class="dnd-playlist-rows">
-            {#each found as song (song.id)}
-              <li class="dnd-playlist-row" class:dnd-playlist-row-on={$track?.id === song.id}>
-                <span class="dnd-playlist-acts">
-                  <IconBtn
-                    title={$track?.id === song.id && $playing ? 'Pause' : 'Play'}
-                    tone={$track?.id === song.id ? 'ember' : 'metal'}
-                    active={$track?.id === song.id}
-                    onclick={() => press(song)}
-                  >
-                    <Glyph name={$track?.id === song.id && $playing ? 'pause' : 'play'} size="sm" />
-                  </IconBtn>
-                </span>
-                <span class="dnd-playlist-name">{song.title}</span>
-                <span class="dnd-playlist-time">{getClock(song.duration)}</span>
-                <span class="dnd-playlist-acts">
-                  <IconBtn title="Add to the queue" onclick={() => enqueueSong(song)}>
-                    <Glyph name="add" size="sm" />
-                  </IconBtn>
-                </span>
-              </li>
-            {/each}
-          </ol>
-        {/if}
+    {#each groups as group (group.id)}
+      {@const found = group.songs.filter((one) => one.title.toLowerCase().includes(term))}
+      <Fold title={group.title} count={found.length} variant="row" open={!shut.includes(group.id)} ontoggle={() => toggle(group.id)}>
+        <div
+          class="dnd-playlist-drop"
+          class:dnd-playlist-drop-live={dragging === group.id}
+          role="region"
+          aria-label="Song drop zone, {group.title}"
+          ondragover={(event) => {
+            event.preventDefault()
+            dragging = group.id
+          }}
+          ondragleave={() => (dragging = null)}
+          ondrop={(event) => drop(event, group.id)}
+        >
+          <div class="dnd-playlist-add">
+            <p class="dnd-playlist-empty">
+              {#if group.songs.length === 0}
+                Nothing has been uploaded. Drop songs here.
+              {:else if found.length === 0}
+                No song answers to that.
+              {:else}
+                Drop songs here.
+              {/if}
+            </p>
+            <span class="dnd-playlist-acts">
+              <IconBtn title={group.add} onclick={() => onimport?.(group.id, [])}>
+                <Glyph name="upload" size="sm" />
+              </IconBtn>
+            </span>
+          </div>
+          {#if found.length > 0}
+            <ol class="dnd-playlist-rows">
+              {#each found as song (song.id)}
+                <li class="dnd-playlist-row" class:dnd-playlist-row-on={$track?.id === song.id}>
+                  <span class="dnd-playlist-acts">
+                    <IconBtn
+                      title={$track?.id === song.id && $playing ? 'Pause' : 'Play'}
+                      tone={$track?.id === song.id ? 'ember' : 'metal'}
+                      active={$track?.id === song.id}
+                      onclick={() => press(song)}
+                    >
+                      <Glyph name={$track?.id === song.id && $playing ? 'pause' : 'play'} size="sm" />
+                    </IconBtn>
+                  </span>
+                  <span class="dnd-playlist-name">{song.title}</span>
+                  <span class="dnd-playlist-time">{getClock(song.duration)}</span>
+                  <span class="dnd-playlist-acts">
+                    <IconBtn title="Add to the queue" onclick={() => enqueueSong(song)}>
+                      <Glyph name="add" size="sm" />
+                    </IconBtn>
+                  </span>
+                </li>
+              {/each}
+            </ol>
+          {/if}
+        </div>
       </Fold>
-    {/if}
+    {/each}
   </div>
 
   <div class="dnd-playlist-player" aria-label="Now playing">
@@ -187,13 +217,36 @@
     flex: 1;
     flex-direction: column;
     min-height: 0;
-    border: var(--border-width) dashed transparent;
-    transition: border-color 0.15s ease;
   }
 
-  .dnd-playlist-live {
-    border-color: var(--metal-bright);
+  .dnd-playlist-drop {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-inline: calc(-1 * var(--space-2));
+    padding-inline: var(--space-2);
+    border-radius: var(--radius-sm);
+    outline: var(--border-width) dashed transparent;
+    outline-offset: calc(-1 * var(--border-width));
+    transition: outline-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .dnd-playlist-drop-live {
+    outline-color: var(--metal-bright);
     box-shadow: inset 0 0 30px -10px var(--ember-glow);
+  }
+
+  .dnd-playlist-add {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--space-6);
+    padding-inline-end: var(--space-2);
+  }
+
+  .dnd-playlist-add .dnd-playlist-empty {
+    flex: 1;
+    min-width: 0;
   }
 
   .dnd-playlist-body {
