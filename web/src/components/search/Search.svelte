@@ -415,14 +415,14 @@
       <span class="chip" title={campaign.name}>
         <span class="chip-glyph"><Glyph name="campaign" size="sm" /></span>
         <span class="chip-name">{campaign.name}</span>
-        <button type="button" class="chip-drop" aria-label="Search every table" onclick={() => (scoped = false)}><Glyph name="close" size="sm" /></button>
+        <IconBtn title="Search every table" tone="ink" onclick={() => (scoped = false)}><Glyph name="close" size="sm" /></IconBtn>
       </span>
     {/if}
     {#each chips as chip, at (chip)}
       <span class="chip" title={chip}>
         <span class="chip-glyph"><Glyph name="key" size="sm" /></span>
         <span class="chip-name">{chip.slice(1)}</span>
-        <button type="button" class="chip-drop" aria-label="Drop {chip.slice(1)}" onclick={() => deleteChip(at)}><Glyph name="close" size="sm" /></button>
+        <IconBtn title="Drop {chip.slice(1)}" tone="ink" onclick={() => deleteChip(at)}><Glyph name="close" size="sm" /></IconBtn>
       </span>
     {/each}
     <input
@@ -563,26 +563,6 @@
     text-overflow: ellipsis;
     font-family: var(--font-display);
     letter-spacing: var(--tracking-wide);
-  }
-
-  .chip-drop {
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    inline-size: var(--space-5);
-    block-size: var(--space-5);
-    padding: 0;
-    border: none;
-    border-radius: var(--radius-pill);
-    background: transparent;
-    color: var(--ink-dim);
-    cursor: pointer;
-  }
-
-  .chip-drop:hover {
-    background: color-mix(in srgb, var(--metal) 20%, transparent);
-    color: var(--ink);
   }
 
   .field {

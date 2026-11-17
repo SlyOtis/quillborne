@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   
-  // Canvas-based effects (damage, particles, animations)
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
   let damageTexts: DamageText[] = [];
@@ -9,11 +8,9 @@
   let levelUpParticles: LevelUpParticle[] = [];
   let animationId: number;
   
-  // DOM-based text displays (funny text, notifications)
   let displayTexts = $state<TextDisplay[]>([]);
   let textId = 0;
   
-  // Types for canvas-based effects
   interface DamageText {
     id: string;
     text: string;
@@ -59,7 +56,6 @@
     pulse: number;
   }
   
-  // Types for DOM-based text
   interface TextDisplay {
     id: number;
     text: string;
@@ -71,7 +67,6 @@
     rotation: number;
   }
   
-  // Canvas functions
   function resizeCanvas() {
     if (!canvas) return;
     canvas.width = window.innerWidth;
@@ -130,7 +125,6 @@
     
     const colors = [primaryColor, secondaryColor, 'var(--state-good)', 'var(--ember-core)', 'var(--metal-bright)', 'var(--verdigris)'];
     
-    // Ring explosion from center
     for (let i = 0; i < 50; i++) {
       const angle = (i / 50) * Math.PI * 2;
       const speed = 4 + Math.random() * 3;
@@ -151,7 +145,6 @@
       });
     }
     
-    // Upward burst 
     for (let i = 0; i < 80; i++) {
       const angle = -Math.PI/2 + (Math.random() - 0.5) * Math.PI/3;
       const speed = 6 + Math.random() * 8;
@@ -172,26 +165,25 @@
       });
     }
     
-    // Sparks from edges
     for (let i = 0; i < 60; i++) {
       const side = Math.floor(Math.random() * 4);
       let startX = 0;
       let startY = 0;
       
       switch(side) {
-        case 0: // Top
+        case 0:
           startX = Math.random() * window.innerWidth;
           startY = 0;
           break;
-        case 1: // Right  
+        case 1:
           startX = window.innerWidth;
           startY = Math.random() * window.innerHeight;
           break;
-        case 2: // Bottom
+        case 2:
           startX = Math.random() * window.innerWidth;
           startY = window.innerHeight;
           break;
-        case 3: // Left
+        case 3:
           startX = 0;
           startY = Math.random() * window.innerHeight;
           break;
@@ -219,7 +211,6 @@
       });
     }
     
-    // Central burst with delay
     setTimeout(() => {
       for (let i = 0; i < 100; i++) {
         const angle = Math.random() * Math.PI * 2;
@@ -289,7 +280,6 @@
     }
   }
   
-  // DOM text functions
   function showText(text: string, category: string, x?: number, y?: number) {
     let posX, posY;
     if (x !== undefined && y !== undefined) {
@@ -313,7 +303,6 @@
     
     displayTexts.push(newText);
     
-    // Animate in with bounce effect
     setTimeout(() => {
       const textElement = displayTexts.find(t => t.id === newText.id);
       if (textElement) {
@@ -329,7 +318,6 @@
       }
     }, 200);
     
-    // Float upward animation
     setTimeout(() => {
       const textElement = displayTexts.find(t => t.id === newText.id);
       if (textElement) {
@@ -338,7 +326,6 @@
       }
     }, 1000);
     
-    // Animate out
     setTimeout(() => {
       const textElement = displayTexts.find(t => t.id === newText.id);
       if (textElement) {
@@ -348,13 +335,11 @@
       }
     }, 2500);
     
-    // Remove from array
     setTimeout(() => {
       displayTexts = displayTexts.filter(t => t.id !== newText.id);
     }, 3000);
   }
   
-  // Canvas drawing functions
   function drawDamageText(text: DamageText) {
     if (!ctx) return;
     
@@ -472,7 +457,6 @@
     
     switch (particle.type) {
       case 'star':
-        // Draw 5-pointed star
         ctx.beginPath();
         const spikes = 5;
         const outerRadius = particle.size;
@@ -543,7 +527,6 @@
     resizeCanvas();
     animate();
     
-    // Event listeners for canvas-based effects
     const handleDamageEvent = (event: CustomEvent) => {
       const { damage, type, x, y } = event.detail;
       addDamageText(damage, type, x, y);
@@ -554,7 +537,6 @@
       createLevelUpAnimation(level);
     };
     
-    // Event listeners for DOM-based text
     const handleFunnyText = (event: CustomEvent) => {
       const { text, category, x, y } = event.detail;
       showText(text, category, x, y);
@@ -577,13 +559,11 @@
   });
 </script>
 
-<!-- Canvas for particle effects and damage text -->
 <canvas 
   bind:this={canvas}
   class="overlay-canvas"
 ></canvas>
 
-<!-- DOM-based text display container -->
 <div class="text-overlay-container">
   {#each displayTexts as textItem (textItem.id)}
     <div 

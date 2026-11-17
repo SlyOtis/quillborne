@@ -13,7 +13,6 @@
   let draggedOver = $state(false);
   let playingClips = $state(new Set<string>());
 
-  // Initialize sound board if it doesn't exist
   $effect(() => {
     if (!soundBoard) {
       const newSoundBoard = createDefaultSoundBoard();
@@ -124,7 +123,6 @@
     {/each}
   {/if}
   
-  <!-- Add new sound button -->
   <div class="clip-tile add-tile">
     <button 
       class="clip-button add-button medieval-button"

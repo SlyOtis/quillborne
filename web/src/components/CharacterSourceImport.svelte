@@ -18,7 +18,6 @@
   let successMessage = $state<string | undefined>(undefined);
   let showImportDialog = $state(false);
 
-  // Load sources from localStorage when dialog opens
   $effect(() => {
     if (isOpen) {
       loadSources();
@@ -32,7 +31,7 @@
         const parsedSources = JSON.parse(storedSources);
         sources = parsedSources.map((source: any) => ({
           ...source,
-          enabled: source.enabled !== false // Default to enabled
+          enabled: source.enabled !== false
         }));
       } else {
         sources = [];
@@ -46,7 +45,6 @@
   function saveSources() {
     try {
       localStorage.setItem('character_sources', JSON.stringify(sources));
-      // Build and save extracted data as structured JSONs
       buildAndSaveStructuredData();
     } catch (error) {
       console.error('Failed to save sources:', error);
@@ -55,11 +53,9 @@
 
   function buildAndSaveStructuredData() {
     try {
-      // Instead of extracting filled content, build schemas for AI processing
       const itemsSchema = buildItemsSchema();
       const characterSchema = buildCharacterSchema();
       
-      // Save schemas to localStorage for AI consumption
       localStorage.setItem('dnd_items_schema', JSON.stringify(itemsSchema));
       localStorage.setItem('dnd_character_schema', JSON.stringify(characterSchema));
       
@@ -396,12 +392,10 @@
 
   function exportStructuredData() {
     try {
-      // Get current schemas from localStorage
       const itemsSchemaData = localStorage.getItem('dnd_items_schema');
       const characterSchemaData = localStorage.getItem('dnd_character_schema');
       
       if (!itemsSchemaData || !characterSchemaData) {
-        // Build the schemas first if they don't exist
         buildAndSaveStructuredData();
         setTimeout(() => exportStructuredData(), 100);
         return;
@@ -409,7 +403,6 @@
 
       const timestamp = new Date().toISOString().split('T')[0];
       
-      // Export items schema
       const itemsBlob = new Blob([itemsSchemaData], {type: 'application/json'});
       const itemsLink = document.createElement('a');
       itemsLink.href = URL.createObjectURL(itemsBlob);
@@ -417,7 +410,6 @@
       itemsLink.click();
       URL.revokeObjectURL(itemsLink.href);
       
-      // Export character schema
       const characterBlob = new Blob([characterSchemaData], {type: 'application/json'});
       const characterLink = document.createElement('a');
       characterLink.href = URL.createObjectURL(characterBlob);
@@ -425,7 +417,6 @@
       characterLink.click();
       URL.revokeObjectURL(characterLink.href);
 
-      // Show success message
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('showFunnyText', {
           detail: { text: 'AI schemas exported successfully!', category: 'treasure' }
@@ -527,7 +518,6 @@
         content: file
       };
 
-      // Update processing message based on file type
       if (fileType === 'pdf') {
         processingMessage = `Extracting text from PDF with Claude AI... (${(file.size / 1024 / 1024).toFixed(1)}MB)`;
       } else if (fileType === 'image') {
@@ -539,13 +529,11 @@
       const extractedData = await processCharacterSource(sourceData);
       
       if (extractedData) {
-        // Store the extracted data for level-up system
         storeCharacterSource(sourceData, extractedData);
         
         successMessage = `Character source processed successfully! Extracted ${extractedData.className || 'Unknown Class'} level progression data.`;
         console.log('Extracted progression data:', extractedData);
         
-        // Reload sources to show the new one
         loadSources();
       }
     } catch (error: any) {
@@ -559,7 +547,6 @@
 
   function storeCharacterSource(sourceData: CharacterSourceData, extractedData: any) {
     try {
-      // Get existing sources from localStorage
       const existingSources = localStorage.getItem('character_sources');
       let sources = [];
       
@@ -567,23 +554,20 @@
         sources = JSON.parse(existingSources);
       }
       
-      // Create new source entry
       const newSource = {
         type: sourceData.type,
         fileName: sourceData.content instanceof File ? sourceData.content.name : 'unknown',
         extractedData: extractedData,
         processedAt: new Date().toISOString(),
-        content: sourceData.content instanceof File ? '' : sourceData.content, // Don't store file content
-        enabled: true // Default to enabled
+        content: sourceData.content instanceof File ? '' : sourceData.content,
+        enabled: true
       };
       
-      // Add to sources array (limit to last 10 sources)
       sources.push(newSource);
       if (sources.length > 10) {
         sources = sources.slice(-10);
       }
       
-      // Save back to localStorage
       localStorage.setItem('character_sources', JSON.stringify(sources));
       
       console.log('Character source stored successfully:', newSource);
@@ -611,7 +595,6 @@
   }
 
   function validateAndNormalizeSchema(data: any) {
-    // Validate that the JSON has the required structure
     if (!data.className || typeof data.className !== 'string') {
       throw new Error('JSON must include a "className" field');
     }
@@ -620,7 +603,6 @@
       throw new Error('JSON must include a "levels" array');
     }
 
-    // Normalize the schema to match our expected format
     const normalized = {
       className: data.className,
       hitDie: data.hitDie || 8,
@@ -642,22 +624,17 @@
   }
 
   function parseTextToClassData(content: string, fileName: string) {
-    // Extract class name from filename or content
     const className = fileName.replace(/\.(txt|json)$/i, '').replace(/[-_]/g, ' ').trim() || 'Custom Class';
     
-    // Basic text parsing - look for level-based content
     const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
     const levels: any[] = [];
     
-    // Try to find level information
     let currentLevel = 1;
     let currentFeatures: any[] = [];
     
     for (const line of lines) {
-      // Look for level indicators
       const levelMatch = line.match(/(?:level|lvl)\s*(\d+)/i);
       if (levelMatch) {
-        // Save previous level if we have features
         if (currentFeatures.length > 0 && currentLevel <= 20) {
           levels.push({
             level: currentLevel,
@@ -678,12 +655,10 @@
         currentLevel = parseInt(levelMatch[1]);
         currentFeatures = [];
       } else if (line.length > 10) {
-        // Collect potential features
         currentFeatures.push(line);
       }
     }
     
-    // Add the last level
     if (currentFeatures.length > 0 && currentLevel <= 20) {
       levels.push({
         level: currentLevel,
@@ -701,7 +676,6 @@
       });
     }
     
-    // If we couldn't parse any levels, create a basic structure
     if (levels.length === 0) {
       levels.push({
         level: 1,

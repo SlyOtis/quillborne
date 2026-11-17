@@ -6,6 +6,7 @@
   import Card from '$components/ui/Card.svelte'
   import StoredImage from '$components/ui/StoredImage.svelte'
   import Glyph from '$components/ui/Glyph.svelte'
+  import IconBtn from '$components/ui/IconBtn.svelte'
 
   const {
     map,
@@ -339,9 +340,7 @@
       {/if}
 
       <div class="dnd-map-bar">
-        <button type="button" class="dnd-map-step" onclick={() => step(1 / 1.4)} aria-label="Zoom out">
-          <Glyph name="conceal" size="sm" />
-        </button>
+        <IconBtn title="Zoom out" onclick={() => step(1 / 1.4)}><Glyph name="conceal" size="sm" /></IconBtn>
         <input
           class="dnd-map-slider"
           type="range"
@@ -351,12 +350,8 @@
           bind:value={zoom}
           aria-label="Zoom level"
         />
-        <button type="button" class="dnd-map-step" onclick={() => step(1.4)} aria-label="Zoom in">
-          <Glyph name="reveal" size="sm" />
-        </button>
-        <button type="button" class="dnd-map-step" onclick={reset} aria-label="Whole map" title="Whole map">
-          <Glyph name="unfold" size="sm" />
-        </button>
+        <IconBtn title="Zoom in" onclick={() => step(1.4)}><Glyph name="reveal" size="sm" /></IconBtn>
+        <IconBtn title="Whole map" onclick={reset}><Glyph name="unfold" size="sm" /></IconBtn>
       </div>
 
       <p class="dnd-map-where">
@@ -581,36 +576,6 @@
     font-size: var(--text-xs);
     color: var(--ink-faint);
     text-align: center;
-  }
-
-  .dnd-map-step {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: none;
-    width: var(--space-5);
-    height: var(--space-5);
-    padding: 0;
-    border: none;
-    background: none;
-    color: var(--metal);
-    cursor: pointer;
-    transition: color 0.15s ease, text-shadow 0.15s ease, filter 0.15s ease;
-  }
-
-  .dnd-map-step:hover {
-    color: var(--metal-bright);
-    filter: drop-shadow(0 0 6px var(--ember-glow));
-  }
-
-  .dnd-map-step:active {
-    transform: translateY(1px);
-    filter: brightness(0.85);
-  }
-
-  .dnd-map-step:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
   }
 
   .dnd-map-slider {
