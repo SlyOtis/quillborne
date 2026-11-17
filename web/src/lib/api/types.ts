@@ -37,7 +37,7 @@ export interface Shortcut {
 }
 
 export interface Access extends generated.Share {
-  owner_id: string
+  user_id: string
 }
 
 export interface Owner {
@@ -177,9 +177,8 @@ export interface Encounter extends Omit<generated.Encounter, 'combatants'> {
 export interface Vehicle
   extends Omit<
     generated.Vehicle,
-    'campaign_id' | 'components' | 'states' | 'stats' | 'rulings' | 'overlay' | 'crew' | 'history'
+    'components' | 'states' | 'stats' | 'rulings' | 'overlay' | 'crew' | 'history'
   > {
-  campaign_id: string | null
   components: InstalledComponent[]
   states: Record<string, ComponentState>
   stats: Record<string, unknown>
@@ -203,7 +202,7 @@ export interface VehicleRevision {
   components: InstalledComponent[]
 }
 
-export type VehicleFields = Partial<Omit<Vehicle, 'id' | 'owner_id' | 'history' | 'created_at' | 'updated_at'>> & {
+export type VehicleFields = Partial<Omit<Vehicle, 'id' | 'user_id' | 'history' | 'created_at' | 'updated_at'>> & {
   note?: string
 }
 
@@ -211,4 +210,4 @@ export interface Monster extends Omit<generated.Monster, 'stats'> {
   stats: MonsterStats
 }
 
-export type MonsterFields = Partial<Omit<Monster, 'id' | 'owner_id' | 'created_at' | 'updated_at'>>
+export type MonsterFields = Partial<Omit<Monster, 'id' | 'user_id' | 'owner_id' | 'created_at' | 'updated_at'>>

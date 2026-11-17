@@ -335,7 +335,7 @@ func TestAPageSharedWithACampaignReachesItsTable(t *testing.T) {
 	requireStack(t)
 	campaignID := postCampaign(t)
 	seatPlayer(t, campaignID)
-	status, made := call(t, dungeonMaster, http.MethodPost, "/api/resource", `{"kind":"entries","name":"Old Moss","campaign_id":"`+campaignID+`"}`, nil, handler.PostResource)
+	status, made := call(t, dungeonMaster, http.MethodPost, "/api/resource", `{"kind":"entries","name":"Old Moss","owner_id":"`+campaignID+`"}`, nil, handler.PostResource)
 	if status != http.StatusCreated {
 		t.Fatalf("PostResource: %d %+v", status, made.Error)
 	}
@@ -370,7 +370,7 @@ func TestALockedItemShowsTheTableItsHeadAlone(t *testing.T) {
 	requireStack(t)
 	ensureProfile(t, player, "pip@quillborne.local")
 	campaignID := postCampaign(t)
-	itemID := postResource(t, dungeonMaster, `{"kind":"items","name":"Sealed Reliquary","description":"A saint's finger bone","campaign_id":"`+campaignID+`","category":"wondrous item","rarity":"rare","body":"It hums near the dead.","grants":{"features":[{"name":"Hush","text":"The dead fall quiet."}]}}`)
+	itemID := postResource(t, dungeonMaster, `{"kind":"items","name":"Sealed Reliquary","description":"A saint's finger bone","owner_id":"`+campaignID+`","category":"wondrous item","rarity":"rare","body":"It hums near the dead.","grants":{"features":[{"name":"Hush","text":"The dead fall quiet."}]}}`)
 	params := map[string]string{"id": itemID}
 	reach := "/api/resource?kind=items&reach=all"
 
@@ -387,10 +387,10 @@ func TestALockedItemShowsTheTableItsHeadAlone(t *testing.T) {
 	if status != http.StatusOK || head == nil {
 		t.Fatalf("a seated player does not know of the table's locked item: %d", status)
 	}
-	if head["locked"] != true || head["name"] != "Sealed Reliquary" || head["category"] != "wondrous item" || head["rarity"] != "rare" || head["campaign_id"] != campaignID {
+	if head["locked"] != true || head["name"] != "Sealed Reliquary" || head["category"] != "wondrous item" || head["rarity"] != "rare" || head["owner_id"] != campaignID {
 		t.Fatalf("a locked item's head is wrong: %v", head)
 	}
-	for _, key := range []string{"description", "body", "grants", "owner_id", "share_users", "share_campaigns"} {
+	for _, key := range []string{"description", "body", "grants", "user_id", "share_users", "share_campaigns"} {
 		if _, ok := head[key]; ok {
 			t.Fatalf("a locked item carries its %s to a player who may not read it", key)
 		}

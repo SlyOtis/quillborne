@@ -3,6 +3,7 @@ package state
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"slices"
 
 	"github.com/SlyOtis/quillborne/internal/db"
@@ -15,8 +16,8 @@ const GroupResource = "resource"
 
 type ResourceData struct {
 	Kind           string          `json:"kind"`
-	OwnerID        string          `json:"owner_id"`
-	CampaignID     *string         `json:"campaign_id,omitempty"`
+	UserID         string          `json:"user_id"`
+	OwnerID        *string         `json:"owner_id,omitempty"`
 	ParentID       *string         `json:"parent_id,omitempty"`
 	Name           string          `json:"name"`
 	Description    string          `json:"description"`
@@ -30,18 +31,18 @@ func getResourceGroup() nstate.Group[ResourceData] {
 		Name: GroupResource,
 		Schema: getSchema(map[string]any{
 			"kind":            getProperty("string", "Which of the seven kinds the page is: entries, items, weapons, armor, locations, maps or sessions."),
-			"owner_id":        getOwner("The player who wrote it down."),
-			"campaign_id":     getRef(GroupCampaign),
+			"user_id":         getOwner("The player who wrote it down."),
+			"owner_id":        getRef(GroupCampaign),
 			"parent_id":       getRef(GroupResource),
 			"name":            getProperty("string", "The name shown at the head."),
 			"description":     getProperty("string", "The lede under the name."),
 			"share_users":     getList("The players it is shared with by name."),
 			"share_campaigns": getList("The campaigns whose tables read it."),
 			"fields":          getJSON("Everything else the page carries: tags, facts, pictures, frame, block document and the fields of its own kind, an item's grants among them."),
-		}, "kind", "owner_id", "name"),
+		}, "kind", "user_id", "name"),
 		DependsOn: []string{GroupCampaign},
-		Refs:      map[string]string{"campaign_id": GroupCampaign, "parent_id": GroupResource},
-		Filters:   []string{"campaign_id", "user_id"},
+		Refs:      map[string]string{"owner_id": GroupCampaign, "parent_id": GroupResource},
+		Filters:   []string{"owner_id", "user_id"},
 		Export:    exportResources,
 		Import:    importResource,
 		Delete:    deleteResource,
@@ -57,13 +58,15 @@ func exportResources(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[R
 	return getRecords(ctx, GroupResource, query, rows, func(row db.Resource) uuid.UUID { return row.ID }, func(row db.Resource) ResourceData {
 		data := ResourceData{
 			Kind:           row.Kind,
-			OwnerID:        row.UserID.String(),
-			CampaignID:     getText(row.CampaignID),
+			UserID:         row.UserID.String(),
 			Name:           row.Name,
 			Description:    row.Description,
 			ShareUsers:     getStrings(row.ShareUsers),
 			ShareCampaigns: getShareKeys(ctx.Request().Context(), row.ShareCampaigns),
 			Fields:         getRaw(row.Fields),
+		}
+		if home, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID")); err == nil && row.OwnerID != home {
+			data.OwnerID = getText(&row.OwnerID)
 		}
 		if row.ParentID != row.RootID {
 			data.ParentID = getText(&row.ParentID)
@@ -73,7 +76,7 @@ func exportResources(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[R
 }
 
 func importResource(ctx *nstate.Context, record nstate.Record[ResourceData]) (string, error) {
-	owner, err := getOptionalID(&record.Data.OwnerID, "owner_id")
+	owner, err := getOptionalID(&record.Data.UserID, "user_id")
 	if err != nil {
 		return "", err
 	}
@@ -103,8 +106,8 @@ func importResource(ctx *nstate.Context, record nstate.Record[ResourceData]) (st
 	body["kind"] = record.Data.Kind
 	body["name"] = record.Data.Name
 	body["description"] = record.Data.Description
-	if record.Data.CampaignID != nil {
-		body["campaign_id"] = *record.Data.CampaignID
+	if record.Data.OwnerID != nil {
+		body["owner_id"] = *record.Data.OwnerID
 	}
 	if record.Data.ParentID != nil {
 		body["parent_id"] = *record.Data.ParentID

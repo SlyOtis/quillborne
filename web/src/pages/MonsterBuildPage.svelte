@@ -78,7 +78,7 @@
           missing = 'That monster does not exist, or it is someone else\'s homebrew.'
           return
         }
-        if (found.owner_id !== reader) {
+        if (found.user_id !== reader) {
           navigate(`/main/monsters/${found.id}`)
           return
         }

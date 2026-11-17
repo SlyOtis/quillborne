@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { deleteCampaign, deleteCampaignCharacter, deleteCampaignPlayer, getCampaign, getCharacters, getProfiles, postCampaignCharacter, postCampaignPlayer, putCampaign } from '$lib/api'
+  import { deleteCampaign, deleteCampaignCharacter, deleteCampaignPlayer, getCampaign, getCampaignId, getCharacters, getProfiles, postCampaignCharacter, postCampaignPlayer, putCampaign } from '$lib/api'
   import type { Campaign, CampaignSettings, Character, Profile } from '$lib/api/types'
   import { navigate } from 'sly-svelte-location-router'
   import { deleteResources } from '$lib/resources'
-  import { user } from '$lib/stores/auth.store'
+  import { user, userProfile } from '$lib/stores/auth.store'
   import { userCampaigns } from '$lib/stores/campaign.store'
   import BaseDialog from '$components/BaseDialog.svelte'
   import Button from '$components/ui/Button.svelte'
@@ -44,7 +44,7 @@
   let read = $state('')
 
   const isDm = $derived(Boolean($user && campaign.dm_id === $user.user_id))
-  const free = $derived(mine.filter((entry) => !entry.campaign_id))
+  const free = $derived(mine.filter((entry) => !getCampaignId(entry, $userProfile)))
   const changed = $derived(
     name.trim() !== campaign.name ||
       description.trim() !== campaign.description ||
@@ -210,7 +210,7 @@
           {#each characters as entry (entry.id)}
             <li class="table-row">
               <span class="table-row-name">{entry.metadata.name}, level {entry.metadata.level} {entry.metadata.class}</span>
-              {#if isDm || entry.owner_id === $user?.user_id}
+              {#if isDm || entry.user_id === $user?.user_id}
                 <Button variant="ghost" size="sm" disabled={busy} onclick={() => dropCharacter(entry.id)}>Take out</Button>
               {/if}
             </li>

@@ -70,9 +70,9 @@
   const pins = $derived(maps.reduce((sum, entry) => sum + entry.markers.length, 0))
   const revealed = $derived(maps.filter((entry) => entry.is_visible).length)
   const party = $derived(
-    [...seated].sort((a, b) => Number(b.owner_id === $user?.user_id) - Number(a.owner_id === $user?.user_id))
+    [...seated].sort((a, b) => Number(b.user_id === $user?.user_id) - Number(a.user_id === $user?.user_id))
   )
-  const yours = $derived(seated.filter((entry) => entry.owner_id === $user?.user_id).length)
+  const yours = $derived(seated.filter((entry) => entry.user_id === $user?.user_id).length)
   let tocOpen = $state(true)
   let chartsOpen = $state(false)
 
@@ -171,7 +171,7 @@
 </script>
 
 {#snippet seat(entry: Character)}
-  {@const mine = entry.owner_id === $user?.user_id}
+  {@const mine = entry.user_id === $user?.user_id}
   <Card
     title={entry.metadata.name}
     sub="{mine ? 'Yours, ' : ''}{entry.metadata.race} {entry.metadata.class}"
@@ -183,7 +183,7 @@
 {/snippet}
 
 {#snippet tile(entry: Character)}
-  {@const mine = entry.owner_id === $user?.user_id}
+  {@const mine = entry.user_id === $user?.user_id}
   <Card
     layout="tile"
     frame={mine ? 'heavy' : 'thin'}
@@ -194,7 +194,7 @@
     tone={mine ? 'ember' : 'metal'}
     onclick={() => navigate(`/main/character/${entry.id}`)}
   >
-    {#if !mine}<span class="camp-owner">{owners[entry.owner_id] ?? 'Another player'}</span>{/if}
+    {#if !mine}<span class="camp-owner">{owners[entry.user_id] ?? 'Another player'}</span>{/if}
     <span>HP {entry.character?.info?.hp?.current ?? 0}/{entry.character?.info?.hp?.max ?? 0}</span>
     <span>AC {entry.character?.info?.ac ?? 10}</span>
   </Card>

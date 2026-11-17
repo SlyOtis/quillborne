@@ -27,7 +27,7 @@ type AssetData struct {
 	Index       int             `json:"index"`
 	Icon        *string         `json:"icon,omitempty"`
 	ParentID    *string         `json:"parent_id,omitempty"`
-	CampaignID  *string         `json:"campaign_id,omitempty"`
+	OwnerID     *string         `json:"owner_id,omitempty"`
 	BannerID    *string         `json:"banner_id,omitempty"`
 	Properties  json.RawMessage `json:"properties,omitempty"`
 	Document    json.RawMessage `json:"document,omitempty"`
@@ -52,15 +52,15 @@ func getAssetGroup() nstate.Group[AssetData] {
 			"index":       getProperty("integer", "The display order among siblings."),
 			"icon":        getProperty("string", "An emoji or an icon name."),
 			"parent_id":   getRef(GroupAsset),
-			"campaign_id": getRef(GroupCampaign),
+			"owner_id":    getRef(GroupCampaign),
 			"banner_id":   getRef(GroupAsset),
 			"properties":  getJSON("Free form customization owned by the reader."),
 			"document":    getJSON("The block document of a document asset."),
 			"uploaded_by": getOwner("The player who stored it."),
 		}, "name", "mime_type", "uploaded_by"),
 		DependsOn: []string{GroupCampaign},
-		Refs:      map[string]string{"parent_id": GroupAsset, "campaign_id": GroupCampaign, "banner_id": GroupAsset},
-		Filters:   []string{"campaign_id"},
+		Refs:      map[string]string{"parent_id": GroupAsset, "owner_id": GroupCampaign, "banner_id": GroupAsset},
+		Filters:   []string{"owner_id"},
 		Export:    exportAssets,
 		Import:    importAsset,
 		Delete:    deleteAsset,
@@ -99,7 +99,7 @@ func exportAssets(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[Asse
 	}
 	rows := make([]db.Asset, 0)
 	q := db.Instance().NewSelect().Model(&rows).Where("asset.sa_deleted_at IS NULL").Where("asset.slug IS NULL")
-	if campaignID, ok := query.Filter["campaign_id"]; ok {
+	if campaignID, ok := query.Filter["owner_id"]; ok {
 		q = q.Where("asset.sa_root_id = (SELECT id FROM asset WHERE slug = ? AND sa_deleted_at IS NULL)", "campaign-"+campaignID)
 	}
 	q = sdb.ObjectWhere(q, caller, db.OBJECT_TYPE_ASSET, sdb.ACCESS_READ, nil, nil, 0)
@@ -122,7 +122,7 @@ func exportAssets(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[Asse
 		switch slug := roots[row.ParentID]; {
 		case strings.HasPrefix(slug, "campaign-"):
 			campaignID := strings.TrimPrefix(slug, "campaign-")
-			data.CampaignID = &campaignID
+			data.OwnerID = &campaignID
 		case slug != "":
 		case row.ParentID != row.ID && row.ParentID != uuid.Nil:
 			data.ParentID = getText(&row.ParentID)
@@ -163,8 +163,8 @@ func importAsset(ctx *nstate.Context, record nstate.Record[AssetData]) (string, 
 		if record.Data.ParentID != nil {
 			body["parent_id"] = *record.Data.ParentID
 		}
-		if record.Data.CampaignID != nil {
-			body["campaign_id"] = *record.Data.CampaignID
+		if record.Data.OwnerID != nil {
+			body["owner_id"] = *record.Data.OwnerID
 		}
 	}
 	data, err := call(ctx, actor, method, target, body)

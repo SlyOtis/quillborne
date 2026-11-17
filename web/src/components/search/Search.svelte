@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { getTags, postSearch, type SearchHit } from '$lib/api'
+  import { getCampaignId, getTags, postSearch, type SearchHit } from '$lib/api'
   import BaseDialog from "../BaseDialog.svelte";
   import Glyph, { type GlyphName } from "$components/ui/Glyph.svelte";
   import { navigate } from "sly-svelte-location-router";
   import { uiStore, isSearchDialogOpen, searchSeed } from "$lib/stores/ui.store";
-  import { user } from "$lib/stores/auth.store";
+  import { user, userProfile } from "$lib/stores/auth.store";
   import { currentCampaignId, userCampaigns } from "$lib/stores/campaign.store";
   import { ACTIONS, actionBlocks, putShortcuts, shortcuts } from "$lib/actions";
   import IconBtn from "$components/ui/IconBtn.svelte";
@@ -224,13 +224,14 @@
       return { id: `monster/${one.id}`, title: name, sub: lore, group: 'Monsters', place: '', glyph: 'claw', key: '', tags: [], token: '', hay: `${name} ${lore}`.toLowerCase(), run: () => navigate(`/main/monsters/${one.id}`) };
     }
     const kind = (one.kind === 'locations' ? 'places' : one.kind ?? 'entries') as ResourceKind;
-    const under = one.campaign_id ? `/main/campaign/${one.campaign_id}` : '/main';
+    const campaignId = getCampaignId(one, $userProfile);
+    const under = campaignId ? `/main/campaign/${campaignId}` : '/main';
     return {
       id: `${under}/${kind}/${one.id}`,
       title: name,
       sub,
       group: RESOURCES[kind]?.many ?? kind,
-      place: one.campaign_id ? 'At the table' : 'Your own',
+      place: campaignId ? 'At the table' : 'Your own',
       glyph: GLYPHS[kind] ?? 'scroll',
       key: '',
       tags: [],

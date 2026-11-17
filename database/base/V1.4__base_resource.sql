@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS resource (
     id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     kind              resource_kind NOT NULL,
     user_id           UUID NOT NULL,
-    campaign_id       UUID REFERENCES campaign(id),
     name              TEXT NOT NULL DEFAULT '',
     description       TEXT NOT NULL DEFAULT '',
     fields            JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -25,7 +24,7 @@ CREATE TABLE IF NOT EXISTS resource (
 
 COMMENT ON TYPE resource_kind IS 'The seven kinds of lore a player or a campaign keeps';
 
-CREATE INDEX IF NOT EXISTS idx_resource_campaign_kind ON resource (campaign_id, kind);
+CREATE INDEX IF NOT EXISTS idx_resource_owner_kind ON resource (sa_owner_id, kind);
 CREATE INDEX IF NOT EXISTS idx_resource_user_kind ON resource (user_id, kind);
 CREATE INDEX IF NOT EXISTS idx_resource_root ON resource (sa_root_id);
 
@@ -33,14 +32,13 @@ COMMENT ON TABLE resource IS 'A piece of lore kept by a player or a campaign, of
 COMMENT ON COLUMN resource.id IS 'The resource id';
 COMMENT ON COLUMN resource.kind IS 'Which of the seven kinds the resource is';
 COMMENT ON COLUMN resource.user_id IS 'The player who wrote it down';
-COMMENT ON COLUMN resource.campaign_id IS 'The campaign that keeps the resource, empty for a player''s own';
 COMMENT ON COLUMN resource.name IS 'The name shown at the head, what a list sorts by and what the shared search finds';
 COMMENT ON COLUMN resource.description IS 'The lede under the name, searched with it';
 COMMENT ON COLUMN resource.fields IS 'Everything else the page carries: lede, tags, facts, pictures, frame, block document, grouping and the fields of its own kind';
 COMMENT ON COLUMN resource.share_users IS 'The players it is shared with by name';
 COMMENT ON COLUMN resource.share_campaigns IS 'The campaigns whose tables read it';
 COMMENT ON COLUMN resource.reader_claim_id IS 'The claim the players it is shared with by name hold';
-COMMENT ON COLUMN resource.sa_owner_id IS 'The owning organization';
+COMMENT ON COLUMN resource.sa_owner_id IS 'The organization that owns the resource: the organization of the campaign that keeps it, Knights of the Cauldron for a player''s own';
 COMMENT ON COLUMN resource.sa_parent_id IS 'The resource this one is a sub page of: the root for a top resource, itself for a root';
 COMMENT ON COLUMN resource.sa_root_id IS 'The root of the tree, the row that holds every page of one campaign or of one player';
 COMMENT ON COLUMN resource.sa_created_by IS 'The user_claim of the creator';

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"os"
 
 	"github.com/SlyOtis/quillborne/internal/db"
 	"github.com/google/uuid"
@@ -14,8 +15,8 @@ import (
 const GroupVehicle = "vehicle"
 
 type VehicleData struct {
-	OwnerID         string          `json:"owner_id"`
-	CampaignID      *string         `json:"campaign_id,omitempty"`
+	UserID          string          `json:"user_id"`
+	OwnerID         *string         `json:"owner_id,omitempty"`
 	Name            string          `json:"name"`
 	System          string          `json:"system"`
 	Template        string          `json:"template"`
@@ -33,8 +34,8 @@ func getVehicleGroup() nstate.Group[VehicleData] {
 	return nstate.Group[VehicleData]{
 		Name: GroupVehicle,
 		Schema: getSchema(map[string]any{
-			"owner_id":         getOwner("The player who built it."),
-			"campaign_id":      getRef(GroupCampaign),
+			"user_id":          getOwner("The player who built it."),
+			"owner_id":         getRef(GroupCampaign),
 			"name":             getProperty("string", "The vehicle name."),
 			"system":           getProperty("string", "The vehicle rule system id."),
 			"template":         getProperty("string", "The template key it was built from."),
@@ -46,10 +47,10 @@ func getVehicleGroup() nstate.Group[VehicleData] {
 			"rulings":          getJSON("The option chosen for each rules ambiguity by its id."),
 			"overlay":          getJSON("The homebrew catalogue entries this vehicle alone carries."),
 			"crew":             getJSON("Every crew member with their character and role; the character ids are those of the export and are mapped on import."),
-		}, "owner_id", "system", "layout"),
+		}, "user_id", "system", "layout"),
 		DependsOn: []string{GroupCampaign, GroupCharacter},
-		Refs:      map[string]string{"campaign_id": GroupCampaign},
-		Filters:   []string{"campaign_id", "user_id"},
+		Refs:      map[string]string{"owner_id": GroupCampaign},
+		Filters:   []string{"owner_id", "user_id"},
 		Export:    exportVehicles,
 		Import:    importVehicle,
 		Delete:    deleteVehicle,
@@ -90,9 +91,8 @@ func exportVehicles(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[Ve
 		return nil, err
 	}
 	return getRecords(ctx, GroupVehicle, query, rows, func(row db.Vehicle) uuid.UUID { return row.ID }, func(row db.Vehicle) VehicleData {
-		return VehicleData{
-			OwnerID:         row.UserID.String(),
-			CampaignID:      getText(row.CampaignID),
+		data := VehicleData{
+			UserID:          row.UserID.String(),
 			Name:            row.Name,
 			System:          row.System,
 			Template:        row.Template,
@@ -105,11 +105,15 @@ func exportVehicles(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[Ve
 			Overlay:         getRaw(row.Overlay),
 			Crew:            getRaw(row.Crew),
 		}
+		if home, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID")); err == nil && row.OwnerID != home {
+			data.OwnerID = getText(&row.OwnerID)
+		}
+		return data
 	})
 }
 
 func importVehicle(ctx *nstate.Context, record nstate.Record[VehicleData]) (string, error) {
-	owner, err := getOptionalID(&record.Data.OwnerID, "owner_id")
+	owner, err := getOptionalID(&record.Data.UserID, "user_id")
 	if err != nil {
 		return "", err
 	}
@@ -135,8 +139,8 @@ func importVehicle(ctx *nstate.Context, record nstate.Record[VehicleData]) (stri
 		}
 	}
 	if record.ID == "" {
-		if record.Data.CampaignID != nil {
-			body["campaign_id"] = *record.Data.CampaignID
+		if record.Data.OwnerID != nil {
+			body["owner_id"] = *record.Data.OwnerID
 		}
 		data, err := call(ctx, actor, http.MethodPost, "/api/vehicle", body)
 		if err != nil {

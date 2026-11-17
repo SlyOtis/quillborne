@@ -42,7 +42,7 @@ type Profile struct {
 	Preferences json.RawMessage `bun:"preferences,type:jsonb" json:"preferences"`
 	Friends     []uuid.UUID     `bun:"friends,array" json:"friends"`
 	KeyClaimID  *uuid.UUID      `bun:"key_claim_id" json:"-"`
-	OwnerID     uuid.UUID       `bun:"sa_owner_id" json:"-"`
+	OwnerID     uuid.UUID       `bun:"sa_owner_id" json:"owner_id"`
 	CreatedBy   *uuid.UUID      `bun:"sa_created_by" json:"-"`
 	CreatedAt   time.Time       `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
 	UpdatedAt   time.Time       `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
@@ -60,7 +60,7 @@ type Campaign struct {
 	Settings     json.RawMessage `bun:"settings,type:jsonb" json:"settings"`
 	PlayerIDs    []uuid.UUID     `bun:"-" json:"player_ids"`
 	CharacterIDs []uuid.UUID     `bun:"-" json:"character_ids"`
-	OwnerID      uuid.UUID       `bun:"sa_owner_id" json:"-"`
+	OwnerID      uuid.UUID       `bun:"sa_owner_id" json:"owner_id"`
 	CreatedBy    *uuid.UUID      `bun:"sa_created_by" json:"-"`
 	CreatedAt    time.Time       `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
 	UpdatedAt    time.Time       `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
@@ -71,8 +71,7 @@ type CampaignMap struct {
 	bun.BaseModel `json:"-" bun:"table:campaign_map"`
 
 	ID          uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
-	CampaignID  uuid.UUID       `bun:"campaign_id" json:"campaign_id"`
-	UserID      uuid.UUID       `bun:"user_id" json:"owner_id"`
+	UserID      uuid.UUID       `bun:"user_id" json:"user_id"`
 	Title       string          `bun:"title" json:"title"`
 	ImageURL    string          `bun:"image_url" json:"image_url"`
 	Layers      json.RawMessage `bun:"layers,type:jsonb" json:"layers"`
@@ -82,7 +81,7 @@ type CampaignMap struct {
 	MaxZoom     float64         `bun:"max_zoom" json:"max_zoom"`
 	Plan        json.RawMessage `bun:"plan,type:jsonb,nullzero" json:"plan"`
 	ParentMapID *uuid.UUID      `bun:"-" json:"parent_map_id,omitempty"`
-	OwnerID     uuid.UUID       `bun:"sa_owner_id" json:"-"`
+	OwnerID     uuid.UUID       `bun:"sa_owner_id" json:"owner_id"`
 	ParentID    uuid.UUID       `bun:"sa_parent_id" json:"-"`
 	RootID      uuid.UUID       `bun:"sa_root_id" json:"-"`
 	CreatedBy   *uuid.UUID      `bun:"sa_created_by" json:"-"`
@@ -101,15 +100,14 @@ type Encounter struct {
 	bun.BaseModel `json:"-" bun:"table:encounter"`
 
 	ID         uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
-	CampaignID uuid.UUID       `bun:"campaign_id" json:"campaign_id"`
-	UserID     uuid.UUID       `bun:"user_id" json:"owner_id"`
+	UserID     uuid.UUID       `bun:"user_id" json:"user_id"`
 	Title      string          `bun:"title" json:"title"`
 	Combatants json.RawMessage `bun:"combatants,type:jsonb" json:"combatants"`
 	Round      int             `bun:"round" json:"round"`
 	Turn       int             `bun:"turn" json:"turn"`
 	IsActive   bool            `bun:"is_active" json:"is_active"`
 	Share      `tstype:",extends"`
-	OwnerID    uuid.UUID    `bun:"sa_owner_id" json:"-"`
+	OwnerID    uuid.UUID    `bun:"sa_owner_id" json:"owner_id"`
 	CreatedBy  *uuid.UUID   `bun:"sa_created_by" json:"-"`
 	CreatedAt  time.Time    `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
 	UpdatedAt  time.Time    `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
@@ -120,8 +118,7 @@ type Vehicle struct {
 	bun.BaseModel `json:"-" bun:"table:vehicle"`
 
 	ID              uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
-	UserID          uuid.UUID       `bun:"user_id" json:"owner_id"`
-	CampaignID      *uuid.UUID      `bun:"campaign_id" json:"campaign_id"`
+	UserID          uuid.UUID       `bun:"user_id" json:"user_id"`
 	Name            string          `bun:"name" json:"name"`
 	System          string          `bun:"system" json:"system"`
 	Template        string          `bun:"template" json:"template"`
@@ -136,7 +133,7 @@ type Vehicle struct {
 	Revision        int             `bun:"revision" json:"revision"`
 	History         json.RawMessage `bun:"history,type:jsonb" json:"history"`
 	CrewClaimID     *uuid.UUID      `bun:"crew_claim_id" json:"-"`
-	OwnerID         uuid.UUID       `bun:"sa_owner_id" json:"-"`
+	OwnerID         uuid.UUID       `bun:"sa_owner_id" json:"owner_id"`
 	CreatedBy       *uuid.UUID      `bun:"sa_created_by" json:"-"`
 	CreatedAt       time.Time       `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
 	UpdatedAt       time.Time       `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
@@ -147,7 +144,7 @@ type Monster struct {
 	bun.BaseModel `json:"-" bun:"table:monster"`
 
 	ID          uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
-	UserID      uuid.UUID       `bun:"user_id" json:"owner_id"`
+	UserID      uuid.UUID       `bun:"user_id" json:"user_id"`
 	IsPublic    bool            `bun:"is_public" json:"is_public"`
 	System      string          `bun:"system" json:"system"`
 	Name        string          `bun:"name" json:"name"`
@@ -158,7 +155,7 @@ type Monster struct {
 	Stats       json.RawMessage `bun:"stats,type:jsonb" json:"stats"`
 	Description string          `bun:"description" json:"description"`
 	Image       string          `bun:"image" json:"image"`
-	OwnerID     uuid.UUID       `bun:"sa_owner_id" json:"-"`
+	OwnerID     uuid.UUID       `bun:"sa_owner_id" json:"owner_id"`
 	CreatedBy   *uuid.UUID      `bun:"sa_created_by" json:"-"`
 	CreatedAt   time.Time       `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
 	UpdatedAt   time.Time       `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
@@ -169,7 +166,6 @@ type ChatEntry struct {
 	bun.BaseModel `json:"-" bun:"table:chat_entry"`
 
 	ID         uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
-	CampaignID uuid.UUID       `bun:"campaign_id" json:"campaign_id"`
 	AuthorID   uuid.UUID       `bun:"author_id" json:"author_id"`
 	AuthorName string          `bun:"author_name" json:"author_name"`
 	Kind       string          `bun:"kind" json:"kind"`
@@ -182,7 +178,7 @@ type ChatEntry struct {
 	Dice       json.RawMessage `bun:"dice,type:jsonb" json:"dice"`
 	Roll       float64         `bun:"roll" json:"roll"`
 	Total      float64         `bun:"total" json:"total"`
-	OwnerID    uuid.UUID       `bun:"sa_owner_id" json:"-"`
+	OwnerID    uuid.UUID       `bun:"sa_owner_id" json:"owner_id"`
 	CreatedBy  *uuid.UUID      `bun:"sa_created_by" json:"-"`
 	CreatedAt  time.Time       `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
 	UpdatedAt  time.Time       `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
@@ -192,26 +188,24 @@ type ChatEntry struct {
 type Song struct {
 	bun.BaseModel `json:"-" bun:"table:song"`
 
-	ID         uuid.UUID `bun:"id,pk,default:gen_random_uuid()" json:"id"`
-	CampaignID uuid.UUID `bun:"campaign_id" json:"campaign_id"`
-	UserID     uuid.UUID `bun:"user_id" json:"owner_id"`
-	Title      string    `bun:"title" json:"title"`
-	Address    string    `bun:"address" json:"address"`
-	Duration   float64   `bun:"duration" json:"duration"`
-	Share      `tstype:",extends"`
-	OwnerID    uuid.UUID    `bun:"sa_owner_id" json:"-"`
-	CreatedBy  *uuid.UUID   `bun:"sa_created_by" json:"-"`
-	CreatedAt  time.Time    `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
-	UpdatedAt  time.Time    `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
-	DeletedAt  bun.NullTime `bun:"sa_deleted_at,soft_delete,nullzero" json:"-"`
+	ID        uuid.UUID `bun:"id,pk,default:gen_random_uuid()" json:"id"`
+	UserID    uuid.UUID `bun:"user_id" json:"user_id"`
+	Title     string    `bun:"title" json:"title"`
+	Address   string    `bun:"address" json:"address"`
+	Duration  float64   `bun:"duration" json:"duration"`
+	Share     `tstype:",extends"`
+	OwnerID   uuid.UUID    `bun:"sa_owner_id" json:"owner_id"`
+	CreatedBy *uuid.UUID   `bun:"sa_created_by" json:"-"`
+	CreatedAt time.Time    `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
+	UpdatedAt time.Time    `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
+	DeletedAt bun.NullTime `bun:"sa_deleted_at,soft_delete,nullzero" json:"-"`
 }
 
 type Character struct {
 	bun.BaseModel `json:"-" bun:"table:character"`
 
 	ID           uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
-	UserID       uuid.UUID       `bun:"user_id" json:"owner_id"`
-	CampaignID   *uuid.UUID      `bun:"campaign_id" json:"campaign_id,omitempty"`
+	UserID       uuid.UUID       `bun:"user_id" json:"user_id"`
 	Name         string          `bun:"name" json:"name"`
 	Description  string          `bun:"description" json:"description"`
 	Sheet        json.RawMessage `bun:"sheet,type:jsonb" json:"character"`
@@ -219,7 +213,7 @@ type Character struct {
 	Sources      json.RawMessage `bun:"sources,type:jsonb" json:"-"`
 	IsPublic     bool            `bun:"is_public" json:"-"`
 	LastPlayedAt *time.Time      `bun:"last_played_at" json:"-"`
-	OwnerID      uuid.UUID       `bun:"sa_owner_id" json:"-"`
+	OwnerID      uuid.UUID       `bun:"sa_owner_id" json:"owner_id"`
 	CreatedBy    *uuid.UUID      `bun:"sa_created_by" json:"-"`
 	CreatedAt    time.Time       `bun:"sa_created_at,nullzero,default:now()" json:"-"`
 	UpdatedAt    time.Time       `bun:"sa_updated_at,nullzero,default:now()" json:"-"`
@@ -231,13 +225,12 @@ type Resource struct {
 
 	ID          uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"id"`
 	Kind        string          `bun:"kind" json:"kind"`
-	UserID      uuid.UUID       `bun:"user_id" json:"owner_id"`
-	CampaignID  *uuid.UUID      `bun:"campaign_id" json:"campaign_id,omitempty"`
+	UserID      uuid.UUID       `bun:"user_id" json:"user_id"`
 	Name        string          `bun:"name" json:"name"`
 	Description string          `bun:"description" json:"description"`
 	Fields      json.RawMessage `bun:"fields,type:jsonb" json:"-"`
 	Share       `tstype:",extends"`
-	OwnerID     uuid.UUID    `bun:"sa_owner_id" json:"-"`
+	OwnerID     uuid.UUID    `bun:"sa_owner_id" json:"owner_id"`
 	ParentID    uuid.UUID    `bun:"sa_parent_id" json:"-"`
 	RootID      uuid.UUID    `bun:"sa_root_id" json:"-"`
 	CreatedBy   *uuid.UUID   `bun:"sa_created_by" json:"-"`
@@ -283,7 +276,7 @@ type Asset struct {
 	Properties       json.RawMessage `bun:"properties,type:jsonb,nullzero" json:"properties"`
 	BannerProperties json.RawMessage `bun:"banner_properties,scanonly,nullzero" json:"banner_properties,omitempty"`
 	Tags             []Tag           `bun:"m2m:tag_object,join:Asset=Tag" json:"tags,omitempty"`
-	OwnerID          uuid.UUID       `bun:"sa_owner_id" json:"-"`
+	OwnerID          uuid.UUID       `bun:"sa_owner_id" json:"owner_id"`
 	CreatedBy        *uuid.UUID      `bun:"sa_created_by" json:"-"`
 	CreatedAt        time.Time       `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
 	UpdatedAt        time.Time       `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
@@ -299,7 +292,7 @@ type ObjectAsset struct {
 	AssetID    uuid.UUID       `bun:"asset_id" json:"asset_id"`
 	Asset      *Asset          `bun:"rel:belongs-to,join:asset_id=id" json:"asset,omitempty"`
 	Properties json.RawMessage `bun:"properties,type:jsonb,nullzero" json:"properties"`
-	OwnerID    uuid.UUID       `bun:"sa_owner_id" json:"-"`
+	OwnerID    uuid.UUID       `bun:"sa_owner_id" json:"owner_id"`
 	CreatedBy  *uuid.UUID      `bun:"sa_created_by" json:"-"`
 	CreatedAt  time.Time       `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
 	UpdatedAt  time.Time       `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
@@ -312,7 +305,7 @@ type Tag struct {
 	ID        uuid.UUID    `bun:"id,pk,default:gen_random_uuid()" json:"id"`
 	Name      string       `bun:"name" json:"name"`
 	ObjectIDs []uuid.UUID  `bun:"object_ids,array,scanonly" json:"object_ids,omitempty"`
-	OwnerID   uuid.UUID    `bun:"sa_owner_id" json:"-"`
+	OwnerID   uuid.UUID    `bun:"sa_owner_id" json:"owner_id"`
 	CreatedBy *uuid.UUID   `bun:"sa_created_by" json:"-"`
 	CreatedAt time.Time    `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
 	UpdatedAt time.Time    `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
@@ -328,7 +321,7 @@ type TagObject struct {
 	ObjectType string       `bun:"object_type" json:"object_type"`
 	ObjectID   uuid.UUID    `bun:"object_id" json:"object_id"`
 	Asset      *Asset       `bun:"rel:belongs-to,join:object_id=id" json:"asset,omitempty"`
-	OwnerID    uuid.UUID    `bun:"sa_owner_id" json:"-"`
+	OwnerID    uuid.UUID    `bun:"sa_owner_id" json:"owner_id"`
 	CreatedBy  *uuid.UUID   `bun:"sa_created_by" json:"-"`
 	CreatedAt  time.Time    `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
 	UpdatedAt  time.Time    `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`
@@ -340,13 +333,13 @@ type CatalogEntry struct {
 
 	ID          uuid.UUID       `bun:"id,pk,default:gen_random_uuid()" json:"-"`
 	Kind        string          `bun:"kind" json:"kind"`
-	UserID      uuid.UUID       `bun:"user_id" json:"owner_id"`
+	UserID      uuid.UUID       `bun:"user_id" json:"user_id"`
 	Slug        string          `bun:"slug" json:"id"`
 	Name        string          `bun:"name" json:"name"`
 	Description string          `bun:"description" json:"description"`
 	Entry       json.RawMessage `bun:"entry,type:jsonb" json:"-"`
 	Digest      string          `bun:"digest" json:"digest"`
-	OwnerID     uuid.UUID       `bun:"sa_owner_id" json:"-"`
+	OwnerID     uuid.UUID       `bun:"sa_owner_id" json:"owner_id"`
 	CreatedBy   *uuid.UUID      `bun:"sa_created_by" json:"-"`
 	CreatedAt   time.Time       `bun:"sa_created_at,nullzero,default:now()" json:"created_at"`
 	UpdatedAt   time.Time       `bun:"sa_updated_at,nullzero,default:now()" json:"updated_at"`

@@ -27,6 +27,7 @@ export interface Profile {
   photo_url: string;
   preferences: any;
   friends: string[];
+  owner_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -39,13 +40,13 @@ export interface Campaign {
   settings: any;
   player_ids: string[];
   character_ids: string[];
+  owner_id: string;
   created_at: string;
   updated_at: string;
 }
 export interface CampaignMap {
   id: string;
-  campaign_id: string;
-  owner_id: string;
+  user_id: string;
   title: string;
   image_url: string;
   layers: any;
@@ -55,6 +56,7 @@ export interface CampaignMap {
   max_zoom: number /* float64 */;
   plan: any;
   parent_map_id?: string;
+  owner_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -64,20 +66,19 @@ export interface Share {
 }
 export interface Encounter extends Share {
   id: string;
-  campaign_id: string;
-  owner_id: string;
+  user_id: string;
   title: string;
   combatants: any;
   round: number /* int */;
   turn: number /* int */;
   is_active: boolean;
+  owner_id: string;
   created_at: string;
   updated_at: string;
 }
 export interface Vehicle {
   id: string;
-  owner_id: string;
-  campaign_id?: string;
+  user_id: string;
   name: string;
   system: string;
   template: string;
@@ -91,12 +92,13 @@ export interface Vehicle {
   crew: any;
   revision: number /* int */;
   history: any;
+  owner_id: string;
   created_at: string;
   updated_at: string;
 }
 export interface Monster {
   id: string;
-  owner_id: string;
+  user_id: string;
   is_public: boolean;
   system: string;
   name: string;
@@ -107,12 +109,12 @@ export interface Monster {
   stats: any;
   description: string;
   image: string;
+  owner_id: string;
   created_at: string;
   updated_at: string;
 }
 export interface ChatEntry {
   id: string;
-  campaign_id: string;
   author_id: string;
   author_name: string;
   kind: string;
@@ -125,35 +127,36 @@ export interface ChatEntry {
   dice: any;
   roll: number /* float64 */;
   total: number /* float64 */;
+  owner_id: string;
   created_at: string;
   updated_at: string;
 }
 export interface Song extends Share {
   id: string;
-  campaign_id: string;
-  owner_id: string;
+  user_id: string;
   title: string;
   address: string;
   duration: number /* float64 */;
+  owner_id: string;
   created_at: string;
   updated_at: string;
 }
 export interface Character {
   id: string;
-  owner_id: string;
-  campaign_id?: string;
+  user_id: string;
   name: string;
   description: string;
   character: any;
   metadata: any;
+  owner_id: string;
 }
 export interface Resource extends Share {
   id: string;
   kind: string;
-  owner_id: string;
-  campaign_id?: string;
+  user_id: string;
   name: string;
   description: string;
+  owner_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -188,6 +191,7 @@ export interface Asset {
   properties: any;
   banner_properties?: any;
   tags?: Tag[];
+  owner_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -198,6 +202,7 @@ export interface ObjectAsset {
   asset_id: string;
   asset?: Asset;
   properties: any;
+  owner_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -205,6 +210,7 @@ export interface Tag {
   id: string;
   name: string;
   object_ids?: string[];
+  owner_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -215,16 +221,18 @@ export interface TagObject {
   object_type: string;
   object_id: string;
   asset?: Asset;
+  owner_id: string;
   created_at: string;
   updated_at: string;
 }
 export interface CatalogEntry {
   kind: string;
-  owner_id: string;
+  user_id: string;
   id: string;
   name: string;
   description: string;
   digest: string;
+  owner_id: string;
   created_at: string;
   updated_at: string;
 }

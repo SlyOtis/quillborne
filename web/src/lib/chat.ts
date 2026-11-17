@@ -1,4 +1,4 @@
-import { getCampaignChatStream, getCharacter, getCsrfHeaders, getVehicle, postCampaignChat } from './api'
+import { getCampaignChatStream, getCampaignId, getCharacter, getCsrfHeaders, getVehicle, postCampaignChat } from './api'
 import type { CardKind, ChatEntry } from './api/types'
 import {type Readable, type Unsubscriber, type Writable, writable, get} from "svelte/store";
 import {currentRoute} from "sly-svelte-location-router";
@@ -6,7 +6,7 @@ import type {RollLog, RollLogItem} from "./types";
 import {rollDie, rollDice, getFormula, getFormulaTotal, type FormulaTerm, writeRollLog, getRollLog, getAuthor, getCharacterStore, getResolvedRules, putItem, postItem, deleteItem, putHealing, putSlots, postShortRest, postLongRest, putCondition, deleteCondition, putDefence, deleteDefence, updateCharacterWithChangeLog, type ChatEntryFields} from "./engine";
 import type {Character} from "./character.types";
 import { ChangeActions, undoLastChange, redoLastChange } from "./changelog";
-import { userDetails } from "./stores/auth.store";
+import { userDetails, userProfile } from "./stores/auth.store";
 import { currentCampaignId } from "./stores/campaign.store";
 import { currentCharacterId } from "./stores/character.store";
 import { getExpressionValue } from "./rules/expression";
@@ -162,7 +162,7 @@ function postCampaignScope(): Unsubscriber {
     if (vehicleId) {
       getVehicle(vehicleId)
         .then(vehicle => {
-          if (get(currentRoute)?.path === route.path) currentCampaignId.set(vehicle?.campaign_id ?? null);
+          if (get(currentRoute)?.path === route.path) currentCampaignId.set(vehicle ? getCampaignId(vehicle, get(userProfile)) : null);
         })
         .catch(error => {
           console.error('Campaign scope did not resolve:', error);
@@ -173,7 +173,7 @@ function postCampaignScope(): Unsubscriber {
 
     if (route?.path?.startsWith('/main/character/') && id && id !== 'local') {
       getCharacter(id)
-        .then(document => currentCampaignId.set(document?.campaign_id ?? null))
+        .then(document => currentCampaignId.set(document ? getCampaignId(document, get(userProfile)) : null))
         .catch(error => {
           console.error('Campaign scope did not resolve:', error);
           currentCampaignId.set(null);

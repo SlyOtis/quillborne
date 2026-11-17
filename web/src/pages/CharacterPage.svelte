@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as api from '$lib/api'
-  import { getAssets, getCampaign, getCampaignVehiclesStream, getCharacter, postCharacterCopy, postFile, putCharacterLayout, putCharacterPlayed, putProfileRecentCharacters } from '$lib/api'
+  import { getAssets, getCampaign, getCampaignId, getCampaignVehiclesStream, getCharacter, postCharacterCopy, postFile, putCharacterLayout, putCharacterPlayed, putProfileRecentCharacters } from '$lib/api'
   import type { Character } from '$lib/api/types'
   import { getTheme, setTheme } from "$lib/dialogs/theme";
   import Senses from "$character-sheet/Senses.svelte";
@@ -102,22 +102,23 @@
           return;
         }
 
-        setCharacterReadOnly(document.owner_id !== $user?.user_id);
+        setCharacterReadOnly(document.user_id !== $user?.user_id);
         applyStateToCharacter(document.character, true);
         layout = document.metadata.layout ?? {};
-        ownerId = document.owner_id;
+        ownerId = document.user_id;
         currentCharacterId.set(characterId);
         putProfileRecentCharacters(getRecentCharacters($userProfile?.preferences?.recent_characters ?? [], characterId))
           .catch((reason) => characterWriteError.set(reason instanceof Error ? reason.message : String(reason)));
-        if (document.owner_id === $user?.user_id) {
+        if (document.user_id === $user?.user_id) {
           putCharacterPlayed(characterId)
             .catch((reason) => characterWriteError.set(reason instanceof Error ? reason.message : String(reason)));
         } else {
           postNotice("Another player's character. You can read the sheet, but only they can change it.");
         }
 
-        if (document.campaign_id) {
-          getCampaign(document.campaign_id)
+        const campaignId = getCampaignId(document, $userProfile);
+        if (campaignId) {
+          getCampaign(campaignId)
             .then((found) => {
               campaign = found && { id: found.id, name: found.name };
               if (!found) fleet = 0;

@@ -108,7 +108,7 @@ func Resources() []cli.Resource {
 			Short: "Character sheets",
 			Verbs: []cli.Verb{
 				getOp("List your characters, or read one", apiPrefix+"/character", apiPrefix+"/character/{id}"),
-				createOp("Create a character, body {character, metadata, campaign_id}", apiPrefix+"/character"),
+				createOp("Create a character, body {character, metadata, owner_id}", apiPrefix+"/character"),
 				replaceOp("Change a character, body {character, metadata}", "", apiPrefix+"/character/{id}"),
 				deleteOp("Delete a character", "", apiPrefix+"/character/{id}"),
 				putOp(verbPlayed, "Mark a character as played now", "", apiPrefix+"/character/{id}/played"),
@@ -130,7 +130,7 @@ func Resources() []cli.Resource {
 			Short: "The vessels the table sails",
 			Verbs: []cli.Verb{
 				getOp("List the vehicles you reach, or read one", apiPrefix+"/vehicle", apiPrefix+"/vehicle/{id}"),
-				createOp("Build a vehicle, body {name, system, layout, template, components, crew, campaign_id}", apiPrefix+"/vehicle"),
+				createOp("Build a vehicle, body {name, system, layout, template, components, crew, owner_id}", apiPrefix+"/vehicle"),
 				replaceOp("Change a vehicle, body with revision for a components change", "", apiPrefix+"/vehicle/{id}"),
 				deleteOp("Scuttle a vehicle", "", apiPrefix+"/vehicle/{id}"),
 				streamOp("Follow a vehicle's events", "", apiPrefix+"/vehicle/{id}/stream"),
@@ -220,8 +220,8 @@ func Resources() []cli.Resource {
 			Name:  "resource",
 			Short: "Lore pages of the seven kinds",
 			Verbs: []cli.Verb{
-				getOp("List pages by ?kind= and ?campaign_id= or ?user_id=, or with ?reach=all every page of the kind you read and the head of each item locked to you at a table you sit at; or read one", apiPrefix+"/resource", apiPrefix+"/resource/{id}"),
-				createOp("Write a page, body {kind, name, description, campaign_id, parent_id, share_users, share_campaigns, ...fields}", apiPrefix+"/resource"),
+				getOp("List pages by ?kind= and ?owner_id= or ?user_id=, or with ?reach=all every page of the kind you read and the head of each item locked to you at a table you sit at; or read one", apiPrefix+"/resource", apiPrefix+"/resource/{id}"),
+				createOp("Write a page, body {kind, name, description, owner_id, parent_id, share_users, share_campaigns, ...fields}", apiPrefix+"/resource"),
 				replaceOp("Change a page", "", apiPrefix+"/resource/{id}"),
 				deleteOp("Delete a page", "", apiPrefix+"/resource/{id}"),
 				streamOp("Follow a page's events", "", apiPrefix+"/resource/{id}/stream"),
@@ -244,7 +244,7 @@ func Resources() []cli.Resource {
 			Short: "Files, block documents and folders",
 			Verbs: []cli.Verb{
 				getOp("List the assets you reach, or read one", apiPrefix+"/asset", apiPrefix+"/asset/{id}"),
-				cli.Verb{Name: verbCreate, Short: "Store an asset: a json body {name, mime_type, parent_id, campaign_id, document} or --upload with name and mime_type", Method: http.MethodPost, Paths: []string{apiPrefix + "/asset"}, Body: true, Upload: true},
+				cli.Verb{Name: verbCreate, Short: "Store an asset: a json body {name, mime_type, parent_id, owner_id, document} or --upload with name and mime_type", Method: http.MethodPost, Paths: []string{apiPrefix + "/asset"}, Body: true, Upload: true},
 				replaceOp("Change an asset's name, description, index, icon, banner or properties", "", apiPrefix+"/asset/{id}"),
 				deleteOp("Delete an asset", "", apiPrefix+"/asset/{id}"),
 				readOp(verbData, "Read the bytes of an asset", "", apiPrefix+"/asset/{id}/data"),

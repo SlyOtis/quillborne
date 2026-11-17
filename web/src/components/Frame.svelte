@@ -32,7 +32,7 @@ import Toast from '$components/ui/Toast.svelte'
   })
 
   const character = $derived($userCharacters.find((one) => one.id === ($currentCharacterId ?? $userProfile?.preferences?.active_characters?.[$currentCampaignId ?? $userCampaigns[0]?.id ?? ''] ?? $userProfile?.preferences?.recent_characters?.[0])) ?? null)
-  const campaign = $derived($userCampaigns.find((one) => one.id === ($currentCampaignId ?? character?.campaign_id)) ?? $userCampaigns[0] ?? null)
+  const campaign = $derived($userCampaigns.find((one) => one.id === ($currentCampaignId ?? character?.owner_id)) ?? $userCampaigns[0] ?? null)
   const onSheet = $derived(Boolean(character) && $resolvedRoute.path === `/main/character/${character?.id}`)
   const seats = $derived(campaign ? [campaign.dm_id, ...campaign.player_ids.filter((id) => id !== campaign.dm_id)] : [])
   let profiles = $state<Record<string, Profile>>({})

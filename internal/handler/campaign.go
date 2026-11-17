@@ -54,11 +54,11 @@ func getCampaignView(ctx context.Context, campaigns []db.Campaign) error {
 		return err
 	}
 	type held struct {
-		ID         uuid.UUID `bun:"id"`
-		CampaignID uuid.UUID `bun:"campaign_id"`
+		ID      uuid.UUID `bun:"id"`
+		OwnerID uuid.UUID `bun:"sa_owner_id"`
 	}
 	rows := make([]held, 0)
-	if err := db.Instance().NewSelect().Table("character").Column("id", "campaign_id").Where("campaign_id IN (?)", bun.In(ids)).Where("sa_deleted_at IS NULL").Scan(ctx, &rows); err != nil {
+	if err := db.Instance().NewSelect().Table("character").Column("id", "sa_owner_id").Where("sa_owner_id IN (?)", bun.In(ids)).Where("sa_deleted_at IS NULL").Scan(ctx, &rows); err != nil {
 		return err
 	}
 	for i := range campaigns {
@@ -72,7 +72,7 @@ func getCampaignView(ctx context.Context, campaigns []db.Campaign) error {
 		}
 		campaigns[i].CharacterIDs = []uuid.UUID{}
 		for _, row := range rows {
-			if row.CampaignID == campaigns[i].ID {
+			if row.OwnerID == campaigns[i].ID {
 				campaigns[i].CharacterIDs = append(campaigns[i].CharacterIDs, row.ID)
 			}
 		}
@@ -390,7 +390,7 @@ func DeleteCampaign(ctx echo.Context) error {
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		held := make([]db.Character, 0)
-		if err := tx.NewSelect().Model(&held).Where("campaign_id = ?", campaignID).Scan(tctx); err != nil {
+		if err := tx.NewSelect().Model(&held).Where("sa_owner_id = ?", campaignID).Scan(tctx); err != nil {
 			return err
 		}
 		for _, character := range held {
@@ -399,11 +399,11 @@ func DeleteCampaign(ctx echo.Context) error {
 			}
 		}
 		for _, table := range []string{"campaign_map", "encounter", "chat_entry", "song"} {
-			if _, err := tx.NewUpdate().Table(table).Set("sa_deleted_at = NOW()").Where("campaign_id = ?", campaignID).Where("sa_deleted_at IS NULL").Exec(tctx); err != nil {
+			if _, err := tx.NewUpdate().Table(table).Set("sa_deleted_at = NOW()").Where("sa_owner_id = ?", campaignID).Where("sa_deleted_at IS NULL").Exec(tctx); err != nil {
 				return err
 			}
 		}
-		if _, err := tx.NewUpdate().Table("resource").Set("sa_deleted_at = NOW()").Where("campaign_id = ?", campaignID).Where("sa_deleted_at IS NULL").Exec(tctx); err != nil {
+		if _, err := tx.NewUpdate().Table("resource").Set("sa_deleted_at = NOW()").Where("sa_owner_id = ?", campaignID).Where("sa_deleted_at IS NULL").Exec(tctx); err != nil {
 			return err
 		}
 		if _, err := tx.NewRaw("WITH RECURSIVE down AS (SELECT id FROM asset WHERE slug = ? AND sa_deleted_at IS NULL UNION SELECT a.id FROM asset a JOIN down ON a.sa_parent_id = down.id AND a.id <> down.id) UPDATE asset SET sa_deleted_at = NOW() WHERE id IN (SELECT id FROM down) AND sa_deleted_at IS NULL", "campaign-"+campaignID.String()).Exec(tctx); err != nil {
@@ -557,7 +557,7 @@ func DeleteCampaignPlayer(ctx echo.Context) error {
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		held := make([]db.Character, 0)
-		if err := tx.NewSelect().Model(&held).Where("campaign_id = ?", campaignID).Where("user_id = ?", playerID).Scan(tctx); err != nil {
+		if err := tx.NewSelect().Model(&held).Where("sa_owner_id = ?", campaignID).Where("user_id = ?", playerID).Scan(tctx); err != nil {
 			return err
 		}
 		for _, character := range held {
@@ -600,7 +600,7 @@ func GetCampaignCharacters(ctx echo.Context) error {
 		return respond.ErrorInternal(ctx)
 	}
 	characters := make([]db.Character, 0)
-	q := db.Instance().NewSelect().Model(&characters).Where("campaign_id = ?", campaignID)
+	q := db.Instance().NewSelect().Model(&characters).Where("character.sa_owner_id = ?", campaignID)
 	q = sdb.ObjectWhere(q, actorID, db.OBJECT_TYPE_CHARACTER, sdb.ACCESS_READ, nil, nil, 0)
 	if err := q.Scan(rctx); err != nil {
 		ctx.Logger().Errorf("GetCampaignCharacters: %v", err)
@@ -668,15 +668,19 @@ func PostCampaignCharacter(ctx echo.Context) error {
 		if err := tx.NewSelect().Model(&character).WherePK().Scan(tctx); err != nil {
 			return err
 		}
-		if character.CampaignID != nil && *character.CampaignID != campaignID {
-			previous := db.Campaign{ID: *character.CampaignID}
+		home, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID"))
+		if err != nil {
+			return errNoOwner
+		}
+		if character.OwnerID != home && character.OwnerID != campaignID {
+			previous := db.Campaign{ID: character.OwnerID}
 			if err := getCampaign(tctx, &previous); err == nil {
 				if err := deleteCampaignCharacterTx(tctx, tx, w, &previous, characterID); err != nil {
 					return err
 				}
 			}
 		}
-		if _, err := tx.NewUpdate().Model(&character).Set("campaign_id = ?", campaignID).Set("sa_owner_id = ?", campaign.ID).Set("sa_updated_at = NOW()").WherePK().Exec(tctx); err != nil {
+		if _, err := tx.NewUpdate().Model(&character).Set("sa_owner_id = ?", campaign.ID).Set("sa_updated_at = NOW()").WherePK().Exec(tctx); err != nil {
 			return err
 		}
 		memberships, err := getMemberships(tctx, []uuid.UUID{campaign.ID})
@@ -781,6 +785,6 @@ func deleteCampaignCharacterTx(ctx context.Context, tx bun.Tx, w *Writer, campai
 	if err != nil {
 		return errNoOwner
 	}
-	_, err = tx.NewUpdate().Table("character").Set("campaign_id = NULL").Set("sa_owner_id = ?", home).Set("sa_updated_at = NOW()").Where("id = ?", characterID).Where("campaign_id = ?", campaign.ID).Exec(ctx)
+	_, err = tx.NewUpdate().Table("character").Set("sa_owner_id = ?", home).Set("sa_updated_at = NOW()").Where("id = ?", characterID).Where("sa_owner_id = ?", campaign.ID).Exec(ctx)
 	return err
 }
