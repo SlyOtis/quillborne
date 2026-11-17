@@ -117,7 +117,6 @@
     width="700px"
     maxWidth="95vw"
     maxHeight="90vh"
-    zIndex={9999}
   >
     <div class="ledger">
       <section class="gains">

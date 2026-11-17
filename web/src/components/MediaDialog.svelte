@@ -157,7 +157,6 @@
   onClose={() => onclose(null)}
   title="Pick or upload {names.one}"
   width="clamp(20rem, 64vw, 52rem)"
-  zIndex={9999}
   closeOnBackdropClick={!uploading}
   closeOnEscape={!uploading}
 >

@@ -327,7 +327,7 @@
 {/snippet}
 
 {#if building}
-  <BaseDialog bind:isOpen={building} title="Build a vessel" zIndex={9999}>
+  <BaseDialog bind:isOpen={building} title="Build a vessel">
     <div class="dock-build">
       <Field id="build-name" label="What she is called" required>
         <input id="build-name" type="text" maxlength="120" placeholder="The Gull’s Revenge" bind:value={name} disabled={busy} />

@@ -22,7 +22,7 @@
   const taken = $derived((frame as PortraitFrame) ?? 'lancet');
 </script>
 
-<BaseDialog bind:isOpen title="Choose Your Frame" width="600px" zIndex={9999}>
+<BaseDialog bind:isOpen title="Choose Your Frame" width="600px">
   <div class="content">
     <div class="crest">
       <Ornament name="crest" size="md" tone="metal" />

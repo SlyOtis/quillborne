@@ -72,7 +72,7 @@
 
 <svelte:window onkeydowncapture={listen} />
 
-<BaseDialog bind:isOpen title="Pin an action" width="520px" zIndex={9999}>
+<BaseDialog bind:isOpen title="Pin an action" width="520px">
   <div class="dnd-shortcut">
     <p class="dnd-shortcut-note">
       Pick an action to pin to the navigator, then press the keyboard key that should fire it. The shortcut is saved on your profile and only applies to you.

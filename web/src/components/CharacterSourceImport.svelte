@@ -725,7 +725,7 @@ Answer with JSON and nothing else: className, hitDie, primaryAbility, savingThro
 </script>
 
 {#if isOpen && !showImportDialog}
-  <BaseDialog bind:isOpen title="Character Sources" onClose={closeDialog} width="760px" zIndex={9999}>
+  <BaseDialog bind:isOpen title="Character Sources" onClose={closeDialog} width="760px">
     <div class="content">
       <div class="crest">
         <Ornament name="crest" size="md" tone="metal" />
@@ -797,7 +797,7 @@ Answer with JSON and nothing else: className, hitDie, primaryAbility, savingThro
 {/if}
 
 {#if showImportDialog}
-  <BaseDialog bind:isOpen={showImportDialog} title="Import Character Source" onClose={closeImportDialog} width="600px" zIndex={9999}>
+  <BaseDialog bind:isOpen={showImportDialog} title="Import Character Source" onClose={closeImportDialog} width="600px">
     <div class="content">
       <div class="crest">
         <Ornament name="crest" size="md" tone="metal" />

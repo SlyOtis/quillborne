@@ -79,7 +79,7 @@
   }
 </script>
 
-<BaseDialog bind:isOpen {title} width="560px" zIndex={9999} closeOnBackdropClick={!busy} closeOnEscape={!busy}>
+<BaseDialog bind:isOpen {title} width="560px" closeOnBackdropClick={!busy} closeOnEscape={!busy}>
   <div class="dnd-songimport">
     <div
       class="dnd-songimport-drop"

@@ -364,7 +364,6 @@
     title={browsingCurrent ? `Change ${browsingCurrent.name}` : `Add to ${browsingSlot?.code ?? 'the deck'}`}
     width="min(72rem, 94vw)"
     maxHeight="88vh"
-    zIndex={9000}
   >
     <div class="vd-browse">
       <ComponentBrowser

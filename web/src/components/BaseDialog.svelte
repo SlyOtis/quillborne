@@ -16,7 +16,6 @@
     closeOnBackdropClick = true,
     closeOnEscape = true,
     place = 'center',
-    zIndex = 1000,
     children
   }: {
     isOpen: boolean;
@@ -30,7 +29,6 @@
     closeOnBackdropClick?: boolean;
     closeOnEscape?: boolean;
     place?: 'center' | 'top';
-    zIndex?: number;
     children?: Snippet;
   } = $props();
 
@@ -68,10 +66,14 @@
   });
 
   $effect(() => {
-    if (isOpen && dialogElement) {
+    if (isOpen && dialogElement && !dialogElement.contains(document.activeElement)) {
       dialogElement.focus();
     }
   });
+
+  function raise(node: HTMLElement) {
+    node.showPopover();
+  }
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -82,8 +84,9 @@
       type="button"
       class="backdrop"
       aria-label="Close dialog"
+      popover="manual"
       onclick={handleBackdropClick}
-      style="z-index: {zIndex};"
+      {@attach raise}
     ></button>
   {/if}
 
@@ -91,9 +94,11 @@
     bind:this={dialogElement}
     class="dialog"
     class:dialog-top={place === 'top'}
-    style="width: {width}; max-width: {maxWidth}; max-height: {maxHeight}; z-index: {zIndex + 1};"
+    style="width: {width}; max-width: {maxWidth}; max-height: {maxHeight};"
     tabindex="-1"
     role="dialog"
+    popover="manual"
+    {@attach raise}
     aria-modal="true"
     aria-labelledby={title ? 'dialog-title' : undefined}
   >
@@ -142,6 +147,7 @@
     inset: 0;
     width: 100vw;
     height: 100vh;
+    margin: 0;
     border: none;
     padding: 0;
     background:
@@ -158,12 +164,15 @@
     --dialog-rim-w: 0.375rem;
     --dialog-shift: -50%;
     position: fixed;
-    top: 50%;
-    left: 50%;
+    inset: 50% auto auto 50%;
+    height: auto;
+    margin: 0;
+    overflow: visible;
     transform: translate(-50%, var(--dialog-shift));
     display: flex;
     flex-direction: column;
     padding: var(--dialog-rim-w);
+    color: inherit;
     background:
       var(--texture-noise),
       radial-gradient(ellipse 80% 50% at 50% 0%, color-mix(in srgb, var(--ember-glow) 18%, transparent) 0%, transparent 70%),

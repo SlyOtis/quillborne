@@ -348,7 +348,7 @@
     {/if}
 
     {#if chartsOpen}
-      <BaseDialog bind:isOpen={chartsOpen} title="Charts" width="420px" zIndex={9999}>
+      <BaseDialog bind:isOpen={chartsOpen} title="Charts" width="420px">
         <div class="camp-charts">
           <Fold title="Maps" count={visibleMaps.length} open={tocOpen} ontoggle={() => (tocOpen = !tocOpen)}>
             {#if visibleMaps.length === 0}

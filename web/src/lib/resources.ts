@@ -397,6 +397,38 @@ export function getItemLine(one: Pick<Item, 'category' | 'subtype' | 'rarity' | 
   return `${getItemType(one)}, ${one.rarity}${one.attunement ? ` (${bond})` : ''}`
 }
 
+/** What the item room is narrowed by. An empty field narrows nothing. */
+export interface ItemFilter {
+  /** Words the name holds. */
+  name: string
+  type: '' | ItemType
+  rarities: Rarity[]
+  bond: '' | 'required' | 'free'
+  source: '' | Item['source']
+  lock: '' | 'open' | 'locked'
+  /** The campaign that keeps it. */
+  table: string
+}
+
+/** A filter that narrows nothing. */
+export function getEmptyItemFilter(): ItemFilter {
+  return { name: '', type: '', rarities: [], bond: '', source: '', lock: '', table: '' }
+}
+
+/** Whether an item answers to every field of the filter. */
+export function isItemShown(one: Item, filter: ItemFilter): boolean {
+  const asked = filter.name.trim().toLowerCase()
+  return (
+    (!asked || one.title.toLowerCase().includes(asked)) &&
+    (!filter.type || one.category === filter.type) &&
+    (filter.rarities.length === 0 || filter.rarities.includes(one.rarity)) &&
+    (!filter.bond || one.attunement === (filter.bond === 'required')) &&
+    (!filter.source || one.source === filter.source) &&
+    (!filter.lock || one.locked === (filter.lock === 'locked')) &&
+    (!filter.table || one.owner_id === filter.table)
+  )
+}
+
 /** An item of the room as a character carries it: what the sheet shows of it, its grants, and where it came from. */
 export function getCarriedItem(one: Item): CharacterInventoryItem {
   return {

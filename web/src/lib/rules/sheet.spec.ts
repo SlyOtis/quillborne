@@ -6,7 +6,7 @@ import type { CharacterInventoryItem } from '../character.types'
 import lars from '../character.fixture'
 import { getItemGrants } from '../resources'
 import { getResolvedCharacter } from './derive'
-import { getAttributeId, getAttunedInventory, getAttunement, getSheet, getSkillId, getTierId } from './sheet'
+import { getAttributeId, getAttunedInventory, getAttunement, getReplacedAttunement, getSheet, getSkillId, getTierId } from './sheet'
 import type { RuleSystem } from './spec.types'
 
 const core = dnd5e as RuleSystem
@@ -135,5 +135,14 @@ describe('what a character wears', () => {
     expect(slots).toBe(3)
     expect(getAttunedInventory([...attuned, { ...held(cloak, false, false), id: 'fourth' }], 'fourth', true, slots)).toBeNull()
     expect(getAttunedInventory(attuned, cloak.name, false, slots)?.filter((item) => item.attunement?.attuned)).toHaveLength(2)
+  })
+
+  it('attunes a fourth in place of one of three, and never past the slots', () => {
+    const attuned = [held(cloak, true, true), { ...held(gauntlets, true, true), id: 'left' }, { ...held(gauntlets, false, true), id: 'right' }]
+    const fourth = { ...held(cloak, false, false), id: 'fourth' }
+    const { slots } = getAttunement(attuned, bare)
+    const replaced = getReplacedAttunement([...attuned, fourth], 'left', 'fourth', slots)
+    expect(replaced?.filter((item) => item.attunement?.attuned).map((item) => item.id)).toEqual([cloak.name, 'right', 'fourth'])
+    expect(getReplacedAttunement([...attuned, fourth], 'fourth', 'fourth', slots)).toBeNull()
   })
 })
