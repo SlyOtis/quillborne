@@ -22,7 +22,7 @@ A component that does not exist is authored in `web/src/components/ui/` and then
 
 One destructured `$props()` with a TSDoc line on every prop. `$derived` for computed values, `$effect` only for work outside the render. No comments in a component.
 
-The root class is `dnd-<component>` and a variant is `dnd-<component>-<value>`. A variant prop is a singular lowercase enum defaulted in the destructure.
+The root class of a primitive, and of every new component, is `dnd-<component>`, and a variant is `dnd-<component>-<value>`. A component or a page that carries scoped class names of its own keeps them; they are renamed only when the user names that change. A variant prop is a singular lowercase enum defaulted in the destructure.
 
 Never declare `style` or `class` as a prop name.
 
