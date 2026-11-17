@@ -158,7 +158,11 @@ func PostMap(ctx echo.Context) error {
 	rctx := ctx.Request().Context()
 	w, err := postWriter(rctx, actorID, &campaign.ID)
 	if err != nil {
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) || errors.Is(err, errNoOwner) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostMap: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	item := db.CampaignMap{
 		ID:         uuid.New(),
@@ -281,7 +285,11 @@ func PutMap(ctx echo.Context) error {
 	}
 	item := db.CampaignMap{ID: mapID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("PutMap: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	columns := []string{"sa_updated_at"}
 	if body.Title != nil {
@@ -378,7 +386,11 @@ func DeleteMap(ctx echo.Context) error {
 	}
 	item := db.CampaignMap{ID: mapID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("DeleteMap: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		if _, err := tx.NewUpdate().Table("campaign_map").Set("sa_deleted_at = NOW()").Where("sa_root_id = ? AND (id = ? OR sa_parent_id = ?)", item.RootID, item.ID, item.ID).Where("sa_deleted_at IS NULL").Exec(tctx); err != nil {
@@ -462,7 +474,11 @@ func PostEncounter(ctx echo.Context) error {
 	rctx := ctx.Request().Context()
 	w, err := postWriter(rctx, actorID, &campaign.ID)
 	if err != nil {
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) || errors.Is(err, errNoOwner) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostEncounter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	item := db.Encounter{
 		CampaignID: campaign.ID,
@@ -566,7 +582,11 @@ func PutEncounter(ctx echo.Context) error {
 	}
 	item := db.Encounter{ID: encounterID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("PutEncounter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	columns := []string{"sa_updated_at"}
 	if body.Title != nil {
@@ -594,7 +614,11 @@ func PutEncounter(ctx echo.Context) error {
 	var w *Writer
 	if len(shared) > 0 {
 		if w, err = postWriter(rctx, actorID, &item.OwnerID); err != nil {
-			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) || errors.Is(err, errNoOwner) {
+				return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			}
+			ctx.Logger().Errorf("PutEncounter: %v", err)
+			return respond.ErrorInternal(ctx)
 		}
 	}
 	item.UpdatedAt = time.Now()
@@ -670,7 +694,11 @@ func DeleteEncounter(ctx echo.Context) error {
 	}
 	item := db.Encounter{ID: encounterID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("DeleteEncounter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		if _, err := tx.NewUpdate().Model(&item).Set("sa_deleted_at = NOW()").WherePK().Exec(tctx); err != nil {
@@ -754,7 +782,11 @@ func PostSong(ctx echo.Context) error {
 	rctx := ctx.Request().Context()
 	w, err := postWriter(rctx, actorID, &campaign.ID)
 	if err != nil {
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) || errors.Is(err, errNoOwner) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostSong: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	item := db.Song{CampaignID: campaign.ID, UserID: actorID, OwnerID: w.OwnerID, CreatedBy: w.Access.UserClaimID}
 	if body.Title != nil {
@@ -834,7 +866,11 @@ func PutSong(ctx echo.Context) error {
 	}
 	item := db.Song{ID: songID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("PutSong: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	columns := []string{"sa_updated_at"}
 	if body.Title != nil {
@@ -854,7 +890,11 @@ func PutSong(ctx echo.Context) error {
 	var w *Writer
 	if len(shared) > 0 {
 		if w, err = postWriter(rctx, actorID, &item.OwnerID); err != nil {
-			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) || errors.Is(err, errNoOwner) {
+				return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			}
+			ctx.Logger().Errorf("PutSong: %v", err)
+			return respond.ErrorInternal(ctx)
 		}
 	}
 	item.UpdatedAt = time.Now()
@@ -920,7 +960,11 @@ func DeleteSong(ctx echo.Context) error {
 	}
 	item := db.Song{ID: songID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("DeleteSong: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		if _, err := tx.NewUpdate().Model(&item).Set("sa_deleted_at = NOW()").WherePK().Exec(tctx); err != nil {
@@ -1004,7 +1048,11 @@ func PostChatEntry(ctx echo.Context) error {
 	rctx := ctx.Request().Context()
 	w, err := postWriter(rctx, actorID, &campaign.ID)
 	if err != nil {
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) || errors.Is(err, errNoOwner) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostChatEntry: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	entry := db.ChatEntry{CampaignID: campaign.ID, AuthorID: actorID, Kind: "message", Dice: json.RawMessage(`[]`), OwnerID: w.OwnerID, CreatedBy: w.Access.UserClaimID}
 	if body.AuthorName != nil {
@@ -1184,7 +1232,11 @@ func DeleteChatEntry(ctx echo.Context) error {
 	rctx := ctx.Request().Context()
 	entry := db.ChatEntry{ID: entryID}
 	if err := db.Instance().NewSelect().Model(&entry).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("DeleteChatEntry: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	ac, err := sdb.Instance().MutationAccess(rctx, actorID, entryID, db.OBJECT_TYPE_CHAT_ENTRY, sdb.ACCESS_WRITE)
 	if err != nil || ac == nil || entry.AuthorID != actorID {

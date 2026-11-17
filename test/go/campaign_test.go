@@ -223,6 +223,23 @@ func TestARequestWhoseClientLeftIsNeverAnsweredAsARefusal(t *testing.T) {
 	}
 }
 
+func TestACreateWhoseClientLeftIsNeverAnsweredAsARefusal(t *testing.T) {
+	requireStack(t)
+	body := `{"system":"dnd5e","name":"Gloomstalker"}`
+	if status, answer := call(t, dungeonMaster, http.MethodPost, "/api/monster", body, nil, handler.PostMonster); status != http.StatusCreated {
+		t.Fatalf("PostMonster: %d %+v", status, answer.Error)
+	}
+	status, _ := call(t, dungeonMaster, http.MethodPost, "/api/monster", body, nil, func(ctx echo.Context) error {
+		left, cancel := context.WithCancel(ctx.Request().Context())
+		cancel()
+		ctx.SetRequest(ctx.Request().WithContext(left))
+		return handler.PostMonster(ctx)
+	})
+	if status == http.StatusForbidden || status == http.StatusNotFound {
+		t.Fatalf("a create whose client left was answered as a refusal: %d", status)
+	}
+}
+
 func TestOnlyTheAuthorEditsAChatEntry(t *testing.T) {
 	requireStack(t)
 	campaignID := postCampaign(t)

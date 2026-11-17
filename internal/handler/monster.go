@@ -138,7 +138,11 @@ func PostMonster(ctx echo.Context) error {
 			ctx.Logger().Error(err)
 			return respond.ErrorInternal(ctx)
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostMonster: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	item := db.Monster{
 		UserID:    actorID,
@@ -197,7 +201,11 @@ func PutMonster(ctx echo.Context) error {
 	}
 	item := db.Monster{ID: monsterID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Scan(rctx); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("PutMonster: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	changed, err := putMonsterBody(&item, body)
 	if err != nil {
@@ -257,7 +265,11 @@ func DeleteMonster(ctx echo.Context) error {
 	}
 	item := db.Monster{ID: monsterID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Scan(rctx); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("DeleteMonster: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		if _, err := tx.NewUpdate().Model(&item).Set("sa_deleted_at = NOW()").WherePK().Exec(tctx); err != nil {
