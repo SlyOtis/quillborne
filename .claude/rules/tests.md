@@ -13,14 +13,14 @@ The `tester` agent holds this file and the `reviewer` agent runs what it describ
 
 ## Names
 
-1. A Go test is the sentence it proves, in the words of the table: `TestAPlayerReadsACampaignOnlyOnceSeated`, `TestOnlyTheDungeonMasterDrawsMaps` (`test/go/access_test.go:129`, `:186`). Never `TestGetCampaign` or `TestCampaign2`.
+1. A Go test is the sentence it proves, in the words of the table: `TestAPlayerReadsACampaignOnlyOnceSeated`, `TestOnlyTheDungeonMasterDrawsMaps`. Never `TestGetCampaign` or `TestCampaign2`.
 2. A Go test file is the resource, `test/go/<resource>_test.go`; what crosses resources lives in `access_test.go`, streams in `stream_test.go`, the state groups in `state_test.go`.
-3. A Go helper takes the verb of what it does through the api: `postCampaign`, `postCharacter`, `postResource`, `getFriends` (`test/go/access_test.go:97`).
+3. A Go helper takes the verb of what it does through the api: `postCampaign`, `postCharacter`, `postResource`, `getFriends`.
 4. A web test is `*.spec.ts`. A fixture is `*.fixture.ts` and never carries the test suffix (`web/test/reference.fixture.ts`).
 
 ## Which kind proves which thing
 
-5. A Go test in `test/go/` proves what the service decides: who may and who may not reach a route, what a stream delivers to whom, that an import upserts by key, that a write changes what the next read answers. It calls the handler in process as Testy or as Pip through `call` (`test/go/access_test.go:50`), with no server and no browser.
+5. A Go test in `test/go/` proves what the service decides: who may and who may not reach a route, what a stream delivers to whom, that an import upserts by key, that a write changes what the next read answers. It calls the handler in process as Testy or as Pip through `call`, with no server and no browser.
 6. A vitest spec proves what the web computes: the rules engine, the parser, the resolver, the bridge and the store under `web/src/lib/`, and the geometry, model and tools of nimap under `web/test/nimap/`. No network and no service.
 7. The browser proves what has to be seen: that a page opens, that a flow can be driven end to end, that a control answers. `just walk` runs `web/test/walk.sh` against the running stack as the debug user, and a flow that has to be watched is driven with the `nimon` skill, whose stories and test files live under `.nimon/` when a project has them. This repo has none yet.
 8. hurl proves the api as a client meets it over HTTP: the status, the envelope and the headers of a request against the running service. This repo has no hurl suite and no recipe for one; bookable_server and nimployer keep theirs in `test/hurl/`, one file per call or per documented flow, run by their `just test-hurl`. Until the user names the folder and the recipe here, what hurl would prove is proved by rule 5.
@@ -30,8 +30,8 @@ The `tester` agent holds this file and the `reviewer` agent runs what it describ
 
 10. Every route: one Go test of who may reach it and one of who may not, in the same test when they share their setup.
 11. Every write: that the next read answers the change, and that a reader without the claim does not see it.
-12. Every stream: one test of what it delivers to whom and one of whom it refuses or leaves out (`test/go/stream_test.go:148`, `:176`).
-13. Every state group: it is in `internal/qubo/state.json`, an import upserts by key, and a player exports only what their claims bind (`test/go/state_test.go:21`, `:133`, `:173`).
+12. Every stream: one test of what it delivers to whom and one of whom it refuses or leaves out.
+13. Every state group: it is in `internal/qubo/state.json`, an import upserts by key, and a player exports only what their claims bind.
 14. Every formula, scaling, pool and threshold of a system, and every new system: one vitest case with the numbers a player would check by hand.
 15. Every nimap geometry and tool behaviour: one spec under `web/test/nimap/`.
 16. Every pure function under `web/src/lib/` that a page depends on for a decision: one spec of the decision and one of its edge.
@@ -40,14 +40,14 @@ The `tester` agent holds this file and the `reviewer` agent runs what it describ
 
 ## Where a suite runs
 
-19. A suite never runs against a database that holds working data, and never against a deployed one. `test/go` reaches the database this checkout's `.env` names and skips when none answers (`test/go/access_test.go:31`, `:43`).
+19. A suite never runs against a database that holds working data, and never against a deployed one. `test/go` reaches the database this checkout's `.env` names and skips when none answers.
 20. A test makes the rows it needs through the handlers and reads only those; it never depends on `database/state/local.ndjson` and never on a row another test made.
 21. A spec that measures time runs alone: `web/test/nimap/tools/performance.spec.ts` runs after the rest, which the `test` script of `web/package.json` does. A timeout on a loaded machine is told from a failure by running the one spec again alone.
 
 ## Good and bad
 
-22. Good: `TestAHiddenRollIsReadByTheDungeonMasterAlone` (`test/go/access_test.go:156`): one rule, both sides, in the words of the table.
-23. Good: `TestTheChatStreamCarriesAHiddenRollToTheDungeonMasterAlone` (`test/go/stream_test.go:148`): the stream's version of the same rule, proving the event and not the row.
+22. Good: `TestAHiddenRollIsReadByTheDungeonMasterAlone`: one rule, both sides, in the words of the table.
+23. Good: `TestTheChatStreamCarriesAHiddenRollToTheDungeonMasterAlone`: the stream's version of the same rule, proving the event and not the row.
 24. Bad: a test that asserts only 200 for the owner. It proves no rule; rule 10 wants the refusal too.
 25. Bad: a row or a claim inserted by SQL to set a test up. The handler makes it, as a player would.
 26. Bad: the same access rule asserted in Go, in hurl and in the browser. Rule 9.

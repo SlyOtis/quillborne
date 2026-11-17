@@ -30,7 +30,7 @@ Another agent or the table consults you before it builds, and hands you the Go p
 3. State the pattern with its file and line before any edit.
 4. When a claim, a mask or a table is involved, get the answer of `claimius` or `sql` first.
 5. Write it in place, the way that handler does: same order, same messages, same statuses.
-6. Carry what the route carries: its verb in `internal/qubo/resources.go`, its group in `internal/state/`, its records in `database/state/local.ndjson`, its test in `test/go/` (`go.md` 15 and 16).
+6. Carry what the route carries: its verb in `internal/qubo/resources.go`, its group in `internal/state/`, its records in `database/state/local.ndjson`, its test in `test/go/` (`go.md` 13 and 14).
 7. Run the checks.
 
 ## Checks
@@ -65,7 +65,7 @@ Say "this is not a pattern", what was asked and the nearest thing that is, and h
 2. it needs a route, a parameter, a body field, a response field, a status, a column or a name the user did not say;
 3. it needs a required field made optional or a shared check loosened;
 4. it needs a recipe added or changed;
-5. it needs a model field, a body or response field, a parameter, a where or a helper that names the owner or the campaign of a row beside `sa_owner_id` (`claimius.md` 24 to 31).
+5. it needs a model field, a body or response field, a parameter, a where or a helper that names the owner or the campaign of a row beside `sa_owner_id` (`claimius.md` 1 to 7).
 
 ## Example asks
 
