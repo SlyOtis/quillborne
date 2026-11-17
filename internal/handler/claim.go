@@ -77,7 +77,11 @@ func GetObjectClaims(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("GetObjectClaims: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	claims, err := sdb.Instance().GetObjectClaims(rctx, actorID, objectID, objectType)
 	if err != nil {
@@ -142,7 +146,11 @@ func PostClaimUser(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostClaimUser: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
@@ -182,7 +190,11 @@ func DeleteClaimUser(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteClaimUser: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
@@ -222,13 +234,21 @@ func PostClaimObject(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostClaimObject: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if _, err := sdb.Instance().MutationAccess(rctx, actorID, body.ObjectID, objectType, sdb.ACCESS_WRITE); err != nil {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostClaimObject: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	access := sdb.ACCESS_READ
 	if body.Access != nil {
@@ -272,13 +292,21 @@ func DeleteClaimObject(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteClaimObject: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if _, err := sdb.Instance().MutationAccess(rctx, actorID, objectID, objectType, sdb.ACCESS_WRITE); err != nil {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteClaimObject: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {

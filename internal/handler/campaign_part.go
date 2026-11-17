@@ -96,10 +96,18 @@ func GetMaps(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("GetMaps: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("GetMaps: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	maps := make([]db.CampaignMap, 0)
 	q := db.Instance().NewSelect().Model(&maps).Where("campaign_id = ?", campaign.ID)
@@ -130,10 +138,18 @@ func PostMap(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostMap: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("PostMap: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	var body BodyMap
 	if err := ctx.Bind(&body); err != nil {
@@ -230,10 +246,18 @@ func PutMap(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutMap: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("PutMap: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	mapID, err := uuid.Parse(ctx.Param("map_id"))
 	if err != nil {
@@ -249,7 +273,11 @@ func PutMap(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutMap: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	item := db.CampaignMap{ID: mapID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
@@ -319,10 +347,18 @@ func DeleteMap(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteMap: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("DeleteMap: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	mapID, err := uuid.Parse(ctx.Param("map_id"))
 	if err != nil {
@@ -334,7 +370,11 @@ func DeleteMap(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteMap: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	item := db.CampaignMap{ID: mapID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
@@ -366,10 +406,18 @@ func GetEncounters(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("GetEncounters: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("GetEncounters: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	encounters := make([]db.Encounter, 0)
 	q := db.Instance().NewSelect().Model(&encounters).Where("campaign_id = ?", campaign.ID)
@@ -394,10 +442,18 @@ func PostEncounter(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostEncounter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("PostEncounter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	var body BodyEncounter
 	if err := ctx.Bind(&body); err != nil {
@@ -475,10 +531,18 @@ func PutEncounter(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutEncounter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("PutEncounter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	encounterID, err := uuid.Parse(ctx.Param("encounter_id"))
 	if err != nil {
@@ -494,7 +558,11 @@ func PutEncounter(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutEncounter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	item := db.Encounter{ID: encounterID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
@@ -571,10 +639,18 @@ func DeleteEncounter(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteEncounter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("DeleteEncounter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	encounterID, err := uuid.Parse(ctx.Param("encounter_id"))
 	if err != nil {
@@ -586,7 +662,11 @@ func DeleteEncounter(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteEncounter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	item := db.Encounter{ID: encounterID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
@@ -618,10 +698,18 @@ func GetSongs(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("GetSongs: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("GetSongs: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	songs := make([]db.Song, 0)
 	q := db.Instance().NewSelect().Model(&songs).Where("campaign_id = ?", campaign.ID)
@@ -646,10 +734,18 @@ func PostSong(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostSong: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("PostSong: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	var body BodySong
 	if err := ctx.Bind(&body); err != nil {
@@ -703,10 +799,18 @@ func PutSong(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutSong: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("PutSong: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	songID, err := uuid.Parse(ctx.Param("song_id"))
 	if err != nil {
@@ -722,7 +826,11 @@ func PutSong(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutSong: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	item := db.Song{ID: songID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
@@ -781,10 +889,18 @@ func DeleteSong(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteSong: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("DeleteSong: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	songID, err := uuid.Parse(ctx.Param("song_id"))
 	if err != nil {
@@ -796,7 +912,11 @@ func DeleteSong(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteSong: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	item := db.Song{ID: songID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Where("campaign_id = ?", campaign.ID).Scan(rctx); err != nil {
@@ -828,10 +948,18 @@ func GetChatEntries(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("GetChatEntries: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("GetChatEntries: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	entries := make([]db.ChatEntry, 0)
 	q := db.Instance().NewSelect().Model(&entries).Where("campaign_id = ?", campaign.ID)
@@ -856,10 +984,18 @@ func PostChatEntry(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostChatEntry: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("PostChatEntry: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	var body BodyChatEntry
 	if err := ctx.Bind(&body); err != nil {
@@ -950,10 +1086,18 @@ func PutChatEntry(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutChatEntry: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("PutChatEntry: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	entryID, err := uuid.Parse(ctx.Param("entry_id"))
 	if err != nil {
@@ -974,7 +1118,11 @@ func PutChatEntry(ctx echo.Context) error {
 	}
 	ac, err := sdb.Instance().MutationAccess(rctx, actorID, entryID, db.OBJECT_TYPE_CHAT_ENTRY, sdb.ACCESS_WRITE)
 	if err != nil || ac == nil || entry.AuthorID != actorID {
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutChatEntry: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	columns := []string{"sa_updated_at"}
 	if body.Body != nil {
@@ -1016,10 +1164,18 @@ func DeleteChatEntry(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteChatEntry: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := getCampaign(ctx.Request().Context(), campaign); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("DeleteChatEntry: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	entryID, err := uuid.Parse(ctx.Param("entry_id"))
 	if err != nil {
@@ -1032,7 +1188,11 @@ func DeleteChatEntry(ctx echo.Context) error {
 	}
 	ac, err := sdb.Instance().MutationAccess(rctx, actorID, entryID, db.OBJECT_TYPE_CHAT_ENTRY, sdb.ACCESS_WRITE)
 	if err != nil || ac == nil || entry.AuthorID != actorID {
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteChatEntry: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		if _, err := tx.NewUpdate().Model(&entry).Set("sa_deleted_at = NOW()").WherePK().Exec(tctx); err != nil {

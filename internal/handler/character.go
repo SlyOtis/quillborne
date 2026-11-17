@@ -131,7 +131,11 @@ func GetCharacter(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("GetCharacter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	character := db.Character{ID: characterID}
 	if err := db.Instance().NewSelect().Model(&character).WherePK().Scan(rctx); err != nil {
@@ -162,11 +166,19 @@ func PostCharacter(ctx echo.Context) error {
 	var ownerID *uuid.UUID
 	if body.CampaignID != nil {
 		if _, err := sdb.Instance().MutationAccess(rctx, actorID, *body.CampaignID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_READ); err != nil {
-			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+				return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			}
+			ctx.Logger().Errorf("PostCharacter: %v", err)
+			return respond.ErrorInternal(ctx)
 		}
 		campaign = &db.Campaign{ID: *body.CampaignID}
 		if err := getCampaign(rctx, campaign); err != nil {
-			return respond.Error(ctx, http.StatusNotFound, "Not found")
+			if errors.Is(err, sql.ErrNoRows) {
+				return respond.Error(ctx, http.StatusNotFound, "Not found")
+			}
+			ctx.Logger().Errorf("PostCharacter: %v", err)
+			return respond.ErrorInternal(ctx)
 		}
 		ownerID = &campaign.ID
 	}
@@ -244,7 +256,11 @@ func PutCharacter(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutCharacter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	character := db.Character{ID: characterID}
 	if err := db.Instance().NewSelect().Model(&character).WherePK().Scan(rctx); err != nil {
@@ -321,7 +337,11 @@ func PutCharacterPlayed(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutCharacterPlayed: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if _, err := db.Instance().NewUpdate().Table("character").Set("last_played_at = NOW()").Where("id = ?", characterID).Exec(rctx); err != nil {
 		ctx.Logger().Errorf("PutCharacterPlayed: %v", err)
@@ -345,7 +365,11 @@ func DeleteCharacter(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteCharacter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	character := db.Character{ID: characterID}
 	if err := db.Instance().NewSelect().Model(&character).WherePK().Scan(rctx); err != nil {
@@ -381,7 +405,11 @@ func GetCharacterSources(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("GetCharacterSources: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	character := db.Character{ID: characterID}
 	if err := db.Instance().NewSelect().Model(&character).Column("sources").WherePK().Scan(rctx); err != nil {
@@ -410,7 +438,11 @@ func PutCharacterSources(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutCharacterSources: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if body.Sources == nil {
 		body.Sources = []string{}

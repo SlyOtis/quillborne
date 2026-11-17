@@ -102,7 +102,11 @@ func GetMonster(ctx echo.Context) error {
 	}
 	rctx := ctx.Request().Context()
 	if _, err := sdb.Instance().MutationAccess(rctx, actorID, monsterID, db.OBJECT_TYPE_MONSTER, sdb.ACCESS_READ); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("GetMonster: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	item := db.Monster{ID: monsterID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Scan(rctx); err != nil {
@@ -185,7 +189,11 @@ func PutMonster(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutMonster: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	item := db.Monster{ID: monsterID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Scan(rctx); err != nil {
@@ -241,7 +249,11 @@ func DeleteMonster(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteMonster: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	item := db.Monster{ID: monsterID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Scan(rctx); err != nil {

@@ -10,6 +10,7 @@ import (
 	"github.com/SlyOtis/quillborne/internal/db"
 	"github.com/SlyOtis/quillborne/internal/handler"
 	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
 	sdb "github.com/nimling/samna-auth-middleware/v2/disciple/sdb"
 	"github.com/uptrace/bun"
 )
@@ -200,6 +201,25 @@ func TestASongReachesTheTableOnlyWhenShared(t *testing.T) {
 	_, after := call(t, dungeonMaster, http.MethodGet, "/", "", params, handler.GetSongs)
 	if listed(t, after, songID) {
 		t.Fatalf("a removed song is still listed")
+	}
+}
+
+func TestARequestWhoseClientLeftIsNeverAnsweredAsARefusal(t *testing.T) {
+	requireStack(t)
+	campaignID := postCampaign(t)
+	seatPlayer(t, campaignID)
+	params := map[string]string{"id": campaignID}
+	if status, answer := call(t, player, http.MethodGet, "/", "", params, handler.GetSongs); status != http.StatusOK {
+		t.Fatalf("a seated player could not list the table's songs: %d %+v", status, answer.Error)
+	}
+	status, _ := call(t, player, http.MethodGet, "/", "", params, func(ctx echo.Context) error {
+		left, cancel := context.WithCancel(ctx.Request().Context())
+		cancel()
+		ctx.SetRequest(ctx.Request().WithContext(left))
+		return handler.GetSongs(ctx)
+	})
+	if status == http.StatusForbidden || status == http.StatusNotFound {
+		t.Fatalf("a request whose client left was answered as a refusal: %d", status)
 	}
 }
 

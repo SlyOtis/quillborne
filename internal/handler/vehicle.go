@@ -178,7 +178,11 @@ func GetVehicle(ctx echo.Context) error {
 	}
 	rctx := ctx.Request().Context()
 	if _, err := sdb.Instance().MutationAccess(rctx, actorID, vehicleID, db.OBJECT_TYPE_VEHICLE, sdb.ACCESS_READ); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("GetVehicle: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	item := db.Vehicle{ID: vehicleID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Scan(rctx); err != nil {
@@ -211,11 +215,19 @@ func PostVehicle(ctx echo.Context) error {
 			if errors.Is(err, sdb.ErrNotFound) {
 				return respond.Error(ctx, http.StatusNotFound, "Not found")
 			}
-			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			if errors.Is(err, sdb.ErrNoAccess) {
+				return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			}
+			ctx.Logger().Errorf("PostVehicle: %v", err)
+			return respond.ErrorInternal(ctx)
 		}
 		campaign = &db.Campaign{ID: *body.CampaignID}
 		if err := getCampaign(rctx, campaign); err != nil {
-			return respond.Error(ctx, http.StatusNotFound, "Not found")
+			if errors.Is(err, sql.ErrNoRows) {
+				return respond.Error(ctx, http.StatusNotFound, "Not found")
+			}
+			ctx.Logger().Errorf("PostVehicle: %v", err)
+			return respond.ErrorInternal(ctx)
 		}
 		ownerID = &campaign.ID
 	}
@@ -328,7 +340,11 @@ func PutVehicle(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutVehicle: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	item := db.Vehicle{ID: vehicleID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Scan(rctx); err != nil {
@@ -425,7 +441,11 @@ func DeleteVehicle(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteVehicle: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	item := db.Vehicle{ID: vehicleID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Scan(rctx); err != nil {

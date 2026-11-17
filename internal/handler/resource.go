@@ -159,7 +159,11 @@ func GetResources(ctx echo.Context) error {
 			if errors.Is(err, sdb.ErrNotFound) {
 				return respond.Error(ctx, http.StatusNotFound, "Not found")
 			}
-			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			if errors.Is(err, sdb.ErrNoAccess) {
+				return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			}
+			ctx.Logger().Errorf("GetResources: %v", err)
+			return respond.ErrorInternal(ctx)
 		}
 		q = q.Where("campaign_id = ?", campaignID)
 	} else {
@@ -248,7 +252,11 @@ func GetResource(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("GetResource: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	resource := db.Resource{ID: resourceID}
 	if err := db.Instance().NewSelect().Model(&resource).WherePK().Scan(rctx); err != nil {
@@ -289,11 +297,19 @@ func PostResource(ctx echo.Context) error {
 			if errors.Is(err, sdb.ErrNotFound) {
 				return respond.Error(ctx, http.StatusNotFound, "Not found")
 			}
-			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			if errors.Is(err, sdb.ErrNoAccess) {
+				return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			}
+			ctx.Logger().Errorf("PostResource: %v", err)
+			return respond.ErrorInternal(ctx)
 		}
 		campaign := db.Campaign{ID: campaignID}
 		if err := getCampaign(rctx, &campaign); err != nil {
-			return respond.Error(ctx, http.StatusNotFound, "Not found")
+			if errors.Is(err, sql.ErrNoRows) {
+				return respond.Error(ctx, http.StatusNotFound, "Not found")
+			}
+			ctx.Logger().Errorf("PostResource: %v", err)
+			return respond.ErrorInternal(ctx)
 		}
 		ownerID = &campaign.ID
 		resource.CampaignID = &campaignID
@@ -304,7 +320,11 @@ func PostResource(ctx echo.Context) error {
 			return respond.Error(ctx, http.StatusBadRequest, "Invalid parent_id, expected UUID")
 		}
 		if _, err := sdb.Instance().MutationAccess(rctx, actorID, parentID, db.OBJECT_TYPE_RESOURCE, sdb.ACCESS_READ); err != nil {
-			return respond.Error(ctx, http.StatusBadRequest, "parent_id is not a resource you read")
+			if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+				return respond.Error(ctx, http.StatusBadRequest, "parent_id is not a resource you read")
+			}
+			ctx.Logger().Errorf("PostResource: %v", err)
+			return respond.ErrorInternal(ctx)
 		}
 		parent := db.Resource{ID: parentID}
 		if err := db.Instance().NewSelect().Model(&parent).WherePK().Scan(rctx); err != nil {
@@ -371,7 +391,11 @@ func PutResource(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutResource: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	resource := db.Resource{ID: resourceID}
 	if err := db.Instance().NewSelect().Model(&resource).WherePK().Scan(rctx); err != nil || resource.ParentID == resource.ID {
@@ -416,7 +440,11 @@ func PutResource(ctx echo.Context) error {
 				if errors.Is(err, sdb.ErrNotFound) {
 					return respond.Error(ctx, http.StatusNotFound, "Not found")
 				}
-				return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+				if errors.Is(err, sdb.ErrNoAccess) {
+					return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+				}
+				ctx.Logger().Errorf("PutResource: %v", err)
+				return respond.ErrorInternal(ctx)
 			}
 			parent := db.Resource{ID: parentID}
 			if err := db.Instance().NewSelect().Model(&parent).WherePK().Scan(rctx); err != nil {
@@ -485,7 +513,11 @@ func DeleteResource(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if err == nil || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteResource: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	resource := db.Resource{ID: resourceID}
 	if err := db.Instance().NewSelect().Model(&resource).WherePK().Scan(rctx); err != nil || resource.ParentID == resource.ID {
@@ -520,7 +552,11 @@ func GetResourceUpdates(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("GetResourceUpdates: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	updates := make([]db.ResourceUpdate, 0)
 	q := db.Instance().NewSelect().Model(&updates).Where("resource_id = ?", resourceID).OrderExpr("created_at")
@@ -556,7 +592,11 @@ func PostResourceUpdate(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostResourceUpdate: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	update := db.ResourceUpdate{ResourceID: resourceID, AuthorID: actorID, Body: body.Body}
 	if _, err := db.Instance().NewInsert().Model(&update).ExcludeColumn("id", "created_at").Returning("*").Exec(rctx); err != nil {
@@ -585,7 +625,11 @@ func PutResourceUpdates(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutResourceUpdates: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	update := db.ResourceUpdate{ResourceID: resourceID, AuthorID: actorID, Body: body.Body}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
@@ -616,7 +660,11 @@ func DeleteResourceUpdates(ctx echo.Context) error {
 		if errors.Is(err, sdb.ErrNotFound) {
 			return respond.Error(ctx, http.StatusNotFound, "Not found")
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteResourceUpdates: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if _, err := db.Instance().NewDelete().Model((*db.ResourceUpdate)(nil)).Where("resource_id = ?", resourceID).Exec(rctx); err != nil {
 		ctx.Logger().Errorf("DeleteResourceUpdates: %v", err)

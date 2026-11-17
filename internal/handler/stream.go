@@ -47,11 +47,14 @@ func GetCampaignStream(ctx echo.Context) error {
 	if !ok {
 		return ctx.String(http.StatusBadRequest, "Invalid id, expected UUID")
 	}
-	if status, message := getReadAccess(ctx.Request().Context(), actorID, campaignID, db.OBJECT_TYPE_CAMPAIGN); status != 0 {
+	if status, message, err := getReadAccess(ctx.Request().Context(), actorID, campaignID, db.OBJECT_TYPE_CAMPAIGN); status != 0 {
+		if err != nil {
+			ctx.Logger().Errorf("GetCampaignStream: %v", err)
+		}
 		return ctx.String(status, message)
 	}
 	return getStream(ctx, broker.CampaignTopic(campaignID), func(rctx context.Context, ev broker.Event) bool {
-		if status, _ := getReadAccess(rctx, actorID, campaignID, db.OBJECT_TYPE_CAMPAIGN); status != 0 {
+		if status, _, _ := getReadAccess(rctx, actorID, campaignID, db.OBJECT_TYPE_CAMPAIGN); status != 0 {
 			return false
 		}
 		objectType, known := campaignPartTypes[ev.Kind]
@@ -65,7 +68,7 @@ func GetCampaignStream(ctx echo.Context) error {
 		if err != nil {
 			return false
 		}
-		status, _ := getReadAccess(rctx, actorID, id, objectType)
+		status, _, _ := getReadAccess(rctx, actorID, id, objectType)
 		return status == 0
 	})
 }
@@ -89,11 +92,14 @@ func GetResourceStream(ctx echo.Context) error {
 	if !ok {
 		return ctx.String(http.StatusBadRequest, "Invalid id, expected UUID")
 	}
-	if status, message := getReadAccess(ctx.Request().Context(), actorID, resourceID, db.OBJECT_TYPE_RESOURCE); status != 0 {
+	if status, message, err := getReadAccess(ctx.Request().Context(), actorID, resourceID, db.OBJECT_TYPE_RESOURCE); status != 0 {
+		if err != nil {
+			ctx.Logger().Errorf("GetResourceStream: %v", err)
+		}
 		return ctx.String(status, message)
 	}
 	return getStream(ctx, broker.ResourceTopic(resourceID), func(rctx context.Context, _ broker.Event) bool {
-		status, _ := getReadAccess(rctx, actorID, resourceID, db.OBJECT_TYPE_RESOURCE)
+		status, _, _ := getReadAccess(rctx, actorID, resourceID, db.OBJECT_TYPE_RESOURCE)
 		return status == 0
 	})
 }
@@ -107,14 +113,17 @@ func GetCharacterStream(ctx echo.Context) error {
 	if !ok {
 		return ctx.String(http.StatusBadRequest, "Invalid id, expected UUID")
 	}
-	if status, message := getReadAccess(ctx.Request().Context(), actorID, characterID, db.OBJECT_TYPE_CHARACTER); status != 0 {
+	if status, message, err := getReadAccess(ctx.Request().Context(), actorID, characterID, db.OBJECT_TYPE_CHARACTER); status != 0 {
+		if err != nil {
+			ctx.Logger().Errorf("GetCharacterStream: %v", err)
+		}
 		return ctx.String(status, message)
 	}
 	return getStream(ctx, broker.CharacterTopic(characterID), func(rctx context.Context, ev broker.Event) bool {
 		if ev.Op == broker.OpDelete {
 			return true
 		}
-		status, _ := getReadAccess(rctx, actorID, characterID, db.OBJECT_TYPE_CHARACTER)
+		status, _, _ := getReadAccess(rctx, actorID, characterID, db.OBJECT_TYPE_CHARACTER)
 		return status == 0
 	})
 }
@@ -128,26 +137,32 @@ func GetVehicleStream(ctx echo.Context) error {
 	if !ok {
 		return ctx.String(http.StatusBadRequest, "Invalid id, expected UUID")
 	}
-	if status, message := getReadAccess(ctx.Request().Context(), actorID, vehicleID, db.OBJECT_TYPE_VEHICLE); status != 0 {
+	if status, message, err := getReadAccess(ctx.Request().Context(), actorID, vehicleID, db.OBJECT_TYPE_VEHICLE); status != 0 {
+		if err != nil {
+			ctx.Logger().Errorf("GetVehicleStream: %v", err)
+		}
 		return ctx.String(status, message)
 	}
 	return getStream(ctx, broker.VehicleTopic(vehicleID), func(rctx context.Context, ev broker.Event) bool {
 		if ev.Op == broker.OpDelete {
 			return true
 		}
-		status, _ := getReadAccess(rctx, actorID, vehicleID, db.OBJECT_TYPE_VEHICLE)
+		status, _, _ := getReadAccess(rctx, actorID, vehicleID, db.OBJECT_TYPE_VEHICLE)
 		return status == 0
 	})
 }
 
-func getReadAccess(ctx context.Context, actorID, objectID uuid.UUID, objectType string) (int, string) {
+func getReadAccess(ctx context.Context, actorID, objectID uuid.UUID, objectType string) (int, string, error) {
 	if _, err := sdb.Instance().MutationAccess(ctx, actorID, objectID, objectType, sdb.ACCESS_READ); err != nil {
 		if errors.Is(err, sdb.ErrNotFound) {
-			return http.StatusNotFound, "Not found"
+			return http.StatusNotFound, "Not found", nil
 		}
-		return http.StatusForbidden, "Forbidden"
+		if errors.Is(err, sdb.ErrNoAccess) {
+			return http.StatusForbidden, "Forbidden", nil
+		}
+		return http.StatusInternalServerError, "Internal server error", err
 	}
-	return 0, ""
+	return 0, "", nil
 }
 
 func getStream(ctx echo.Context, topic string, allowed func(context.Context, broker.Event) bool) error {
