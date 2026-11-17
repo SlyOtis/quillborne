@@ -25,7 +25,7 @@ Never hand roll a `<button>` with a border and a background around a glyph. That
 
 ## Size and tone
 
-No primitive takes a size. A button is square and fills the height it is given, so the row it sits in decides how big it is. A call site that wants a bigger button gives the row more height, never a prop.
+A glyph button takes no size: it is square and fills the height it is given, so the row it sits in decides how big it is, and a call site that wants a bigger one gives the row more height. A button that carries a word, a framed button, a sigil and a portrait take one of the sizes the design system names, and a portrait may also fill the height it is given. No other size and no measured value appears at a call site.
 
 Tone names the meaning, never the colour: `metal` is neutral, `ember` is the character's own, `verdigris` is the world's, `bane` is destructive. A colour value never appears at a call site.
 
