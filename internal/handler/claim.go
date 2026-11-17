@@ -106,7 +106,11 @@ func PostClaim(ctx echo.Context) error {
 	rctx := ctx.Request().Context()
 	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) || errors.Is(err, errNoOwner) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostClaim: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	var claimID uuid.UUID
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
@@ -154,7 +158,11 @@ func PostClaimUser(ctx echo.Context) error {
 	}
 	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) || errors.Is(err, errNoOwner) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostClaimUser: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		if _, err := postGrant(tctx, tx, w, claimID, body.UserID); err != nil {
@@ -198,7 +206,11 @@ func DeleteClaimUser(ctx echo.Context) error {
 	}
 	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) || errors.Is(err, errNoOwner) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteClaimUser: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		if err := deleteGrant(tctx, tx, w, claimID, userID); err != nil {
@@ -256,7 +268,11 @@ func PostClaimObject(ctx echo.Context) error {
 	}
 	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) || errors.Is(err, errNoOwner) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostClaimObject: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		if err := putBindings(tctx, tx, w, objectType, body.ObjectID, map[uuid.UUID]sdb.ClaimAccess{claimID: access}, []uuid.UUID{claimID}); err != nil {
@@ -310,7 +326,11 @@ func DeleteClaimObject(ctx echo.Context) error {
 	}
 	w, err := postWriter(rctx, actorID, nil)
 	if err != nil {
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) || errors.Is(err, errNoOwner) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteClaimObject: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		if err := putBindings(tctx, tx, w, objectType, objectID, map[uuid.UUID]sdb.ClaimAccess{}, []uuid.UUID{claimID}); err != nil {

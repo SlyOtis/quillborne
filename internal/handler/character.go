@@ -188,7 +188,11 @@ func PostCharacter(ctx echo.Context) error {
 			ctx.Logger().Error(err)
 			return respond.ErrorInternal(ctx)
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostCharacter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	metadata, public := getStoredMetadata(body.Metadata)
 	character := db.Character{
@@ -264,7 +268,11 @@ func PutCharacter(ctx echo.Context) error {
 	}
 	character := db.Character{ID: characterID}
 	if err := db.Instance().NewSelect().Model(&character).WherePK().Scan(rctx); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("PutCharacter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	columns := []string{"sa_updated_at"}
 	if body.Character != nil {
@@ -373,7 +381,11 @@ func DeleteCharacter(ctx echo.Context) error {
 	}
 	character := db.Character{ID: characterID}
 	if err := db.Instance().NewSelect().Model(&character).WherePK().Scan(rctx); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("DeleteCharacter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		if _, err := tx.NewUpdate().Model(&character).Set("sa_deleted_at = NOW()").WherePK().Exec(tctx); err != nil {
@@ -413,7 +425,11 @@ func GetCharacterSources(ctx echo.Context) error {
 	}
 	character := db.Character{ID: characterID}
 	if err := db.Instance().NewSelect().Model(&character).Column("sources").WherePK().Scan(rctx); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("GetCharacterSources: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	sources := make([]string, 0)
 	_ = json.Unmarshal(character.Sources, &sources)

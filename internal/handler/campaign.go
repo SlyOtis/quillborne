@@ -182,7 +182,11 @@ func PostCampaign(ctx echo.Context) error {
 			ctx.Logger().Error(err)
 			return respond.ErrorInternal(ctx)
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostCampaign: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	home, err := sdb.Instance().GetOrganization(rctx, w.OwnerID)
 	if err != nil {
@@ -378,7 +382,11 @@ func DeleteCampaign(ctx echo.Context) error {
 	}
 	w, err := postWriter(rctx, actorID, &campaign.ID)
 	if err != nil {
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) || errors.Is(err, errNoOwner) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteCampaign: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		held := make([]db.Character, 0)
@@ -473,7 +481,14 @@ func PostCampaignPlayer(ctx echo.Context) error {
 		}
 	}
 	w, err := postWriter(rctx, actorID, &campaign.ID)
-	if err != nil || memberClaim == nil {
+	if err != nil {
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) || errors.Is(err, errNoOwner) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostCampaignPlayer: %v", err)
+		return respond.ErrorInternal(ctx)
+	}
+	if memberClaim == nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
@@ -530,7 +545,14 @@ func DeleteCampaignPlayer(ctx echo.Context) error {
 	}
 	memberClaim := memberships[campaign.ID].memberClaim
 	w, err := postWriter(rctx, actorID, &campaign.ID)
-	if err != nil || memberClaim == nil {
+	if err != nil {
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) || errors.Is(err, errNoOwner) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteCampaignPlayer: %v", err)
+		return respond.ErrorInternal(ctx)
+	}
+	if memberClaim == nil {
 		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
@@ -635,7 +657,11 @@ func PostCampaignCharacter(ctx echo.Context) error {
 	}
 	w, err := postWriter(rctx, actorID, &campaign.ID)
 	if err != nil {
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) || errors.Is(err, errNoOwner) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostCampaignCharacter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		character := db.Character{ID: characterID}
@@ -697,7 +723,11 @@ func DeleteCampaignCharacter(ctx echo.Context) error {
 	_, campaignErr := sdb.Instance().MutationAccess(rctx, actorID, campaignID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_WRITE)
 	character := db.Character{ID: characterID}
 	if err := db.Instance().NewSelect().Model(&character).WherePK().Scan(rctx); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("DeleteCampaignCharacter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if campaignErr != nil && character.UserID != actorID {
 		if errors.Is(campaignErr, sdb.ErrNotFound) || errors.Is(campaignErr, sdb.ErrNoAccess) {
@@ -716,7 +746,11 @@ func DeleteCampaignCharacter(ctx echo.Context) error {
 	}
 	w, err := postWriter(rctx, actorID, &campaign.ID)
 	if err != nil {
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) || errors.Is(err, errNoOwner) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("DeleteCampaignCharacter: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		return deleteCampaignCharacterTx(tctx, tx, w, &campaign, characterID)

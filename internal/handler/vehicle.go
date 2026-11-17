@@ -237,7 +237,11 @@ func PostVehicle(ctx echo.Context) error {
 			ctx.Logger().Error(err)
 			return respond.ErrorInternal(ctx)
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostVehicle: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	item := db.Vehicle{
 		UserID:     actorID,
@@ -348,7 +352,11 @@ func PutVehicle(ctx echo.Context) error {
 	}
 	item := db.Vehicle{ID: vehicleID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Scan(rctx); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("PutVehicle: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	columns := append([]string{"sa_updated_at"}, putVehicleBody(&item, body)...)
 	base := item.Revision
@@ -391,7 +399,14 @@ func PutVehicle(ctx echo.Context) error {
 			return respond.ErrorInternal(ctx)
 		}
 		w, err = postWriter(rctx, actorID, &item.OwnerID)
-		if err != nil || item.CrewClaimID == nil {
+		if err != nil {
+			if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) || errors.Is(err, errNoOwner) {
+				return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			}
+			ctx.Logger().Errorf("PutVehicle: %v", err)
+			return respond.ErrorInternal(ctx)
+		}
+		if item.CrewClaimID == nil {
 			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
 		}
 		columns = append(columns, "crew")
@@ -449,7 +464,11 @@ func DeleteVehicle(ctx echo.Context) error {
 	}
 	item := db.Vehicle{ID: vehicleID}
 	if err := db.Instance().NewSelect().Model(&item).WherePK().Scan(rctx); err != nil {
-		return respond.Error(ctx, http.StatusNotFound, "Not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return respond.Error(ctx, http.StatusNotFound, "Not found")
+		}
+		ctx.Logger().Errorf("DeleteVehicle: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {
 		if _, err := tx.NewUpdate().Model(&item).Set("sa_deleted_at = NOW()").WherePK().Exec(tctx); err != nil {

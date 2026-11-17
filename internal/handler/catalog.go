@@ -143,7 +143,11 @@ func PutCatalogEntry(ctx echo.Context) error {
 			ctx.Logger().Error(err)
 			return respond.ErrorInternal(ctx)
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutCatalogEntry: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	entry = db.CatalogEntry{Kind: kind, UserID: actorID, Slug: slug, Name: name, Description: description, Digest: digest, Entry: encoded, OwnerID: w.OwnerID, CreatedBy: w.Access.UserClaimID}
 	if err := db.Instance().RunInTx(rctx, nil, func(tctx context.Context, tx bun.Tx) error {

@@ -138,7 +138,11 @@ func PostProfile(ctx echo.Context) error {
 			ctx.Logger().Error(err)
 			return respond.ErrorInternal(ctx)
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PostProfile: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	exists, err := db.Instance().NewSelect().Model((*db.Profile)(nil)).Where("user_id = ?", actorID).Exists(rctx)
 	if err != nil {
@@ -414,7 +418,11 @@ func PutProfileDetails(ctx echo.Context) error {
 			ctx.Logger().Error(err)
 			return respond.ErrorInternal(ctx)
 		}
-		return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		if errors.Is(err, sdb.ErrNotFound) || errors.Is(err, sdb.ErrNoAccess) {
+			return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+		}
+		ctx.Logger().Errorf("PutProfileDetails: %v", err)
+		return respond.ErrorInternal(ctx)
 	}
 	secrets, err := sdb.Instance().GetSecrets(rctx, actorID, sdb.ACCESS_READ, nil, 0)
 	if err != nil {
