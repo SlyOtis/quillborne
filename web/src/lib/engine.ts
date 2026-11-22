@@ -426,16 +426,6 @@ export function writeRollLog(
   })
 }
 
-export function asGold(currency: CharacterCurrency): number {
-  const totalGP =
-    (currency?.pp || 0) * 10 +    // Convert platinum to gold (1pp = 10gp)
-    (currency?.gp || 0) +         // Gold pieces as is
-    (currency?.sp || 0) * 0.1 +   // Convert silver to gold (1sp = 0.1gp)
-    (currency?.cp || 0) * 0.01;   // Convert copper to gold (1cp = 0.01gp)
-
-  return Number(totalGP.toFixed(3)); // Round to 2 decimal places
-}
-
 export function addCurrencies(currency: CharacterCurrency, currency2: CharacterCurrency): CharacterCurrency {
   return (Object.keys(currency2) as [curr: keyof CharacterCurrency]).reduce((prev, curr): CharacterCurrency => {
     return {
@@ -1183,6 +1173,16 @@ export function deleteItem(id: string) {
     inventory => inventory.filter(entry => entry.id !== id),
     ChangeActions.INVENTORY_REMOVE,
     'Removed an item'
+  )
+}
+
+/** Puts an item in a carried container, or takes it out with no container named. */
+export function putInside(item: InventoryItem, inside: string) {
+  updateCharacterWithChangeLog(
+    'inventory',
+    inventory => inventory.map(entry => entry.id === item.id ? { ...entry, inside: inside || undefined } : entry),
+    ChangeActions.INVENTORY_CHANGE,
+    inside ? `Put ${item.title} away` : `Took ${item.title} out`
   )
 }
 

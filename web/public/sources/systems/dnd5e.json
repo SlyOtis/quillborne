@@ -185,8 +185,21 @@
       { "id": "heal", "title": "Heals" },
       { "id": "temporary", "title": "Temporary hit points" },
       { "id": "damage", "title": "Damage" }
+    ],
+    "coinWeight": "coins / 50",
+    "encumbrance": [
+      { "id": "encumbered", "title": "Encumbered", "over": "attr.str * 5", "effect": "Speed drops by 10 feet." },
+      { "id": "heavilyEncumbered", "title": "Heavily encumbered", "over": "attr.str * 10", "effect": "Speed drops by 20 feet, with disadvantage on ability checks, attacks and saves that use Strength, Dexterity or Constitution." },
+      { "id": "overCapacity", "title": "Over capacity", "over": "derived.carryCapacity", "effect": "Speed drops to 5 feet, and no more than twice the capacity can be pushed, dragged or lifted." }
     ]
   },
+  "coins": [
+    { "id": "pp", "title": "Platinum", "value": 10 },
+    { "id": "gp", "title": "Gold", "value": 1 },
+    { "id": "ep", "title": "Electrum", "value": 0.5 },
+    { "id": "sp", "title": "Silver", "value": 0.1 },
+    { "id": "cp", "title": "Copper", "value": 0.01 }
+  ],
   "progression": {
     "maxLevel": 20,
     "proficiency": "2 + floor((level - 1) / 4)",

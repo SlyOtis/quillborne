@@ -4,14 +4,15 @@
   import type {CharacterContext} from "$lib/types";
   import type {Character, Currency} from "$lib/character.types";
   import type {RulesState} from "$lib/rules/store";
-  import {getAttunement, getCarriedWeight, getChargesLeft, getInventoryValue, getRecharging, isConsumable, isItemApplied} from "$lib/rules/sheet";
+  import {getAttunement, getCarriedWeight, getChargesLeft, getCoinValue, getContainer, getContainerLoad, getContainers, getEncumbrance, getInventoryValue, getRecharging, isConsumable, isItemApplied} from "$lib/rules/sheet";
   import {getCarriedItem, getEmptyItemFilter, getGrantLines, getItemRoom, getRarityInk, isItemShown, type Item} from "$lib/resources";
-  import {addCurrencies, asGold, deleteItem, postItem, postItemUse, postRecharge, putAttunement, putCharges, putCurrency, putEquipped, putItem, putReplacedAttunement} from "$lib/engine";
+  import {addCurrencies, deleteItem, postItem, postItemUse, postRecharge, putAttunement, putCharges, putCurrency, putEquipped, putInside, putItem, putReplacedAttunement} from "$lib/engine";
   import BaseDialog from "$components/BaseDialog.svelte";
   import ItemFilters from "$components/campaign/ItemFilters.svelte";
   import ItemRow from "$components/campaign/ItemRow.svelte";
   import Button from "$components/ui/Button.svelte";
   import Chip from "$components/ui/Chip.svelte";
+  import Dropdown from "$components/ui/Dropdown.svelte";
   import Field from "$components/ui/Field.svelte";
   import Glyph, {type GlyphName} from "$components/ui/Glyph.svelte";
   import IconBtn from "$components/ui/IconBtn.svelte";
@@ -24,14 +25,14 @@
   const {inventory, info, currency} = getContext<CharacterContext>('character')
   const rules = getContext<Readable<RulesState>>('rules')
 
-  const COINS: Currency[] = ['pp', 'gp', 'sp', 'cp']
-
+  let coins = $derived(($rules.system?.coins ?? []).map(coin => ({...coin, id: coin.id as Currency})))
+  let priced = $derived(coins.find(coin => coin.value === 1)?.id ?? '')
   let categories = $derived($rules.system?.items?.categories ?? [])
   let calls = $derived(($rules.system?.recharges ?? []).filter(one => !one.rests?.length && getRecharging($inventory, [one.id]).length > 0))
 
   let carryCapacity = $derived($rules.resolved?.scope['derived.carryCapacity'] ?? $info.carry_capacity)
-  let carriedWeight = $derived(getCarriedWeight($inventory))
-  let encumbered = $derived(carriedWeight > carryCapacity)
+  let carriedWeight = $derived($rules.system ? Number(getCarriedWeight($inventory, $currency, $rules.system).toFixed(2)) : 0)
+  let encumbrance = $derived($rules.resolved ? getEncumbrance(carriedWeight, $rules.resolved) : null)
   let inventoryValue = $derived(getInventoryValue($inventory))
 
   let totalValuables = $derived(addCurrencies(inventoryValue, $currency))
@@ -48,8 +49,9 @@
     val.type,
     val.title
   ].some(text => text?.toLowerCase().includes(asked))))
-  let equipment = $derived(filteredItems.filter(item => item.equipped))
-  let carried = $derived(filteredItems.filter(item => !item.equipped))
+  let loose = $derived(filteredItems.filter(item => !filteredItems.includes(getContainer($inventory, item) as InventoryItem)))
+  let equipment = $derived(loose.filter(item => item.equipped))
+  let carried = $derived(loose.filter(item => !item.equipped))
 
   let attunement = $derived($rules.resolved?.system.items ? getAttunement($inventory, $rules.resolved) : null)
   let attunable = $derived($inventory.filter(item => item.attunement?.required))
@@ -154,6 +156,14 @@
     draft = null
   }
 
+  function getHeld(container: InventoryItem): InventoryItem[] {
+    return filteredItems.filter(item => getContainer($inventory, item)?.id === container.id)
+  }
+
+  function getPlaces(item: InventoryItem): {value: string, label: string}[] {
+    return [{value: '', label: 'Carried loose'}, ...getContainers($inventory, item).map(one => ({value: one.id, label: `In ${one.title}`}))]
+  }
+
   function putCoin(coin: Currency, event: Event) {
     putCurrency({...$currency, [coin]: Math.max(0, parseInt((event.target as HTMLInputElement).value) || 0)})
   }
@@ -163,24 +173,21 @@
     <div class="header">
         <div class="weight">
             <span><b>Weight carried:</b> {carriedWeight}/{carryCapacity} lb.</span>
-            <span class="encumbered">
-                {#if encumbered}
-                    ENCUMBERED
-                {:else}
-                    UNENCUMBERED
-                {/if}
-            </span>
+            <span class="encumbered">{encumbrance?.title ?? 'Unencumbered'}</span>
+            {#if encumbrance}<span>{encumbrance.effect}</span>{/if}
         </div>
         <div class="currency">
             <span class="coins">
-                {#each COINS as coin (coin)}
-                    <Field label={coin} id="coin-{coin}">
-                        <input id="coin-{coin}" class="dnd-num" type="number" min="0" value={$currency[coin] ?? 0} onchange={event => putCoin(coin, event)} />
+                {#each coins as coin (coin.id)}
+                    <Field label={coin.id} id="coin-{coin.id}">
+                        <input id="coin-{coin.id}" class="dnd-num" type="number" min="0" title={coin.title} value={$currency[coin.id] ?? 0} onchange={event => putCoin(coin.id, event)} />
                     </Field>
                 {/each}
             </span>
-            <span><b>Currency carried:</b> {asGold($currency)}gp</span>
-            <span><b>Total valuables:</b> {asGold(totalValuables)}gp</span>
+            {#if $rules.system}
+                <span><b>Currency carried:</b> {getCoinValue($currency, $rules.system)} {priced}</span>
+                <span><b>Total valuables:</b> {getCoinValue(totalValuables, $rules.system)} {priced}</span>
+            {/if}
         </div>
     </div>
     <div class="search">
@@ -213,8 +220,8 @@
             </Field>
             <Field label="Coin" id="item-coin">
                 <select id="item-coin" bind:value={draft.value.currency}>
-                    {#each COINS as coin (coin)}
-                        <option value={coin}>{coin}</option>
+                    {#each coins as coin (coin.id)}
+                        <option value={coin.id}>{coin.title}</option>
                     {/each}
                 </select>
             </Field>
@@ -244,14 +251,14 @@
                 <span>Worn and wielded. What applies changes the sheet.</span>
             </li>
             {#each equipment as item (item.id)}
-                {@render row(item)}
+                {@render row(item, 0)}
             {/each}
             <li class="items-section">
                 <b>Carried</b>
                 <span>In the pack. Changes nothing.</span>
             </li>
             {#each carried as item (item.id)}
-                {@render row(item)}
+                {@render row(item, 0)}
             {/each}
         </ul>
         {#if attunement}
@@ -315,8 +322,9 @@
     </div>
 </BaseDialog>
 
-{#snippet row(item: InventoryItem)}
+{#snippet row(item: InventoryItem, depth: number)}
     {@const gives = getGives(item)}
+    {@const places = getPlaces(item)}
     <li class="item">
         <div class="equippable center">
             {#if isUsed(item)}
@@ -342,7 +350,7 @@
                 </Sigil>
             {/if}
         </div>
-        <div class="name">
+        <div class="name" style:padding-inline-start="calc(var(--space-4) * {depth})">
             <h4 title={item.title} style:--item-ink={getRarityInk(item.rarity)}>{item.title}</h4>
             <span class="kind">
                 <span class="kind-type">{getTypeLine(item)}</span>
@@ -356,6 +364,9 @@
             </span>
             {#if gives}
                 <span class="gives" class:gives-on={$rules.system && isItemApplied(item, $rules.system)} title={gives}>{gives}</span>
+            {/if}
+            {#if (item.properties?.capacity ?? 0) > 0}
+                <span class="gives">Holds {getContainerLoad($inventory, item)}/{item.properties?.capacity} lb{item.properties?.weightless ? ', weighing nothing' : ''}</span>
             {/if}
             {#if item.grants && item.grants.charges.max > 0}
                 <Pool title="Charges" max={item.grants.charges.max} current={getChargesLeft(item)} view="pips" onput={current => putCharges(item, (item.grants?.charges.max ?? 0) - current)} />
@@ -377,6 +388,9 @@
         </div>
         <div class="notes">
             <p title={item.description}>{item.description}</p>
+            {#if places.length > 1}
+                <Dropdown label="Put {item.title} in a container" value={item.inside && places.some(one => one.value === item.inside) ? item.inside : ''} options={places} glyph="chest" onchange={value => putInside(item, value)} />
+            {/if}
             <IconBtn title="Edit {item.title}" onclick={() => openItem(item)}>
                 <Glyph name="edit" size="sm" />
             </IconBtn>
@@ -385,6 +399,9 @@
             </IconBtn>
         </div>
     </li>
+    {#each (item.properties?.capacity ?? 0) > 0 ? getHeld(item) : [] as held (held.id)}
+        {@render row(held, depth + 1)}
+    {/each}
 {/snippet}
 
 <style>
@@ -441,6 +458,7 @@
         font-family: var(--font-display);
         font-weight: 700;
         letter-spacing: var(--tracking-caps);
+        text-transform: uppercase;
         color: var(--metal-bright);
         text-shadow: 0 1px 0 var(--shadow-ink), 0 0 0.5rem var(--ember-glow);
     }
@@ -460,7 +478,8 @@
 
     .coins {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, 1fr);
         gap: var(--space-1);
         min-width: 0;
     }

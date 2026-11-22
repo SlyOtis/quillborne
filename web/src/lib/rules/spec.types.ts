@@ -52,6 +52,19 @@ export type SpeedSpec = MeasureSpec & {
   value?: Expression
 }
 
+/** A coin of the system and what one is worth in the coin its prices are written in. */
+export type CoinSpec = TitledSpec & {
+  value: number
+}
+
+/** A load past which carrying slows or hinders. */
+export type EncumbranceSpec = TitledSpec & {
+  /** The pounds past which it applies, against the resolved character. */
+  over: Expression
+  /** What it does, as the table reads it. */
+  effect: string
+}
+
 /** A time charges come back at. */
 export type RechargeSpec = TitledSpec & {
   /** The rests that bring it about, so a long rest names what a short one does too. Without any it is called for at the table. */
@@ -108,6 +121,10 @@ export type ItemRules = {
   attack?: AttackSpec
   /** What using an item that rolls may do with the roll: `heal`, `temporary` hit points or `damage`. */
   uses?: TitledSpec[]
+  /** What carried coins weigh in pounds, against `coins`, how many are carried. */
+  coinWeight?: Expression
+  /** The loads, lightest first. */
+  encumbrance?: EncumbranceSpec[]
 }
 
 export type ConditionSpec = TitledSpec & {
@@ -198,6 +215,8 @@ export type RuleSystem = {
   /** When a thing that spends charges gets them back. */
   recharges?: RechargeSpec[]
   items?: ItemRules
+  /** The coins, worth the most first. */
+  coins?: CoinSpec[]
 }
 
 export type RuleSystemOverlay = Partial<Omit<RuleSystem, 'id' | 'title' | 'version'>> & {

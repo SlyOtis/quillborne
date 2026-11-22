@@ -7,7 +7,7 @@ import type { Character, CharacterInventoryItem } from '../character.types'
 import lars from '../character.fixture'
 import { getItemGrants } from '../resources'
 import { getResolvedCharacter } from './derive'
-import { getAmmunition, getAmmunitionType, getAppliedItems, getAttackReach, getAttributeId, getAttunedInventory, getAttunement, getCarriedWeight, getChargesLeft, getInventoryValue, getRecharging, getReplacedAttunement, getRestRecharges, getSaveNotes, getSheet, getSkillId, getSpentInventory, getTierId, getWeaponAttacks } from './sheet'
+import { getAmmunition, getAmmunitionType, getAppliedItems, getAttackReach, getAttributeId, getAttunedInventory, getAttunement, getCarriedWeight, getChargesLeft, getCoinValue, getCoinWeight, getContainers, getEncumbrance, getInventoryValue, getRecharging, getReplacedAttunement, getRestRecharges, getSaveNotes, getSheet, getSkillId, getSpentInventory, getTierId, getWeaponAttacks } from './sheet'
 import type { RuleSystem } from './spec.types'
 import { getMergedSystem } from './system'
 
@@ -184,7 +184,7 @@ describe('what a character carries', () => {
   })
 
   it('weighs two handaxes at 2 lb each and twenty arrows at 0.05 lb each as 5 lb', () => {
-    expect(getCarriedWeight([carried('handaxe', 'weapon', 2, 2, 5), carried('arrows', 'ammunition', 0.05, 20, 0.05)])).toBeCloseTo(5)
+    expect(getCarriedWeight([carried('handaxe', 'weapon', 2, 2, 5), carried('arrows', 'ammunition', 0.05, 20, 0.05)], {}, core)).toBeCloseTo(5)
   })
 
   it('prices every item, the first of each coin included, as many times as there are of it', () => {
@@ -351,5 +351,42 @@ describe('charges an item holds', () => {
     expect(getRestRecharges(core, 'long')).toEqual(['shortRest', 'longRest'])
     expect(getRecharging([{ ...wand, spent: 3 }], getRestRecharges(core, 'long'))).toEqual([])
     expect(getRecharging([{ ...wand, spent: 3 }], ['dawn'])).toHaveLength(1)
+  })
+})
+
+describe('what a pack holds and what a load weighs', () => {
+  const carried = (id: string, weight: number, quantity: number, properties?: CharacterInventoryItem['properties'], inside?: string): CharacterInventoryItem => ({
+    id, title: id, type: properties?.capacity ? 'container' : 'misc', rarity: 'common', attributes: [], description: '',
+    value: { amount: 0, currency: 'gp' }, weight, quantity, equippable: false, equipped: false,
+    ...(properties ? { properties } : {}), ...(inside ? { inside } : {})
+  })
+  const backpack = carried('backpack', 5, 1, { capacity: 30 })
+  const bag = carried('bag', 15, 1, { capacity: 500, weightless: true })
+
+  it('weighs 31 gp at 50 coins to the pound as 0.62 lb', () => {
+    expect(getCoinWeight({ gp: 31 }, core)).toBeCloseTo(0.62)
+  })
+
+  it('counts what sits in a backpack toward the load and nothing of what sits in a Bag of Holding but the bag', () => {
+    const inventory = [backpack, bag, carried('rope', 10, 1, undefined, 'backpack'), carried('pouch', 1, 1, { capacity: 6 }, 'bag'), carried('anvil', 50, 1, undefined, 'pouch')]
+    expect(getCarriedWeight(inventory, { gp: 50 }, core)).toBe(5 + 15 + 10 + 1)
+  })
+
+  it('offers every container but the item itself and those it holds', () => {
+    const pouch = carried('pouch', 1, 1, { capacity: 6 }, 'backpack')
+    expect(getContainers([backpack, bag, pouch], backpack).map((one) => one.id)).toEqual(['bag'])
+    expect(getContainers([backpack, bag, pouch], pouch).map((one) => one.id)).toEqual(['backpack', 'bag'])
+  })
+
+  it('is encumbered past 5 times Strength 12, 60 lb, heavily past 120, over capacity past 180, and not at exactly 60', () => {
+    const resolved = getResolvedCharacter(core, getSheet(lars, core))
+    expect(getEncumbrance(60, resolved)).toBeNull()
+    expect(getEncumbrance(61, resolved)?.id).toBe('encumbered')
+    expect(getEncumbrance(121, resolved)?.id).toBe('heavilyEncumbered')
+    expect(getEncumbrance(181, resolved)?.id).toBe('overCapacity')
+  })
+
+  it('prices 2 pp, 3 gp, 1 ep, 4 sp and 5 cp at 23.95 gp', () => {
+    expect(getCoinValue({ pp: 2, gp: 3, ep: 1, sp: 4, cp: 5 }, core)).toBe(23.95)
   })
 })

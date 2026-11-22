@@ -81,15 +81,6 @@ interface Enchantment {
   effects: Effect[]
 }
 
-/** Container item properties */
-interface Container {
-  capacity: {
-    weight: number   // Weight capacity
-    items: number    // Item count capacity
-  }
-  contents: CharacterInventoryItem[]
-}
-
 /** What an item is as a weapon or as armor, the same on an item of the room and on a carried one */
 export interface Properties {
   /** A weapon's dice and damage type; what an attack adds to it is the rule system's attack formula */
@@ -110,6 +101,10 @@ export interface Properties {
   stealth?: boolean
   /** What using it rolls and does with the roll */
   use?: ItemUse
+  /** The pounds a container holds */
+  capacity?: number
+  /** What a container holds weighs nothing */
+  weightless?: boolean
 }
 
 /** A roll an item makes when it is used, and what the roll does */
@@ -156,10 +151,11 @@ export interface CharacterInventoryItem {
   consumable?: boolean
   /** How many of the charges its grants hold are spent */
   spent?: number
+  /** The id of the carried container it sits in */
+  inside?: string
   properties?: Properties
   requirements?: Requirements
   enchantments?: Enchantment[]
-  container?: Container
   customProperties?: Record<string, unknown>
 }
 
@@ -391,6 +387,7 @@ export interface CharacterCurrency {
   sp?: number    // Silver pieces
   cp?: number    // Copper pieces
   pp?: number    // Platinum pieces
+  ep?: number    // Electrum pieces
 }
 
 /** Character's background information */

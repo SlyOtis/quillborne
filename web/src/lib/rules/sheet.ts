@@ -2,7 +2,7 @@ import type { Character, CharacterAction, CharacterCurrency, CharacterInventoryI
 import { getResolvedCharacter } from './derive'
 import { getExpressionNames, getExpressionValue } from './expression'
 import type { ItemGrants } from './item.types'
-import type { ArmorCategorySpec, CharacterSheet, ProficiencyTier, ResolvedCharacter, RuleSystem } from './spec.types'
+import type { ArmorCategorySpec, CharacterSheet, EncumbranceSpec, ProficiencyTier, ResolvedCharacter, RuleSystem } from './spec.types'
 
 export type AppliedItem = CharacterInventoryItem & { grants: ItemGrants }
 
@@ -288,9 +288,56 @@ export function getRecharging(inventory: CharacterInventoryItem[], at: string[])
   return inventory.filter((item) => (item.spent ?? 0) > 0 && item.grants && at.includes(item.grants.charges.at))
 }
 
-/** What everything carried weighs, each item as many times as there are of it. */
-export function getCarriedWeight(inventory: CharacterInventoryItem[]): number {
-  return inventory.reduce((all, item) => all + item.weight * item.quantity, 0)
+/** The carried container an item sits in, or none when it sits in none or in one no longer carried. */
+export function getContainer(inventory: CharacterInventoryItem[], item: CharacterInventoryItem): CharacterInventoryItem | undefined {
+  return item.inside ? inventory.find((one) => one.id === item.inside && (one.properties?.capacity ?? 0) > 0) : undefined
+}
+
+/** Whether an item weighs nothing because it sits, however deep, in a container whose contents weigh nothing. */
+export function isWeightless(inventory: CharacterInventoryItem[], item: CharacterInventoryItem): boolean {
+  const seen: string[] = []
+  for (let holder = getContainer(inventory, item); holder && !seen.includes(holder.id); holder = getContainer(inventory, holder)) {
+    if (holder.properties?.weightless) return true
+    seen.push(holder.id)
+  }
+  return false
+}
+
+/** The containers an item may be put in: every carried container but itself and those inside it. */
+export function getContainers(inventory: CharacterInventoryItem[], item: CharacterInventoryItem): CharacterInventoryItem[] {
+  const holds = (holder: CharacterInventoryItem, seen: string[]): boolean => {
+    const container = getContainer(inventory, holder)
+    return Boolean(container && !seen.includes(container.id) && (container.id === item.id || holds(container, [...seen, container.id])))
+  }
+  return inventory.filter((one) => one.id !== item.id && (one.properties?.capacity ?? 0) > 0 && !holds(one, []))
+}
+
+/** What the items in a container weigh, whether or not the container lets them weigh on its carrier. */
+export function getContainerLoad(inventory: CharacterInventoryItem[], container: CharacterInventoryItem): number {
+  return inventory.filter((one) => one.inside === container.id).reduce((all, one) => all + one.weight * one.quantity, 0)
+}
+
+/** What carried coins weigh, by the system. */
+export function getCoinWeight(currency: CharacterCurrency, system: RuleSystem): number {
+  const coins = (system.coins ?? []).reduce((all, coin) => all + (currency[coin.id as keyof CharacterCurrency] ?? 0), 0)
+  return system.items?.coinWeight ? getExpressionValue(system.items.coinWeight, { coins }) : 0
+}
+
+/** What everything carried weighs, each item as many times as there are of it, its coins with it, less what a weightless container holds. */
+export function getCarriedWeight(inventory: CharacterInventoryItem[], currency: CharacterCurrency, system: RuleSystem): number {
+  const items = inventory.filter((item) => !isWeightless(inventory, item)).reduce((all, item) => all + item.weight * item.quantity, 0)
+  return items + getCoinWeight(currency, system)
+}
+
+/** The heaviest load of the system a weight is past, or null when it is past none. */
+export function getEncumbrance(weight: number, resolved: ResolvedCharacter): EncumbranceSpec | null {
+  return (resolved.system.items?.encumbrance ?? []).filter((one) => weight > getExpressionValue(one.over, resolved.scope)).at(-1) ?? null
+}
+
+/** What a purse is worth in the coin the system writes its prices in. */
+export function getCoinValue(currency: CharacterCurrency, system: RuleSystem): number {
+  const value = (system.coins ?? []).reduce((all, coin) => all + (currency[coin.id as keyof CharacterCurrency] ?? 0) * coin.value, 0)
+  return Number(value.toFixed(3))
 }
 
 /** What everything carried is worth, by the coin each is priced in, each item as many times as there are of it. */
