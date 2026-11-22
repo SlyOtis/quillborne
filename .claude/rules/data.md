@@ -20,7 +20,7 @@ The schema and the api are snake_case throughout. A camelCase reader is a bug, n
 
 - Who owns a row, and which campaign it belongs to, is its `sa_owner_id` and nothing else: the campaign's organization for what a table keeps, Knights of the Cauldron for a player's own. `claimius.md` 1 to 7.
 - `profile` is the player. `character` is the sheet as stored data. `campaign` is what a table of play holds beside its organization, one row with the organization's id.
-- A campaign keeps maps, encounters, chat and songs. A map holds its picture, its layers and markers, and an optional drawn plan, the nimap document of `maps.md`.
+- A campaign keeps maps, encounters, chat, songs and its bestiary, the monsters it owns, which every seated player reads, the dungeon master alone writes, and none is public. A map holds its picture, its layers and markers, and an optional drawn plan, the nimap document of `maps.md`.
 - `resource` is every kind of lore, by `kind`, with the rest of the page in `fields` and sub pages through the claimius parent and root. `resource_update` holds the updates of live editing.
 - `asset` is a file, a block document or a folder, in nimployer's model: folders nest through the claimius parent and root, bytes sit in blob storage, and `object_asset` attaches an asset to any row by object type and id. `tag` and `tag_object` tag any row the same way.
 - `vehicle` is a vessel with its system, components, states, crew and revision history. `monster` is a creature with its stat block. `catalog_entry` is the shared class and race readings.

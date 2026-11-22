@@ -241,14 +241,14 @@ func getEncounterGroup() nstate.Group[EncounterData] {
 			"owner_id":        getRef(GroupCampaign),
 			"user_id":         getOwner("The player who set it up."),
 			"title":           getProperty("string", "The encounter title."),
-			"combatants":      getJSON("Every combatant with its kind, initiative, hit points and conditions; character ids are those of the export and are mapped on import."),
+			"combatants":      getJSON("Every combatant with its kind, initiative, hit points and conditions; its character_id and monster_id are those of the export and are mapped on import, and a monster_slug names a shipped monster and is kept."),
 			"round":           getProperty("integer", "The current round."),
 			"turn":            getProperty("integer", "The index of the combatant whose turn it is."),
 			"is_active":       getProperty("boolean", "Whether the encounter is running."),
 			"share_users":     getList("The players it is shared with by name."),
 			"share_campaigns": getList("The campaigns whose tables read it."),
 		}, "owner_id", "user_id", "title"),
-		DependsOn: []string{GroupCampaign, GroupCharacter},
+		DependsOn: []string{GroupCampaign, GroupCharacter, GroupMonster},
 		Refs:      map[string]string{"owner_id": GroupCampaign},
 		Filters:   []string{"owner_id"},
 		Export:    exportEncounters,
@@ -285,6 +285,10 @@ func importEncounter(ctx *nstate.Context, record nstate.Record[EncounterData]) (
 		return "", err
 	}
 	combatants, err := putIDs(ctx.Request().Context(), record.Data.Combatants, "character_id", func(map[string]any) string { return GroupCharacter })
+	if err != nil {
+		return "", err
+	}
+	combatants, err = putIDs(ctx.Request().Context(), combatants, "monster_id", func(map[string]any) string { return GroupMonster })
 	if err != nil {
 		return "", err
 	}

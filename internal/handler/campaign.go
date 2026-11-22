@@ -398,7 +398,7 @@ func DeleteCampaign(ctx echo.Context) error {
 				return err
 			}
 		}
-		for _, table := range []string{"campaign_map", "encounter", "chat_entry", "song"} {
+		for _, table := range []string{"campaign_map", "encounter", "chat_entry", "song", "monster"} {
 			if _, err := tx.NewUpdate().Table(table).Set("sa_deleted_at = NOW()").Where("sa_owner_id = ?", campaignID).Where("sa_deleted_at IS NULL").Exec(tctx); err != nil {
 				return err
 			}

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -30,6 +31,7 @@ type BodyMonster struct {
 	Stats       *json.RawMessage `json:"stats"`
 	Description *string          `json:"description"`
 	Image       *string          `json:"image"`
+	OwnerID     *uuid.UUID       `json:"owner_id"`
 }
 
 func putMonsterBody(item *db.Monster, body BodyMonster) ([]string, error) {
@@ -83,7 +85,15 @@ func GetMonsters(ctx echo.Context) error {
 		return respond.Error(ctx, http.StatusUnauthorized, "Unauthorized")
 	}
 	monsters := make([]db.Monster, 0)
-	q := sdb.ObjectWhere(db.Instance().NewSelect().Model(&monsters), actorID, db.OBJECT_TYPE_MONSTER, sdb.ACCESS_READ, nil, nil, 0)
+	q := db.Instance().NewSelect().Model(&monsters)
+	if raw := ctx.QueryParam("owner_id"); raw != "" {
+		ownerID, ok := getUUID(raw)
+		if !ok {
+			return respond.Error(ctx, http.StatusBadRequest, "Invalid owner_id, expected UUID")
+		}
+		q = q.Where("monster.sa_owner_id = ?", ownerID)
+	}
+	q = sdb.ObjectWhere(q, actorID, db.OBJECT_TYPE_MONSTER, sdb.ACCESS_READ, nil, nil, 0)
 	if err := q.OrderExpr("monster.name ASC, monster.id ASC").Scan(ctx.Request().Context()); err != nil {
 		ctx.Logger().Errorf("GetMonsters: %v", err)
 		return respond.ErrorInternal(ctx)
@@ -131,8 +141,34 @@ func PostMonster(ctx echo.Context) error {
 	if body.System == nil || *body.System == "" {
 		return respond.Error(ctx, http.StatusBadRequest, "A monster names its system")
 	}
+	if body.OwnerID != nil && body.IsPublic != nil && *body.IsPublic {
+		return respond.Error(ctx, http.StatusBadRequest, "A campaign's monster is read by its table and is never public")
+	}
 	rctx := ctx.Request().Context()
-	w, err := postWriter(rctx, actorID, nil)
+	var campaign *db.Campaign
+	var ownerID *uuid.UUID
+	if body.OwnerID != nil {
+		if _, err := sdb.Instance().MutationAccess(rctx, actorID, *body.OwnerID, db.OBJECT_TYPE_CAMPAIGN, sdb.ACCESS_WRITE); err != nil {
+			if errors.Is(err, sdb.ErrNotFound) {
+				return respond.Error(ctx, http.StatusNotFound, "Not found")
+			}
+			if errors.Is(err, sdb.ErrNoAccess) {
+				return respond.Error(ctx, http.StatusForbidden, "Forbidden")
+			}
+			ctx.Logger().Errorf("PostMonster: %v", err)
+			return respond.ErrorInternal(ctx)
+		}
+		campaign = &db.Campaign{ID: *body.OwnerID}
+		if err := getCampaign(rctx, campaign); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return respond.Error(ctx, http.StatusNotFound, "Not found")
+			}
+			ctx.Logger().Errorf("PostMonster: %v", err)
+			return respond.ErrorInternal(ctx)
+		}
+		ownerID = &campaign.ID
+	}
+	w, err := postWriter(rctx, actorID, ownerID)
 	if err != nil {
 		if errors.Is(err, errNoOwner) {
 			ctx.Logger().Error(err)
@@ -166,7 +202,24 @@ func PostMonster(ctx echo.Context) error {
 		if err := sdb.Write(tctx, tx, "PostMonster", "create", db.OBJECT_TYPE_MONSTER, item.ID, item.OwnerID, w.Access.UserClaimID, item.Name); err != nil {
 			return err
 		}
-		return putPublicBinding(tctx, tx, w, db.OBJECT_TYPE_MONSTER, item.ID, item.IsPublic)
+		if err := putPublicBinding(tctx, tx, w, db.OBJECT_TYPE_MONSTER, item.ID, item.IsPublic); err != nil {
+			return err
+		}
+		if campaign == nil {
+			return nil
+		}
+		memberships, err := getMemberships(tctx, []uuid.UUID{campaign.ID})
+		if err != nil {
+			return err
+		}
+		want := map[uuid.UUID]sdb.ClaimAccess{}
+		if ownerClaim := memberships[campaign.ID].ownerClaim; ownerClaim != nil {
+			want[*ownerClaim] = sdb.ACCESS_ALL
+		}
+		if memberClaim := memberships[campaign.ID].memberClaim; memberClaim != nil {
+			want[*memberClaim] = sdb.ACCESS_READ
+		}
+		return putBindings(tctx, tx, w, db.OBJECT_TYPE_MONSTER, item.ID, want, nil)
 	}); err != nil {
 		ctx.Logger().Errorf("PostMonster: %v", err)
 		return respond.ErrorInternal(ctx)
@@ -216,6 +269,9 @@ func PutMonster(ctx echo.Context) error {
 	}
 	columns := append([]string{"sa_updated_at"}, changed...)
 	public := body.IsPublic != nil && *body.IsPublic != item.IsPublic
+	if home, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID")); public && err == nil && item.OwnerID != home {
+		return respond.Error(ctx, http.StatusBadRequest, "A campaign's monster is read by its table and is never public")
+	}
 	if public {
 		item.IsPublic = *body.IsPublic
 		columns = append(columns, "is_public")
@@ -226,7 +282,7 @@ func PutMonster(ctx echo.Context) error {
 			return err
 		}
 		if public {
-			w, err := postWriter(tctx, actorID, nil)
+			w, err := postWriter(tctx, actorID, &item.OwnerID)
 			if err != nil {
 				return err
 			}
