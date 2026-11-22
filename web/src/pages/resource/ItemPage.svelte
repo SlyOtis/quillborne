@@ -116,6 +116,10 @@
       <dd style:color={getRarityInk(it.rarity)}>{it.rarity}</dd>
       {#if it.attunement}<dt>Attunement</dt><dd>Required{it.attuned_by ? ` ${it.attuned_by}` : ""}</dd>{/if}
       {#if it.consumable}<dt>Consumable</dt><dd>Used up when used</dd>{/if}
+      {#if it.properties.use}
+        <dt>When used</dt>
+        <dd>{rules?.items?.uses?.find((choice) => choice.id === it.properties.use?.effect)?.title ?? it.properties.use.effect} {it.properties.use.roll}</dd>
+      {/if}
       {#if it.properties.damage}
         <dt>Damage</dt>
         <dd>{getDamageLine(it.properties.damage, rules)}{it.properties.magic ? `, +${it.properties.magic} magic` : ''}</dd>
@@ -260,6 +264,17 @@
           <option value={true}>Yes</option>
         </select>
       </dd>
+      {#if one.consumable}
+        <dt><label for="item-use-roll">When used</label></dt>
+        <dd class="item-dice">
+          <input id="item-use-roll" type="text" placeholder="2d4 + 2" aria-label="What it rolls" bind:value={() => held(one).use?.roll ?? '', (value) => put(one, { use: value.trim() ? { roll: value, effect: held(one).use?.effect ?? rules?.items?.uses?.[0]?.id ?? '' } : undefined })} />
+          {#if held(one).use}
+            <select aria-label="What the roll does" bind:value={() => held(one).use?.effect ?? '', (value) => put(one, { use: { roll: held(one).use?.roll ?? '', effect: value } })}>
+              {#each rules?.items?.uses ?? [] as choice (choice.id)}<option value={choice.id}>{choice.title}</option>{/each}
+            </select>
+          {/if}
+        </dd>
+      {/if}
       <dt><label for="item-weight">Weight</label></dt>
       <dd>
         <input id="item-weight" type="number" min="0" step="any" bind:value={one.weight} />

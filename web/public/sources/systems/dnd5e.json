@@ -129,8 +129,8 @@
   "recharges": [
     { "id": "dawn", "title": "Dawn" },
     { "id": "dusk", "title": "Dusk" },
-    { "id": "shortRest", "title": "Short Rest" },
-    { "id": "longRest", "title": "Long Rest" }
+    { "id": "shortRest", "title": "Short Rest", "rests": ["short", "long"] },
+    { "id": "longRest", "title": "Long Rest", "rests": ["long"] }
   ],
   "items": {
     "attunement": "3",
@@ -180,7 +180,12 @@
       "ability": "finesse ? max(mod.str, mod.dex) : ranged ? mod.dex : mod.str",
       "hit": "ability + prof * proficient + magic",
       "damage": "ability + magic"
-    }
+    },
+    "uses": [
+      { "id": "heal", "title": "Heals" },
+      { "id": "temporary", "title": "Temporary hit points" },
+      { "id": "damage", "title": "Damage" }
+    ]
   },
   "progression": {
     "maxLevel": 20,

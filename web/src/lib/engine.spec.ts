@@ -38,6 +38,7 @@ vi.mock('./dice', () => ({
 import dnd5e from '../../public/sources/systems/dnd5e.json'
 import { getResolvedCharacter } from './rules/derive'
 import { getSheet } from './rules/sheet'
+import { getItemGrants } from './resources'
 import type { RuleSystem } from './rules/spec.types'
 import {
   applyStateToCharacter,
@@ -48,7 +49,10 @@ import {
   getEmptyCharacter,
   postCast,
   postItem,
+  postItemCast,
+  postItemUse,
   postLongRest,
+  postRecharge,
   postShortRest,
   putCondition,
   putDamage,
@@ -384,5 +388,71 @@ describe('conditions and items', () => {
     deleteItem('torch')
 
     expect(get(store.inventory)).toEqual([])
+  })
+})
+
+describe('charges and what an item does when used', () => {
+  const core = dnd5e as RuleSystem
+  const dice = (...faces: number[]) => vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, text: async () => faces.join('\n') + '\n' })))
+  const wand = (spent: number) => ({
+    id: 'wand', title: 'Wand of Magic Missiles', type: 'wand', rarity: 'uncommon' as const, attributes: [], description: '',
+    value: { amount: 0, currency: 'gp' as const }, weight: 1, quantity: 1, equippable: true, equipped: true, spent,
+    grants: getItemGrants({ spells: [{ name: 'Magic Missile', level: 1, charges: 1 }], charges: { max: 7, regain: '1d6 + 1', at: 'dawn' } })
+  })
+  const potion = (use: { roll: string, effect: string }) => ({
+    id: 'potion', title: 'Potion of Healing', type: 'potion', rarity: 'common' as const, attributes: [], description: '',
+    value: { amount: 50, currency: 'gp' as const }, weight: 0.5, quantity: 2, equippable: false, equipped: false, consumable: true,
+    properties: { use }
+  })
+  const charged = (store: ReturnType<typeof getCharacterStore>) => get(store.inventory)[0].spent
+
+  it('spends one charge of seven casting Magic Missile from the wand, and refuses a cast with none left', async () => {
+    const { store } = opened()
+    postItem(wand(0))
+    expect(await postItemCast(wand(0), { name: 'Magic Missile', level: 1, charges: 1, note: '' })).toBe(true)
+    expect(charged(store)).toBe(1)
+
+    store.inventory.set([wand(7)])
+    expect(await postItemCast(wand(7), { name: 'Magic Missile', level: 1, charges: 1, note: '' })).toBe(false)
+    expect(charged(store)).toBe(7)
+  })
+
+  it('regains 1d6 + 1 at dawn: a roll of 4 gives back five, so three spent are all back and never past the seven', async () => {
+    const { store } = opened()
+    postItem(wand(3))
+    dice(4)
+    await postRecharge(['dawn'])
+    vi.unstubAllGlobals()
+    expect(charged(store)).toBe(0)
+  })
+
+  it('regains nothing for a dawn item on a short rest', async () => {
+    const { store } = opened()
+    postItem(wand(3))
+    await postRecharge(['shortRest'])
+    expect(charged(store)).toBe(3)
+  })
+
+  it('heals a Potion of Healing\'s 2d4 + 2, rolled 2 and 3, from 22 to 29 of 30, and spends one of the two', async () => {
+    const { store } = opened()
+    postItem(potion({ roll: '2d4 + 2', effect: 'heal' }))
+    dice(2, 3)
+    await postItemUse(potion({ roll: '2d4 + 2', effect: 'heal' }), core)
+    vi.unstubAllGlobals()
+    expect(hp(store).current).toBe(29)
+    expect(get(store.inventory)[0].quantity).toBe(1)
+  })
+
+  it('grants temporary hit points with a temporary use, and takes them with a damage use', async () => {
+    const { store } = opened()
+    postItem(potion({ roll: '1d4', effect: 'temporary' }))
+    dice(3)
+    await postItemUse(potion({ roll: '1d4', effect: 'temporary' }), core)
+    expect(hp(store).temporary).toBe(3)
+
+    dice(4)
+    await postItemUse(potion({ roll: '1d4', effect: 'damage' }), core)
+    vi.unstubAllGlobals()
+    expect(hp(store)).toMatchObject({ temporary: 0, current: 21 })
   })
 })

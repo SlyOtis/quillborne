@@ -2,11 +2,11 @@
   import {getContext, tick} from "svelte";
   import type {Readable} from "svelte/store";
   import type {CharacterContext} from "$lib/types";
-  import type {Character, Currency, ItemType} from "$lib/character.types";
+  import type {Character, Currency} from "$lib/character.types";
   import type {RulesState} from "$lib/rules/store";
-  import {getAttunement, getCarriedWeight, getInventoryValue, isItemApplied} from "$lib/rules/sheet";
+  import {getAttunement, getCarriedWeight, getChargesLeft, getInventoryValue, getRecharging, isConsumable, isItemApplied} from "$lib/rules/sheet";
   import {getCarriedItem, getEmptyItemFilter, getGrantLines, getItemRoom, getRarityInk, isItemShown, type Item} from "$lib/resources";
-  import {addCurrencies, asGold, deleteItem, postItem, putAttunement, putCurrency, putEquipped, putItem, putReplacedAttunement} from "$lib/engine";
+  import {addCurrencies, asGold, deleteItem, postItem, postItemUse, postRecharge, putAttunement, putCharges, putCurrency, putEquipped, putItem, putReplacedAttunement} from "$lib/engine";
   import BaseDialog from "$components/BaseDialog.svelte";
   import ItemFilters from "$components/campaign/ItemFilters.svelte";
   import ItemRow from "$components/campaign/ItemRow.svelte";
@@ -25,7 +25,9 @@
   const rules = getContext<Readable<RulesState>>('rules')
 
   const COINS: Currency[] = ['pp', 'gp', 'sp', 'cp']
-  const ITEM_TYPES: ItemType[] = ['weapon', 'armor', 'consumable', 'tool', 'container', 'treasure', 'ammunition', 'misc']
+
+  let categories = $derived($rules.system?.items?.categories ?? [])
+  let calls = $derived(($rules.system?.recharges ?? []).filter(one => !one.rests?.length && getRecharging($inventory, [one.id]).length > 0))
 
   let carryCapacity = $derived($rules.resolved?.scope['derived.carryCapacity'] ?? $info.carry_capacity)
   let carriedWeight = $derived(getCarriedWeight($inventory))
@@ -111,21 +113,15 @@
   }
 
   function getEquipIcon(itemType: string): GlyphName {
-    const icons: {[key: string]: GlyphName} = {
-      weapon: 'weapon',
-      armor: 'armor',
-      ammunition: 'ammunition',
-      tool: 'tool',
-      consumable: 'potion',
-      treasure: 'gem',
-      container: 'chest',
-      misc: 'scroll'
-    }
-    return icons[itemType] || 'gear'
+    return (categories.find(one => one.id === itemType)?.glyph as GlyphName | undefined) ?? 'gear'
   }
 
-  function consumeItem(item: InventoryItem) {
-    putItem({...item, quantity: item.quantity - 1})
+  function isUsed(item: InventoryItem): boolean {
+    return Boolean($rules.system && (item.properties?.use || isConsumable(item, $rules.system)))
+  }
+
+  function useItem(item: InventoryItem) {
+    if ($rules.system) void postItemUse(item, $rules.system)
   }
 
   function openItem(item?: InventoryItem) {
@@ -189,6 +185,9 @@
     </div>
     <div class="search">
         <SearchInput bind:value={searchInput} placeholder="Search the inventory..." label="Search the inventory" />
+        {#each calls as call (call.id)}
+            <Button variant="ghost" size="sm" title="Regain the charges that come back at {call.title.toLowerCase()}" onclick={() => postRecharge([call.id])}>{call.title}</Button>
+        {/each}
         <Button variant="secondary" size="sm" title="Add an item to the inventory" onclick={openRoom}>Add item</Button>
     </div>
     {#if draft}
@@ -198,8 +197,8 @@
             </Field>
             <Field label="Type" id="item-type">
                 <select id="item-type" bind:value={draft.type}>
-                    {#each ITEM_TYPES as type (type)}
-                        <option value={type}>{type}</option>
+                    {#each categories as type (type.id)}
+                        <option value={type.id}>{type.title}</option>
                     {/each}
                 </select>
             </Field>
@@ -320,15 +319,15 @@
     {@const gives = getGives(item)}
     <li class="item">
         <div class="equippable center">
-            {#if item.type === 'consumable'}
+            {#if isUsed(item)}
                 <Sigil
                     frame="ring"
                     size="sm"
                     tone="verdigris"
-                    title="Consume {item.title}"
-                    onclick={() => consumeItem(item)}
+                    title="Use {item.title}"
+                    onclick={() => useItem(item)}
                 >
-                    <Glyph name="potion" size="sm" />
+                    <Glyph name={getEquipIcon(item.type)} size="sm" />
                 </Sigil>
             {:else if item.equippable}
                 <Sigil
@@ -357,6 +356,9 @@
             </span>
             {#if gives}
                 <span class="gives" class:gives-on={$rules.system && isItemApplied(item, $rules.system)} title={gives}>{gives}</span>
+            {/if}
+            {#if item.grants && item.grants.charges.max > 0}
+                <Pool title="Charges" max={item.grants.charges.max} current={getChargesLeft(item)} view="pips" onput={current => putCharges(item, (item.grants?.charges.max ?? 0) - current)} />
             {/if}
         </div>
         <div class="qty center">

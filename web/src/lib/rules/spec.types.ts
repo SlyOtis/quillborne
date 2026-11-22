@@ -52,6 +52,12 @@ export type SpeedSpec = MeasureSpec & {
   value?: Expression
 }
 
+/** A time charges come back at. */
+export type RechargeSpec = TitledSpec & {
+  /** The rests that bring it about, so a long rest names what a short one does too. Without any it is called for at the table. */
+  rests?: ('short' | 'long')[]
+}
+
 /** A kind of item, with the glyph its row draws. */
 export type ItemCategorySpec = TitledSpec & {
   glyph?: string
@@ -100,6 +106,8 @@ export type ItemRules = {
   weaponCategories?: TitledSpec[]
   armorCategories?: ArmorCategorySpec[]
   attack?: AttackSpec
+  /** What using an item that rolls may do with the roll: `heal`, `temporary` hit points or `damage`. */
+  uses?: TitledSpec[]
 }
 
 export type ConditionSpec = TitledSpec & {
@@ -188,7 +196,7 @@ export type RuleSystem = {
   bonuses?: TitledSpec[]
   speeds?: SpeedSpec[]
   /** When a thing that spends charges gets them back. */
-  recharges?: TitledSpec[]
+  recharges?: RechargeSpec[]
   items?: ItemRules
 }
 

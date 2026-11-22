@@ -108,6 +108,16 @@ export interface Properties {
   strength?: number
   /** Disadvantage on Stealth while it is worn */
   stealth?: boolean
+  /** What using it rolls and does with the roll */
+  use?: ItemUse
+}
+
+/** A roll an item makes when it is used, and what the roll does */
+export interface ItemUse {
+  /** A dice expression, `2d4 + 2` */
+  roll: string
+  /** One of the rule system's item uses, such as heal */
+  effect: string
 }
 
 /** Item attunement status */
@@ -144,6 +154,8 @@ export interface CharacterInventoryItem {
   grants?: ItemGrants
   /** Used up when it is used, whatever its category says */
   consumable?: boolean
+  /** How many of the charges its grants hold are spent */
+  spent?: number
   properties?: Properties
   requirements?: Requirements
   enchantments?: Enchantment[]

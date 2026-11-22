@@ -261,6 +261,33 @@ export function getStoredAttack(action: CharacterAction, inventory: CharacterInv
   }
 }
 
+/** Whether an item is used up when it is used: by its own flag, or else by its category. */
+export function isConsumable(item: CharacterInventoryItem, system: RuleSystem): boolean {
+  return item.consumable ?? Boolean(system.items?.categories?.find((one) => one.id === item.type)?.consumable)
+}
+
+/** How many of the charges an item's grants hold are left. */
+export function getChargesLeft(item: CharacterInventoryItem): number {
+  return Math.max(0, (item.grants?.charges.max ?? 0) - (item.spent ?? 0))
+}
+
+/** The inventory with charges of one item spent, or null when fewer than that are left. */
+export function getSpentInventory(inventory: CharacterInventoryItem[], id: string, charges: number): CharacterInventoryItem[] | null {
+  const item = inventory.find((one) => one.id === id)
+  if (!item || getChargesLeft(item) < charges) return null
+  return inventory.map((one) => (one.id === id ? { ...one, spent: (one.spent ?? 0) + charges } : one))
+}
+
+/** The recharges of the system a rest brings about. */
+export function getRestRecharges(system: RuleSystem, rest: 'short' | 'long'): string[] {
+  return (system.recharges ?? []).filter((one) => one.rests?.includes(rest)).map((one) => one.id)
+}
+
+/** The carried items with charges spent that regain them at one of the recharges. */
+export function getRecharging(inventory: CharacterInventoryItem[], at: string[]): CharacterInventoryItem[] {
+  return inventory.filter((item) => (item.spent ?? 0) > 0 && item.grants && at.includes(item.grants.charges.at))
+}
+
 /** What everything carried weighs, each item as many times as there are of it. */
 export function getCarriedWeight(inventory: CharacterInventoryItem[]): number {
   return inventory.reduce((all, item) => all + item.weight * item.quantity, 0)

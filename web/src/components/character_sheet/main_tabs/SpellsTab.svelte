@@ -4,9 +4,11 @@
   import type {CharacterContext} from "$lib/types";
   import type {RulesState} from "$lib/rules/store";
   import type {CharacterSpell, Damage} from "$lib/character.types";
-  import {getAppliedItems} from "$lib/rules/sheet";
+  import {getAppliedItems, getChargesLeft} from "$lib/rules/sheet";
   import {getChargesLine, getItemSpellLine} from "$lib/resources";
-  import {deleteSpell, postCast, postSpell, putSpell, putSpellcasting} from "$lib/engine";
+  import type {ItemSpell} from "$lib/rules/item.types";
+  import {deleteSpell, postCast, postItemCast, postSpell, putCharges, putSpell, putSpellcasting} from "$lib/engine";
+  import Pool from "$components/ui/Pool.svelte";
   import AdditionalSlots from "./AdditionalSlots.svelte";
   import Button from "$components/ui/Button.svelte";
   import Field from "$components/ui/Field.svelte";
@@ -62,6 +64,10 @@
   )
 
   const casters = $derived($rules.system ? getAppliedItems($inventory, $rules.system).filter(item => item.grants.spells.length > 0) : [])
+
+  async function castFrom(item: (typeof casters)[number], spell: ItemSpell) {
+    note = (await postItemCast(item, spell)) ? '' : `${item.title} has too few charges left for ${spell.name}.`
+  }
 
   const getSlotLevel = (spell: CharacterSpell) =>
     LEVELS.find(level => level >= spell.level && (spellcasting.slots?.[level] ?? 0) > (spellcasting.expended?.[level] ?? 0))
@@ -266,7 +272,17 @@
             <span class="note">No spells yet.</span>
         {/each}
         {#each casters as item (item.id)}
-            <div class="divider"><span>{item.title}{item.grants.charges.max > 0 && $rules.system ? ` · charges ${getChargesLine(item.grants.charges, $rules.system)}` : ''}</span></div>
+            <div class="divider"><span>{item.title}</span></div>
+            {#if item.grants.charges.max > 0 && $rules.system}
+                <Pool
+                    title="Charges"
+                    note={getChargesLine(item.grants.charges, $rules.system)}
+                    max={item.grants.charges.max}
+                    current={getChargesLeft(item)}
+                    view="pips"
+                    onput={current => putCharges(item, item.grants.charges.max - current)}
+                />
+            {/if}
             <ul>
                 {#each item.grants.spells as spell (spell.name)}
                     <li class="spell">
@@ -274,6 +290,15 @@
                             <b>{spell.name}</b>
                             <span class="spell-sub">{getItemSpellLine(spell)}</span>
                         </span>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            title="Cast {spell.name} from {item.title}"
+                            disabled={getChargesLeft(item) < spell.charges}
+                            onclick={() => castFrom(item, spell)}
+                        >
+                            Cast
+                        </Button>
                     </li>
                 {/each}
             </ul>

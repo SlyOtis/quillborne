@@ -7,7 +7,7 @@ import type { Character, CharacterInventoryItem } from '../character.types'
 import lars from '../character.fixture'
 import { getItemGrants } from '../resources'
 import { getResolvedCharacter } from './derive'
-import { getAmmunition, getAmmunitionType, getAppliedItems, getAttackReach, getAttributeId, getAttunedInventory, getAttunement, getCarriedWeight, getInventoryValue, getReplacedAttunement, getSaveNotes, getSheet, getSkillId, getTierId, getWeaponAttacks } from './sheet'
+import { getAmmunition, getAmmunitionType, getAppliedItems, getAttackReach, getAttributeId, getAttunedInventory, getAttunement, getCarriedWeight, getChargesLeft, getInventoryValue, getRecharging, getReplacedAttunement, getRestRecharges, getSaveNotes, getSheet, getSkillId, getSpentInventory, getTierId, getWeaponAttacks } from './sheet'
 import type { RuleSystem } from './spec.types'
 import { getMergedSystem } from './system'
 
@@ -327,5 +327,29 @@ describe('what a character wears and wields', () => {
   it('adds a +1 weapon\'s bonus to hit and damage: +6 and 1d8 + 4', () => {
     const swing = attack(fighter(12, []), { ...longsword, properties: { ...longsword.properties, magic: 1 } })
     expect([swing.hit, swing.damage[0].bonus]).toEqual([6, 4])
+  })
+})
+
+describe('charges an item holds', () => {
+  const wand: CharacterInventoryItem = {
+    id: 'wand', title: 'Wand of Magic Missiles', type: 'wand', rarity: 'uncommon', attributes: [], description: '',
+    value: { amount: 0, currency: 'gp' }, weight: 1, quantity: 1, equippable: true, equipped: true,
+    grants: getItemGrants({ charges: { max: 7, regain: '1d6 + 1', at: 'dawn' } })
+  }
+
+  it('leaves four of seven charges after a cast at 3rd level spends three', () => {
+    const spent = getSpentInventory([wand], 'wand', 3)
+    expect(spent && getChargesLeft(spent[0])).toBe(4)
+  })
+
+  it('refuses a cast that needs four with three left', () => {
+    expect(getSpentInventory([{ ...wand, spent: 4 }], 'wand', 4)).toBeNull()
+  })
+
+  it('brings short rest recharges about on a short rest, and short and long rest ones on a long rest, never dawn', () => {
+    expect(getRestRecharges(core, 'short')).toEqual(['shortRest'])
+    expect(getRestRecharges(core, 'long')).toEqual(['shortRest', 'longRest'])
+    expect(getRecharging([{ ...wand, spent: 3 }], getRestRecharges(core, 'long'))).toEqual([])
+    expect(getRecharging([{ ...wand, spent: 3 }], ['dawn'])).toHaveLength(1)
   })
 })
