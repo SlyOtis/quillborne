@@ -1,0 +1,17 @@
+{
+  "name": "Fine Clothes",
+  "description": "Good cloth, careful tailoring and a little embroidery.",
+  "category": "adventuring gear",
+  "subtype": "clothes",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 6,
+  "value": 15,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nWhat you wear to be received at court or by a guildmaster."
+}

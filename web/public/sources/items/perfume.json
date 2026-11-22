@@ -1,0 +1,17 @@
+{
+  "name": "Perfume",
+  "description": "A tiny vial of scent.",
+  "category": "adventuring gear",
+  "subtype": "vial",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 5,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nFor a good first impression, or to cover the smell of the road."
+}

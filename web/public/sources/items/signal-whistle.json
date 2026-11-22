@@ -1,0 +1,17 @@
+{
+  "name": "Signal Whistle",
+  "description": "A small tin whistle on a cord.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0.05,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nA shrill blast carries further than any shout."
+}

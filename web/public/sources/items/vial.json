@@ -1,0 +1,17 @@
+{
+  "name": "Vial",
+  "description": "A small glass vial with a stopper.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 1,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nHolds four ounces of liquid."
+}

@@ -1,0 +1,17 @@
+{
+  "name": "Alchemist's Supplies",
+  "description": "A wooden case of glassware, a spirit burner and stoppered jars of powders.",
+  "category": "tool",
+  "subtype": "artisan's tools",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 8,
+  "value": 50,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nFor brewing acids, powders and the tinctures of alchemy."
+}

@@ -1,0 +1,21 @@
+{
+  "name": "Chest",
+  "description": "A wooden chest bound in iron, with a hasp for a lock.",
+  "category": "container",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 25,
+  "value": 5,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nHolds 12 cubic feet of goods, up to 300 pounds.",
+  "properties": {
+    "capacity": 300,
+    "weightless": false
+  }
+}

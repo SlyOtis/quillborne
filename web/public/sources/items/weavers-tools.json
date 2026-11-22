@@ -1,0 +1,17 @@
+{
+  "name": "Weaver's Tools",
+  "description": "A hand loom, shuttles and skeins of yarn.",
+  "category": "tool",
+  "subtype": "artisan's tools",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 5,
+  "value": 1,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nFor weaving cloth and mending clothes."
+}

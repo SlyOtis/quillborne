@@ -1,0 +1,17 @@
+{
+  "name": "Antitoxin",
+  "description": "A small vial of bitter green tincture.",
+  "category": "consumable",
+  "subtype": "vial",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": true,
+  "weight": 0,
+  "value": 50,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nDrink it and for the next hour you have advantage on saving throws against poison. It does nothing for undead or constructs."
+}

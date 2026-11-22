@@ -1,0 +1,17 @@
+{
+  "name": "Climber's Kit",
+  "description": "A harness, iron spikes, toe spurs and rough leather gloves, rolled in canvas.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 12,
+  "value": 25,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nAs an action you can anchor yourself with it. While anchored you cannot fall more than 25 feet from the anchor, and you cannot climb more than 25 feet from it without undoing the anchor."
+}

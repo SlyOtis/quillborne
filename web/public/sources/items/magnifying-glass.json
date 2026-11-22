@@ -1,0 +1,17 @@
+{
+  "name": "Magnifying Glass",
+  "description": "A ground glass lens in a horn handle.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 100,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nYou have advantage on checks to appraise or inspect anything small or finely made. Held to bright sunlight, it lights tinder in about 5 minutes, without flint and steel."
+}

@@ -1,0 +1,17 @@
+{
+  "name": "Forgery Kit",
+  "description": "A slim box of blank papers, coloured inks and wax, a few seals and a little gold leaf.",
+  "category": "tool",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 5,
+  "value": 15,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nProficiency with it adds your proficiency bonus to checks to copy a document or a hand."
+}

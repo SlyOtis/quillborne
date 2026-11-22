@@ -1,0 +1,17 @@
+{
+  "name": "Caltrops",
+  "description": "A bag of twenty small iron spikes, made so one point always faces up.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 1,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nScattered as an action, they cover a 5-foot square. A creature stepping in makes a DC 15 Dexterity saving throw. On a failure it stops for the turn, takes 1 piercing damage and walks 10 feet slower until it regains a hit point. Picking through at half speed is safe."
+}

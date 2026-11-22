@@ -1,0 +1,17 @@
+{
+  "name": "Thieves' Tools",
+  "description": "A rolled leather wallet of picks, tension bars, a hooked mirror and slim pliers.",
+  "category": "tool",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 1,
+  "value": 25,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nProficiency with it adds your proficiency bonus to checks to disarm traps and open locks."
+}

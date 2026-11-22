@@ -1,0 +1,17 @@
+{
+  "name": "Poisoner's Kit",
+  "description": "A locked case of dark glass bottles, gloves and fine syringes.",
+  "category": "tool",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 50,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nProficiency with it adds your proficiency bonus to checks to make or use poisons."
+}

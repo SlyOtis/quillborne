@@ -1,0 +1,17 @@
+{
+  "name": "Book",
+  "description": "A leather-bound book with a clasp.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 5,
+  "value": 25,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nPoetry, history, a ledger or a treatise on some art. What it holds is up to the one who writes it."
+}

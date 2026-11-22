@@ -1,0 +1,17 @@
+{
+  "name": "Manacles",
+  "description": "Two iron cuffs on a short chain, with a key.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 6,
+  "value": 2,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nThey hold a Small or Medium creature. Slipping them takes a DC 20 Dexterity check and breaking them a DC 20 Strength check; they have 15 hit points. Without the key, picking them takes thieves' tools, proficiency and a DC 15 Dexterity check."
+}

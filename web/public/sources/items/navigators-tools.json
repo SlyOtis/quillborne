@@ -1,0 +1,17 @@
+{
+  "name": "Navigator's Tools",
+  "description": "A brass sextant, a sea compass and rolled charts in a leather case.",
+  "category": "tool",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 25,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nProficiency with it adds your proficiency bonus to checks to plot a course, follow a chart or keep from getting lost at sea."
+}

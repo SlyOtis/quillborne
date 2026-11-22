@@ -1,0 +1,17 @@
+{
+  "name": "Tinker's Tools",
+  "description": "A satchel of small tools, wire, rivets and patching tin.",
+  "category": "tool",
+  "subtype": "artisan's tools",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 10,
+  "value": 50,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nFor mending pots, buckles and small mechanisms of every kind."
+}

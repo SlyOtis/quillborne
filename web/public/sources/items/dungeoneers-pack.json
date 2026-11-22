@@ -1,0 +1,55 @@
+{
+  "name": "Dungeoneer's Pack",
+  "description": "A backpack packed for going underground.",
+  "category": "adventuring gear",
+  "subtype": "equipment pack",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 12,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nA backpack holding a crowbar, a hammer, ten pitons, ten torches, a tinderbox, ten days of rations, a waterskin and fifty feet of hempen rope. Added to an inventory, it is unpacked into those items.",
+  "pack": [
+    {
+      "id": "backpack",
+      "quantity": 1
+    },
+    {
+      "id": "crowbar",
+      "quantity": 1
+    },
+    {
+      "id": "hammer",
+      "quantity": 1
+    },
+    {
+      "id": "piton",
+      "quantity": 10
+    },
+    {
+      "id": "torch",
+      "quantity": 10
+    },
+    {
+      "id": "tinderbox",
+      "quantity": 1
+    },
+    {
+      "id": "rations",
+      "quantity": 10
+    },
+    {
+      "id": "waterskin",
+      "quantity": 1
+    },
+    {
+      "id": "hempen-rope",
+      "quantity": 1
+    }
+  ]
+}

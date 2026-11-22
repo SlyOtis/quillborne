@@ -1,0 +1,17 @@
+{
+  "name": "Brewer's Supplies",
+  "description": "A copper kettle, a long wooden paddle and a sack of malted barley.",
+  "category": "tool",
+  "subtype": "artisan's tools",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 9,
+  "value": 20,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nFor turning grain and fruit into ale, beer and wine, and for purifying water."
+}

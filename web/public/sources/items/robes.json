@@ -1,0 +1,17 @@
+{
+  "name": "Robes",
+  "description": "Long loose robes with a hood.",
+  "category": "adventuring gear",
+  "subtype": "clothes",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 4,
+  "value": 1,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nWorn by priests, scholars and anyone who would rather not show their shape."
+}

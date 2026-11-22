@@ -1,0 +1,47 @@
+{
+  "name": "Scholar's Pack",
+  "description": "A backpack packed for study.",
+  "category": "adventuring gear",
+  "subtype": "equipment pack",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 40,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nA backpack holding a book of lore, a bottle of ink, an ink pen, ten sheets of parchment, a little bag of sand and a small knife. Added to an inventory, it is unpacked into those items.",
+  "pack": [
+    {
+      "id": "backpack",
+      "quantity": 1
+    },
+    {
+      "id": "book",
+      "quantity": 1
+    },
+    {
+      "id": "ink",
+      "quantity": 1
+    },
+    {
+      "id": "ink-pen",
+      "quantity": 1
+    },
+    {
+      "id": "parchment",
+      "quantity": 10
+    },
+    {
+      "id": "bag-of-sand",
+      "quantity": 1
+    },
+    {
+      "id": "small-knife",
+      "quantity": 1
+    }
+  ]
+}

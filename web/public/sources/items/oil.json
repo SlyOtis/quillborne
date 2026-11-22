@@ -1,0 +1,17 @@
+{
+  "name": "Oil",
+  "description": "A clay flask of lamp oil.",
+  "category": "consumable",
+  "subtype": "flask",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": true,
+  "weight": 1,
+  "value": 0.1,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nIt fuels a lamp or lantern. As an action, splash it on a creature within 5 feet or throw it up to 20 feet as an improvised weapon; a target it hits that takes fire damage within the next minute takes 5 more. Poured on level ground it covers a 5-foot square, and lit it burns for 2 rounds, dealing 5 fire damage to any creature that enters or ends its turn there, once a turn."
+}

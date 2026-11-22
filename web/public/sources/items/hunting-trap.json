@@ -1,0 +1,17 @@
+{
+  "name": "Hunting Trap",
+  "description": "A ring of steel teeth around a pressure plate, chained to a stake.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 25,
+  "value": 5,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nSetting it takes an action. Whatever steps on the plate makes a DC 13 Dexterity saving throw or takes 1d4 piercing damage and is caught, its move ended. Caught, it goes no further than the chain, usually 3 feet. An action and a DC 13 Strength check frees it, or someone in reach, and every failed check costs it 1 piercing damage."
+}

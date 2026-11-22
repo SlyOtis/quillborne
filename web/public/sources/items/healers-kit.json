@@ -1,0 +1,17 @@
+{
+  "name": "Healer's Kit",
+  "description": "A satchel of clean linen, pots of salve and wooden splints.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 5,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nIt holds ten uses. As an action, spend one to stabilize a creature at 0 hit points without a Wisdom (Medicine) check."
+}

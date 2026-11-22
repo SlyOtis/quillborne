@@ -1,0 +1,17 @@
+{
+  "name": "Waterskin",
+  "description": "A leather skin with a wooden stopper, here full.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 5,
+  "value": 0.2,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nHolds four pints of water."
+}

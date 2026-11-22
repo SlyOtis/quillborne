@@ -1,0 +1,17 @@
+{
+  "name": "Blanket",
+  "description": "A thick wool blanket.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 0.5,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nWarmth on a cold night, or a cloak at a pinch."
+}

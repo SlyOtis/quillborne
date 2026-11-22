@@ -1,0 +1,17 @@
+{
+  "name": "Flask or Tankard",
+  "description": "A pewter flask, or a tankard with a lid.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 1,
+  "value": 0.02,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nHolds a pint of liquid."
+}

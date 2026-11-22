@@ -1,0 +1,17 @@
+{
+  "name": "Bullseye Lantern",
+  "description": "A tin lantern with a single lens and a shutter.",
+  "category": "adventuring gear",
+  "subtype": "lantern",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 10,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nIt casts bright light in a 60-foot cone and dim light for 60 feet beyond. A flask of oil keeps it burning for six hours."
+}
