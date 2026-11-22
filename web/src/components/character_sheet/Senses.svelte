@@ -10,18 +10,11 @@
   const {senses} = getContext<CharacterContext>('character')
   const rules = getContext<Readable<RulesState>>('rules')
 
-  const resolved = $derived.by(() => {
-    const stored = $senses.map((sense) => {
-      const derivedSense = $rules.resolved?.senses.find((entry) => entry.id === getSkillId(sense.title))
-      if (!derivedSense) return sense
-      return {...sense, score: derivedSense.value}
-    })
-    const held = new Set($senses.map((sense) => getSkillId(sense.title)))
-    const reached = ($rules.resolved?.senses ?? [])
-      .filter((entry) => entry.unit && entry.value > 0 && !held.has(entry.id))
-      .map((entry) => ({title: entry.title, score: entry.value}))
-    return [...stored, ...reached]
-  })
+  const resolved = $derived($senses.flatMap((sense) => {
+    const derivedSense = $rules.resolved?.senses.find((entry) => entry.id === getSkillId(sense.title))
+    if (!derivedSense) return [sense]
+    return derivedSense.unit ? [] : [{...sense, score: derivedSense.value}]
+  }))
 
   async function rollSense(event: MouseEvent, title: string, score: number | string) {
     event.preventDefault()

@@ -166,7 +166,7 @@ export type CharacterSheet = {
   proficiencies: CharacterProficiencyMap
   pools: Record<string, number>
   bonuses: Record<string, number>
-  /** The least a `sense.<id>` or a `speed.<id>` reaches, from what the character wears. */
+  /** The least a `sense.<id>` or a `speed.<id>` reaches, from the range the character stores and what it wears. */
   reaches?: Record<string, number>
 }
 

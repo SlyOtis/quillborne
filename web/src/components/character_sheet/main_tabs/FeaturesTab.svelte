@@ -1,14 +1,20 @@
 <script lang="ts">
   import {getContext} from "svelte";
+  import type {Readable} from "svelte/store";
   import type {CharacterContext} from "$lib/types";
+  import type {RulesState} from "$lib/rules/store";
+  import {getSkillId} from "$lib/rules/sheet";
   import Marked from "$components/Marked.svelte";
   import Special from "../Special.svelte";
 
-  const {feats, special} = getContext<CharacterContext>('character')
+  const {feats, special, senses} = getContext<CharacterContext>('character')
+  const rules = getContext<Readable<RulesState>>('rules')
 
   let orderFeats = $derived([...$feats].sort((a, b) => a.level - b.level));
 
-
+  const ranged = $derived(($rules.resolved?.senses ?? [])
+    .filter((sense) => sense.unit && sense.value > 0)
+    .map((sense) => ({...sense, condition: $senses.find((one) => getSkillId(one.title) === sense.id)?.condition})))
 </script>
 
 <div class="root">
@@ -17,6 +23,12 @@
             <Special/>
         {/if}
         <ul>
+            {#each ranged as sense (sense.id)}
+                <li class="feat">
+                    <h4>{sense.title} - <i>{sense.value} {sense.unit}</i></h4>
+                    {#if sense.condition}<Marked content={sense.condition} />{/if}
+                </li>
+            {/each}
             {#each orderFeats as feat}
                 <li class="feat">
                     <h4>{feat.title} - <i>lvl {feat.level}</i></h4>

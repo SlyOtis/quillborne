@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import belt from '../../../public/sources/items/belt-of-dwarvenkind.json'
 import cloak from '../../../public/sources/items/cloak-of-protection.json'
 import gauntlets from '../../../public/sources/items/gauntlets-of-ogre-power.json'
 import dnd5e from '../../../public/sources/systems/dnd5e.json'
@@ -6,7 +7,7 @@ import type { CharacterInventoryItem } from '../character.types'
 import lars from '../character.fixture'
 import { getItemGrants } from '../resources'
 import { getResolvedCharacter } from './derive'
-import { getAttributeId, getAttunedInventory, getAttunement, getReplacedAttunement, getSheet, getSkillId, getTierId } from './sheet'
+import { getAppliedItems, getAttributeId, getAttunedInventory, getAttunement, getReplacedAttunement, getSaveNotes, getSheet, getSkillId, getTierId } from './sheet'
 import type { RuleSystem } from './spec.types'
 
 const core = dnd5e as RuleSystem
@@ -62,6 +63,15 @@ describe('getSheet on the sample character', () => {
     expect(speed).toBe(Number.parseInt(lars.info.speed, 10))
   })
 
+  it('reproduces the stored darkvision of 60 ft through the engine', () => {
+    expect(resolved.senses.find((entry) => entry.id === 'darkvision')?.value).toBe(60)
+  })
+
+  it('reaches nothing from a stored sense whose range is not a number', () => {
+    const keen = getResolvedCharacter(core, getSheet({ ...lars, senses: [{ title: 'Darkvision', score: 'keen' }] }, core))
+    expect(keen.senses.find((entry) => entry.id === 'darkvision')?.value).toBe(0)
+  })
+
   it('reproduces every stored skill modifier through the engine', () => {
     for (const skill of lars.skills) {
       const id = getSkillId(skill.name)
@@ -92,7 +102,7 @@ describe('getSheet on the sample character', () => {
 })
 
 describe('what a character wears', () => {
-  const held = (document: typeof cloak | typeof gauntlets, equipped: boolean, attuned: boolean): CharacterInventoryItem => ({
+  const held = (document: typeof cloak | typeof gauntlets | typeof belt, equipped: boolean, attuned: boolean): CharacterInventoryItem => ({
     id: document.name,
     title: document.name,
     type: 'misc',
@@ -127,6 +137,19 @@ describe('what a character wears', () => {
     const carried = resolve(held(cloak, false, true))
     expect(armorClass(carried)).toBe(lars.info.ac)
     expect(carried.saves).toEqual(bare.saves)
+  })
+
+  it('notes the advantage on Constitution saves against poison under a Belt of Dwarvenkind, and the Cloak of Protection as one +1 for every save', () => {
+    const notes = getSaveNotes(getAppliedItems([held(belt, true, true), held(cloak, true, true)], core), core)
+    expect(notes).toEqual([
+      { kind: 'advantage', title: 'Constitution', note: 'against poison' },
+      { kind: 'bonus', title: 'Saving Throws', value: 1 }
+    ])
+  })
+
+  it('notes no save for an advantage that names none', () => {
+    const vague = { ...held(belt, true, true), grants: { ...getItemGrants(belt.grants), advantages: [{ id: '', name: 'Saves against spells', note: '' }] } }
+    expect(getSaveNotes(getAppliedItems([vague], core), core)).toEqual([])
   })
 
   it('refuses a fourth attunement', () => {

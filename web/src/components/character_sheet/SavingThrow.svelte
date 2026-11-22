@@ -21,11 +21,11 @@
   }
 </script>
 
-<Button variant="ghost" size="sm" fill title="Roll {title} save" onclick={roll}>
+<Button variant="ghost" size="md" fill title="Roll {title} save" onclick={roll}>
   <span class="save" class:save-proficient={proficient}>
     <span class="save-pip"></span>
     <span class="save-short">{short}</span>
-    <span class="save-bonus">{sign}{modifier}</span>
+    <span class="save-bonus dnd-inset">{sign}{modifier}</span>
   </span>
 </Button>
 
@@ -68,7 +68,9 @@
 
   .save-bonus {
     flex: none;
+    padding: 0 var(--space-2);
     font-family: var(--font-figures);
+    font-size: var(--text-lg);
     font-weight: 700;
     font-variant-numeric: lining-nums tabular-nums;
     letter-spacing: 0;

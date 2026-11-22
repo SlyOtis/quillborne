@@ -4,15 +4,11 @@
   import type {CharacterContext} from "$lib/types";
   import type {RulesState} from "$lib/rules/store";
   import {getAppliedItems} from "$lib/rules/sheet";
-  import {deleteCondition, deleteDefence, putCondition, putDefence} from "$lib/engine";
-  import Field from "$components/ui/Field.svelte";
-  import IconBtn from "$components/ui/IconBtn.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
 
   const {info, inventory} = getContext<CharacterContext>('character')
   const rules = getContext<Readable<RulesState>>('rules')
 
-  const conditionList = $derived($rules.system?.conditions ?? [])
   const damageTypes = $derived($rules.system?.damageTypes ?? [])
   const defenceKinds = $derived($rules.system?.defences ?? [])
 
@@ -29,48 +25,13 @@
       .flatMap(item => item.grants.defences.map(one => ({title: getDefenceTitle(one.id, one.damage), from: item.title})))
       .filter(one => !held.has(one.title.toLowerCase()))
   })
-
-  let conditionId = $state('')
-  let kindId = $state('')
-  let damageId = $state('')
-
-  const getLevels = (title: string) =>
-    conditionList.find(entry => entry.title.toLowerCase() === title.toLowerCase())?.levels ?? 0
-
-  function addCondition() {
-    const spec = conditionList.find(entry => entry.id === conditionId)
-    if (!spec) return
-    putCondition({title: spec.title, effects: spec.description ? [spec.description] : [], level: spec.levels ? 1 : null})
-    conditionId = ''
-  }
-
-  function stepLevel(title: string, level: number) {
-    if (level < 1) {
-      deleteCondition(title)
-      return
-    }
-    putCondition({title, level: Math.min(getLevels(title), level)})
-  }
-
-  function addDefence() {
-    const kind = defenceKinds.find(entry => entry.id === kindId)
-    const damage = damageTypes.find(entry => entry.id === damageId)
-    if (!kind || !damage) return
-    putDefence({title: getDefenceTitle(kind.id, damage.id), effects: [`${kind.title} to ${damage.title.toLowerCase()} damage`]})
-    damageId = ''
-  }
 </script>
 
 <div class="root dnd-panel dnd-keyline">
-    <div class="box defences">
+    <div class="box">
         <span class="title">Defences</span>
         {#each $info.defences ?? [] as defence (defence.title)}
-            <span class="chip">
-                <span>{defence.title}</span>
-                <IconBtn title="Remove {defence.title}" onclick={() => deleteDefence(defence.title)}>
-                    <Glyph name="remove" size="sm" />
-                </IconBtn>
-            </span>
+            <span class="chip"><span>{defence.title}</span></span>
         {/each}
         {#each worn as defence (defence.title + defence.from)}
             <span class="chip" title="From {defence.from}">
@@ -82,59 +43,16 @@
             <span class="none">None</span>
         {/if}
     </div>
-    <div class="adder">
-        <Field label="Defence" id="defence-kind" inline>
-            <select id="defence-kind" bind:value={kindId} onchange={addDefence}>
-                <option value="">Kind</option>
-                {#each defenceKinds as kind (kind.id)}
-                    <option value={kind.id}>{kind.title}</option>
-                {/each}
-            </select>
-        </Field>
-        <Field label="Damage" id="defence-damage" inline>
-            <select id="defence-damage" bind:value={damageId} onchange={addDefence}>
-                <option value="">Type</option>
-                {#each damageTypes as damage (damage.id)}
-                    <option value={damage.id}>{damage.title}</option>
-                {/each}
-            </select>
-        </Field>
-    </div>
-    <div class="divider"></div>
-    <div class="box conditions">
+    <div class="box">
         <span class="title">Conditions</span>
         {#each $info.conditions ?? [] as condition (condition.title)}
             <span class="chip" title={condition.effects?.join(' ')}>
-                <span>{condition.title}{condition.level ? ` ${condition.level}` : ''}</span>
-                {#if getLevels(condition.title) > 1}
-                    <IconBtn title="Lower {condition.title}" onclick={() => stepLevel(condition.title, (condition.level ?? 1) - 1)}>
-                        <Glyph name="minus" size="sm" />
-                    </IconBtn>
-                    <IconBtn
-                        title="Raise {condition.title}"
-                        disabled={(condition.level ?? 1) >= getLevels(condition.title)}
-                        onclick={() => stepLevel(condition.title, (condition.level ?? 1) + 1)}
-                    >
-                        <Glyph name="add" size="sm" />
-                    </IconBtn>
-                {/if}
-                <IconBtn title="Remove {condition.title}" onclick={() => deleteCondition(condition.title)}>
-                    <Glyph name="remove" size="sm" />
-                </IconBtn>
+                <span>{condition.title}</span>
+                {#if condition.level}<span class="level">{condition.level}</span>{/if}
             </span>
         {:else}
             <span class="none">None</span>
         {/each}
-    </div>
-    <div class="adder">
-        <Field label="Condition" id="condition-pick" inline>
-            <select id="condition-pick" bind:value={conditionId} onchange={addCondition}>
-                <option value="">Choose</option>
-                {#each conditionList as condition (condition.id)}
-                    <option value={condition.id}>{condition.title}</option>
-                {/each}
-            </select>
-        </Field>
     </div>
     <span class="dnd-caption">Defences and conditions</span>
 </div>
@@ -142,11 +60,11 @@
 <style>
     .root {
         position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+        align-items: start;
         min-width: 0;
-        gap: var(--space-2);
+        gap: var(--space-3);
         padding: 0;
         z-index: 1;
         color: var(--ink);
@@ -207,20 +125,16 @@
         color: var(--ink-faint);
     }
 
-    .adder {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
-        align-items: center;
-        gap: var(--space-2);
-        min-width: 0;
-        padding-inline: var(--space-3);
-    }
-
-    .adder :global(select) {
-        padding-block: var(--space-1);
+    .chip > .level {
+        font-family: var(--font-figures);
+        font-size: var(--text-xs);
+        font-weight: 700;
+        font-variant-numeric: lining-nums tabular-nums;
+        color: var(--metal-bright);
     }
 
     .root > .dnd-caption {
+        grid-column: 1 / -1;
         margin: auto var(--space-1) var(--space-1);
         padding: var(--space-1) var(--space-3);
         border-radius: 0 0 calc(var(--radius-lg) - var(--space-1)) calc(var(--radius-lg) - var(--space-1));
@@ -233,13 +147,4 @@
         text-shadow: 0 1px 0 var(--shadow-ink);
     }
 
-    .divider {
-        position: relative;
-        flex: none;
-        height: var(--border-hair);
-        min-height: var(--border-hair);
-        margin-block: var(--space-1);
-        background: linear-gradient(90deg, transparent, var(--metal-dim) 15%, var(--metal) 50%, var(--metal-dim) 85%, transparent);
-        box-shadow: 0 1px 0 var(--shadow-ink);
-    }
 </style>

@@ -38,6 +38,7 @@
   import VehiclesPage from "./VehiclesPage.svelte";
   import VehiclePage from "./VehiclePage.svelte";
   import Portrait, { type PortraitFrame } from "$components/ui/Portrait.svelte";
+  import Stat from "$components/ui/Stat.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
   import Field from "$components/ui/Field.svelte";
   import Button from "$components/ui/Button.svelte";
@@ -289,7 +290,6 @@
     { id: 'saves', x: 0, y: 0, w: 3, h: 4, minW: 2, minH: 3 },
     { id: 'senses', x: 0, y: 4, w: 3, h: 7, minW: 2, minH: 3 },
     { id: 'proficiencies', x: 0, y: 11, w: 3, h: 8, minW: 2, minH: 3 },
-    { id: 'defences', x: 0, y: 19, w: 3, h: 7, minW: 2, minH: 3 },
     { id: 'skills', x: 3, y: 0, w: 3, h: 26, minW: 2, minH: 6 },
     { id: 'actions', x: 6, y: 4, w: 6, h: 22, minW: 4, minH: 8 },
     { id: 'rules', x: 3, y: 26, w: 9, h: 7, minW: 3, minH: 3 }
@@ -331,9 +331,12 @@
   const slots = $derived($rules.resolved?.derived.filter((entry) => !bespokeSlots.includes(entry.id)) ?? [])
   const bespoke = (id: string) => $rules.resolved?.derived.find((entry) => entry.id === id)?.value
   const speed = $derived($rules.resolved?.speeds[0])
-  const slotPlaces = $derived<DynamicGridItem[]>(
-    ['initiative', 'armor', ...slots.map((slot) => slot.id)].map((id, at) => ({ id: `slot/${id}`, x: 6 + at, y: 0, w: 1, h: 4, minW: 1, minH: 3 }))
-  )
+  const slotPlaces = $derived<DynamicGridItem[]>([
+    ...['initiative', 'armor', ...slots.map((slot) => slot.id)].map((id, at) => ({ id: `slot/${id}`, x: 6 + at, y: 0, w: 1, h: 4, minW: 1, minH: 3 })),
+    slots.length > 2
+      ? { id: 'defences', x: 6, y: 4, w: 6, h: 4, minW: 2, minH: 3 }
+      : { id: 'defences', x: 8 + slots.length, y: 0, w: 4 - slots.length, h: 4, minW: 2, minH: 3 }
+  ])
   const places = $derived([...sheetPlaces, ...slotPlaces].filter((place) => place.id !== 'rules' || rulePanels.length > 0).map((place) => {
     const own = layout[place.id]
     const grown = natural[place.id]
@@ -583,9 +586,9 @@
                 prefix="+"
       />
       {#if speed}
-        <PlainBox value="{speed.value}{speed.unit ? ` ${speed.unit}` : ''}" title={speed.title} subTitle="speed" />
+        <Stat shape="cut" over={speed.title} value={speed.value} unit={speed.unit} label="Speed" />
       {:else}
-        <PlainBox value={$info.speed} title="Walking" subTitle="speed" />
+        <Stat shape="cut" over="Walking" value={$info.speed} label="Speed" />
       {/if}
     </div>
 
