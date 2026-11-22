@@ -2,9 +2,9 @@
   import {getContext, tick} from "svelte";
   import type {Readable} from "svelte/store";
   import type {CharacterContext} from "$lib/types";
-  import type {Character, CharacterCurrency, Currency, ItemType} from "$lib/character.types";
+  import type {Character, Currency, ItemType} from "$lib/character.types";
   import type {RulesState} from "$lib/rules/store";
-  import {getAttunement, isItemApplied} from "$lib/rules/sheet";
+  import {getAttunement, getCarriedWeight, getInventoryValue, isItemApplied} from "$lib/rules/sheet";
   import {getCarriedItem, getEmptyItemFilter, getGrantLines, getItemRoom, getRarityInk, isItemShown, type Item} from "$lib/resources";
   import {addCurrencies, asGold, deleteItem, postItem, putAttunement, putCurrency, putEquipped, putItem, putReplacedAttunement} from "$lib/engine";
   import BaseDialog from "$components/BaseDialog.svelte";
@@ -27,28 +27,25 @@
   const COINS: Currency[] = ['pp', 'gp', 'sp', 'cp']
   const ITEM_TYPES: ItemType[] = ['weapon', 'armor', 'consumable', 'tool', 'container', 'treasure', 'ammunition', 'misc']
 
-  let carryCapacity = $derived($info.carry_capacity)
-  let carriedWeight = $derived($inventory.reduce((prev, curr) => prev + curr.weight, 0))
+  let carryCapacity = $derived($rules.resolved?.scope['derived.carryCapacity'] ?? $info.carry_capacity)
+  let carriedWeight = $derived(getCarriedWeight($inventory))
   let encumbered = $derived(carriedWeight > carryCapacity)
-  let inventoryValue = $derived($inventory.reduce((prev, curr) => {
-    return {
-      ...prev,
-      [curr.value.currency]: curr.value.amount + (prev as any)?.[curr.value.currency] || 0,
-    }
-  }, {} as CharacterCurrency))
+  let inventoryValue = $derived(getInventoryValue($inventory))
 
   let totalValuables = $derived(addCurrencies(inventoryValue, $currency))
   let searchInput = $state('')
   let draft = $state<InventoryItem | null>(null)
 
-  let filteredItems = $derived($inventory.filter(val => val.attributes.find(attr => attr.includes(searchInput)) ||
-    val.description.includes(searchInput) ||
-    val.enchantments?.find(ench => ench.name.includes(searchInput) || ench.description.includes(searchInput)) ||
-    val.rarity?.includes(searchInput) ||
-    val.subtype?.includes(searchInput) ||
-    val.type?.includes(searchInput) ||
-    val.id?.includes(searchInput) ||
-    val.title?.includes(searchInput)))
+  let asked = $derived(searchInput.trim().toLowerCase())
+  let filteredItems = $derived($inventory.filter(val => !asked || [
+    ...val.attributes,
+    val.description,
+    ...(val.enchantments ?? []).flatMap(ench => [ench.name, ench.description]),
+    val.rarity,
+    val.subtype,
+    val.type,
+    val.title
+  ].some(text => text?.toLowerCase().includes(asked))))
   let equipment = $derived(filteredItems.filter(item => item.equipped))
   let carried = $derived(filteredItems.filter(item => !item.equipped))
 
@@ -92,7 +89,7 @@
   }
 
   function getTypeLine(item: InventoryItem): string {
-    return item.origin ? item.subtype ?? item.type : getDisplayType(item)
+    return item.origin ? item.subtype ?? item.type : item.type
   }
 
   async function attune(item: InventoryItem) {
@@ -125,23 +122,6 @@
       misc: 'scroll'
     }
     return icons[itemType] || 'gear'
-  }
-
-  function isAmmunition(item: InventoryItem): boolean {
-    return item.type === 'ammunition' || (
-      item.type === 'consumable' && (
-        item.title.toLowerCase().includes('ammunition') ||
-        item.title.toLowerCase().includes('rounds') ||
-        item.title.toLowerCase().includes('bullets') ||
-        item.title.toLowerCase().includes('shotshells') ||
-        item.title.toLowerCase().includes('arrows') ||
-        item.description.toLowerCase().includes('firearm')
-      )
-    );
-  }
-
-  function getDisplayType(item: InventoryItem): string {
-    return isAmmunition(item) ? 'ammunition' : item.type;
   }
 
   function consumeItem(item: InventoryItem) {
@@ -340,7 +320,7 @@
     {@const gives = getGives(item)}
     <li class="item">
         <div class="equippable center">
-            {#if item.type === 'consumable' && !isAmmunition(item)}
+            {#if item.type === 'consumable'}
                 <Sigil
                     frame="ring"
                     size="sm"
@@ -359,7 +339,7 @@
                     title="{item.equipped ? 'Unequip' : 'Equip'} {item.title}"
                     onclick={() => putEquipped(item, !item.equipped)}
                 >
-                    <Glyph name={isAmmunition(item) ? 'ammunition' : getEquipIcon(item.type)} size="sm" />
+                    <Glyph name={getEquipIcon(item.type)} size="sm" />
                 </Sigil>
             {/if}
         </div>

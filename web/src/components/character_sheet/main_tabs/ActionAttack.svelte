@@ -3,20 +3,24 @@
   import type {CharacterAction, Damage} from "$lib/character.types";
   import {rollAttack, rollDamage, rollAttackWithAmmo, rollDamageWithAmmo} from "$lib/engine";
   import {getContext} from "svelte";
+  import type {Readable} from "svelte/store";
   import type {CharacterContext} from "$lib/types";
+  import type {RulesState} from "$lib/rules/store";
+  import {getAmmunition, getAmmunitionType, getAttackReach} from "$lib/rules/sheet";
   import Button from "$components/ui/Button.svelte";
 
   let {action}: { action: CharacterAction } = $props()
 
   const {inventory} = getContext<CharacterContext>('character')
+  const rules = getContext<Readable<RulesState>>('rules')
 
-  let isRanged = $derived(!!action.range)
+  let weapon = $derived(action.itemId ? $inventory.find(item => item.id === action.itemId) : undefined)
+  let spends = $derived(weapon && $rules.system ? getAmmunitionType(weapon, $rules.system) : '')
+  let reach = $derived($rules.system ? getAttackReach(action.range, weapon, $rules.system) : 'melee')
 
-  let equippedAmmo = $derived(isRanged
-    ? $inventory.find(item => item.equipped && item.quantity > 0 && (item.type === 'ammunition' || item.title.toLowerCase().includes('ammunition')))
-    : undefined)
+  let equippedAmmo = $derived(weapon && $rules.system ? getAmmunition($inventory, weapon, $rules.system) : null)
 
-  let buttonsDisabled = $derived(isRanged && !equippedAmmo)
+  let buttonsDisabled = $derived(Boolean(spends) && !equippedAmmo)
 
   let properties = $derived((action.properties || ['None']).join(', '))
 
@@ -31,7 +35,7 @@
 
   async function rollToHit() {
     window.dispatchEvent(new CustomEvent('playButtonClick'))
-    if (isRanged && equippedAmmo) {
+    if (equippedAmmo) {
       await rollAttackWithAmmo(action.name, action.toHit || 0, equippedAmmo.id)
     } else {
       await rollAttack(action.name, action.toHit || 0)
@@ -42,7 +46,7 @@
     const damage = action.damage?.[0]
     if (!damage) return
     window.dispatchEvent(new CustomEvent('playButtonClick'))
-    if (isRanged && equippedAmmo) {
+    if (equippedAmmo) {
       await rollDamageWithAmmo(action.name, damage.dice, damage.amount, damage.bonus, equippedAmmo.id)
     } else {
       await rollDamage(action.name, damage.dice, damage.amount, damage.bonus)
@@ -54,38 +58,34 @@
 <li>
     <div class="title">
         <h4 title={action.name}>{action.name}</h4>
-        {#if action.range}
-            <span class="sub">Ranged Attack</span>
-        {:else}
-            <span class="sub">Melee Attack</span>
-        {/if}
+        <span class="sub">{reach === 'ranged' ? 'Ranged Attack' : reach === 'thrown' ? 'Melee or Thrown' : 'Melee Attack'}</span>
     </div>
     <div class="range">
-        {#if action.range}
+        {#if action.range && reach !== 'melee'}
             <span><b>{action.range.normal}</b> ({action.range.max})</span>
         {:else}
-            <span><b>5ft.</b> reach</span>
+            <span><b>{action.range?.normal ?? 5}ft.</b> reach</span>
         {/if}
     </div>
-    <div class="hit" class:attack-dry={isRanged && buttonsDisabled}>
+    <div class="hit" class:attack-dry={buttonsDisabled}>
         <Button
             variant="secondary"
             size="sm"
             fill
             disabled={buttonsDisabled}
-            title={isRanged && buttonsDisabled ? 'No ammo' : `Roll ${action.name} to hit`}
+            title={buttonsDisabled ? `No ${spends} left` : `Roll ${action.name} to hit`}
             onclick={rollToHit}
         >
             +{action.toHit || 0}
         </Button>
     </div>
-    <div class="attack" class:attack-dry={isRanged && buttonsDisabled}>
+    <div class="attack" class:attack-dry={buttonsDisabled}>
         <Button
             variant="secondary"
             size="sm"
             fill
             disabled={buttonsDisabled || !action.damage?.[0]}
-            title={isRanged && buttonsDisabled ? 'No ammo' : `Roll ${action.name} damage`}
+            title={buttonsDisabled ? `No ${spends} left` : `Roll ${action.name} damage`}
             onclick={rollAttackDamage}
         >
             {action.damage?.[0] ? renderDamage(action.damage[0]) : 'No damage'}

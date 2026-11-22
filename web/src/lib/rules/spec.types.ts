@@ -52,12 +52,25 @@ export type SpeedSpec = MeasureSpec & {
   value?: Expression
 }
 
+/** A kind of item, with the glyph its row draws. */
+export type ItemCategorySpec = TitledSpec & {
+  glyph?: string
+}
+
+/** A property a weapon may carry. */
+export type WeaponPropertySpec = TitledSpec & {
+  /** The item category one attack with the weapon uses up. */
+  spends?: string
+}
+
 /** How a character carries items. */
 export type ItemRules = {
   /** How many items the character may be attuned to at once, against the resolved character. */
   attunement: Expression
   /** Whether an item's grants reach the character, against `equipped`, `attuned` and `attunement`, each 1 or 0. */
   applies: Expression
+  categories?: ItemCategorySpec[]
+  weaponProperties?: WeaponPropertySpec[]
 }
 
 export type ConditionSpec = TitledSpec & {

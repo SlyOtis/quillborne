@@ -131,7 +131,40 @@
     { "id": "shortRest", "title": "Short Rest" },
     { "id": "longRest", "title": "Long Rest" }
   ],
-  "items": { "attunement": "3", "applies": "equipped && (attuned || !attunement)" },
+  "items": {
+    "attunement": "3",
+    "applies": "equipped && (attuned || !attunement)",
+    "categories": [
+      { "id": "weapon", "title": "Weapon", "glyph": "weapon" },
+      { "id": "armor", "title": "Armor", "glyph": "armor" },
+      { "id": "ammunition", "title": "Ammunition", "glyph": "ammunition" },
+      { "id": "adventuring gear", "title": "Adventuring gear", "glyph": "gear" },
+      { "id": "container", "title": "Container", "glyph": "chest" },
+      { "id": "consumable", "title": "Consumable", "glyph": "potion" },
+      { "id": "potion", "title": "Potion", "glyph": "potion" },
+      { "id": "scroll", "title": "Scroll", "glyph": "scroll" },
+      { "id": "ring", "title": "Ring", "glyph": "gem" },
+      { "id": "rod", "title": "Rod", "glyph": "gear" },
+      { "id": "staff", "title": "Staff", "glyph": "gear" },
+      { "id": "wand", "title": "Wand", "glyph": "gear" },
+      { "id": "wondrous item", "title": "Wondrous item", "glyph": "gem" },
+      { "id": "tool", "title": "Tool", "glyph": "tool" },
+      { "id": "treasure", "title": "Treasure", "glyph": "gem" },
+      { "id": "misc", "title": "Other", "glyph": "scroll" }
+    ],
+    "weaponProperties": [
+      { "id": "ammunition", "title": "Ammunition", "description": "Each attack uses up one piece of the ammunition it fires.", "spends": "ammunition" },
+      { "id": "finesse", "title": "Finesse", "description": "Attack and damage use Strength or Dexterity, whichever is higher." },
+      { "id": "heavy", "title": "Heavy", "description": "Small creatures attack with it at disadvantage." },
+      { "id": "light", "title": "Light", "description": "Small enough to fight with one in each hand." },
+      { "id": "loading", "title": "Loading", "description": "Fires once per action, bonus action or reaction, whatever the attacks." },
+      { "id": "reach", "title": "Reach", "description": "Reaches 5 feet further than other melee weapons." },
+      { "id": "special", "title": "Special", "description": "Follows rules of its own, written on the weapon." },
+      { "id": "thrown", "title": "Thrown", "description": "Can be thrown for a ranged attack with the same ability as in melee." },
+      { "id": "two-handed", "title": "Two-handed", "description": "Needs both hands to attack with." },
+      { "id": "versatile", "title": "Versatile", "description": "Deals its larger die when held in both hands." }
+    ]
+  },
   "progression": {
     "maxLevel": 20,
     "proficiency": "2 + floor((level - 1) / 4)",

@@ -1,4 +1,4 @@
-import type { Character, CharacterInventoryItem, CharacterSkill, Proficiency } from '../character.types'
+import type { Character, CharacterCurrency, CharacterInventoryItem, CharacterSkill, Proficiency, Range } from '../character.types'
 import { getResolvedCharacter } from './derive'
 import { getExpressionNames, getExpressionValue } from './expression'
 import type { ItemGrants } from './item.types'
@@ -133,6 +133,37 @@ export function getSaveNotes(items: AppliedItem[], system: RuleSystem): SaveNote
     ...advantages,
     ...[...bonuses].map(([id, value]): SaveNote => ({ kind: 'bonus', title: system.bonuses?.find((one) => one.id === id)?.title ?? id, value }))
   ]
+}
+
+/** The item category one attack with a weapon uses up, by the system's weapon properties, or empty when it uses none. */
+export function getAmmunitionType(weapon: CharacterInventoryItem, system: RuleSystem): string {
+  return system.items?.weaponProperties?.find((one) => one.spends && weapon.attributes.includes(one.id))?.spends ?? ''
+}
+
+/** The equipped item a weapon's next attack uses up, or null when it uses none or none is left. */
+export function getAmmunition(inventory: CharacterInventoryItem[], weapon: CharacterInventoryItem, system: RuleSystem): CharacterInventoryItem | null {
+  const type = getAmmunitionType(weapon, system)
+  return (type && inventory.find((item) => item.type === type && item.equipped && item.quantity > 0)) || null
+}
+
+/** How an attack reaches: in melee, by firing what its weapon uses up or as a ranged attack of no weapon, or by throwing a melee weapon. */
+export function getAttackReach(range: Range | undefined, weapon: CharacterInventoryItem | undefined, system: RuleSystem): 'melee' | 'ranged' | 'thrown' {
+  const far = (range?.normal ?? 5) > 5
+  if (weapon ? getAmmunitionType(weapon, system) : far) return 'ranged'
+  return far ? 'thrown' : 'melee'
+}
+
+/** What everything carried weighs, each item as many times as there are of it. */
+export function getCarriedWeight(inventory: CharacterInventoryItem[]): number {
+  return inventory.reduce((all, item) => all + item.weight * item.quantity, 0)
+}
+
+/** What everything carried is worth, by the coin each is priced in, each item as many times as there are of it. */
+export function getInventoryValue(inventory: CharacterInventoryItem[]): CharacterCurrency {
+  return inventory.reduce<CharacterCurrency>(
+    (all, item) => ({ ...all, [item.value.currency]: (all[item.value.currency] ?? 0) + item.value.amount * item.quantity }),
+    {}
+  )
 }
 
 /**

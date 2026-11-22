@@ -7,7 +7,7 @@ import type { CharacterInventoryItem } from '../character.types'
 import lars from '../character.fixture'
 import { getItemGrants } from '../resources'
 import { getResolvedCharacter } from './derive'
-import { getAppliedItems, getAttributeId, getAttunedInventory, getAttunement, getReplacedAttunement, getSaveNotes, getSheet, getSkillId, getTierId } from './sheet'
+import { getAmmunition, getAmmunitionType, getAppliedItems, getAttackReach, getAttributeId, getAttunedInventory, getAttunement, getCarriedWeight, getInventoryValue, getReplacedAttunement, getSaveNotes, getSheet, getSkillId, getTierId } from './sheet'
 import type { RuleSystem } from './spec.types'
 
 const core = dnd5e as RuleSystem
@@ -167,5 +167,63 @@ describe('what a character wears', () => {
     const replaced = getReplacedAttunement([...attuned, fourth], 'left', 'fourth', slots)
     expect(replaced?.filter((item) => item.attunement?.attuned).map((item) => item.id)).toEqual([cloak.name, 'right', 'fourth'])
     expect(getReplacedAttunement([...attuned, fourth], 'fourth', 'fourth', slots)).toBeNull()
+  })
+})
+
+describe('what a character carries', () => {
+  const carried = (id: string, type: CharacterInventoryItem['type'], weight: number, quantity: number, amount: number, extra: Partial<CharacterInventoryItem> = {}): CharacterInventoryItem => ({
+    id,
+    title: id,
+    type,
+    rarity: 'common',
+    attributes: [],
+    description: '',
+    value: { amount, currency: 'gp' },
+    weight,
+    quantity,
+    equippable: true,
+    equipped: false,
+    ...extra
+  })
+
+  it('weighs two handaxes at 2 lb each and twenty arrows at 0.05 lb each as 5 lb', () => {
+    expect(getCarriedWeight([carried('handaxe', 'weapon', 2, 2, 5), carried('arrows', 'ammunition', 0.05, 20, 0.05)])).toBeCloseTo(5)
+  })
+
+  it('prices every item, the first of each coin included, as many times as there are of it', () => {
+    const potion = carried('potion', 'consumable', 0.5, 2, 50)
+    const rope = { ...carried('rope', 'misc', 10, 1, 2), value: { amount: 2, currency: 'sp' as const } }
+    expect(getInventoryValue([potion, rope])).toEqual({ gp: 100, sp: 2 })
+  })
+
+  it('spends arrows only for a weapon with the ammunition property, and never for a thrown or a melee weapon', () => {
+    const arrows = carried('arrows', 'ammunition', 0.05, 20, 0.05, { equipped: true })
+    const shortbow = carried('shortbow', 'weapon', 2, 1, 25, { attributes: ['ammunition', 'two-handed'] })
+    const handaxe = carried('handaxe', 'weapon', 2, 1, 5, { attributes: ['light', 'thrown'] })
+    const warhammer = carried('warhammer', 'weapon', 2, 1, 15, { attributes: ['versatile'] })
+    const inventory = [arrows, shortbow, handaxe, warhammer]
+    expect(getAmmunition(inventory, shortbow, core)?.id).toBe('arrows')
+    expect(getAmmunitionType(handaxe, core)).toBe('')
+    expect(getAmmunitionType(warhammer, core)).toBe('')
+  })
+
+  it('reads a melee weapon stored with a 5 ft range as melee, a handaxe as thrown, a shortbow and a spell as ranged', () => {
+    const handaxe = carried('handaxe', 'weapon', 2, 1, 5, { attributes: ['light', 'thrown'] })
+    const shortbow = carried('shortbow', 'weapon', 2, 1, 25, { attributes: ['ammunition'] })
+    const warhammer = carried('warhammer', 'weapon', 2, 1, 15, { attributes: ['versatile'] })
+    expect(getAttackReach({ normal: 5, max: 5 }, warhammer, core)).toBe('melee')
+    expect(getAttackReach({ normal: 20, max: 60 }, handaxe, core)).toBe('thrown')
+    expect(getAttackReach({ normal: 80, max: 320 }, shortbow, core)).toBe('ranged')
+    expect(getAttackReach({ normal: 120, max: 120 }, undefined, core)).toBe('ranged')
+  })
+
+  it('holds what Strength 12 carries at 180 lb from the rules, whatever the sheet stored', () => {
+    const resolved = getResolvedCharacter(core, getSheet({ ...lars, info: { ...lars.info, carry_capacity: 0 } }, core))
+    expect(resolved.scope['derived.carryCapacity']).toBe(180)
+  })
+
+  it('finds no ammunition by its name: arrows carried as a consumable are not spent', () => {
+    const shortbow = carried('shortbow', 'weapon', 2, 1, 25, { attributes: ['ammunition'] })
+    expect(getAmmunition([carried('Arrows', 'consumable', 0.05, 20, 0.05, { equipped: true }), shortbow], shortbow, core)).toBeNull()
   })
 })
