@@ -173,6 +173,60 @@
     }
   ],
   "proficiencies": {},
+  "startingEquipment": {
+    "fixed": [
+      {
+        "id": "dart",
+        "quantity": 10
+      }
+    ],
+    "choices": [
+      {
+        "options": [
+          [
+            {
+              "id": "shortsword",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "quarterstaff",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "spear",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "handaxe",
+              "quantity": 1
+            }
+          ]
+        ]
+      },
+      {
+        "options": [
+          [
+            {
+              "id": "dungeoneers-pack",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "explorers-pack",
+              "quantity": 1
+            }
+          ]
+        ]
+      }
+    ]
+  },
   "subclasses": [],
   "source": "srd"
 }

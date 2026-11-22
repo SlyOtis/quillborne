@@ -111,6 +111,82 @@
     }
   ],
   "proficiencies": {},
+  "startingEquipment": {
+    "fixed": [
+      {
+        "id": "longbow",
+        "quantity": 1
+      },
+      {
+        "id": "quiver",
+        "quantity": 1
+      },
+      {
+        "id": "arrows",
+        "quantity": 20
+      }
+    ],
+    "choices": [
+      {
+        "options": [
+          [
+            {
+              "id": "scale-mail",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "leather-armor",
+              "quantity": 1
+            }
+          ]
+        ]
+      },
+      {
+        "options": [
+          [
+            {
+              "id": "shortsword",
+              "quantity": 2
+            }
+          ],
+          [
+            {
+              "id": "handaxe",
+              "quantity": 2
+            }
+          ],
+          [
+            {
+              "id": "spear",
+              "quantity": 1
+            },
+            {
+              "id": "dagger",
+              "quantity": 1
+            }
+          ]
+        ]
+      },
+      {
+        "options": [
+          [
+            {
+              "id": "dungeoneers-pack",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "explorers-pack",
+              "quantity": 1
+            }
+          ]
+        ]
+      }
+    ]
+  },
   "subclasses": [],
   "source": "srd"
 }

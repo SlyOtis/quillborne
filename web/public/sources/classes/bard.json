@@ -96,6 +96,134 @@
     }
   ],
   "proficiencies": {},
+  "startingEquipment": {
+    "fixed": [
+      {
+        "id": "leather-armor",
+        "quantity": 1
+      },
+      {
+        "id": "dagger",
+        "quantity": 1
+      }
+    ],
+    "choices": [
+      {
+        "options": [
+          [
+            {
+              "id": "rapier",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "longsword",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "dagger",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "quarterstaff",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "mace",
+              "quantity": 1
+            }
+          ]
+        ]
+      },
+      {
+        "options": [
+          [
+            {
+              "id": "diplomats-pack",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "entertainers-pack",
+              "quantity": 1
+            }
+          ]
+        ]
+      },
+      {
+        "options": [
+          [
+            {
+              "id": "lute",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "lyre",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "flute",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "drum",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "horn",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "pan-flute",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "viol",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "bagpipes",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "dulcimer",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "shawm",
+              "quantity": 1
+            }
+          ]
+        ]
+      }
+    ]
+  },
   "subclasses": [],
   "source": "srd"
 }

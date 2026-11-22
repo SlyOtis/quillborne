@@ -111,6 +111,132 @@
     }
   ],
   "proficiencies": {},
+  "startingEquipment": {
+    "fixed": [
+      {
+        "id": "chain-mail",
+        "quantity": 1
+      }
+    ],
+    "choices": [
+      {
+        "options": [
+          [
+            {
+              "id": "longsword",
+              "quantity": 1
+            },
+            {
+              "id": "shield",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "battleaxe",
+              "quantity": 1
+            },
+            {
+              "id": "shield",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "warhammer",
+              "quantity": 1
+            },
+            {
+              "id": "shield",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "greatsword",
+              "quantity": 1
+            },
+            {
+              "id": "longsword",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "shortsword",
+              "quantity": 2
+            }
+          ]
+        ]
+      },
+      {
+        "options": [
+          [
+            {
+              "id": "javelin",
+              "quantity": 5
+            }
+          ],
+          [
+            {
+              "id": "mace",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "spear",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "light-hammer",
+              "quantity": 1
+            }
+          ]
+        ]
+      },
+      {
+        "options": [
+          [
+            {
+              "id": "priests-pack",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "explorers-pack",
+              "quantity": 1
+            }
+          ]
+        ]
+      },
+      {
+        "options": [
+          [
+            {
+              "id": "holy-amulet",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "holy-emblem",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "reliquary",
+              "quantity": 1
+            }
+          ]
+        ]
+      }
+    ]
+  },
   "subclasses": [],
   "source": "srd"
 }
