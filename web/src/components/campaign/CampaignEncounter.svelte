@@ -1,12 +1,44 @@
 <script lang="ts">
-  import { deleteCampaignEncounter, getCampaignEncountersStream, postCampaignEncounter, putCampaignEncounter } from '$lib/api'
-  import type { Campaign, Encounter, EncounterCombatant } from '$lib/api/types'
+  import { deleteCampaignEncounter, getCampaignEncountersStream, getMonsters, postCampaignEncounter, postMonster, putCampaignEncounter } from '$lib/api'
+  import type { Campaign, Encounter, EncounterCombatant, Monster } from '$lib/api/types'
   import type * as api from '$lib/api/types'
-  import { rollDie } from '$lib/engine'
+  import { rollDice, rollDie } from '$lib/engine'
+  import {
+    getBestiaryCombatants,
+    getBestiaryMissing,
+    getChallenge,
+    getCombatantNames,
+    getDifficulty,
+    getEntryName,
+    getFeatureKey,
+    getMonsterBlock,
+    getMonsterFields,
+    getMonsterSources,
+    getMonsterStats,
+    getMonsterSystems,
+    getRechargeKeys,
+    getRolledHitPoints,
+    getTurnSpent,
+    LEGENDARY
+  } from '$lib/rules/monster'
+  import type { MonsterSource, MonsterStats, MonsterSystem } from '$lib/rules/monster.types'
   import { user } from '$lib/stores/auth.store'
+  import MonsterBlock from '$components/monster/MonsterBlock.svelte'
+  import BaseDialog from '$components/BaseDialog.svelte'
   import Button from '$components/ui/Button.svelte'
+  import Chip from '$components/ui/Chip.svelte'
   import Field from '$components/ui/Field.svelte'
+  import Glyph from '$components/ui/Glyph.svelte'
+  import IconBtn from '$components/ui/IconBtn.svelte'
   import Panel from '$components/ui/Panel.svelte'
+  import Picker, { type Pick as Choice } from '$components/ui/Picker.svelte'
+  import Pool from '$components/ui/Pool.svelte'
+  import Row from '$components/ui/Row.svelte'
+  import SearchInput from '$components/ui/SearchInput.svelte'
+
+  type Beast = Pick<Monster, 'name' | 'system' | 'size' | 'type' | 'alignment' | 'challenge' | 'description' | 'image'> & { stats: MonsterStats }
+
+  type Offer = { id: string; beast: Beast; mark: string; row: boolean }
 
   const {
     campaign,
@@ -22,6 +54,9 @@
   } = $props()
 
   let encounters = $state<Encounter[]>([])
+  let systems = $state<MonsterSystem[]>([])
+  let sources = $state<MonsterSource[]>([])
+  let rows = $state<Monster[]>([])
   let chosen = $state('')
   let title = $state('')
   let seat = $state('')
@@ -31,6 +66,12 @@
   let bonus = $state(0)
   let busy = $state(false)
   let error = $state<string | null>(null)
+  let noted = $state('')
+  let adding = $state(false)
+  let hunt = $state('')
+  let offered = $state('')
+  let count = $state(1)
+  let mode = $state('average')
 
   const isDm = $derived(Boolean($user && campaign.dm_id === $user.user_id))
   const encounter = $derived(
@@ -38,6 +79,53 @@
   )
   const combatants = $derived(encounter ? order(encounter.combatants) : [])
   const turn = $derived(encounter && combatants.length > 0 ? encounter.turn % combatants.length : -1)
+  const system = $derived(systems[0] ?? null)
+  const conditions = $derived<Choice[]>((system?.conditions ?? []).map((one) => ({ id: one.id, mark: 'condition', word: '', name: one.name, tone: 'thing' })))
+
+  const offers = $derived<Offer[]>([
+    ...sources.flatMap((source) => {
+      const held = systems.find((one) => one.id === source.system)
+      if (!held) return []
+      return source.monsters.map((entry) => ({
+        id: entry.slug,
+        beast: { ...entry, system: source.system, image: '', stats: getMonsterStats(held, entry.stats) },
+        mark: source.title,
+        row: false
+      }))
+    }),
+    ...rows.flatMap((monster) => {
+      const held = systems.find((one) => one.id === monster.system)
+      if (!held) return []
+      return [
+        {
+          id: monster.id,
+          beast: { ...monster, stats: getMonsterStats(held, monster.stats) },
+          mark: monster.owner_id === campaign.id ? campaign.name : held.labels.homebrew,
+          row: true
+        }
+      ]
+    })
+  ])
+  const found = $derived(offers.filter((one) => one.beast.name.toLowerCase().includes(hunt.trim().toLowerCase())))
+  const offer = $derived(offers.find((one) => one.id === offered) ?? null)
+
+  const fought = $derived(
+    combatants.flatMap((entry) => {
+      const beast = getBeast(entry)
+      return beast ? [{ entry, beast }] : []
+    })
+  )
+  const current = $derived(turn >= 0 && encounter?.is_active ? (fought.find((one) => one.entry.id === combatants[turn]?.id) ?? null) : null)
+  const party = $derived.by(() => {
+    const joined = combatants.flatMap((entry) => characters.filter((one) => entry.kind === 'character' && one.id === entry.character_id))
+    return (joined.length ? joined : characters).map((one) => one.metadata.level)
+  })
+  const difficulty = $derived(
+    system ? getDifficulty(system, party, fought.reduce((sum, one) => sum + (getChallenge(system, one.beast.challenge)?.xp ?? 0), 0)) : null
+  )
+  const band = $derived(
+    difficulty?.difficulty ? (difficulty.budgets.find((one) => one.id === difficulty.difficulty?.id) ?? difficulty.budgets.at(-1) ?? null) : null
+  )
 
   $effect(() => {
     const stop = getCampaignEncountersStream(campaign.id, (found) => {
@@ -45,6 +133,32 @@
     })
     return stop
   })
+
+  $effect(() => {
+    const running = isDm
+    let live = true
+    Promise.all([getMonsterSystems(), getMonsterSources(), running ? getMonsters() : Promise.resolve([] as Monster[])])
+      .then(([loadedSystems, loadedSources, loadedRows]) => {
+        if (!live) return
+        systems = loadedSystems
+        sources = loadedSources
+        rows = loadedRows
+      })
+      .catch((reason) => live && (error = reason instanceof Error ? reason.message : String(reason)))
+    return () => {
+      live = false
+    }
+  })
+
+  function getBeast(entry: EncounterCombatant): Beast | null {
+    if (entry.kind !== 'monster') return null
+    if (entry.monster_id) return offers.find((one) => one.row && one.id === entry.monster_id)?.beast ?? null
+    return offers.find((one) => !one.row && one.id === entry.monster_slug)?.beast ?? null
+  }
+
+  function getSystem(beast: Beast): MonsterSystem | null {
+    return systems.find((one) => one.id === beast.system) ?? null
+  }
 
   function order(list: EncounterCombatant[]): EncounterCombatant[] {
     return [...list].sort((a, b) => b.initiative - a.initiative || b.modifier - a.modifier || a.name.localeCompare(b.name))
@@ -124,6 +238,40 @@
     other = ''
   }
 
+  function joinMonsters() {
+    const held = encounter
+    const picked = offer
+    const rules = picked && getSystem(picked.beast)
+    if (!held || !picked || !rules) return
+    const many = Math.max(1, Math.floor(count))
+    void write(async () => {
+      const block = getMonsterBlock(rules, picked.beast)
+      const dice = picked.beast.stats.hit_dice
+      const thrown = mode === 'rolled' ? (await rollDice([{ die: block.hitDie, amount: dice * many }]))[0] : []
+      const names = getCombatantNames(picked.beast.name, many, held.combatants.map((one) => one.name))
+      const joined = names.map((name, at): EncounterCombatant => {
+        const hp = thrown.length ? getRolledHitPoints(rules, block, thrown.slice(at * dice, (at + 1) * dice).reduce((sum, one) => sum + one, 0)) : block.hitPoints
+        return {
+          id: crypto.randomUUID(),
+          name,
+          kind: 'monster',
+          ...(picked.row ? { monster_id: picked.id } : { monster_slug: picked.id }),
+          armor_class: picked.beast.stats.ac,
+          modifier: block.initiative,
+          initiative: 0,
+          hit_points: hp,
+          max_hit_points: hp,
+          conditions: [],
+          is_hit_points_known: false
+        }
+      })
+      await putCampaignEncounter(campaign.id, held.id, { combatants: order([...held.combatants, ...joined]) })
+      adding = false
+      offered = ''
+      count = 1
+    })
+  }
+
   function roll() {
     const held = encounter
     if (!held || held.combatants.length === 0) return
@@ -135,9 +283,30 @@
   }
 
   function step() {
-    if (!encounter || combatants.length === 0) return
-    const next = turn + 1
-    put(next >= combatants.length ? { turn: 0, round: encounter.round + 1 } : { turn: next })
+    const held = encounter
+    if (!held || combatants.length === 0) return
+    const next = turn + 1 >= combatants.length ? 0 : turn + 1
+    const changes: Partial<Encounter> = next === 0 ? { turn: 0, round: held.round + 1 } : { turn: next }
+    const coming = combatants[next]
+    const beast = getBeast(coming)
+    const rules = beast && getSystem(beast)
+    if (!beast || !rules || !coming.spent) {
+      put(changes)
+      return
+    }
+    const spent = coming.spent
+    void write(async () => {
+      const keys = getRechargeKeys(beast.stats, spent)
+      const thrown = keys.length ? (await rollDie(rules.rechargeDie, keys.length)).rolls : []
+      const fresh = getTurnSpent(rules, beast.stats, spent, Object.fromEntries(keys.map((key, at) => [key, thrown[at] ?? 0])))
+      noted = keys
+        .map((key, at) => `${coming.name}'s ${key.slice(key.indexOf('.') + 1)} ${fresh[key] ? 'stays spent' : 'recharges'} on a ${thrown[at]}.`)
+        .join(' ')
+      await putCampaignEncounter(campaign.id, held.id, {
+        ...changes,
+        combatants: combatants.map((entry) => (entry.id === coming.id ? { ...entry, spent: fresh } : entry))
+      })
+    })
   }
 
   function change(id: string, fields: Partial<EncounterCombatant>) {
@@ -149,12 +318,48 @@
     change(entry.id, { hit_points: Math.max(0, Math.min(entry.max_hit_points, value)) })
   }
 
+  function spend(entry: EncounterCombatant, key: string, used: number) {
+    const spent = { ...(entry.spent ?? {}), [key]: used }
+    change(entry.id, { spent: Object.fromEntries(Object.entries(spent).filter(([, value]) => value > 0)) })
+  }
+
   function remove(id: string) {
     if (!encounter) return
     const at = combatants.findIndex((entry) => entry.id === id)
     const left = combatants.filter((entry) => entry.id !== id)
     const moved = at < turn ? turn - 1 : turn
     put({ combatants: left, turn: left.length === 0 || moved >= left.length ? 0 : moved })
+  }
+
+  async function shelve(held: Encounter, picked: { entry: EncounterCombatant; beast: Beast }[], changes: Partial<Encounter> = {}) {
+    const names = Object.fromEntries(picked.map((one) => [one.entry.id, one.beast.name]))
+    const kept = await getMonsters(campaign.id)
+    const made = await Promise.all(
+      getBestiaryMissing(Object.values(names), kept).flatMap((name) => {
+        const beast = picked.find((one) => one.beast.name === name)?.beast
+        return beast ? [postMonster({ ...getMonsterFields(beast.system, beast), owner_id: campaign.id })] : []
+      })
+    )
+    await putCampaignEncounter(campaign.id, held.id, { ...changes, combatants: getBestiaryCombatants(held.combatants, names, [...kept, ...made]) })
+    rows = [...rows.filter((one) => !made.some((copy) => copy.id === one.id)), ...made]
+    noted = made.length
+      ? `${made.map((one) => one.name).join(', ')} written into the bestiary of ${campaign.name}.`
+      : picked.length
+        ? `The bestiary of ${campaign.name} already holds them.`
+        : ''
+  }
+
+  function end() {
+    const held = encounter
+    if (!held) return
+    void write(() => shelve(held, fought, { is_active: false }))
+  }
+
+  function bestow(entry: EncounterCombatant) {
+    const held = encounter
+    const beast = getBeast(entry)
+    if (!held || !beast) return
+    void write(() => shelve(held, fought.filter((one) => one.beast.name === beast.name)))
   }
 
   function drop() {
@@ -166,6 +371,47 @@
     })
   }
 </script>
+
+{#snippet trackers(entry: EncounterCombatant, beast: Beast)}
+  {@const rules = getSystem(beast)}
+  {#if rules}
+    {#each rules.features as kind (kind.id)}
+      {#each beast.stats.features[kind.id] ?? [] as feature, place (place)}
+        {@const key = getFeatureKey(kind.id, feature)}
+        {@const used = entry.spent?.[key] ?? 0}
+        {#if feature.recharge}
+          <Pool
+            title={feature.name}
+            note="{rules.labels.recharge} {feature.recharge < rules.rechargeDie ? `${feature.recharge}\u2013${rules.rechargeDie}` : feature.recharge}"
+            max={1}
+            current={1 - Math.min(1, used)}
+            view="pips"
+            onput={(left) => spend(entry, key, 1 - left)}
+          />
+        {:else if feature.uses}
+          <Pool
+            title={feature.name}
+            note="{feature.uses}{rules.labels.perDay}"
+            max={feature.uses}
+            current={Math.max(0, feature.uses - used)}
+            view="pips"
+            onput={(left) => spend(entry, key, (feature.uses ?? 0) - left)}
+          />
+        {/if}
+      {/each}
+    {/each}
+    {#if beast.stats.legendary_uses}
+      {@const uses = beast.stats.legendary_uses}
+      <Pool
+        title={rules.labels.legendaryUses}
+        max={uses}
+        current={Math.max(0, uses - (entry.spent?.[LEGENDARY] ?? 0))}
+        view="pips"
+        onput={(left) => spend(entry, LEGENDARY, uses - left)}
+      />
+    {/if}
+  {/if}
+{/snippet}
 
 <div class="fray">
   {#if error}
@@ -204,6 +450,11 @@
           <span>Round {encounter.round}</span>
           <span>{combatants.length} in it</span>
           <span>{encounter.is_active ? 'Running' : 'Ended'}</span>
+          {#if isDm && system && difficulty?.difficulty && band}
+            <span class="fray-difficulty">
+              {system.labels.difficulty} {difficulty.difficulty.name}, {difficulty.xp.toLocaleString('en-US')} of {band.value.toLocaleString('en-US')} {system.labels.experience}
+            </span>
+          {/if}
         </p>
 
         {#if combatants.length === 0}
@@ -211,9 +462,15 @@
         {:else}
           <ol class="fray-order">
             {#each combatants as entry, index (entry.id)}
+              {@const beast = getBeast(entry)}
               <li class="fray-row" class:fray-row-on={index === turn && encounter.is_active} aria-current={index === turn && encounter.is_active ? 'step' : undefined}>
                 <span class="fray-initiative">{entry.initiative}</span>
-                <span class="fray-name">{entry.name}</span>
+                <span class="fray-who">
+                  <span class="fray-name">{entry.name}</span>
+                  {#if isDm && entry.armor_class !== undefined && system}
+                    <span class="fray-armor">{system.labels.armorClass} {entry.armor_class}</span>
+                  {/if}
+                </span>
                 {#if isDm}
                   <Field id="fray-hp-{entry.id}" label="Hit points of {entry.max_hit_points}">
                     <input
@@ -233,22 +490,56 @@
                       onchange={(event) => change(entry.id, { initiative: Number(event.currentTarget.value) })}
                     />
                   </Field>
-                  <Button variant="ghost" size="sm" disabled={busy} onclick={() => remove(entry.id)}>Remove</Button>
+                  <span class="fray-row-acts">
+                    {#if beast}
+                      <IconBtn title="Add {beast.name} to the bestiary" disabled={busy} onclick={() => bestow(entry)}>
+                        <Glyph name="book" size="md" />
+                      </IconBtn>
+                    {/if}
+                    <Button variant="ghost" size="sm" disabled={busy} onclick={() => remove(entry.id)}>Remove</Button>
+                  </span>
+                  <div class="fray-row-more">
+                    <Picker
+                      id="fray-conditions-{entry.id}"
+                      label="Conditions"
+                      picked={conditions.filter((one) => entry.conditions.includes(one.id))}
+                      options={conditions}
+                      placeholder="Pick a condition"
+                      disabled={busy}
+                      onchange={(picked) => change(entry.id, { conditions: picked.map((one) => one.id) })}
+                    />
+                    {#if beast}
+                      {@render trackers(entry, beast)}
+                    {/if}
+                  </div>
                 {:else}
                   <span class="fray-health">
                     {entry.is_hit_points_known ? `${entry.hit_points}/${entry.max_hit_points}` : 'Hidden'}
                   </span>
+                  {#if entry.conditions.length && system}
+                    <p class="fray-row-more fray-conditions">
+                      {#each entry.conditions as one (one)}<Chip still>{getEntryName(system.conditions, one)}</Chip>{/each}
+                    </p>
+                  {/if}
                 {/if}
               </li>
             {/each}
           </ol>
         {/if}
 
+        {#if isDm && current}
+          {@const rules = getSystem(current.beast)}
+          {#if rules}
+            <MonsterBlock system={rules} monster={{ ...current.beast, name: current.entry.name }} layout="compact" rolls />
+          {/if}
+        {/if}
+
         {#if isDm}
+          <p class="fray-note" role="status">{noted}</p>
           <div class="fray-acts">
             <Button variant="secondary" size="sm" disabled={busy || combatants.length === 0} onclick={roll}>Roll initiative</Button>
             <Button variant="primary" size="sm" disabled={busy || combatants.length === 0 || !encounter.is_active} onclick={step}>Next turn</Button>
-            <Button variant="ghost" size="sm" disabled={busy} onclick={() => put({ is_active: !encounter?.is_active })}>
+            <Button variant="ghost" size="sm" disabled={busy} onclick={() => (encounter?.is_active ? end() : put({ is_active: true }))}>
               {encounter.is_active ? 'End encounter' : 'Run again'}
             </Button>
             <Button variant="danger" size="sm" disabled={busy} onclick={drop}>Delete</Button>
@@ -270,6 +561,11 @@
               </select>
             </Field>
             <Button variant="secondary" size="sm" disabled={busy || !seat} onclick={joinCharacter}>Add</Button>
+          </div>
+
+          <div class="fray-line">
+            <p class="fray-note">A monster from the bestiary, as many as the fight holds.</p>
+            <Button variant="secondary" size="sm" disabled={busy || !system} onclick={() => (adding = true)}>Add monster</Button>
           </div>
 
           <div class="fray-grid">
@@ -299,6 +595,47 @@
     {/if}
   {/if}
 </div>
+
+<BaseDialog bind:isOpen={adding} title="Add monsters to {encounter?.title ?? 'the fight'}" width="min(56rem, 94vw)" maxHeight="88vh">
+  <div class="fray-picker">
+    <SearchInput bind:value={hunt} placeholder="Search the bestiary..." label="Search the bestiary" autofocus />
+    <span class="fray-count">{found.length} of {offers.length}</span>
+    <div class="fray-list">
+      {#each found as one (one.id)}
+        {@const rules = getSystem(one.beast)}
+        <Row
+          title={one.beast.name}
+          sub={rules
+            ? `${rules.labels.challenge} ${getChallenge(rules, one.beast.challenge)?.name ?? ''}, ${getEntryName(rules.sizes, one.beast.size)} ${getEntryName(rules.types, one.beast.type)}`
+            : ''}
+          mark={one.mark}
+          image={one.beast.image || undefined}
+          on={one.id === offered}
+          onclick={() => (offered = one.id)}
+        />
+      {:else}
+        <span class="fray-note">No monster in the bestiary answers to that.</span>
+      {/each}
+    </div>
+    <div class="fray-grid">
+      <Field id="fray-count" label="How many">
+        <input id="fray-count" type="number" min="1" max="20" bind:value={count} disabled={busy} />
+      </Field>
+      <Field id="fray-rolled" label="Hit points">
+        <select id="fray-rolled" bind:value={mode} disabled={busy}>
+          <option value="average">Average</option>
+          <option value="rolled">Rolled with the hit dice</option>
+        </select>
+      </Field>
+    </div>
+    <div class="fray-acts">
+      <Button variant="ghost" size="sm" onclick={() => (adding = false)}>Cancel</Button>
+      <Button variant="primary" size="sm" loading={busy} disabled={!offer} onclick={joinMonsters}>
+        {offer ? `Add ${Math.max(1, Math.floor(count))} ${offer.beast.name}` : 'Choose a monster'}
+      </Button>
+    </div>
+  </div>
+</BaseDialog>
 
 <style>
   .fray {
@@ -387,6 +724,67 @@
     font-variant-numeric: lining-nums tabular-nums;
     color: var(--metal-bright);
     text-shadow: 0 1px 0 var(--shadow-ink), 0 0 8px var(--ember-glow);
+  }
+
+  .fray-who {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-0);
+    align-self: center;
+    min-width: 0;
+  }
+
+  .fray-armor {
+    font-family: var(--font-figures);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wide);
+    color: var(--ink-faint);
+  }
+
+  .fray-row-acts {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .fray-row-more {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--space-3);
+    grid-column: 1 / -1;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .fray-conditions {
+    gap: var(--space-1);
+  }
+
+  .fray-difficulty {
+    color: var(--metal);
+  }
+
+  .fray-picker {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5) var(--space-5);
+  }
+
+  .fray-count {
+    font-family: var(--font-figures);
+    font-size: var(--text-xs);
+    color: var(--ink-faint);
+  }
+
+  .fray-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    max-height: min(32rem, 52vh);
+    overflow-y: auto;
+    padding: var(--space-1);
   }
 
   .fray-name {

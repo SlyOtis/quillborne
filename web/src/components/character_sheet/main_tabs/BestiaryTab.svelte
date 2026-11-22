@@ -1,7 +1,45 @@
 <script lang="ts">
+  import { getMonsters } from '$lib/api'
+  import type { Monster } from '$lib/api/types'
+  import { getChallenge, getEntryName, getMonsterSystems } from '$lib/rules/monster'
+  import type { MonsterSystem } from '$lib/rules/monster.types'
+  import { currentCampaignId } from '$lib/stores/campaign.store'
+  import { navigate } from 'sly-svelte-location-router'
+  import Card from '$components/ui/Card.svelte'
   import Ornament from '$components/ui/Ornament.svelte'
 
   const SLOTS = ['skull', 'dragon', 'rune', 'tracery', 'quatrefoil', 'dragon', 'skull', 'quatrefoil', 'rune', 'tracery'] as const
+
+  let monsters = $state<Monster[]>([])
+  let systems = $state<MonsterSystem[]>([])
+  let loading = $state(false)
+  let error = $state<string | null>(null)
+
+  $effect(() => {
+    const campaignId = $currentCampaignId
+    monsters = []
+    error = null
+    if (!campaignId) return
+    let live = true
+    loading = true
+    Promise.all([getMonsters(campaignId), getMonsterSystems()])
+      .then(([found, held]) => {
+        if (!live) return
+        systems = held
+        monsters = found.sort((a, b) => a.name.localeCompare(b.name))
+      })
+      .catch((reason) => live && (error = reason instanceof Error ? reason.message : String(reason)))
+      .finally(() => live && (loading = false))
+    return () => {
+      live = false
+    }
+  })
+
+  function getSub(monster: Monster): string {
+    const system = systems.find((one) => one.id === monster.system)
+    if (!system) return ''
+    return `${system.labels.challenge} ${getChallenge(system, monster.challenge)?.name ?? ''}, ${getEntryName(system.sizes, monster.size)} ${getEntryName(system.types, monster.type)}`
+  }
 </script>
 
 <div class="root">
@@ -12,16 +50,28 @@
     <span class="rule"><Ornament name="divider" tone="metal" /></span>
   </header>
 
-  <ul class="slots" aria-label="Unwritten pages">
-    {#each SLOTS as mark, index (index)}
-      <li class="slot">
-        <span class="slot-face"><Ornament name={mark} size="sm" tone="metal" /></span>
-        <span class="slot-word">Unwritten</span>
-      </li>
-    {/each}
-  </ul>
+  {#if error}
+    <p class="foot" role="alert">{error}</p>
+  {:else if loading}
+    <div class="dnd-loading" role="status" aria-label="Opening the bestiary"><span class="dnd-spinner"></span></div>
+  {:else if monsters.length}
+    <div class="pages">
+      {#each monsters as monster (monster.id)}
+        <Card layout="tile" title={monster.name} sub={getSub(monster)} image={monster.image || undefined} tone="verdigris" onclick={() => navigate(`/main/monsters/${monster.id}`)} />
+      {/each}
+    </div>
+  {:else}
+    <ul class="slots" aria-label="Unwritten pages">
+      {#each SLOTS as mark, index (index)}
+        <li class="slot">
+          <span class="slot-face"><Ornament name={mark} size="sm" tone="metal" /></span>
+          <span class="slot-word">Unwritten</span>
+        </li>
+      {/each}
+    </ul>
 
-  <p class="foot">No creature has crossed this character's path yet.</p>
+    <p class="foot">No creature has crossed this character's path yet.</p>
+  {/if}
 </div>
 
 <style>
@@ -83,6 +133,18 @@
     margin: 0;
     padding: 0;
     list-style: none;
+  }
+
+  .pages {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(calc(var(--space-8) * 2.5), 100%), 1fr));
+    gap: var(--space-5);
+    width: 100%;
+    min-width: 0;
+  }
+
+  .pages :global(.dnd-card-tile) {
+    width: 100%;
   }
 
   .slot {
