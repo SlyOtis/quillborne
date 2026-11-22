@@ -1,32 +1,32 @@
 <script lang="ts">
   import {getContext} from "svelte";
+  import type {Readable} from "svelte/store";
   import type {CharacterContext} from "$lib/types";
-  import type {CharacterAction} from "$lib/character.types";
+  import type {ActionType, CharacterAction} from "$lib/character.types";
+  import type {RulesState} from "$lib/rules/store";
+  import {getStoredAttack, getWeaponAttacks, type Attack} from "$lib/rules/sheet";
   import ActionAttack from "./ActionAttack.svelte";
   import ActionSpecial from "./ActionSpecial.svelte";
 
-  const {actions} = getContext<CharacterContext>('character')
+  const {actions, inventory, proficients} = getContext<CharacterContext>('character')
+  const rules = getContext<Readable<RulesState>>('rules')
 
-  const groupActions = (items: CharacterAction[]): { attack: CharacterAction[], special: CharacterAction[] } => {
-    return items.reduce((prev, curr) => {
-      if (curr.layout === 'Attack') {
-        return {
-          ...prev,
-          attack: [...prev.attack, curr],
-        }
-      }
+  const weapons = $derived($rules.resolved ? getWeaponAttacks($inventory, $proficients, $rules.resolved) : [])
 
-      return {
-        ...prev,
-        special: [...prev.special, curr],
-      }
-    }, {attack: [] as CharacterAction[], special: [] as CharacterAction[]})
+  const groupActions = (type: ActionType): { attack: Attack[], special: CharacterAction[] } => {
+    const held = $actions.filter(a => a.type === type)
+    const system = $rules.system
+    const stored = system ? held.filter(a => a.layout === 'Attack').flatMap(a => getStoredAttack(a, $inventory, system) ?? []) : []
+    return {
+      attack: [...(type === 'Action' ? weapons : []), ...stored],
+      special: held.filter(a => a.layout !== 'Attack')
+    }
   }
 
-  let primary = $derived(groupActions($actions.filter(a => a.type === 'Action')))
-  let bonus = $derived(groupActions($actions.filter(a => a.type === 'Bonus')))
-  let reaction = $derived(groupActions($actions.filter(a => a.type === 'Reaction')))
-  let other = $derived(groupActions($actions.filter(a => a.type === 'Other')))
+  let primary = $derived(groupActions('Action'))
+  let bonus = $derived(groupActions('Bonus'))
+  let reaction = $derived(groupActions('Reaction'))
+  let other = $derived(groupActions('Other'))
 
 </script>
 
@@ -46,8 +46,8 @@
                     <span>Damage</span>
                     <span>Properties</span>
                 </li>
-                {#each primary.attack as action}
-                    <ActionAttack {action}/>
+                {#each primary.attack as attack}
+                    <ActionAttack {attack}/>
                 {/each}
             </ul>
         {/if}
@@ -72,8 +72,8 @@
                     <span>Damage</span>
                     <span>Properties</span>
                 </li>
-                {#each bonus.attack as action}
-                    <ActionAttack {action}/>
+                {#each bonus.attack as attack}
+                    <ActionAttack {attack}/>
                 {/each}
             </ul>
         {/if}
@@ -98,8 +98,8 @@
                     <span>Damage</span>
                     <span>Properties</span>
                 </li>
-                {#each reaction.attack as action}
-                    <ActionAttack {action}/>
+                {#each reaction.attack as attack}
+                    <ActionAttack {attack}/>
                 {/each}
             </ul>
         {/if}
@@ -124,8 +124,8 @@
                     <span>Damage</span>
                     <span>Properties</span>
                 </li>
-                {#each other.attack as action}
-                    <ActionAttack {action}/>
+                {#each other.attack as attack}
+                    <ActionAttack {attack}/>
                 {/each}
             </ul>
         {/if}

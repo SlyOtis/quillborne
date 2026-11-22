@@ -58,9 +58,10 @@
   ],
   "derived": [
     { "id": "initiative", "title": "Initiative", "value": "mod.dex + bonus.initiative" },
-    { "id": "armorClass", "title": "Armor Class", "value": "10 + mod.dex + bonus.armorClass" },
+    { "id": "unarmored", "title": "Unarmored Defence", "value": "10 + mod.dex", "hidden": true },
+    { "id": "armorClass", "title": "Armor Class", "value": "(armor.worn ? armor.base + armor.dex * (armor.cap > 0 ? min(mod.dex, armor.cap) : mod.dex) : derived.unarmored) + armor.bonus + bonus.armorClass" },
     { "id": "carryCapacity", "title": "Carry Capacity", "value": "attr.str * 15", "unit": "lb", "hidden": true },
-    { "id": "speed", "title": "Speed", "value": "30 + bonus.speed", "unit": "ft" },
+    { "id": "speed", "title": "Speed", "value": "30 + bonus.speed - (armor.strength > attr.str ? 10 : 0)", "unit": "ft" },
     { "id": "maxHitPoints", "title": "Maximum Hit Points", "value": "max(1, bonus.hitPoints + mod.con * level)" },
     { "id": "spellSaveDc", "title": "Spell Save DC", "value": "8 + prof + bonus.spellcasting", "hidden": true },
     { "id": "spellAttack", "title": "Spell Attack", "value": "prof + bonus.spellcasting", "hidden": true },
@@ -135,14 +136,14 @@
     "attunement": "3",
     "applies": "equipped && (attuned || !attunement)",
     "categories": [
-      { "id": "weapon", "title": "Weapon", "glyph": "weapon" },
-      { "id": "armor", "title": "Armor", "glyph": "armor" },
+      { "id": "weapon", "title": "Weapon", "glyph": "weapon", "stats": "weapon" },
+      { "id": "armor", "title": "Armor", "glyph": "armor", "stats": "armor" },
       { "id": "ammunition", "title": "Ammunition", "glyph": "ammunition" },
       { "id": "adventuring gear", "title": "Adventuring gear", "glyph": "gear" },
-      { "id": "container", "title": "Container", "glyph": "chest" },
-      { "id": "consumable", "title": "Consumable", "glyph": "potion" },
-      { "id": "potion", "title": "Potion", "glyph": "potion" },
-      { "id": "scroll", "title": "Scroll", "glyph": "scroll" },
+      { "id": "container", "title": "Container", "glyph": "chest", "stats": "container" },
+      { "id": "consumable", "title": "Consumable", "glyph": "potion", "consumable": true },
+      { "id": "potion", "title": "Potion", "glyph": "potion", "consumable": true },
+      { "id": "scroll", "title": "Scroll", "glyph": "scroll", "consumable": true },
       { "id": "ring", "title": "Ring", "glyph": "gem" },
       { "id": "rod", "title": "Rod", "glyph": "gear" },
       { "id": "staff", "title": "Staff", "glyph": "gear" },
@@ -163,7 +164,23 @@
       { "id": "thrown", "title": "Thrown", "description": "Can be thrown for a ranged attack with the same ability as in melee." },
       { "id": "two-handed", "title": "Two-handed", "description": "Needs both hands to attack with." },
       { "id": "versatile", "title": "Versatile", "description": "Deals its larger die when held in both hands." }
-    ]
+    ],
+    "weaponCategories": [
+      { "id": "simple", "title": "Simple Weapons" },
+      { "id": "martial", "title": "Martial Weapons" }
+    ],
+    "armorCategories": [
+      { "id": "light", "title": "Light Armor", "dex": true, "cap": 0 },
+      { "id": "medium", "title": "Medium Armor", "dex": true, "cap": 2 },
+      { "id": "heavy", "title": "Heavy Armor", "dex": false, "cap": 0 },
+      { "id": "shield", "title": "Shield", "shield": true }
+    ],
+    "attack": {
+      "reach": "reach ? 10 : 5",
+      "ability": "finesse ? max(mod.str, mod.dex) : ranged ? mod.dex : mod.str",
+      "hit": "ability + prof * proficient + magic",
+      "damage": "ability + magic"
+    }
   },
   "progression": {
     "maxLevel": 20,

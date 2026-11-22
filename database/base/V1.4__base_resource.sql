@@ -1,5 +1,5 @@
 DO $$ BEGIN
-    CREATE TYPE resource_kind AS ENUM ('entries', 'items', 'weapons', 'armor', 'locations', 'maps', 'sessions');
+    CREATE TYPE resource_kind AS ENUM ('entries', 'items', 'locations', 'maps', 'sessions');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
@@ -22,15 +22,15 @@ CREATE TABLE IF NOT EXISTS resource (
     sa_deleted_at     TIMESTAMPTZ
 );
 
-COMMENT ON TYPE resource_kind IS 'The seven kinds of lore a player or a campaign keeps';
+COMMENT ON TYPE resource_kind IS 'The five kinds of lore a player or a campaign keeps';
 
 CREATE INDEX IF NOT EXISTS idx_resource_owner_kind ON resource (sa_owner_id, kind);
 CREATE INDEX IF NOT EXISTS idx_resource_user_kind ON resource (user_id, kind);
 CREATE INDEX IF NOT EXISTS idx_resource_root ON resource (sa_root_id);
 
-COMMENT ON TABLE resource IS 'A piece of lore kept by a player or a campaign, of one of the seven kinds, with its block document and pictures, nested under a parent resource';
+COMMENT ON TABLE resource IS 'A piece of lore kept by a player or a campaign, of one of the five kinds, with its block document and pictures, nested under a parent resource';
 COMMENT ON COLUMN resource.id IS 'The resource id';
-COMMENT ON COLUMN resource.kind IS 'Which of the seven kinds the resource is';
+COMMENT ON COLUMN resource.kind IS 'Which of the five kinds the resource is';
 COMMENT ON COLUMN resource.user_id IS 'The player who wrote it down';
 COMMENT ON COLUMN resource.name IS 'The name shown at the head, what a list sorts by and what the shared search finds';
 COMMENT ON COLUMN resource.description IS 'The lede under the name, searched with it';

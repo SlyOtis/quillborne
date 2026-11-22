@@ -55,12 +55,37 @@ export type SpeedSpec = MeasureSpec & {
 /** A kind of item, with the glyph its row draws. */
 export type ItemCategorySpec = TitledSpec & {
   glyph?: string
+  /** The figures an item of this kind is written with beside the ones every item has. */
+  stats?: 'weapon' | 'armor' | 'container'
+  /** An item of this kind is used up when it is used, unless it says otherwise. */
+  consumable?: boolean
 }
 
 /** A property a weapon may carry. */
 export type WeaponPropertySpec = TitledSpec & {
   /** The item category one attack with the weapon uses up. */
   spends?: string
+}
+
+/** A kind of armor, and what of Dexterity reaches the armor class while it is worn. */
+export type ArmorCategorySpec = TitledSpec & {
+  dex?: boolean
+  /** The most Dexterity adds, zero for no limit. */
+  cap?: number
+  /** Worn beside armor and adds to it, rather than being armor. */
+  shield?: boolean
+}
+
+/**
+ * How an attack with a weapon is worked out, against the resolved scope and, as 1 or 0, `ranged`, `proficient` and
+ * each of the weapon's properties, with `magic` its bonus and `ability` what `ability` came to.
+ */
+export type AttackSpec = {
+  /** The feet a melee attack reaches. */
+  reach: Expression
+  ability: Expression
+  hit: Expression
+  damage: Expression
 }
 
 /** How a character carries items. */
@@ -71,6 +96,10 @@ export type ItemRules = {
   applies: Expression
   categories?: ItemCategorySpec[]
   weaponProperties?: WeaponPropertySpec[]
+  /** What a character's weapon proficiencies name. */
+  weaponCategories?: TitledSpec[]
+  armorCategories?: ArmorCategorySpec[]
+  attack?: AttackSpec
 }
 
 export type ConditionSpec = TitledSpec & {
@@ -181,6 +210,8 @@ export type CharacterSheet = {
   bonuses: Record<string, number>
   /** The least a `sense.<id>` or a `speed.<id>` reaches, from the range the character stores and what it wears. */
   reaches?: Record<string, number>
+  /** The armor worn, on `armor.<id>`. */
+  armor?: Record<string, number>
 }
 
 export type ResolvedValue = {

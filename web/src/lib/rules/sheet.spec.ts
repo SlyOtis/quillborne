@@ -3,12 +3,13 @@ import belt from '../../../public/sources/items/belt-of-dwarvenkind.json'
 import cloak from '../../../public/sources/items/cloak-of-protection.json'
 import gauntlets from '../../../public/sources/items/gauntlets-of-ogre-power.json'
 import dnd5e from '../../../public/sources/systems/dnd5e.json'
-import type { CharacterInventoryItem } from '../character.types'
+import type { Character, CharacterInventoryItem } from '../character.types'
 import lars from '../character.fixture'
 import { getItemGrants } from '../resources'
 import { getResolvedCharacter } from './derive'
-import { getAmmunition, getAmmunitionType, getAppliedItems, getAttackReach, getAttributeId, getAttunedInventory, getAttunement, getCarriedWeight, getInventoryValue, getReplacedAttunement, getSaveNotes, getSheet, getSkillId, getTierId } from './sheet'
+import { getAmmunition, getAmmunitionType, getAppliedItems, getAttackReach, getAttributeId, getAttunedInventory, getAttunement, getCarriedWeight, getInventoryValue, getReplacedAttunement, getSaveNotes, getSheet, getSkillId, getTierId, getWeaponAttacks } from './sheet'
 import type { RuleSystem } from './spec.types'
+import { getMergedSystem } from './system'
 
 const core = dnd5e as RuleSystem
 
@@ -44,10 +45,6 @@ describe('getSheet on the sample character', () => {
     for (const ability of lars.abilities) {
       expect(sheet.attributes[getAttributeId(ability.title)]).toBe(ability.score)
     }
-  })
-
-  it('reproduces the stored armor class through the engine', () => {
-    expect(resolved.derived.find((entry) => entry.id === 'armorClass')?.value).toBe(lars.info.ac)
   })
 
   it('reproduces the stored initiative through the engine', () => {
@@ -129,13 +126,13 @@ describe('what a character wears', () => {
 
   it('raises armor class and every save by 1 with a Cloak of Protection equipped and attuned, counting it once', () => {
     const warded = resolve(held(cloak, true, true))
-    expect(armorClass(warded)).toBe(lars.info.ac + 1)
+    expect(armorClass(warded)).toBe(15)
     expect(warded.saves.map((save) => save.value)).toEqual(bare.saves.map((save) => save.value + 1))
   })
 
   it('changes nothing with a Cloak of Protection carried', () => {
     const carried = resolve(held(cloak, false, true))
-    expect(armorClass(carried)).toBe(lars.info.ac)
+    expect(armorClass(carried)).toBe(14)
     expect(carried.saves).toEqual(bare.saves)
   })
 
@@ -225,5 +222,110 @@ describe('what a character carries', () => {
   it('finds no ammunition by its name: arrows carried as a consumable are not spent', () => {
     const shortbow = carried('shortbow', 'weapon', 2, 1, 25, { attributes: ['ammunition'] })
     expect(getAmmunition([carried('Arrows', 'consumable', 0.05, 20, 0.05, { equipped: true }), shortbow], shortbow, core)).toBeNull()
+  })
+})
+
+describe('what a character wears and wields', () => {
+  const brann = (score: Record<string, number>) => Object.entries(score).map(([title, value]) => ({ id: title, title, score: value, modifier: Math.floor((value - 10) / 2) }))
+  const worn = (id: string, ac: CharacterInventoryItem['properties'], equipped = true, tags: string[] = []): CharacterInventoryItem => ({
+    id,
+    title: id,
+    type: 'armor',
+    rarity: 'common',
+    attributes: tags,
+    description: '',
+    value: { amount: 0, currency: 'gp' },
+    weight: 0,
+    quantity: 1,
+    equippable: true,
+    equipped,
+    properties: ac
+  })
+  const chainMail = worn('Chain Mail', { armor: 'heavy', strength: 13, ac: { base: 16, bonus: 0, dexModifier: false, maxDexBonus: 0 } })
+  const shield = worn('Shield', { ac: { base: 0, bonus: 2, dexModifier: false, maxDexBonus: 0 } }, true, ['shield'])
+  const leather = worn('Leather Armor', { armor: 'light', ac: { base: 11, bonus: 0, dexModifier: true, maxDexBonus: 0 } })
+  const scale = worn('Scale Mail', { armor: 'medium', ac: { base: 14, bonus: 0, dexModifier: true, maxDexBonus: 2 } })
+  const fighter = (dex: number, inventory: CharacterInventoryItem[], overlay: Character['overlay'] = null): Character => ({
+    ...lars,
+    info: { ...lars.info, level: 3, ac: 0, speed: '30 ft' },
+    abilities: brann({ Strength: 16, Dexterity: dex, Constitution: 16 }),
+    inventory,
+    overlay
+  })
+  const armorClass = (character: Character, system = core) => getResolvedCharacter(system, getSheet(character, system)).scope['derived.armorClass']
+
+  it('gives Brann in Chain Mail with a Shield armor class 18, his Dexterity left out', () => {
+    expect(armorClass(fighter(12, [chainMail, shield]))).toBe(18)
+  })
+
+  it('gives Wren in Leather Armor 11 and her full Dexterity of 17, armor class 14', () => {
+    expect(armorClass(fighter(17, [leather]))).toBe(14)
+  })
+
+  it('gives Maela in Scale Mail 14 and her Dexterity only up to 2, armor class 16, and 15 with Dexterity 12', () => {
+    expect(armorClass(fighter(17, [scale]))).toBe(16)
+    expect(armorClass(fighter(12, [scale]))).toBe(15)
+  })
+
+  it('gives armor carried but not worn nothing: Wren unarmored is 10 and her Dexterity, 13', () => {
+    expect(armorClass(fighter(17, [{ ...leather, equipped: false }]))).toBe(13)
+  })
+
+  it('adds the bonus of a +1 Chain Mail, armor class 17', () => {
+    expect(armorClass(fighter(12, [{ ...chainMail, properties: { ...chainMail.properties, ac: { ...chainMail.properties!.ac!, bonus: 1 } } }]))).toBe(17)
+  })
+
+  it('takes a class overlay of 13 and Dexterity for unarmored, 15 at Dexterity 15, and lets worn armor replace it again', () => {
+    const resilience = { id: 'resilience', title: 'Draconic Resilience', version: '1.0.0', derived: [{ id: 'unarmored', title: 'Unarmored Defence', value: '13 + mod.dex', hidden: true }] }
+    const system = getMergedSystem(core, resilience)
+    expect(armorClass(fighter(15, [], resilience), system)).toBe(15)
+    expect(armorClass(fighter(15, [chainMail], resilience), system)).toBe(16)
+  })
+
+  it('gives Lars in Leather Armor with Dexterity 18 the armor class 15 he has stored, from what he wears', () => {
+    expect(getResolvedCharacter(core, getSheet(lars, core)).scope['derived.armorClass']).toBe(15)
+  })
+
+  it('slows a wearer of Chain Mail by 10 feet below Strength 13, and not at 13', () => {
+    const speed = (strength: number) => getResolvedCharacter(core, getSheet({ ...fighter(12, [chainMail]), abilities: brann({ Strength: strength }) }, core)).scope['derived.speed']
+    expect(speed(12)).toBe(20)
+    expect(speed(13)).toBe(30)
+  })
+
+  const weapon = (id: string, properties: CharacterInventoryItem['properties'], tags: string[] = []): CharacterInventoryItem => ({
+    ...worn(id, properties, true, tags),
+    type: 'weapon'
+  })
+  const longsword = weapon('Longsword', { weapon: 'martial', damage: { amount: 1, dice: 8, type: 'slashing', bonus: 0 }, versatile: { amount: 1, dice: 10, type: 'slashing', bonus: 0 } }, ['versatile'])
+  const rapier = weapon('Rapier', { weapon: 'martial', damage: { amount: 1, dice: 8, type: 'piercing', bonus: 0 } }, ['finesse'])
+  const longbow = weapon('Longbow', { weapon: 'martial', damage: { amount: 1, dice: 8, type: 'piercing', bonus: 0 }, range: { normal: 150, max: 600 } }, ['ammunition', 'heavy', 'two-handed'])
+  const proficient = (...value: string[]) => [{ id: 'weapons', title: 'Weapons', value }]
+  const attack = (character: Character, wielded: CharacterInventoryItem, proficients = proficient('Simple Weapons', 'Martial Weapons')) =>
+    getWeaponAttacks([wielded], proficients, getResolvedCharacter(core, getSheet(character, core)))[0]
+
+  it('hits with Brann\'s Longsword at Strength 16 and level 3 for +5 and 1d8 + 3, and 1d10 + 3 in two hands', () => {
+    const swing = attack(fighter(12, []), longsword)
+    expect(swing.hit).toBe(5)
+    expect([swing.damage[0].dice, swing.damage[0].bonus]).toEqual([8, 3])
+    expect([swing.versatile?.dice, swing.versatile?.bonus]).toEqual([10, 3])
+    expect(swing.reach).toBe('melee')
+    expect(swing.spends).toBe('')
+  })
+
+  it('hits with Wren\'s Rapier by her higher Dexterity of 17, +5 and 1d8 + 3, though her Strength is 8', () => {
+    const wren = { ...fighter(17, []), abilities: brann({ Strength: 8, Dexterity: 17 }) }
+    const thrust = attack(wren, rapier, proficient('Rapiers'))
+    expect([thrust.hit, thrust.damage[0].bonus]).toEqual([5, 3])
+  })
+
+  it('adds no proficiency for a weapon the character is not proficient with: Wren\'s Longbow is +3', () => {
+    const wren = { ...fighter(17, []), abilities: brann({ Strength: 8, Dexterity: 17 }) }
+    const shot = attack(wren, longbow, proficient('Simple Weapons', 'Rapiers'))
+    expect([shot.hit, shot.damage[0].bonus, shot.reach, shot.spends]).toEqual([3, 3, 'ranged', 'ammunition'])
+  })
+
+  it('adds a +1 weapon\'s bonus to hit and damage: +6 and 1d8 + 4', () => {
+    const swing = attack(fighter(12, []), { ...longsword, properties: { ...longsword.properties, magic: 1 } })
+    expect([swing.hit, swing.damage[0].bonus]).toEqual([6, 4])
   })
 })

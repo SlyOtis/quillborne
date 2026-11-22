@@ -218,7 +218,7 @@ func Resources() []cli.Resource {
 		},
 		{
 			Name:  "resource",
-			Short: "Lore pages of the seven kinds",
+			Short: "Lore pages of the five kinds: entries, items, locations, maps and sessions",
 			Verbs: []cli.Verb{
 				getOp("List pages by ?kind= and ?owner_id= or ?user_id=, or with ?reach=all every page of the kind you read and the head of each item locked to you at a table you sit at; or read one", apiPrefix+"/resource", apiPrefix+"/resource/{id}"),
 				createOp("Write a page, body {kind, name, description, owner_id, parent_id, share_users, share_campaigns, ...fields}", apiPrefix+"/resource"),

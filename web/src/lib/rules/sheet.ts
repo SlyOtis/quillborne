@@ -1,8 +1,8 @@
-import type { Character, CharacterCurrency, CharacterInventoryItem, CharacterSkill, Proficiency, Range } from '../character.types'
+import type { Character, CharacterAction, CharacterCurrency, CharacterInventoryItem, CharacterProficiency, CharacterSkill, Damage, Proficiency, Range } from '../character.types'
 import { getResolvedCharacter } from './derive'
 import { getExpressionNames, getExpressionValue } from './expression'
 import type { ItemGrants } from './item.types'
-import type { CharacterSheet, ProficiencyTier, ResolvedCharacter, RuleSystem } from './spec.types'
+import type { ArmorCategorySpec, CharacterSheet, ProficiencyTier, ResolvedCharacter, RuleSystem } from './spec.types'
 
 export type AppliedItem = CharacterInventoryItem & { grants: ItemGrants }
 
@@ -42,7 +42,8 @@ function getProficiencyMap(skills: CharacterSkill[], tiers: ProficiencyTier[]): 
 
 /**
  * The stored character as the engine reads it. The stored totals leave out what worn items grant: the bonuses are
- * recovered from them first, and the items that apply are laid over last, so each grant counts once.
+ * recovered from them first, and the items that apply are laid over last, so each grant counts once. Armor class is
+ * never recovered: the system works it out from the armor worn.
  */
 export function getSheet(character: Character, system: RuleSystem): CharacterSheet {
   const tiers = system.proficiencyTiers
@@ -88,14 +89,13 @@ export function getSheet(character: Character, system: RuleSystem): CharacterShe
   const level = base.level
   const bonuses: Record<string, number> = {}
 
-  if (info?.ac !== undefined) bonuses.armorClass = info.ac - 10 - (scope['mod.dex'] ?? 0)
   if (info?.hp?.max !== undefined) bonuses.hitPoints = info.hp.max - (scope['mod.con'] ?? 0) * level
   if (info?.initiative !== undefined) bonuses.initiative = info.initiative - (scope['mod.dex'] ?? 0)
 
   const speed = Number.parseInt(String(info?.speed ?? ''), 10)
   if (Number.isFinite(speed)) bonuses.speed = speed - 30
 
-  const worn = getWornSheet({ ...base, bonuses }, getAppliedItems(character.inventory ?? [], system), system)
+  const worn = getWornSheet({ ...base, bonuses, armor: getWornArmor(character.inventory ?? [], system) }, getAppliedItems(character.inventory ?? [], system), system)
   if (!info?.spells?.modifier) return worn
 
   const spellcasting = getResolvedCharacter(system, worn).scope[`mod.${getAttributeId(info.spells.modifier)}`] ?? 0
@@ -135,6 +135,32 @@ export function getSaveNotes(items: AppliedItem[], system: RuleSystem): SaveNote
   ]
 }
 
+/** The system's armor category a carried item is, from its own field or else the first of its tags the system names. */
+export function getArmorCategory(item: CharacterInventoryItem, system: RuleSystem): ArmorCategorySpec | undefined {
+  const categories = system.items?.armorCategories ?? []
+  const id = item.properties?.armor ?? item.attributes.find((tag) => categories.some((one) => one.id === tag))
+  return categories.find((one) => one.id === id)
+}
+
+/**
+ * The armor and shields worn, as the `armor.` names the system's armor class reads: `worn` when body armor is on,
+ * its `base`, whether its `dex` counts and the `cap` on it, its `strength`, and the `bonus` of it and every shield.
+ */
+export function getWornArmor(inventory: CharacterInventoryItem[], system: RuleSystem): Record<string, number> {
+  const worn = inventory.filter((item) => item.equipped && item.properties?.ac)
+  const shields = worn.filter((item) => getArmorCategory(item, system)?.shield)
+  const body = worn.find((item) => !shields.includes(item))
+  const ac = body?.properties?.ac
+  return {
+    worn: body ? 1 : 0,
+    base: ac?.base ?? 0,
+    dex: ac?.dexModifier ? 1 : 0,
+    cap: ac?.maxDexBonus ?? 0,
+    strength: body?.properties?.strength ?? 0,
+    bonus: (ac?.bonus ?? 0) + shields.reduce((all, item) => all + (item.properties?.ac?.base ?? 0) + (item.properties?.ac?.bonus ?? 0), 0)
+  }
+}
+
 /** The item category one attack with a weapon uses up, by the system's weapon properties, or empty when it uses none. */
 export function getAmmunitionType(weapon: CharacterInventoryItem, system: RuleSystem): string {
   return system.items?.weaponProperties?.find((one) => one.spends && weapon.attributes.includes(one.id))?.spends ?? ''
@@ -151,6 +177,88 @@ export function getAttackReach(range: Range | undefined, weapon: CharacterInvent
   const far = (range?.normal ?? 5) > 5
   if (weapon ? getAmmunitionType(weapon, system) : far) return 'ranged'
   return far ? 'thrown' : 'melee'
+}
+
+/** An attack as the actions tab draws it, built from an equipped weapon or read from a stored action such as a spell. */
+export type Attack = {
+  name: string
+  reach: 'melee' | 'ranged' | 'thrown'
+  /** The feet a melee attack reaches. */
+  melee: number
+  range?: Range
+  hit: number
+  damage: Damage[]
+  /** The damage dealt held in two hands, for a versatile weapon. */
+  versatile?: Damage
+  properties: string[]
+  /** The item category each attack uses up, or empty. */
+  spends: string
+  itemId?: string
+}
+
+function getComparable(name: string): string {
+  return name.toLowerCase().replace(/[^a-z]/g, '').replace(/s$/, '')
+}
+
+/** Whether a character's proficiencies name a weapon, by its category's title, its name or what it is. */
+export function isWeaponProficient(proficients: CharacterProficiency[], weapon: CharacterInventoryItem, system: RuleSystem): boolean {
+  const category = system.items?.weaponCategories?.find((one) => one.id === weapon.properties?.weapon)?.title
+  const names = [category, weapon.title, weapon.subtype].filter((one): one is string => Boolean(one)).map(getComparable)
+  return proficients.some((group) => group.value.some((one) => names.includes(getComparable(one))))
+}
+
+/** Every attack the equipped weapons make, each worked out by the system's attack formulas against the resolved character. */
+export function getWeaponAttacks(inventory: CharacterInventoryItem[], proficients: CharacterProficiency[], resolved: ResolvedCharacter): Attack[] {
+  const system = resolved.system
+  const rule = system.items?.attack
+  if (!rule) return []
+  const properties = system.items?.weaponProperties ?? []
+  return inventory
+    .filter((item) => item.equipped && item.properties?.damage)
+    .map((weapon) => {
+      const reach = getAttackReach(weapon.properties?.range, weapon, system)
+      const flags = Object.fromEntries(properties.filter((one) => /^[a-z]\w*$/i.test(one.id)).map((one) => [one.id, weapon.attributes.includes(one.id) ? 1 : 0]))
+      const locals = {
+        ...resolved.scope,
+        ...flags,
+        ranged: reach === 'ranged' ? 1 : 0,
+        proficient: isWeaponProficient(proficients, weapon, system) ? 1 : 0,
+        magic: weapon.properties?.magic ?? 0
+      }
+      const ability = getExpressionValue(rule.ability, locals)
+      const bonus = getExpressionValue(rule.damage, { ...locals, ability })
+      const dealt = (damage: Damage): Damage => ({ ...damage, bonus })
+      return {
+        name: weapon.title,
+        reach,
+        melee: getExpressionValue(rule.reach, locals),
+        range: reach === 'melee' ? undefined : weapon.properties?.range,
+        hit: getExpressionValue(rule.hit, { ...locals, ability }),
+        damage: [dealt(weapon.properties!.damage!)],
+        ...(weapon.properties?.versatile ? { versatile: dealt(weapon.properties.versatile) } : {}),
+        properties: weapon.attributes.map((tag) => properties.find((one) => one.id === tag)?.title ?? tag),
+        spends: getAmmunitionType(weapon, system),
+        itemId: weapon.id
+      }
+    })
+}
+
+/** A stored attack action, such as a spell, as the actions tab draws it; one tied to a carried weapon is built from the weapon instead. */
+export function getStoredAttack(action: CharacterAction, inventory: CharacterInventoryItem[], system: RuleSystem): Attack | null {
+  const weapon = action.itemId ? inventory.find((item) => item.id === action.itemId) : undefined
+  if (weapon?.properties?.damage) return null
+  const reach = getAttackReach(action.range, weapon, system)
+  return {
+    name: action.name,
+    reach,
+    melee: reach === 'melee' ? action.range?.normal ?? 5 : 5,
+    range: reach === 'melee' ? undefined : action.range,
+    hit: action.toHit ?? 0,
+    damage: action.damage ?? [],
+    properties: action.properties ?? [],
+    spends: weapon ? getAmmunitionType(weapon, system) : '',
+    itemId: action.itemId
+  }
 }
 
 /** What everything carried weighs, each item as many times as there are of it. */

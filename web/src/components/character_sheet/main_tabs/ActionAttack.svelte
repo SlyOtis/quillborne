@@ -1,55 +1,52 @@
 <script lang="ts">
 
-  import type {CharacterAction, Damage} from "$lib/character.types";
+  import type {Damage} from "$lib/character.types";
   import {rollAttack, rollDamage, rollAttackWithAmmo, rollDamageWithAmmo} from "$lib/engine";
   import {getContext} from "svelte";
   import type {Readable} from "svelte/store";
   import type {CharacterContext} from "$lib/types";
   import type {RulesState} from "$lib/rules/store";
-  import {getAmmunition, getAmmunitionType, getAttackReach} from "$lib/rules/sheet";
+  import type {Attack} from "$lib/rules/sheet";
   import Button from "$components/ui/Button.svelte";
 
-  let {action}: { action: CharacterAction } = $props()
+  let {attack}: {
+    /** The attack the row rolls, built from a weapon or read from a stored action. */
+    attack: Attack
+  } = $props()
 
   const {inventory} = getContext<CharacterContext>('character')
   const rules = getContext<Readable<RulesState>>('rules')
 
-  let weapon = $derived(action.itemId ? $inventory.find(item => item.id === action.itemId) : undefined)
-  let spends = $derived(weapon && $rules.system ? getAmmunitionType(weapon, $rules.system) : '')
-  let reach = $derived($rules.system ? getAttackReach(action.range, weapon, $rules.system) : 'melee')
+  let ammunition = $derived(attack.spends ? $inventory.find(item => item.type === attack.spends && item.equipped && item.quantity > 0) ?? null : null)
+  let spent = $derived(($rules.system?.items?.categories?.find(one => one.id === attack.spends)?.title ?? attack.spends).toLowerCase())
 
-  let equippedAmmo = $derived(weapon && $rules.system ? getAmmunition($inventory, weapon, $rules.system) : null)
+  let buttonsDisabled = $derived(Boolean(attack.spends) && !ammunition)
 
-  let buttonsDisabled = $derived(Boolean(spends) && !equippedAmmo)
-
-  let properties = $derived((action.properties || ['None']).join(', '))
+  let properties = $derived(attack.properties.length ? attack.properties.join(', ') : 'None')
 
   const renderDamage = (dmg: Damage) => {
     const die = `${dmg.amount}d${dmg.dice}`
-    if (dmg.bonus > 0) {
-      return die + ` + ${dmg.bonus}`
-    }
-
+    if (dmg.bonus > 0) return `${die} + ${dmg.bonus}`
+    if (dmg.bonus < 0) return `${die} - ${-dmg.bonus}`
     return die
   }
 
   async function rollToHit() {
     window.dispatchEvent(new CustomEvent('playButtonClick'))
-    if (equippedAmmo) {
-      await rollAttackWithAmmo(action.name, action.toHit || 0, equippedAmmo.id)
+    if (ammunition) {
+      await rollAttackWithAmmo(attack.name, attack.hit, ammunition.id)
     } else {
-      await rollAttack(action.name, action.toHit || 0)
+      await rollAttack(attack.name, attack.hit)
     }
   }
 
-  async function rollAttackDamage() {
-    const damage = action.damage?.[0]
+  async function rollAttackDamage(damage: Damage | undefined) {
     if (!damage) return
     window.dispatchEvent(new CustomEvent('playButtonClick'))
-    if (equippedAmmo) {
-      await rollDamageWithAmmo(action.name, damage.dice, damage.amount, damage.bonus, equippedAmmo.id)
+    if (ammunition) {
+      await rollDamageWithAmmo(attack.name, damage.dice, damage.amount, damage.bonus, ammunition.id)
     } else {
-      await rollDamage(action.name, damage.dice, damage.amount, damage.bonus)
+      await rollDamage(attack.name, damage.dice, damage.amount, damage.bonus)
     }
   }
 
@@ -57,14 +54,17 @@
 
 <li>
     <div class="title">
-        <h4 title={action.name}>{action.name}</h4>
-        <span class="sub">{reach === 'ranged' ? 'Ranged Attack' : reach === 'thrown' ? 'Melee or Thrown' : 'Melee Attack'}</span>
+        <h4 title={attack.name}>{attack.name}</h4>
+        <span class="sub">{attack.reach === 'ranged' ? 'Ranged Attack' : attack.reach === 'thrown' ? 'Melee or Thrown' : 'Melee Attack'}</span>
     </div>
     <div class="range">
-        {#if action.range && reach !== 'melee'}
-            <span><b>{action.range.normal}</b> ({action.range.max})</span>
+        {#if attack.reach === 'thrown'}
+            <span><b>{attack.melee}ft.</b> or</span>
+        {/if}
+        {#if attack.range && attack.reach !== 'melee'}
+            <span><b>{attack.range.normal}</b> ({attack.range.max})</span>
         {:else}
-            <span><b>{action.range?.normal ?? 5}ft.</b> reach</span>
+            <span><b>{attack.melee}ft.</b> reach</span>
         {/if}
     </div>
     <div class="hit" class:attack-dry={buttonsDisabled}>
@@ -73,10 +73,10 @@
             size="sm"
             fill
             disabled={buttonsDisabled}
-            title={buttonsDisabled ? `No ${spends} left` : `Roll ${action.name} to hit`}
+            title={buttonsDisabled ? `No ${spent} left` : `Roll ${attack.name} to hit${ammunition ? `, spending one of ${ammunition.title}` : ''}`}
             onclick={rollToHit}
         >
-            +{action.toHit || 0}
+            {attack.hit < 0 ? attack.hit : `+${attack.hit}`}
         </Button>
     </div>
     <div class="attack" class:attack-dry={buttonsDisabled}>
@@ -84,12 +84,24 @@
             variant="secondary"
             size="sm"
             fill
-            disabled={buttonsDisabled || !action.damage?.[0]}
-            title={buttonsDisabled ? `No ${spends} left` : `Roll ${action.name} damage`}
-            onclick={rollAttackDamage}
+            disabled={buttonsDisabled || !attack.damage[0]}
+            title={buttonsDisabled ? `No ${spent} left` : `Roll ${attack.name} damage${attack.versatile ? ' one-handed' : ''}`}
+            onclick={() => rollAttackDamage(attack.damage[0])}
         >
-            {action.damage?.[0] ? renderDamage(action.damage[0]) : 'No damage'}
+            {attack.damage[0] ? renderDamage(attack.damage[0]) : 'No damage'}
         </Button>
+        {#if attack.versatile}
+            <Button
+                variant="secondary"
+                size="sm"
+                fill
+                title="Roll {attack.name} damage two-handed"
+                label="Roll {attack.name} damage two-handed"
+                onclick={() => rollAttackDamage(attack.versatile)}
+            >
+                {renderDamage(attack.versatile)}
+            </Button>
+        {/if}
     </div>
     <div class="properties">
         <span title={properties}>{properties}</span>

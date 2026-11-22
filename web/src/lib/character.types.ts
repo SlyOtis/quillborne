@@ -5,8 +5,8 @@ import type {RuleSystemOverlay} from "./rules/spec.types";
 /** Basic D&D currency types (cp, sp, gp, pp) */
 export type Currency = keyof CharacterCurrency
 
-/** Classification of items in the game world */
-export type ItemType = 'weapon' | 'armor' | 'consumable' | 'tool' | 'container' | 'treasure' | 'ammunition' | 'misc'
+/** One of the rule system's item categories, such as weapon, armor or ammunition */
+export type ItemType = string
 
 /** Standard D&D item rarity levels */
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'very rare' | 'legendary' | 'artifact'
@@ -41,7 +41,7 @@ export interface Range {
 }
 
 /** Armor Class calculation components */
-interface ArmorClass {
+export interface ArmorClass {
   base: number          // Base AC value
   bonus: number         // Additional AC bonus
   dexModifier: boolean  // Whether DEX mod applies
@@ -90,11 +90,24 @@ interface Container {
   contents: CharacterInventoryItem[]
 }
 
-/** Basic item properties combining damage, range, and armor */
+/** What an item is as a weapon or as armor, the same on an item of the room and on a carried one */
 export interface Properties {
+  /** A weapon's dice and damage type; what an attack adds to it is the rule system's attack formula */
   damage?: Damage
+  /** The damage a weapon with the versatile property deals held in two hands */
+  versatile?: Damage
   range?: Range
+  /** One of the rule system's weapon categories, which a character's weapon proficiencies name */
+  weapon?: string
+  /** What a magic weapon adds to its attack and damage rolls */
+  magic?: number
   ac?: ArmorClass
+  /** One of the rule system's armor categories */
+  armor?: string
+  /** The Strength score the armor slows a wearer below */
+  strength?: number
+  /** Disadvantage on Stealth while it is worn */
+  stealth?: boolean
 }
 
 /** Item attunement status */
@@ -129,6 +142,8 @@ export interface CharacterInventoryItem {
   origin?: ItemOrigin
   /** What it gives the character while it applies, by the rule system's rule for items */
   grants?: ItemGrants
+  /** Used up when it is used, whatever its category says */
+  consumable?: boolean
   properties?: Properties
   requirements?: Requirements
   enchantments?: Enchantment[]

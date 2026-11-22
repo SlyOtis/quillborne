@@ -58,6 +58,7 @@ export function getResolvedCharacter(system: RuleSystem, sheet: CharacterSheet):
   }
 
   for (const [key, value] of Object.entries(sheet.bonuses ?? {})) scope[`bonus.${key}`] = value
+  for (const [key, value] of Object.entries(sheet.armor ?? {})) scope[`armor.${key}`] = value
 
   scope.prof = Math.round(getExpressionValue(system.progression.proficiency, scope))
 
@@ -112,7 +113,7 @@ export function getResolvedCharacter(system: RuleSystem, sheet: CharacterSheet):
 
     const node = nodes.get(key)
     if (!node) {
-      if (key.startsWith('bonus.') || key.startsWith('step.')) {
+      if (key.startsWith('bonus.') || key.startsWith('step.') || key.startsWith('armor.')) {
         scope[key] = 0
         return 0
       }
