@@ -1,0 +1,28 @@
+{
+  "name": "Belt of Fire Giant Strength",
+  "description": "A belt of blackened iron plates, hot as a forge door.",
+  "category": "wondrous item",
+  "subtype": "belt",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Strength",
+  "tags": [
+    "strength"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nWhile you wear it, you have the strength of a fire giant: your Strength becomes 25. A wearer who is already stronger gains nothing.",
+  "grants": {
+    "attributes": [
+      {
+        "id": "str",
+        "mode": "set",
+        "value": 25
+      }
+    ]
+  }
+}

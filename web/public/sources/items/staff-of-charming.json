@@ -1,0 +1,54 @@
+{
+  "name": "Staff of Charming",
+  "description": "A slender staff of pale wood twined with carved flowers.",
+  "category": "staff",
+  "subtype": "",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "by a bard, cleric, druid, sorcerer, warlock, or wizard",
+  "consumable": false,
+  "weight": 4,
+  "value": 0,
+  "notes": "Charm",
+  "tags": [
+    "spell",
+    "control"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nSpend its charges to charm, command or understand those you meet. Once a day, when you fail a saving throw against an enchantment spell that targets only you, you can succeed instead, and whenever you succeed on such a save you can spend a charge to turn the spell back on its caster.\n\n## Charges\n\nIt holds ten and regains 1d8 + 2 each dawn. Spend the last and it may become a plain staff.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Charm Person",
+        "level": 1,
+        "charges": 1,
+        "note": ""
+      },
+      {
+        "name": "Command",
+        "level": 1,
+        "charges": 1,
+        "note": ""
+      },
+      {
+        "name": "Comprehend Languages",
+        "level": 1,
+        "charges": 1,
+        "note": ""
+      }
+    ],
+    "features": [
+      {
+        "name": "Reflect",
+        "text": "Once per dawn, turn a failed save against an enchantment spell that targets only you into a success. When you succeed on such a save, spend a charge as a reaction to turn the spell back on its caster."
+      }
+    ],
+    "charges": {
+      "max": 10,
+      "regain": "1d8 + 2",
+      "at": "dawn",
+      "last": "roll a d20; on a 1 it becomes a nonmagical quarterstaff"
+    }
+  }
+}

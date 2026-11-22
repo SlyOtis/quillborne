@@ -1,0 +1,57 @@
+{
+  "name": "Holy Avenger",
+  "description": "A longsword with a hilt of gold and a blade that gleams even in shadow.",
+  "category": "weapon",
+  "subtype": "longsword",
+  "rarity": "legendary",
+  "attunement": true,
+  "attuned_by": "by a paladin",
+  "consumable": false,
+  "weight": 3,
+  "value": 0,
+  "notes": "Radiant, Saving Throws",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nAny sword can carry this blessing; this one is a longsword. It strikes far truer and harder than a plain sword, and it burns fiends and undead with holy light.\n\n## Aura\n\nWhile you hold it drawn, you and every friendly creature within 10 feet of you have advantage on saving throws against spells and other magic. The aura reaches 30 feet once you are a 17th-level paladin.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 10,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "magic": 3
+  },
+  "grants": {
+    "damage": [
+      {
+        "dice": "2d10",
+        "damage": "radiant",
+        "note": "against a fiend or an undead"
+      }
+    ],
+    "advantages": [
+      {
+        "id": "",
+        "name": "Saving throws",
+        "note": "against spells and other magical effects"
+      }
+    ],
+    "features": [
+      {
+        "name": "Aura",
+        "text": "Friendly creatures within 10 feet of you, 30 feet at paladin level 17, have advantage on saving throws against spells and other magical effects."
+      }
+    ]
+  }
+}

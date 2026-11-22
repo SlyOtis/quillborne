@@ -1,0 +1,30 @@
+{
+  "name": "Amulet of the Planes",
+  "description": "A black pendant on which tiny worlds seem to turn.",
+  "category": "wondrous item",
+  "subtype": "amulet",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Travel",
+  "tags": [
+    "spell",
+    "movement"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nAs an action, name a place you know on another plane and make a DC 15 Intelligence check. On a success you are there. On a failure you, and everyone and everything within 15 feet of you, are flung to a random plane.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Plane Shift",
+        "level": 7,
+        "charges": 0,
+        "note": "make a DC 15 Intelligence check first; a failure sends you and all within 15 feet to a random plane"
+      }
+    ]
+  }
+}

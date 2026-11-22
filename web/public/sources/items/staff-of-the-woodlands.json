@@ -1,0 +1,103 @@
+{
+  "name": "Staff of the Woodlands",
+  "description": "A living staff of oak that still sprouts leaves in spring.",
+  "category": "staff",
+  "subtype": "quarterstaff",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "by a druid",
+  "consumable": false,
+  "weight": 4,
+  "value": 0,
+  "notes": "Nature, Spells",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt fights as a magic quarterstaff that strikes truer and harder than a plain one, and your spell attacks strike truer. Its charges speak to beasts and plants and wake the woods, and you can always pass through them without a trace.\n\n## Tree form\n\nPlanted in fertile earth for a charge, it becomes a great tree, and a staff again when you touch it and speak.\n\n## Charges\n\nIt holds ten and regains 1d6 + 4 each dawn. Spend the last and it may become a plain staff.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "bludgeoning",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 8,
+      "type": "bludgeoning",
+      "bonus": 0
+    },
+    "magic": 2
+  },
+  "grants": {
+    "spells": [
+      {
+        "name": "Pass without Trace",
+        "level": 2,
+        "charges": 0,
+        "note": "at will"
+      },
+      {
+        "name": "Animal Friendship",
+        "level": 1,
+        "charges": 1,
+        "note": ""
+      },
+      {
+        "name": "Awaken",
+        "level": 5,
+        "charges": 5,
+        "note": ""
+      },
+      {
+        "name": "Barkskin",
+        "level": 2,
+        "charges": 2,
+        "note": ""
+      },
+      {
+        "name": "Locate Animals or Plants",
+        "level": 2,
+        "charges": 2,
+        "note": ""
+      },
+      {
+        "name": "Speak with Animals",
+        "level": 1,
+        "charges": 1,
+        "note": ""
+      },
+      {
+        "name": "Speak with Plants",
+        "level": 3,
+        "charges": 3,
+        "note": ""
+      },
+      {
+        "name": "Wall of Thorns",
+        "level": 6,
+        "charges": 6,
+        "note": ""
+      }
+    ],
+    "features": [
+      {
+        "name": "Woodlands",
+        "text": "Your spell attack rolls gain +2."
+      },
+      {
+        "name": "Tree Form",
+        "text": "As an action and 1 charge, plant it in fertile earth to become a 60-foot tree until you touch it and speak again."
+      }
+    ],
+    "charges": {
+      "max": 10,
+      "regain": "1d6 + 4",
+      "at": "dawn",
+      "last": "roll a d20; on a 1 it becomes a nonmagical quarterstaff"
+    }
+  }
+}

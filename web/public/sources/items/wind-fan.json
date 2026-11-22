@@ -1,0 +1,31 @@
+{
+  "name": "Wind Fan",
+  "description": "A painted silk fan that stirs a breeze even when it is still.",
+  "category": "wondrous item",
+  "subtype": "fan",
+  "rarity": "uncommon",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Wind",
+  "tags": [
+    "spell",
+    "control"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nAs an action you can cast gust of wind from it. Once used, it should rest until dawn: each use before then has a 20 percent chance, adding up, of failing and tearing into rags.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Gust of Wind",
+        "level": 2,
+        "charges": 0,
+        "dc": 13,
+        "note": "once per dawn; each further use before dawn has a growing 20 percent chance to tear the fan"
+      }
+    ]
+  }
+}

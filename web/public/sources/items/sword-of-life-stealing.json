@@ -1,0 +1,43 @@
+{
+  "name": "Sword of Life Stealing",
+  "description": "A longsword of blackened steel that is warm after every fight.",
+  "category": "weapon",
+  "subtype": "longsword",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 0,
+  "notes": "Necrotic",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nAny sword can carry this hunger; this one is a longsword. When you roll a 20 against a creature that is neither a construct nor undead, the blade drinks from it, and you gain as many temporary hit points as the extra damage it deals.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 10,
+      "type": "slashing",
+      "bonus": 0
+    }
+  },
+  "grants": {
+    "damage": [
+      {
+        "dice": "3d6",
+        "damage": "necrotic",
+        "note": "on a 20 against a creature that is not a construct or undead; you gain that many temporary hit points"
+      }
+    ]
+  }
+}

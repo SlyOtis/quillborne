@@ -1,0 +1,37 @@
+{
+  "name": "Gem of Brightness",
+  "description": "A long prism of crystal that holds a spark at its heart.",
+  "category": "wondrous item",
+  "subtype": "gem",
+  "rarity": "uncommon",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Light, Blinding",
+  "tags": [
+    "control"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nOne word makes it shed light, bright for 30 feet and dim for 30 beyond, without spending anything. With its charges it can do more.\n\n## Charges\n\nIt holds 50 and never regains them. Spend one to fire a beam at a creature within 60 feet, which makes a DC 15 Constitution saving throw or is blinded for a minute. Spend five to flare in a 30-foot cone, with the same save for everyone in it. With its last charge spent, it is an ordinary gem worth 50 gp.",
+  "grants": {
+    "features": [
+      {
+        "name": "Beam",
+        "text": "1 charge: a creature within 60 feet makes a DC 15 Constitution save or is blinded for a minute, repeating the save at the end of each of its turns."
+      },
+      {
+        "name": "Flare",
+        "text": "5 charges: every creature in a 30-foot cone makes a DC 15 Constitution save or is blinded for a minute."
+      }
+    ],
+    "charges": {
+      "max": 50,
+      "regain": "",
+      "at": "",
+      "last": "it becomes an ordinary gem worth 50 gp"
+    }
+  }
+}

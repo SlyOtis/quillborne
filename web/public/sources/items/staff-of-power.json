@@ -1,0 +1,126 @@
+{
+  "name": "Staff of Power",
+  "description": "A staff of black wood shod in iron and crowned with a dark crystal.",
+  "category": "staff",
+  "subtype": "quarterstaff",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "by a sorcerer, warlock, or wizard",
+  "consumable": false,
+  "weight": 4,
+  "value": 0,
+  "notes": "Armor Class, Saving Throws, Force",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt fights as a magic quarterstaff that strikes truer and harder than a plain one, and while you hold it you are harder to hit, steadier against harm and your spell attacks strike truer. A hit can spend a charge for a burst of force.\n\n## Charges\n\nIt holds twenty and regains 2d8 + 4 each dawn. Spend the last and it may lose all but its weapon magic, or roar back with fresh charges.\n\n## Retributive strike\n\nYou can break it to unleash everything it holds in a 30-foot sphere, with an even chance of being flung to another plane before it reaches you.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "bludgeoning",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 8,
+      "type": "bludgeoning",
+      "bonus": 0
+    },
+    "magic": 2
+  },
+  "grants": {
+    "bonuses": [
+      {
+        "id": "armorClass",
+        "value": 2
+      },
+      {
+        "id": "saves",
+        "value": 2
+      }
+    ],
+    "damage": [
+      {
+        "dice": "1d6",
+        "damage": "force",
+        "note": "for 1 charge, when it hits"
+      }
+    ],
+    "spells": [
+      {
+        "name": "Cone of Cold",
+        "level": 5,
+        "charges": 5,
+        "note": ""
+      },
+      {
+        "name": "Fireball",
+        "level": 5,
+        "charges": 5,
+        "note": ""
+      },
+      {
+        "name": "Globe of Invulnerability",
+        "level": 6,
+        "charges": 6,
+        "note": ""
+      },
+      {
+        "name": "Hold Monster",
+        "level": 5,
+        "charges": 5,
+        "note": ""
+      },
+      {
+        "name": "Levitate",
+        "level": 2,
+        "charges": 2,
+        "note": ""
+      },
+      {
+        "name": "Lightning Bolt",
+        "level": 5,
+        "charges": 5,
+        "note": ""
+      },
+      {
+        "name": "Magic Missile",
+        "level": 1,
+        "charges": 1,
+        "note": ""
+      },
+      {
+        "name": "Ray of Enfeeblement",
+        "level": 2,
+        "charges": 1,
+        "note": ""
+      },
+      {
+        "name": "Wall of Force",
+        "level": 5,
+        "charges": 5,
+        "note": ""
+      }
+    ],
+    "features": [
+      {
+        "name": "Power",
+        "text": "Your spell attack rolls gain +2."
+      },
+      {
+        "name": "Retributive Strike",
+        "text": "Break it as an action and it explodes in a 30-foot sphere. Half the time you escape to another plane; otherwise you take 16 force damage per charge left. Everyone else in it makes a DC 17 Dexterity save, taking 8, 6 or 4 per charge as they stand within 10, 20 or 30 feet, half on a success."
+      }
+    ],
+    "charges": {
+      "max": 20,
+      "regain": "2d8 + 4",
+      "at": "dawn",
+      "last": "roll a d20; on a 1 it keeps only its +2 as a weapon, on a 20 it regains 1d8 + 2 charges"
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "Gem of Seeing",
+  "description": "A clear gem cut with many facets, through which everything looks as it is.",
+  "category": "wondrous item",
+  "subtype": "gem",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Truesight",
+  "tags": [
+    "senses"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt holds three charges and regains 1d3 each dawn. Spend one, as an action, and for 10 minutes, looking through it, you see things as they truly are out to 120 feet.",
+  "grants": {
+    "features": [
+      {
+        "name": "True Sight",
+        "text": "Spend a charge: for 10 minutes you have truesight out to 120 feet while you look through the gem."
+      }
+    ],
+    "charges": {
+      "max": 3,
+      "regain": "1d3",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

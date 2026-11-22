@@ -1,0 +1,36 @@
+{
+  "name": "Elven Chain",
+  "description": "A shirt of fine silvery rings, light as linen.",
+  "category": "armor",
+  "subtype": "chain shirt",
+  "rarity": "rare",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 20,
+  "value": 0,
+  "notes": "Armor Class",
+  "tags": [
+    "medium"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt guards better than a plain chain shirt, and you wear it as if you had trained in medium armor all your life, whether you have or not.",
+  "properties": {
+    "armor": "medium",
+    "ac": {
+      "base": 13,
+      "bonus": 1,
+      "dexModifier": true,
+      "maxDexBonus": 2
+    }
+  },
+  "grants": {
+    "features": [
+      {
+        "name": "Elven Make",
+        "text": "You are proficient with it even without proficiency in medium armor."
+      }
+    ]
+  }
+}

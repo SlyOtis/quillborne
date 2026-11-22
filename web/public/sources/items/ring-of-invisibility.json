@@ -1,0 +1,30 @@
+{
+  "name": "Ring of Invisibility",
+  "description": "A plain gold band that feels heavier the longer it is worn.",
+  "category": "ring",
+  "subtype": "",
+  "rarity": "legendary",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Invisibility",
+  "tags": [
+    "stealth",
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nAs an action you vanish, along with everything you wear and carry. You stay unseen until you take the ring off, attack, cast a spell, or choose to appear again as a bonus action.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Invisibility",
+        "level": 2,
+        "charges": 0,
+        "note": "on yourself only, at will, until you attack, cast a spell or take the ring off"
+      }
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "Shield +2",
+  "description": "A shield whose face is inlaid with two interlocked silver rings.",
+  "category": "armor",
+  "subtype": "shield",
+  "rarity": "rare",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 6,
+  "value": 0,
+  "notes": "Armor Class",
+  "tags": [
+    "shield"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt guards 2 better than a plain shield, on top of what any shield gives.",
+  "properties": {
+    "armor": "shield",
+    "ac": {
+      "base": 2,
+      "bonus": 2,
+      "dexModifier": false,
+      "maxDexBonus": 0
+    }
+  }
+}

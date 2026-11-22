@@ -1,0 +1,46 @@
+{
+  "name": "Rod of Lordly Might",
+  "description": "A flanged rod of dark iron with six studs along its haft.",
+  "category": "rod",
+  "subtype": "mace",
+  "rarity": "legendary",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 0,
+  "notes": "Combat, Necrotic",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt fights as a magic mace that strikes far truer and harder than a plain one. Once a day each, it can paralyze a creature it hits, drain the life of one it hits, or terrify everyone around you.\n\n## Studs\n\nPressing one of six studs turns it into a blade of flame, a battleaxe or a spear, a climbing pole of up to 50 feet, a battering ram, or a compass that also tells depth and height. Pressing none returns it to a rod.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "bludgeoning",
+      "bonus": 0
+    },
+    "magic": 3
+  },
+  "grants": {
+    "damage": [
+      {
+        "dice": "4d6",
+        "damage": "necrotic",
+        "note": "once per dawn, to drain life on a hit, unless the target makes a DC 17 Constitution save; you regain half"
+      }
+    ],
+    "features": [
+      {
+        "name": "Paralyze",
+        "text": "Once per dawn, on a hit, the target makes a DC 17 Strength save or is paralyzed for a minute."
+      },
+      {
+        "name": "Terrify",
+        "text": "Once per dawn, as an action, each creature you can see within 30 feet makes a DC 17 Wisdom save or is frightened of you for a minute."
+      }
+    ]
+  }
+}

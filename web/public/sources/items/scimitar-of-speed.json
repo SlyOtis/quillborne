@@ -1,0 +1,38 @@
+{
+  "name": "Scimitar of Speed",
+  "description": "A narrow curved blade so light it seems to swing itself.",
+  "category": "weapon",
+  "subtype": "scimitar",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 0,
+  "notes": "Combat",
+  "tags": [
+    "finesse",
+    "light"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt strikes far truer and harder than a plain scimitar, and it is so quick in the hand that you can attack with it once more each turn as a bonus action.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "magic": 2
+  },
+  "grants": {
+    "features": [
+      {
+        "name": "Speed",
+        "text": "On each of your turns you can make one attack with it as a bonus action."
+      }
+    ]
+  }
+}

@@ -16,6 +16,12 @@
   "system": "dnd5e",
   "book": "System Reference Document 5.1",
   "body": "## What it does\n\nDrink it and wounds close as you watch. The vial is empty afterwards.",
+  "properties": {
+    "use": {
+      "roll": "2d4 + 2",
+      "effect": "heal"
+    }
+  },
   "grants": {
     "features": [
       {

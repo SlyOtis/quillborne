@@ -1,0 +1,55 @@
+{
+  "name": "Cloak of the Bat",
+  "description": "A dark leather cloak whose hem is cut like a bat's wings.",
+  "category": "wondrous item",
+  "subtype": "cloak",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Flying, Stealth",
+  "tags": [
+    "movement",
+    "stealth",
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIn its folds you slip from sight easily. In dim light or darkness you can hold its edges and fly, and once a day, in the dark, you can turn yourself into a bat.",
+  "grants": {
+    "advantages": [
+      {
+        "id": "skill.stealth",
+        "note": ""
+      }
+    ],
+    "speeds": [
+      {
+        "id": "fly",
+        "value": 40
+      }
+    ],
+    "spells": [
+      {
+        "name": "Polymorph",
+        "level": 4,
+        "charges": 1,
+        "note": "on yourself only, into a bat, in dim light or darkness"
+      }
+    ],
+    "features": [
+      {
+        "name": "Night Wings",
+        "text": "You fly only in dim light or darkness, holding the cloak's edges with both hands."
+      }
+    ],
+    "charges": {
+      "max": 1,
+      "regain": "1",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

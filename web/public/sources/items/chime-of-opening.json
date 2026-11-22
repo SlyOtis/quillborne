@@ -1,0 +1,33 @@
+{
+  "name": "Chime of Opening",
+  "description": "A slim silver tube that rings like struck glass.",
+  "category": "wondrous item",
+  "subtype": "chime",
+  "rarity": "rare",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 1,
+  "value": 0,
+  "notes": "Opening",
+  "tags": [
+    "utility"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nStrike it as an action, pointing it at something within 120 feet that can be opened, a door, a lid or a lock. If the sound can reach it, one lock or latch on it opens, and once none are left, the thing itself opens.\n\n## Charges\n\nIt can be struck ten times, and then it cracks and is useless.",
+  "grants": {
+    "features": [
+      {
+        "name": "Opening",
+        "text": "Spend a charge to open one lock or latch on an object within 120 feet, or the object itself once none are left."
+      }
+    ],
+    "charges": {
+      "max": 10,
+      "regain": "",
+      "at": "",
+      "last": "it cracks and is useless"
+    }
+  }
+}

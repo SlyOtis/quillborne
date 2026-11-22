@@ -1,0 +1,33 @@
+{
+  "name": "Wand of Paralysis",
+  "description": "A wand of smooth grey stone, cold enough to numb the fingers.",
+  "category": "wand",
+  "subtype": "",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "by a spellcaster",
+  "consumable": false,
+  "weight": 1,
+  "value": 0,
+  "notes": "Paralysis",
+  "tags": [
+    "control"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nSpend a charge to send a thin blue ray at a creature within 60 feet. It makes a DC 15 Constitution saving throw or is paralyzed for a minute, repeating the save at the end of each of its turns.\n\n## Charges\n\nIt holds seven and regains 1d6 + 1 each dawn. Spend the last and it may crumble to ash.",
+  "grants": {
+    "features": [
+      {
+        "name": "Paralysis",
+        "text": "1 charge: a creature within 60 feet makes a DC 15 Constitution save or is paralyzed for a minute, repeating the save at the end of each of its turns."
+      }
+    ],
+    "charges": {
+      "max": 7,
+      "regain": "1d6 + 1",
+      "at": "dawn",
+      "last": "roll a d20; on a 1 it crumbles to ash"
+    }
+  }
+}

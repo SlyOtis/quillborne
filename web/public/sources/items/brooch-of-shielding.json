@@ -1,0 +1,33 @@
+{
+  "name": "Brooch of Shielding",
+  "description": "A silver brooch shaped like a small kite shield.",
+  "category": "wondrous item",
+  "subtype": "brooch",
+  "rarity": "uncommon",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Force",
+  "tags": [
+    "defence"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nForce struggles to harm you while it is pinned on, and the darts of the magic missile spell vanish before they reach you.",
+  "grants": {
+    "defences": [
+      {
+        "id": "resistance",
+        "damage": "force"
+      }
+    ],
+    "features": [
+      {
+        "name": "Shielding",
+        "text": "You are immune to the magic missile spell."
+      }
+    ]
+  }
+}

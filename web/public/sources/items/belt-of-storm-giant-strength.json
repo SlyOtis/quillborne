@@ -1,0 +1,28 @@
+{
+  "name": "Belt of Storm Giant Strength",
+  "description": "A belt of sea-green scales with a buckle that crackles with sparks.",
+  "category": "wondrous item",
+  "subtype": "belt",
+  "rarity": "legendary",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Strength",
+  "tags": [
+    "strength"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nWhile you wear it, you have the strength of a storm giant: your Strength becomes 29. A wearer who is already stronger gains nothing.",
+  "grants": {
+    "attributes": [
+      {
+        "id": "str",
+        "mode": "set",
+        "value": 29
+      }
+    ]
+  }
+}

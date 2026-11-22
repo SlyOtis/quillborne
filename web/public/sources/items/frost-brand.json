@@ -1,0 +1,55 @@
+{
+  "name": "Frost Brand",
+  "description": "A longsword of pale steel, always cold, with frost forming at its tip.",
+  "category": "weapon",
+  "subtype": "longsword",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 0,
+  "notes": "Cold, Fire",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nAny sword can carry this cold; this one is a longsword. Every hit bites with frost, and the one who carries it shrugs off flame. In freezing air the blade sheds bright light for 10 feet and dim light for 10 beyond.\n\n## Quench\n\nOnce an hour, when you draw it, you can put out every nonmagical flame within 30 feet.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 10,
+      "type": "slashing",
+      "bonus": 0
+    }
+  },
+  "grants": {
+    "damage": [
+      {
+        "dice": "1d6",
+        "damage": "cold",
+        "note": ""
+      }
+    ],
+    "defences": [
+      {
+        "id": "resistance",
+        "damage": "fire"
+      }
+    ],
+    "features": [
+      {
+        "name": "Quench",
+        "text": "Once an hour, when you draw it, put out every nonmagical flame within 30 feet."
+      }
+    ]
+  }
+}

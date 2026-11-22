@@ -1,0 +1,44 @@
+{
+  "name": "Dragon Slayer",
+  "description": "A longsword with a guard shaped like a pair of folded wings.",
+  "category": "weapon",
+  "subtype": "longsword",
+  "rarity": "rare",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 0,
+  "notes": "Dragons, Damage",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nAny sword can carry this enchantment; this one is a longsword. It strikes truer and harder than a plain sword, and a dragon it hits takes far more harm, true dragons and their kin alike.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 10,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "magic": 1
+  },
+  "grants": {
+    "damage": [
+      {
+        "dice": "3d6",
+        "damage": "",
+        "note": "against a dragon"
+      }
+    ]
+  }
+}

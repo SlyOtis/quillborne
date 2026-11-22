@@ -1,0 +1,29 @@
+{
+  "name": "Ring of Telekinesis",
+  "description": "A ring of grey metal that floats a hair above the finger.",
+  "category": "ring",
+  "subtype": "",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Telekinesis",
+  "tags": [
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nWhenever you like, you can move objects with your mind as the telekinesis spell does, though only things nobody is holding or wearing.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Telekinesis",
+        "level": 5,
+        "charges": 0,
+        "note": "at will, on objects nobody is wearing or carrying"
+      }
+    ]
+  }
+}

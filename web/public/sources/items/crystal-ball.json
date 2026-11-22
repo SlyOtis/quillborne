@@ -1,0 +1,30 @@
+{
+  "name": "Crystal Ball",
+  "description": "A sphere of flawless crystal that fills two cupped hands, cloudy until you look into it.",
+  "category": "wondrous item",
+  "subtype": "orb",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 0,
+  "notes": "Scrying",
+  "tags": [
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nHold it and look into it, and you can watch a distant creature or place, as the scrying spell does.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Scrying",
+        "level": 5,
+        "charges": 0,
+        "dc": 17,
+        "note": ""
+      }
+    ]
+  }
+}

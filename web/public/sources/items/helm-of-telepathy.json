@@ -1,0 +1,50 @@
+{
+  "name": "Helm of Telepathy",
+  "description": "A close helm of dark steel with a crystal set over the brow.",
+  "category": "wondrous item",
+  "subtype": "helm",
+  "rarity": "uncommon",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Telepathy",
+  "tags": [
+    "spell",
+    "mind"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nWhenever you like, you can read the surface thoughts of those around you, as the detect thoughts spell does, and speak into the mind of anyone whose thoughts you are reading. Once a day you can also plant a suggestion in that mind.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Detect Thoughts",
+        "level": 2,
+        "charges": 0,
+        "dc": 13,
+        "note": "at will"
+      },
+      {
+        "name": "Suggestion",
+        "level": 2,
+        "charges": 1,
+        "dc": 13,
+        "note": "on a creature whose thoughts you are reading"
+      }
+    ],
+    "features": [
+      {
+        "name": "Telepathy",
+        "text": "While you read a creature's thoughts, you can speak telepathically to it."
+      }
+    ],
+    "charges": {
+      "max": 1,
+      "regain": "1",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

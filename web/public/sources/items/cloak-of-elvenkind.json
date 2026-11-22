@@ -1,0 +1,33 @@
+{
+  "name": "Cloak of Elvenkind",
+  "description": "A grey-green hooded cloak whose colour shifts to match whatever is behind it.",
+  "category": "wondrous item",
+  "subtype": "cloak",
+  "rarity": "uncommon",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Stealth",
+  "tags": [
+    "stealth"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nWith the hood up, the cloak takes on the colours around you. Anyone looking for you has a hard time of it, and you hide far more easily. Raising or lowering the hood takes an action.",
+  "grants": {
+    "advantages": [
+      {
+        "id": "skill.stealth",
+        "note": "to hide, with the hood up"
+      }
+    ],
+    "features": [
+      {
+        "name": "Camouflage",
+        "text": "With the hood up, Wisdom (Perception) checks to see you have disadvantage."
+      }
+    ]
+  }
+}

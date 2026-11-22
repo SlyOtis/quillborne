@@ -1,0 +1,37 @@
+{
+  "name": "Eyes of Charming",
+  "description": "A pair of violet glass lenses that glitter in the light.",
+  "category": "wondrous item",
+  "subtype": "lenses",
+  "rarity": "uncommon",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Charm",
+  "tags": [
+    "spell",
+    "control"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What they do\n\nThey hold three charges and regain them all each dawn. Spend one to charm a humanoid within 30 feet that meets your gaze.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Charm Person",
+        "level": 1,
+        "charges": 1,
+        "dc": 13,
+        "note": "the target must be within 30 feet and able to see you"
+      }
+    ],
+    "charges": {
+      "max": 3,
+      "regain": "3",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "Cloak of the Manta Ray",
+  "description": "A cloak of rubbery grey hide with a hood shaped like a ray's head.",
+  "category": "wondrous item",
+  "subtype": "cloak",
+  "rarity": "uncommon",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Swimming",
+  "tags": [
+    "movement"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nWith the hood up you breathe underwater and swim like a ray. Raising or lowering the hood takes an action.",
+  "grants": {
+    "speeds": [
+      {
+        "id": "swim",
+        "value": 60
+      }
+    ],
+    "features": [
+      {
+        "name": "Water Breathing",
+        "text": "With the hood up you can breathe underwater."
+      }
+    ]
+  }
+}

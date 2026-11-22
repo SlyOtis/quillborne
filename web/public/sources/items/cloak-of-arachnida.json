@@ -1,0 +1,54 @@
+{
+  "name": "Cloak of Arachnida",
+  "description": "A black silk cloak with a spider of silver thread across its shoulders.",
+  "category": "wondrous item",
+  "subtype": "cloak",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Poison, Climbing",
+  "tags": [
+    "defence",
+    "movement",
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nVenom bites you less, webs never catch you, and you climb as fast as you walk, along walls and upside down across ceilings, with your hands free.\n\n## Web\n\nOnce a day you can cast web from it, filling twice the space the spell usually does.",
+  "grants": {
+    "defences": [
+      {
+        "id": "resistance",
+        "damage": "poison"
+      }
+    ],
+    "spells": [
+      {
+        "name": "Web",
+        "level": 2,
+        "charges": 1,
+        "dc": 13,
+        "note": "fills twice the usual area"
+      }
+    ],
+    "features": [
+      {
+        "name": "Spider Climb",
+        "text": "You have a climbing speed equal to your walking speed and can move on walls and ceilings with your hands free."
+      },
+      {
+        "name": "Webwalker",
+        "text": "Webs never catch you, and you move through them as through difficult terrain."
+      }
+    ],
+    "charges": {
+      "max": 1,
+      "regain": "1",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

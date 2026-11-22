@@ -1,0 +1,46 @@
+{
+  "name": "Demon Armor",
+  "description": "A suit of black plate with a horned helm and gauntlets ending in claws.",
+  "category": "armor",
+  "subtype": "plate armor",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 65,
+  "value": 0,
+  "notes": "Armor Class, Curse",
+  "tags": [
+    "heavy"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt guards better than plain plate. You speak and understand Abyssal while you wear it, and its clawed gauntlets turn your bare-handed blows into magic slashes.\n\n## Curse\n\nOnce on, it will not come off unless you are the target of remove curse or similar magic. You have disadvantage on attacks against demons and on saving throws against their spells and abilities.",
+  "properties": {
+    "armor": "heavy",
+    "ac": {
+      "base": 18,
+      "bonus": 1,
+      "dexModifier": false,
+      "maxDexBonus": 0
+    },
+    "strength": 15,
+    "stealth": true
+  },
+  "grants": {
+    "features": [
+      {
+        "name": "Claws",
+        "text": "Your unarmed strikes are magic, deal 1d8 slashing damage, and have +1 to attack and damage."
+      },
+      {
+        "name": "Abyssal",
+        "text": "You can speak and understand Abyssal."
+      },
+      {
+        "name": "Curse",
+        "text": "You cannot take it off without remove curse, and you have disadvantage against demons."
+      }
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "Potion of Greater Healing",
+  "description": "A deep red draught that glows faintly in the dark.",
+  "category": "potion",
+  "subtype": "",
+  "rarity": "uncommon",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": true,
+  "weight": 0.5,
+  "value": 0,
+  "notes": "Healing",
+  "tags": [
+    "healing"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nDrink it and you regain 4d4 + 4 hit points as the worst wounds close. The vial is empty afterwards.",
+  "properties": {
+    "use": {
+      "roll": "4d4 + 4",
+      "effect": "heal"
+    }
+  }
+}

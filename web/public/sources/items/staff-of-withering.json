@@ -1,0 +1,55 @@
+{
+  "name": "Staff of Withering",
+  "description": "A crooked staff of grey wood that leaves the grass dead where it rests.",
+  "category": "staff",
+  "subtype": "quarterstaff",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "by a cleric, druid, or warlock",
+  "consumable": false,
+  "weight": 4,
+  "value": 0,
+  "notes": "Necrotic",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt fights as a magic quarterstaff. When it hits, you can spend a charge to wither the target, which also makes a DC 15 Constitution saving throw or has disadvantage on every Strength and Constitution check and save for an hour.\n\n## Charges\n\nIt holds three and regains 1d3 each dawn.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "bludgeoning",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 8,
+      "type": "bludgeoning",
+      "bonus": 0
+    }
+  },
+  "grants": {
+    "damage": [
+      {
+        "dice": "2d10",
+        "damage": "necrotic",
+        "note": "for 1 charge, when it hits"
+      }
+    ],
+    "features": [
+      {
+        "name": "Withering",
+        "text": "A target withered makes a DC 15 Constitution save or has disadvantage for an hour on Strength and Constitution checks and saves."
+      }
+    ],
+    "charges": {
+      "max": 3,
+      "regain": "1d3",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

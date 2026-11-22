@@ -1,0 +1,48 @@
+{
+  "name": "Staff of Swarming Insects",
+  "description": "A gnarled staff riddled with tiny tunnels that buzz when it is shaken.",
+  "category": "staff",
+  "subtype": "",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "by a bard, cleric, druid, sorcerer, warlock, or wizard",
+  "consumable": false,
+  "weight": 4,
+  "value": 0,
+  "notes": "Insects",
+  "tags": [
+    "spell",
+    "control"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIts charges call up insects, giant ones or a plague of small ones, or a cloud of them that swarms around you, blocking sight.\n\n## Charges\n\nIt holds ten and regains 1d6 + 4 each dawn. Spend the last and the insects may eat the staff.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Giant Insect",
+        "level": 4,
+        "charges": 4,
+        "note": ""
+      },
+      {
+        "name": "Insect Plague",
+        "level": 5,
+        "charges": 5,
+        "note": ""
+      }
+    ],
+    "features": [
+      {
+        "name": "Swarm",
+        "text": "1 charge: a swarm fills a 30-foot sphere around you for 10 minutes, heavily obscuring it, though not for you."
+      }
+    ],
+    "charges": {
+      "max": 10,
+      "regain": "1d6 + 4",
+      "at": "dawn",
+      "last": "roll a d20; on a 1 a swarm consumes the staff and disperses"
+    }
+  }
+}

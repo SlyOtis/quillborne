@@ -1,0 +1,54 @@
+{
+  "name": "Staff of Fire",
+  "description": "A staff of blackened wood capped with brass shaped like a flame.",
+  "category": "staff",
+  "subtype": "",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "by a druid, sorcerer, warlock, or wizard",
+  "consumable": false,
+  "weight": 4,
+  "value": 0,
+  "notes": "Fire, Damage",
+  "tags": [
+    "combat",
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nFlame struggles to harm the one who holds it, and its charges call fire up.\n\n## Charges\n\nIt holds ten and regains 1d6 + 4 each dawn. Spend the last and it may burn away to nothing.",
+  "grants": {
+    "defences": [
+      {
+        "id": "resistance",
+        "damage": "fire"
+      }
+    ],
+    "spells": [
+      {
+        "name": "Burning Hands",
+        "level": 1,
+        "charges": 1,
+        "note": ""
+      },
+      {
+        "name": "Fireball",
+        "level": 3,
+        "charges": 3,
+        "note": ""
+      },
+      {
+        "name": "Wall of Fire",
+        "level": 4,
+        "charges": 4,
+        "note": ""
+      }
+    ],
+    "charges": {
+      "max": 10,
+      "regain": "1d6 + 4",
+      "at": "dawn",
+      "last": "roll a d20; on a 1 it blackens, crumbles into cinders and is gone"
+    }
+  }
+}

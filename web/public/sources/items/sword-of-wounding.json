@@ -1,0 +1,49 @@
+{
+  "name": "Sword of Wounding",
+  "description": "A longsword with a serrated edge that leaves cuts that will not close.",
+  "category": "weapon",
+  "subtype": "longsword",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 0,
+  "notes": "Necrotic",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nAny sword can carry this curse on its victims; this one is a longsword. Hit points it takes come back only with rest, never by magic. Once a turn, when you hit with it, you can leave a wound that bleeds at the start of each of the creature's turns, one more for every wound it carries. It makes a DC 15 Constitution saving throw at each of those times, and a success closes every wound it has. A DC 15 Wisdom (Medicine) check closes them too.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 10,
+      "type": "slashing",
+      "bonus": 0
+    }
+  },
+  "grants": {
+    "damage": [
+      {
+        "dice": "1d4",
+        "damage": "necrotic",
+        "note": "at the start of each of the target's turns for every wound it carries, until a DC 15 Constitution save closes them"
+      }
+    ],
+    "features": [
+      {
+        "name": "Wounding",
+        "text": "Hit points lost to it return only with a rest. Once per turn, a hit can leave a wound."
+      }
+    ]
+  }
+}

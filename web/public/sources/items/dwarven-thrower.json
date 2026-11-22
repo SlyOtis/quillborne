@@ -1,0 +1,55 @@
+{
+  "name": "Dwarven Thrower",
+  "description": "A runed warhammer of dark iron with a dwarf's face cast into its head.",
+  "category": "weapon",
+  "subtype": "warhammer",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "by a dwarf",
+  "consumable": false,
+  "weight": 2,
+  "value": 0,
+  "notes": "Thrown, Giants",
+  "tags": [
+    "thrown",
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIn a dwarf's hand it strikes far truer and harder than a plain warhammer. Thrown, it flies true to 20 feet and as far as 60, hits harder still, and a giant takes the worst of it. After the throw it flies back to your hand.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "bludgeoning",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 10,
+      "type": "bludgeoning",
+      "bonus": 0
+    },
+    "range": {
+      "normal": 20,
+      "max": 60
+    },
+    "magic": 3
+  },
+  "grants": {
+    "damage": [
+      {
+        "dice": "1d8",
+        "damage": "",
+        "note": "when thrown, or 2d8 against a giant"
+      }
+    ],
+    "features": [
+      {
+        "name": "Return",
+        "text": "Right after a ranged attack with it, it flies back to your hand."
+      }
+    ]
+  }
+}

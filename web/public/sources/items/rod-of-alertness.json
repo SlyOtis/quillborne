@@ -1,0 +1,65 @@
+{
+  "name": "Rod of Alertness",
+  "description": "A rod of grey iron topped with a flanged head, cold and watchful.",
+  "category": "rod",
+  "subtype": "rod",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 0,
+  "notes": "Perception, Initiative",
+  "tags": [
+    "senses",
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nYou notice everything and are never slow to act. Whenever you like you can sense good and evil, magic, poison and disease, or the invisible.\n\n## Protective aura\n\nOnce a day you can plant it in the ground for 10 minutes. It sheds bright light for 60 feet and dim light for 60 beyond, and friendly creatures in the bright light are a little harder to hit and a little steadier against harm, and can sense any hostile invisible creature within that light.",
+  "grants": {
+    "advantages": [
+      {
+        "id": "skill.perception",
+        "note": ""
+      },
+      {
+        "id": "",
+        "name": "Initiative",
+        "note": ""
+      }
+    ],
+    "spells": [
+      {
+        "name": "Detect Evil and Good",
+        "level": 1,
+        "charges": 0,
+        "note": "at will"
+      },
+      {
+        "name": "Detect Magic",
+        "level": 1,
+        "charges": 0,
+        "note": "at will"
+      },
+      {
+        "name": "Detect Poison and Disease",
+        "level": 1,
+        "charges": 0,
+        "note": "at will"
+      },
+      {
+        "name": "See Invisibility",
+        "level": 2,
+        "charges": 0,
+        "note": "at will"
+      }
+    ],
+    "features": [
+      {
+        "name": "Protective Aura",
+        "text": "Once per dawn, for 10 minutes, friendly creatures within 60 feet of the planted rod gain +1 to Armor Class and saving throws and can sense hostile invisible creatures within 60 feet."
+      }
+    ]
+  }
+}

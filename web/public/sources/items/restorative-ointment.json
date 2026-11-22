@@ -1,0 +1,33 @@
+{
+  "name": "Restorative Ointment",
+  "description": "A small glass jar of thick green salve.",
+  "category": "wondrous item",
+  "subtype": "",
+  "rarity": "uncommon",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": true,
+  "weight": 0.5,
+  "value": 0,
+  "notes": "Healing",
+  "tags": [
+    "healing"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nAs an action, one dose is swallowed or rubbed into the skin: it heals 2d8 + 2 hit points and ends poison and disease. The jar holds 1d4 + 1 doses when found; count each dose as one.",
+  "properties": {
+    "use": {
+      "roll": "2d8 + 2",
+      "effect": "heal"
+    }
+  },
+  "grants": {
+    "features": [
+      {
+        "name": "Restore",
+        "text": "A dose also ends poison and disease."
+      }
+    ]
+  }
+}

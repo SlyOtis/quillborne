@@ -1,0 +1,50 @@
+{
+  "name": "Dragon Scale Mail",
+  "description": "A coat of red dragon scales, each as large as a hand, warm to the touch.",
+  "category": "armor",
+  "subtype": "scale mail",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 45,
+  "value": 0,
+  "notes": "Armor Class, Fire, Dragons",
+  "tags": [
+    "medium"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nThe scales of one dragon, fitted into scale mail. It guards better than plain scale, steadies you against a dragon's breath and dread, and wards against the element of the dragon it came from. These are red scales, so it wards against fire.\n\n## Dragon sense\n\nOnce a day, as an action, you can sense the direction and distance of the nearest dragon of the same kind within 30 miles.",
+  "properties": {
+    "armor": "medium",
+    "ac": {
+      "base": 14,
+      "bonus": 1,
+      "dexModifier": true,
+      "maxDexBonus": 2
+    },
+    "stealth": true
+  },
+  "grants": {
+    "advantages": [
+      {
+        "id": "",
+        "name": "Saving throws",
+        "note": "against the frightful presence and breath weapons of dragons"
+      }
+    ],
+    "defences": [
+      {
+        "id": "resistance",
+        "damage": "fire"
+      }
+    ],
+    "features": [
+      {
+        "name": "Dragon Sense",
+        "text": "Once per dawn, as an action, learn the distance and direction to the nearest red dragon within 30 miles."
+      }
+    ]
+  }
+}

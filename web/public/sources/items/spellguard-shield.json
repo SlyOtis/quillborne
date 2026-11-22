@@ -1,0 +1,43 @@
+{
+  "name": "Spellguard Shield",
+  "description": "A shield whose face is a mirror of polished silver.",
+  "category": "armor",
+  "subtype": "shield",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 6,
+  "value": 0,
+  "notes": "Saving Throws, Spells",
+  "tags": [
+    "shield"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nWhile you hold it, spells and magic find it hard to take hold of you, and spell attacks aimed at you go wide.",
+  "properties": {
+    "armor": "shield",
+    "ac": {
+      "base": 2,
+      "bonus": 0,
+      "dexModifier": false,
+      "maxDexBonus": 0
+    }
+  },
+  "grants": {
+    "advantages": [
+      {
+        "id": "",
+        "name": "Saving throws",
+        "note": "against spells and other magical effects"
+      }
+    ],
+    "features": [
+      {
+        "name": "Spellguard",
+        "text": "Spell attacks against you have disadvantage."
+      }
+    ]
+  }
+}

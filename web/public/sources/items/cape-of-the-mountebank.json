@@ -1,0 +1,36 @@
+{
+  "name": "Cape of the Mountebank",
+  "description": "A brilliant red cape with a scorched hem.",
+  "category": "wondrous item",
+  "subtype": "cape",
+  "rarity": "rare",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Teleport",
+  "tags": [
+    "movement",
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nOnce a day, as an action, you can vanish in a puff of smoke and reappear somewhere else, as the dimension door spell does. The smoke hangs where you were and where you arrive.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Dimension Door",
+        "level": 4,
+        "charges": 1,
+        "note": "you leave and arrive in a puff of smoke"
+      }
+    ],
+    "charges": {
+      "max": 1,
+      "regain": "1",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "name": "Nine Lives Stealer",
+  "description": "A longsword with nine small notches filed into its guard, some of them filled with lead.",
+  "category": "weapon",
+  "subtype": "longsword",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 0,
+  "notes": "Combat",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nAny sword can carry this hunger; this one is a longsword. It strikes truer and harder than a plain sword.\n\n## Life stealing\n\nIt holds 1d8 + 1 charges when found and never regains them. When you hit a creature with fewer than 100 hit points on a 20, it makes a DC 15 Constitution saving throw or dies as the sword tears out its life force, and each death spends a charge. Constructs and undead are untouched.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 10,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "magic": 2
+  },
+  "grants": {
+    "features": [
+      {
+        "name": "Life Stealing",
+        "text": "On a 20 against a creature with fewer than 100 hit points, not a construct or undead, it makes a DC 15 Constitution save or dies, and its death spends a charge."
+      }
+    ],
+    "charges": {
+      "max": 9,
+      "regain": "",
+      "at": "",
+      "last": "it keeps its bonus but steals no more lives"
+    }
+  }
+}

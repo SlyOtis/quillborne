@@ -1,0 +1,35 @@
+{
+  "name": "Ring of Three Wishes",
+  "description": "A plain gold ring set with three small rubies.",
+  "category": "ring",
+  "subtype": "",
+  "rarity": "legendary",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Wish",
+  "tags": [
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nEach ruby holds a wish. Spend one to cast wish. When the last is spent, the ring is an ordinary ring.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Wish",
+        "level": 9,
+        "charges": 1,
+        "note": ""
+      }
+    ],
+    "charges": {
+      "max": 3,
+      "regain": "",
+      "at": "",
+      "last": "the ring loses its magic"
+    }
+  }
+}

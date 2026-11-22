@@ -1,0 +1,50 @@
+{
+  "name": "Vorpal Sword",
+  "description": "A longsword whose blade sings a high, thin note as it cuts the air.",
+  "category": "weapon",
+  "subtype": "longsword",
+  "rarity": "legendary",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 0,
+  "notes": "Slashing",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nAny sword that cuts can carry this edge; this one is a longsword. It strikes far truer and harder than a plain sword, and it cuts through resistance to slashing damage as though it were not there.\n\n## Beheading\n\nOn a 20 against a creature with at least one head, the blade takes one off, and the creature dies if it cannot live without it. A creature that needs no head, or is too large or immune, takes far more slashing damage instead.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 10,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "magic": 3
+  },
+  "grants": {
+    "damage": [
+      {
+        "dice": "6d8",
+        "damage": "slashing",
+        "note": "on a 20 against a creature it cannot behead"
+      }
+    ],
+    "features": [
+      {
+        "name": "Vorpal",
+        "text": "It ignores resistance to slashing damage. On a 20 it beheads a creature that has a head and is not immune."
+      }
+    ]
+  }
+}

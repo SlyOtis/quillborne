@@ -1,0 +1,36 @@
+{
+  "name": "Helm of Teleportation",
+  "description": "A tall winged helm of polished silver.",
+  "category": "wondrous item",
+  "subtype": "helm",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Teleport",
+  "tags": [
+    "movement",
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt holds three charges and regains 1d3 each dawn. Spend one to teleport yourself and others, as the teleport spell does.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Teleport",
+        "level": 7,
+        "charges": 1,
+        "note": ""
+      }
+    ],
+    "charges": {
+      "max": 3,
+      "regain": "1d3",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "name": "Wand of Binding",
+  "description": "A short wand of black iron wrapped in a fine chain.",
+  "category": "wand",
+  "subtype": "",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "by a spellcaster",
+  "consumable": false,
+  "weight": 1,
+  "value": 0,
+  "notes": "Control",
+  "tags": [
+    "spell",
+    "control"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nSpend its charges to hold a creature where it stands. It also helps you slip free of being held yourself.\n\n## Charges\n\nIt holds seven and regains 1d6 + 1 each dawn. Spend the last and it may crumble to ash.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Hold Monster",
+        "level": 5,
+        "charges": 5,
+        "dc": 17,
+        "note": ""
+      },
+      {
+        "name": "Hold Person",
+        "level": 2,
+        "charges": 2,
+        "dc": 17,
+        "note": ""
+      }
+    ],
+    "features": [
+      {
+        "name": "Assisted Escape",
+        "text": "1 charge, as a reaction: advantage on a save against being paralyzed or restrained. 1 charge: advantage on a check to escape a grapple."
+      }
+    ],
+    "charges": {
+      "max": 7,
+      "regain": "1d6 + 1",
+      "at": "dawn",
+      "last": "roll a d20; on a 1 it crumbles to ash"
+    }
+  }
+}

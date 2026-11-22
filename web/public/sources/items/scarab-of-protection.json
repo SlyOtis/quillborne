@@ -1,0 +1,40 @@
+{
+  "name": "Scarab of Protection",
+  "description": "A beetle of polished jet with a hidden inscription under its wings.",
+  "category": "wondrous item",
+  "subtype": "scarab",
+  "rarity": "legendary",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Saving Throws, Necromancy",
+  "tags": [
+    "defence"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nHeld for a round, it shows its inscription. From then on, while you hold it, spells have a hard time taking hold of you.\n\n## Charges\n\nIt holds twelve and never regains them. When you fail a saving throw against a necromancy spell or the harm of an undead creature, you can spend one to succeed instead. With its last charge it crumbles to powder.",
+  "grants": {
+    "advantages": [
+      {
+        "id": "",
+        "name": "Saving throws",
+        "note": "against spells"
+      }
+    ],
+    "features": [
+      {
+        "name": "Ward",
+        "text": "As a reaction, spend a charge to turn a failed save against a necromancy spell or an undead creature's harm into a success."
+      }
+    ],
+    "charges": {
+      "max": 12,
+      "regain": "",
+      "at": "",
+      "last": "it crumbles to powder"
+    }
+  }
+}
