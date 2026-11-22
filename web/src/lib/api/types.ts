@@ -155,13 +155,17 @@ export interface ChatEntry extends Omit<generated.ChatEntry, 'kind' | 'card_kind
   dice: number[]
 }
 
-export type CombatantKind = 'character' | 'npc'
+export type CombatantKind = 'character' | 'npc' | 'monster'
 
 export interface EncounterCombatant {
   id: string
   name: string
   kind: CombatantKind
   character_id?: string
+  monster_id?: string
+  monster_slug?: string
+  armor_class?: number
+  spent?: Record<string, number>
   modifier: number
   initiative: number
   hit_points: number
@@ -210,4 +214,4 @@ export interface Monster extends Omit<generated.Monster, 'stats'> {
   stats: MonsterStats
 }
 
-export type MonsterFields = Partial<Omit<Monster, 'id' | 'user_id' | 'owner_id' | 'created_at' | 'updated_at'>>
+export type MonsterFields = Partial<Omit<Monster, 'id' | 'user_id' | 'created_at' | 'updated_at'>>

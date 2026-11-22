@@ -11,7 +11,7 @@ export type MonsterType = MonsterEntry & { glyph?: string }
 
 export type MonsterSkill = MonsterEntry & { ability: string }
 
-export type MonsterFeatureKind = MonsterEntry & { one: string }
+export type MonsterFeatureKind = MonsterEntry & { one: string; legendary?: boolean }
 
 export type MonsterChallenge = {
   value: number
@@ -34,6 +34,12 @@ export type MonsterFormulas = {
   initiativeScore: string
   hitPoints: string
   hitBonus: string
+  attack: string
+  dc: string
+  damage: string
+  average: string
+  rolledHitPoints: string
+  recharged: string
 }
 
 export type MonsterLabels = {
@@ -56,7 +62,33 @@ export type MonsterLabels = {
   experience: string
   proficiency: string
   habitats: string
+  melee: string
+  ranged: string
+  meleeOrRanged: string
+  or: string
+  reach: string
+  range: string
+  hit: string
+  plus: string
+  damage: string
+  savingThrow: string
+  dc: string
+  failure: string
+  success: string
+  half: string
+  recharge: string
+  perDay: string
+  costs: string
+  actions: string
+  legendaryUses: string
+  inLair: string
+  source: string
+  homebrew: string
+  mine: string
+  difficulty: string
 }
+
+export type MonsterBudget = Record<string, number> & { level: number }
 
 export type MonsterDefaults = {
   size: string
@@ -94,11 +126,45 @@ export type MonsterSystem = {
   features: MonsterFeatureKind[]
   labels: MonsterLabels
   formulas: MonsterFormulas
+  rechargeDie: number
+  difficulties: MonsterEntry[]
+  budgets: MonsterBudget[]
+}
+
+export type MonsterDamage = {
+  dice: number
+  die: number
+  bonus: number
+  type: string
+  ability: boolean
+}
+
+export type MonsterAttack = {
+  ability: string
+  bonus: number
+  reach: number
+  range: number
+  long_range: number
+  damage: MonsterDamage[]
+}
+
+export type MonsterSave = {
+  ability: string
+  dc_ability: string
+  bonus: number
+  area: string
+  damage: MonsterDamage[]
+  half: boolean
 }
 
 export type MonsterFeature = {
   name: string
   text: string
+  attack?: MonsterAttack
+  save?: MonsterSave
+  recharge?: number
+  uses?: number
+  cost?: number
 }
 
 export type MonsterStats = {
@@ -120,6 +186,8 @@ export type MonsterStats = {
   habitats: string[]
   flags: string[]
   features: Record<string, MonsterFeature[]>
+  legendary_uses?: number
+  legendary_lair_uses?: number
 }
 
 export type MonsterFigure = MonsterEntry & { value: number }
@@ -182,4 +250,46 @@ export type MonsterFilter = {
   movement: string
   tag: string
   subtype: string
+  source: string
+}
+
+export type MonsterRoll = {
+  dice: number
+  die: number
+  flat: number
+  average: number
+  type: string
+}
+
+export type MonsterAction = {
+  attack: number | null
+  dc: number | null
+  hit: MonsterRoll[]
+  failure: MonsterRoll[]
+}
+
+export type MonsterSourceEntry = {
+  slug: string
+  name: string
+  size: string
+  type: string
+  alignment: string
+  challenge: number
+  stats: unknown
+  description: string
+}
+
+export type MonsterSource = {
+  id: string
+  title: string
+  system: string
+  license: string
+  attribution: string
+  monsters: MonsterSourceEntry[]
+}
+
+export type MonsterDifficulty = {
+  xp: number
+  budgets: MonsterFigure[]
+  difficulty: MonsterEntry | null
 }

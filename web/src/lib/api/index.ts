@@ -268,7 +268,7 @@ export const putVehicle = (vehicleId: string, updates: VehicleFields) => apiPut<
 
 export const deleteVehicle = (vehicleId: string) => apiDelete(`vehicle/${vehicleId}`)
 
-export const getMonsters = () => apiGet<Monster[]>('monster')
+export const getMonsters = (campaignId?: string) => apiGet<Monster[]>(path('monster', { owner_id: campaignId }))
 
 export const getMonster = (monsterId: string) =>
   apiGet<Monster>(`monster/${monsterId}`).catch((error) => getAbsent(error, null))
