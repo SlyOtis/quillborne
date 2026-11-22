@@ -72,11 +72,10 @@ export interface LevelTableRow {
   classResources?: {[key: string]: number}
 }
 
-/** Equipment choice option */
-export interface EquipmentOption {
-  type: 'choice' | 'fixed'
-  items: string[]      // Item IDs
-  count?: number       // For choices
+/** An item of the item room by its slug, and how many of it */
+export interface EquipmentEntry {
+  id: string
+  quantity: number
 }
 
 /** Subclass definition */
@@ -105,10 +104,10 @@ export interface Class {
   resources?: ClassResource[]
   // Level progression
   levelTable: LevelTableRow[]
-  // Equipment
-  startingEquipment: {
-    fixed: string[]      // Always granted
-    options: EquipmentOption[]
+  /** What every member starts with, then for each choice the sets of items picked between, the first being the one a new character takes */
+  startingEquipment?: {
+    fixed: EquipmentEntry[]
+    choices: { options: EquipmentEntry[][] }[]
   }
   // Available subclasses
   subclasses: Subclass[]

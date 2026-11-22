@@ -1,6 +1,7 @@
 import { deleteFile, deleteResource, getReachedResources, getResource, getResources, isStoredFile, postResource, putResource } from './api'
 import type { Access, Owner } from './api/types'
 import type { CharacterInventoryItem, Properties } from './character.types'
+import type { EquipmentEntry } from './class.types'
 import { dropDoc } from './collab'
 import type { ItemAttribute, ItemCharges, ItemGrants, ItemSpell } from './rules/item.types'
 import type { RuleSystem } from './rules/spec.types'
@@ -73,6 +74,8 @@ export interface Item extends Resource {
   locked: boolean
   /** What it is as a weapon or as armor, the shape a carried item has. */
   properties: Properties
+  /** The items an equipment pack unpacks into, its container first. */
+  pack: EquipmentEntry[]
 }
 
 /** Somewhere an encounter can happen. Always placed on a map. */
@@ -153,7 +156,7 @@ export function putEntry(owner: Owner, id: string, one: Partial<Entry>): Promise
 
 const ITEM_PATH = '/sources/items'
 
-const ITEM: Omit<Item, keyof Resource | 'grants' | 'properties'> = {
+const ITEM: Omit<Item, keyof Resource | 'grants' | 'properties' | 'pack'> = {
   category: 'adventuring gear',
   subtype: '',
   rarity: 'common',
@@ -252,7 +255,8 @@ function getItem(one: Stored): Item {
     source: ITEM.source,
     book: ITEM.book,
     locked: Boolean(one.locked),
-    properties: one.properties && typeof one.properties === 'object' ? (one.properties as Properties) : {}
+    properties: one.properties && typeof one.properties === 'object' ? (one.properties as Properties) : {},
+    pack: getList(one.pack, (entry) => (getText(entry.id) ? { id: getText(entry.id), quantity: Math.max(1, getFigure(entry.quantity) ?? 1) } : null))
   }
 }
 
@@ -266,8 +270,18 @@ export async function getItems(owner: Owner): Promise<Item[]> {
   return stored.map(getItem)
 }
 
-/** The general items, the world's list that ships under `/sources/items` with an index naming them. */
-export async function getWorldItems(): Promise<Item[]> {
+let world: Promise<Item[]> | null = null
+
+/** The general items, the world's list that ships under `/sources/items` with an index naming them, read once. */
+export function getWorldItems(): Promise<Item[]> {
+  world ??= getWorldDocuments().catch((reason: unknown) => {
+    world = null
+    throw reason
+  })
+  return world
+}
+
+async function getWorldDocuments(): Promise<Item[]> {
   const answer = await fetch(`${ITEM_PATH}/index.json`)
   if (!answer.ok) throw new Error(`The item index did not load: ${answer.status} ${answer.statusText}`)
   const listed = (await answer.json()) as { items: string[] }
@@ -362,7 +376,8 @@ function putItemFields(one: Partial<Item>): Record<string, unknown> {
     notes: one.notes ?? ITEM.notes,
     system: one.system ?? ITEM.system,
     grants: getItemGrants(one.grants),
-    properties: one.properties ?? {}
+    properties: one.properties ?? {},
+    pack: one.pack ?? []
   }
 }
 
@@ -469,6 +484,32 @@ export function getGivenItem(one: Item, campaignId: string): CharacterInventoryI
     origin: carried.origin,
     unidentified: true
   }
+}
+
+/**
+ * What an item of the room lands as in an inventory: itself, or for an equipment pack the items it unpacks into,
+ * each out of the room, the rest sitting in the first that is a container.
+ */
+export function getCarriedItems(one: Item, room: Item[]): CharacterInventoryItem[] {
+  if (one.pack.length === 0) return [getCarriedItem(one)]
+  const unpacked = one.pack.flatMap((entry) => {
+    const found = room.find((item) => item.id === entry.id)
+    return found ? [{ ...getCarriedItem(found), quantity: entry.quantity }] : []
+  })
+  const holder = unpacked.find((item) => (item.properties?.capacity ?? 0) > 0)
+  return unpacked.map((item) => (holder && item !== holder ? { ...item, inside: holder.id } : item))
+}
+
+/** The inventory a new character starts with: what the class gives every member and the first option of each choice. */
+export function getStartingInventory(equipment: { fixed: EquipmentEntry[]; choices: { options: EquipmentEntry[][] }[] } | undefined, room: Item[]): CharacterInventoryItem[] {
+  if (!equipment) return []
+  const entries = [...equipment.fixed, ...equipment.choices.flatMap((choice) => choice.options[0] ?? [])]
+  return entries.flatMap((entry) => {
+    const found = room.find((item) => item.id === entry.id)
+    if (!found) return []
+    if (found.pack.length > 0) return getCarriedItems(found, room)
+    return [{ ...getCarriedItem(found), quantity: entry.quantity }]
+  })
 }
 
 /** The token a rarity is written in under the active theme. */
@@ -710,7 +751,7 @@ export function isResourceKind(value: string | undefined): value is ResourceKind
 /** A fresh resource of a kind, owned by whoever is writing it, opened on the kind's example page. */
 export function getBlank(kind: ResourceKind, userId: string): Record<string, unknown> & Resource {
   return {
-    ...(kind === 'items' ? { ...ITEM, grants: getItemGrants({}), properties: {} } : {}),
+    ...(kind === 'items' ? { ...ITEM, grants: getItemGrants({}), properties: {}, pack: [] } : {}),
     id: '',
     title: '',
     description: '',

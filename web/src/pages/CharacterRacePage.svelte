@@ -10,6 +10,7 @@
   import { getAbilities, getEmptyCharacter, getEmptyCharacterInfo } from "$lib/engine";
   import { getSystemStack } from "$lib/rules/system";
   import { getStartingCharacter } from "$lib/dialogs/levelUp";
+  import { getStartingInventory, getWorldItems } from "$lib/resources";
   import Button from "$components/ui/Button.svelte";
   import Ornament from "$components/ui/Ornament.svelte";
   import Shell from "$components/ui/Shell.svelte";
@@ -128,7 +129,10 @@
       const system = await getSystemStack(character.systems, character.overlay ?? undefined);
       const entry = (await getCatalog('classes')).find((one) => one.name === character.info.class.name) ?? null;
 
-      const characterId = await postCharacter(getStartingCharacter(character, system, entry), {
+      const equipment = entry?.startingEquipment as Parameters<typeof getStartingInventory>[0]
+      const inventory = equipment ? getStartingInventory(equipment, await getWorldItems()) : []
+
+      const characterId = await postCharacter({ ...getStartingCharacter(character, system, entry), inventory }, {
         tags: characterData.sources.length > 0 ? ["ai-generated", "sources-uploaded"] : ["manually-created"]
       }, characterData.campaignId);
 

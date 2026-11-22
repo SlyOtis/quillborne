@@ -5,7 +5,7 @@
   import type {Character, Currency} from "$lib/character.types";
   import type {RulesState} from "$lib/rules/store";
   import {getAttunement, getCarriedWeight, getChargesLeft, getCoinValue, getContainer, getContainerLoad, getContainers, getEncumbrance, getInventoryValue, getRecharging, isConsumable, isItemApplied} from "$lib/rules/sheet";
-  import {getCarriedItem, getEmptyItemFilter, getGrantLines, getItemRoom, getRarityInk, isItemShown, type Item} from "$lib/resources";
+  import {getCarriedItems, getEmptyItemFilter, getGrantLines, getItemRoom, getRarityInk, isItemShown, type Item} from "$lib/resources";
   import {addCurrencies, deleteItem, postItem, postItemUse, postRecharge, putAttunement, putCharges, putCurrency, putEquipped, putIdentified, putInside, putItem, putReplacedAttunement} from "$lib/engine";
   import {user} from "$lib/stores/auth.store";
   import {currentCampaignId, userCampaigns} from "$lib/stores/campaign.store";
@@ -82,7 +82,7 @@
   }
 
   function addFromRoom(one: Item) {
-    postItem(getCarriedItem(one))
+    for (const carried of getCarriedItems(one, room ?? [])) postItem(carried)
     added = `${one.title} is in the pack.`
   }
 

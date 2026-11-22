@@ -33,7 +33,7 @@ vi.mock('./collab', () => ({
 
 import dnd5e from '../../public/sources/systems/dnd5e.json'
 import type { RuleSystem } from './rules/spec.types'
-import { deleteOne, deleteResources, getBlank, getCarriedItem, getGivenItem, getGrantLines, getItemGrants, getItemLine, type Item, type Resource } from './resources'
+import { deleteOne, deleteResources, getBlank, getCarriedItem, getCarriedItems, getGivenItem, getStartingInventory, getGrantLines, getItemGrants, getItemLine, type Item, type Resource } from './resources'
 
 
 const one = (fields: Partial<Resource> = {}): Resource => ({ ...getBlank('entries', 'lars'), id: 'res-1', ...fields })
@@ -160,5 +160,25 @@ describe('an item handed over at a table', () => {
     expect(given.description).toBe('')
     expect(given.value.amount).toBe(0)
     expect(getCarriedItem(ring([])).unidentified).toBeUndefined()
+  })
+})
+
+describe('equipment that unpacks', () => {
+  const item = (id: string, extra: Partial<Item> = {}): Item => ({ ...(getBlank('items', '') as unknown as Item), id, title: id, source: 'general', ...extra })
+  const backpack = item('backpack', { category: 'container', properties: { capacity: 30 } })
+  const torch = item('torch')
+  const pack = item('explorers-pack', { pack: [{ id: 'backpack', quantity: 1 }, { id: 'torch', quantity: 10 }] })
+  const chainMail = item('chain-mail', { category: 'armor' })
+  const leather = item('leather-armor', { category: 'armor' })
+  const room = [backpack, torch, pack, chainMail, leather]
+
+  it('unpacks an explorer\'s pack into a backpack holding ten torches', () => {
+    const [bag, torches] = getCarriedItems(pack, room)
+    expect([bag.title, torches.title, torches.quantity, torches.inside]).toEqual(['backpack', 'torch', 10, bag.id])
+  })
+
+  it('starts a fighter with what every member gets and the first option of each choice', () => {
+    const inventory = getStartingInventory({ fixed: [{ id: 'explorers-pack', quantity: 1 }], choices: [{ options: [[{ id: 'chain-mail', quantity: 1 }], [{ id: 'leather-armor', quantity: 1 }]] }] }, room)
+    expect(inventory.map((one) => one.title)).toEqual(['backpack', 'torch', 'chain-mail'])
   })
 })
