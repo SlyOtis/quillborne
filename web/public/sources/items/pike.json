@@ -1,0 +1,30 @@
+{
+  "name": "Pike",
+  "description": "A very long spear with a small steel head.",
+  "category": "weapon",
+  "subtype": "pike",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 18,
+  "value": 5,
+  "notes": "",
+  "tags": [
+    "heavy",
+    "reach",
+    "two-handed"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nIt holds an enemy off at 10 feet when soldiers stand in close ranks. It takes both hands, and small folk struggle with its weight.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 10,
+      "type": "piercing",
+      "bonus": 0
+    }
+  }
+}

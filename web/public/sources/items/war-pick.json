@@ -1,0 +1,26 @@
+{
+  "name": "War Pick",
+  "description": "A heavy spike on a hammer's haft.",
+  "category": "weapon",
+  "subtype": "war pick",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 5,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nMade to punch through plate where a blade would skid off.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "piercing",
+      "bonus": 0
+    }
+  }
+}

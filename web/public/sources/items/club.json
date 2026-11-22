@@ -1,0 +1,28 @@
+{
+  "name": "Club",
+  "description": "A length of hardwood, thicker at the striking end and worn smooth where the hand holds it.",
+  "category": "weapon",
+  "subtype": "club",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 0.1,
+  "notes": "",
+  "tags": [
+    "light"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nThe oldest weapon there is, a heavy stick. It is light enough to carry in the off hand.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 4,
+      "type": "bludgeoning",
+      "bonus": 0
+    }
+  }
+}

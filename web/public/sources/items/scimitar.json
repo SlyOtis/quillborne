@@ -1,0 +1,29 @@
+{
+  "name": "Scimitar",
+  "description": "A curved single-edged sword, light and quick.",
+  "category": "weapon",
+  "subtype": "scimitar",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 25,
+  "notes": "",
+  "tags": [
+    "finesse",
+    "light"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nMade for drawing cuts. Light enough for the off hand and quick enough for a nimble fighter.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "slashing",
+      "bonus": 0
+    }
+  }
+}

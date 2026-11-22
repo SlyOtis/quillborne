@@ -1,0 +1,32 @@
+{
+  "name": "Sling",
+  "description": "A leather cradle on two long cords.",
+  "category": "weapon",
+  "subtype": "sling",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0.1,
+  "notes": "",
+  "tags": [
+    "ammunition"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nWhirled and loosed, it hurls stones or lead bullets. It costs almost nothing and weighs less.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 4,
+      "type": "bludgeoning",
+      "bonus": 0
+    },
+    "range": {
+      "normal": 30,
+      "max": 120
+    }
+  }
+}

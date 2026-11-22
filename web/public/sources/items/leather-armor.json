@@ -1,0 +1,28 @@
+{
+  "name": "Leather Armor",
+  "description": "A jerkin of hardened hide over a soft padded shirt.",
+  "category": "armor",
+  "subtype": "leather armor",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 10,
+  "value": 10,
+  "notes": "",
+  "tags": [
+    "light"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nLight enough to run and climb in. Your quickness counts in full toward your defence.",
+  "properties": {
+    "armor": "light",
+    "ac": {
+      "base": 11,
+      "bonus": 0,
+      "dexModifier": true,
+      "maxDexBonus": 0
+    }
+  }
+}

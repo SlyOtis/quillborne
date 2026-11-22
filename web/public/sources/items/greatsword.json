@@ -1,0 +1,29 @@
+{
+  "name": "Greatsword",
+  "description": "A two-handed blade nearly as tall as the one who wields it.",
+  "category": "weapon",
+  "subtype": "greatsword",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 6,
+  "value": 50,
+  "notes": "",
+  "tags": [
+    "heavy",
+    "two-handed"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nSwung in wide arcs with both hands. Small folk struggle with its weight.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 2,
+      "dice": 6,
+      "type": "slashing",
+      "bonus": 0
+    }
+  }
+}

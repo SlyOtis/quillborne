@@ -1,0 +1,26 @@
+{
+  "name": "Mace",
+  "description": "A wooden haft topped with a flanged iron head.",
+  "category": "weapon",
+  "subtype": "mace",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 4,
+  "value": 5,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nBuilt to dent and crush armor rather than cut through it.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "bludgeoning",
+      "bonus": 0
+    }
+  }
+}

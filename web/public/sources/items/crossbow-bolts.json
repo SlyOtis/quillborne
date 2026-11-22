@@ -1,0 +1,17 @@
+{
+  "name": "Crossbow Bolts",
+  "description": "Short, thick bolts with square iron heads.",
+  "category": "ammunition",
+  "subtype": "crossbow bolt",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0.075,
+  "value": 0.05,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nShot from any crossbow. A shot spends one; after a fight, half of those spent can be found again with a minute of searching. Usually bought twenty at a time."
+}

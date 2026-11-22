@@ -1,0 +1,17 @@
+{
+  "name": "Arrows",
+  "description": "Ash shafts with steel heads and goose fletching.",
+  "category": "ammunition",
+  "subtype": "arrow",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0.05,
+  "value": 0.05,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nShot from a longbow or a shortbow. A shot spends one; after a fight, half of those spent can be found again with a minute of searching. Usually bought twenty at a time."
+}

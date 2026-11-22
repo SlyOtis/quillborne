@@ -1,0 +1,28 @@
+{
+  "name": "Hide Armor",
+  "description": "Thick furs and skins lashed together into a coat.",
+  "category": "armor",
+  "subtype": "hide armor",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 12,
+  "value": 10,
+  "notes": "",
+  "tags": [
+    "medium"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nRough armor of the wilds. Your quickness counts, up to 2.",
+  "properties": {
+    "armor": "medium",
+    "ac": {
+      "base": 12,
+      "bonus": 0,
+      "dexModifier": true,
+      "maxDexBonus": 2
+    }
+  }
+}

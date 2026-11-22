@@ -1,0 +1,17 @@
+{
+  "name": "Blowgun Needles",
+  "description": "Thin iron needles with a wad of cotton at the end.",
+  "category": "ammunition",
+  "subtype": "blowgun needle",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0.02,
+  "value": 0.02,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nShot from a blowgun. A shot spends one; after a fight, half of those spent can be found again with a minute of searching. Usually bought fifty at a time."
+}

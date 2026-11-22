@@ -1,0 +1,39 @@
+{
+  "name": "Spear",
+  "description": "A wooden shaft tipped with a leaf-shaped iron head.",
+  "category": "weapon",
+  "subtype": "spear",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 1,
+  "notes": "",
+  "tags": [
+    "thrown",
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nThrust with one hand or two, or thrown when the moment calls for it.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "piercing",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 8,
+      "type": "piercing",
+      "bonus": 0
+    },
+    "range": {
+      "normal": 20,
+      "max": 60
+    }
+  }
+}

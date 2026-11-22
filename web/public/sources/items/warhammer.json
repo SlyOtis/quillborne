@@ -1,0 +1,34 @@
+{
+  "name": "Warhammer",
+  "description": "A hammer with a flat face on one side and a spike on the other, on a haft long enough for two hands.",
+  "category": "weapon",
+  "subtype": "warhammer",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 15,
+  "notes": "",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nOne hand fights with it beside a shield; two hands make it ring.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "bludgeoning",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 10,
+      "type": "bludgeoning",
+      "bonus": 0
+    }
+  }
+}

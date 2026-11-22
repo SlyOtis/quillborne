@@ -1,0 +1,35 @@
+{
+  "name": "Heavy Crossbow",
+  "description": "A large crossbow with a steel prod and a crank to draw it.",
+  "category": "weapon",
+  "subtype": "heavy crossbow",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 18,
+  "value": 50,
+  "notes": "",
+  "tags": [
+    "ammunition",
+    "heavy",
+    "loading",
+    "two-handed"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nIt hits hard and far. It is heavy, takes both hands, and fires once before it must be loaded again.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 10,
+      "type": "piercing",
+      "bonus": 0
+    },
+    "range": {
+      "normal": 100,
+      "max": 400
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "Morningstar",
+  "description": "A stout handle crowned with a ball of iron spikes.",
+  "category": "weapon",
+  "subtype": "morningstar",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 4,
+  "value": 15,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nIts spikes punch through mail where a plain mace would only bruise.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "piercing",
+      "bonus": 0
+    }
+  }
+}

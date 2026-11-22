@@ -1,0 +1,34 @@
+{
+  "name": "Dagger",
+  "description": "A short double-edged blade with a plain cross guard.",
+  "category": "weapon",
+  "subtype": "dagger",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 1,
+  "value": 2,
+  "notes": "",
+  "tags": [
+    "finesse",
+    "light",
+    "thrown"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nA blade for close work and for throwing. Quick hands use it as well as strong ones, and it is small enough to hold one in each hand.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 4,
+      "type": "piercing",
+      "bonus": 0
+    },
+    "range": {
+      "normal": 20,
+      "max": 60
+    }
+  }
+}

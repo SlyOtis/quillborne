@@ -1,0 +1,28 @@
+{
+  "name": "Shield",
+  "description": "A round board of wood or metal with a grip and a strap on the back.",
+  "category": "armor",
+  "subtype": "shield",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 6,
+  "value": 10,
+  "notes": "",
+  "tags": [
+    "shield"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nCarried on one arm, it adds 2 to your Armor Class. You can benefit from only one shield at a time.",
+  "properties": {
+    "armor": "shield",
+    "ac": {
+      "base": 2,
+      "bonus": 0,
+      "dexModifier": false,
+      "maxDexBonus": 0
+    }
+  }
+}

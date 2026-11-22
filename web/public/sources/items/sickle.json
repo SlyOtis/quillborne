@@ -1,0 +1,28 @@
+{
+  "name": "Sickle",
+  "description": "A curved reaping blade on a short wooden handle.",
+  "category": "weapon",
+  "subtype": "sickle",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 1,
+  "notes": "",
+  "tags": [
+    "light"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nThe harvest tool of every field, light enough for the off hand.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 4,
+      "type": "slashing",
+      "bonus": 0
+    }
+  }
+}

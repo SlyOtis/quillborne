@@ -1,0 +1,34 @@
+{
+  "name": "Battleaxe",
+  "description": "A broad crescent blade on a haft of ash.",
+  "category": "weapon",
+  "subtype": "battleaxe",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 4,
+  "value": 10,
+  "notes": "",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nA soldier's axe. One hand swings it beside a shield; two hands put the full weight of the body behind it.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 10,
+      "type": "slashing",
+      "bonus": 0
+    }
+  }
+}

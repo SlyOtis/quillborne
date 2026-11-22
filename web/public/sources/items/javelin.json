@@ -1,0 +1,32 @@
+{
+  "name": "Javelin",
+  "description": "A light spear with a slim iron point, made for throwing.",
+  "category": "weapon",
+  "subtype": "javelin",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 0.5,
+  "notes": "",
+  "tags": [
+    "thrown"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nCarried in a bundle and thrown one after another as a line closes. It still serves in the hand once they are gone.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "piercing",
+      "bonus": 0
+    },
+    "range": {
+      "normal": 30,
+      "max": 120
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "Net",
+  "description": "A weighted net of heavy cord, thrown to tangle.",
+  "category": "weapon",
+  "subtype": "net",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 1,
+  "notes": "",
+  "tags": [
+    "special",
+    "thrown"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nA creature of Large size or smaller that it hits is restrained until freed. It holds nothing that is formless or Huge and larger. An action and a DC 10 Strength check frees the creature or one within reach; so does dealing 5 slashing damage to the net (AC 10), which ruins it. An action, bonus action or reaction spent attacking with a net makes one attack only, however many you could make.",
+  "properties": {
+    "weapon": "martial",
+    "range": {
+      "normal": 5,
+      "max": 15
+    }
+  }
+}

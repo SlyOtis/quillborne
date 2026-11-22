@@ -1,0 +1,33 @@
+{
+  "name": "Blowgun",
+  "description": "A hollow tube of reed, about as long as an arm.",
+  "category": "weapon",
+  "subtype": "blowgun",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 1,
+  "value": 10,
+  "notes": "",
+  "tags": [
+    "ammunition",
+    "loading"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nIt puffs a needle at a target. The needle alone does a single point of harm, which is why needles are so often coated.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 1,
+      "type": "piercing",
+      "bonus": 0
+    },
+    "range": {
+      "normal": 25,
+      "max": 100
+    }
+  }
+}

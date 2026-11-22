@@ -1,0 +1,29 @@
+{
+  "name": "Maul",
+  "description": "A block of iron on a long haft, more sledge than hammer.",
+  "category": "weapon",
+  "subtype": "maul",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 10,
+  "value": 10,
+  "notes": "",
+  "tags": [
+    "heavy",
+    "two-handed"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nSwung in both hands, it breaks bones through armor. Small folk struggle with its weight.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 2,
+      "dice": 6,
+      "type": "bludgeoning",
+      "bonus": 0
+    }
+  }
+}
