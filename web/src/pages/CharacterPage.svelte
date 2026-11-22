@@ -38,7 +38,6 @@
   import VehiclesPage from "./VehiclesPage.svelte";
   import VehiclePage from "./VehiclePage.svelte";
   import Portrait, { type PortraitFrame } from "$components/ui/Portrait.svelte";
-  import Stat from "$components/ui/Stat.svelte";
   import Glyph from "$components/ui/Glyph.svelte";
   import Field from "$components/ui/Field.svelte";
   import Button from "$components/ui/Button.svelte";
@@ -331,10 +330,9 @@
 
   const slots = $derived($rules.resolved?.derived.filter((entry) => !bespokeSlots.includes(entry.id)) ?? [])
   const bespoke = (id: string) => $rules.resolved?.derived.find((entry) => entry.id === id)?.value
-  const speeds = $derived($rules.resolved?.speeds.filter((entry) => entry.value > 0) ?? [])
-  const hitDice = $derived($rules.resolved?.pools.find((pool) => pool.id === 'hitDice'))
+  const speed = $derived($rules.resolved?.speeds[0])
   const slotPlaces = $derived<DynamicGridItem[]>(
-    ['initiative', 'armor', 'hitDice', ...slots.map((slot) => slot.id)].map((id, at) => ({ id: `slot/${id}`, x: 6 + at, y: 0, w: 1, h: 4, minW: 1, minH: 3 }))
+    ['initiative', 'armor', ...slots.map((slot) => slot.id)].map((id, at) => ({ id: `slot/${id}`, x: 6 + at, y: 0, w: 1, h: 4, minW: 1, minH: 3 }))
   )
   const places = $derived([...sheetPlaces, ...slotPlaces].filter((place) => place.id !== 'rules' || rulePanels.length > 0).map((place) => {
     const own = layout[place.id]
@@ -584,11 +582,11 @@
                 subTitle="bonus"
                 prefix="+"
       />
-      {#each speeds as speed (speed.id)}
+      {#if speed}
         <PlainBox value="{speed.value}{speed.unit ? ` ${speed.unit}` : ''}" title={speed.title} subTitle="speed" />
       {:else}
         <PlainBox value={$info.speed} title="Walking" subTitle="speed" />
-      {/each}
+      {/if}
     </div>
 
     <div class="sheet-grid" class:sheet-grid-arranging={arranging} bind:clientWidth={room}>
@@ -623,8 +621,6 @@
             <Initiative initiative={bespoke('initiative') ?? $info.initiative}/>
           {:else if placed.id === 'slot/armor'}
             <PlainBox value={bespoke('armorClass') ?? $info.ac} title="Armor" subTitle="class" />
-          {:else if placed.id === 'slot/hitDice'}
-            <Stat label="Hit dice" value="{hitDice?.remaining ?? 0}/{hitDice?.max ?? '--'}" sub="d{$info.class?.hitDice?.die || 8}" title="Hit dice left to spend" />
           {:else if placed.id.startsWith('slot/')}
             {@const slot = slots.find((one) => `slot/${one.id}` === placed.id)}
             {#if slot}

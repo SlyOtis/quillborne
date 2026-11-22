@@ -303,10 +303,10 @@ describe('spell slots spent and restored', () => {
   it('reads the save DC and the attack bonus off the spellcasting ability', () => {
     const store = caster()
     store.abilities.set([{ id: 'wisdom', title: 'Wisdom', score: 16, modifier: 3 }])
-    const derived = (id: string) => rules(store).derived.find((entry) => entry.id === id)?.value
+    const { scope } = rules(store)
 
-    expect(derived('spellSaveDc')).toBe(13)
-    expect(derived('spellAttack')).toBe(5)
+    expect(scope['derived.spellSaveDc']).toBe(13)
+    expect(scope['derived.spellAttack']).toBe(5)
   })
 })
 
