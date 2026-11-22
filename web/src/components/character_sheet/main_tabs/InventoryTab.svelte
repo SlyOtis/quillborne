@@ -6,7 +6,9 @@
   import type {RulesState} from "$lib/rules/store";
   import {getAttunement, getCarriedWeight, getChargesLeft, getCoinValue, getContainer, getContainerLoad, getContainers, getEncumbrance, getInventoryValue, getRecharging, isConsumable, isItemApplied} from "$lib/rules/sheet";
   import {getCarriedItem, getEmptyItemFilter, getGrantLines, getItemRoom, getRarityInk, isItemShown, type Item} from "$lib/resources";
-  import {addCurrencies, deleteItem, postItem, postItemUse, postRecharge, putAttunement, putCharges, putCurrency, putEquipped, putInside, putItem, putReplacedAttunement} from "$lib/engine";
+  import {addCurrencies, deleteItem, postItem, postItemUse, postRecharge, putAttunement, putCharges, putCurrency, putEquipped, putIdentified, putInside, putItem, putReplacedAttunement} from "$lib/engine";
+  import {user} from "$lib/stores/auth.store";
+  import {currentCampaignId, userCampaigns} from "$lib/stores/campaign.store";
   import BaseDialog from "$components/BaseDialog.svelte";
   import ItemFilters from "$components/campaign/ItemFilters.svelte";
   import ItemRow from "$components/campaign/ItemRow.svelte";
@@ -28,6 +30,8 @@
   let coins = $derived(($rules.system?.coins ?? []).map(coin => ({...coin, id: coin.id as Currency})))
   let priced = $derived(coins.find(coin => coin.value === 1)?.id ?? '')
   let categories = $derived($rules.system?.items?.categories ?? [])
+  let isDm = $derived(Boolean($currentCampaignId && $user && $userCampaigns.find(one => one.id === $currentCampaignId)?.dm_id === $user.user_id))
+  let identifyError = $state('')
   let calls = $derived(($rules.system?.recharges ?? []).filter(one => !one.rests?.length && getRecharging($inventory, [one.id]).length > 0))
 
   let carryCapacity = $derived($rules.resolved?.scope['derived.carryCapacity'] ?? $info.carry_capacity)
@@ -122,6 +126,11 @@
     return Boolean($rules.system && (item.properties?.use || isConsumable(item, $rules.system)))
   }
 
+  function identify(item: InventoryItem) {
+    identifyError = ''
+    if ($currentCampaignId) putIdentified(item, $currentCampaignId).catch(reason => (identifyError = reason instanceof Error ? reason.message : String(reason)))
+  }
+
   function useItem(item: InventoryItem) {
     if ($rules.system) void postItemUse(item, $rules.system)
   }
@@ -190,6 +199,9 @@
             {/if}
         </div>
     </div>
+    {#if identifyError}
+        <span class="picker-note" role="alert">{identifyError}</span>
+    {/if}
     <div class="search">
         <SearchInput bind:value={searchInput} placeholder="Search the inventory..." label="Search the inventory" />
         {#each calls as call (call.id)}
@@ -354,6 +366,12 @@
             <h4 title={item.title} style:--item-ink={getRarityInk(item.rarity)}>{item.title}</h4>
             <span class="kind">
                 <span class="kind-type">{getTypeLine(item)}</span>
+                {#if item.unidentified}
+                    <Chip still glyph="conceal">Unidentified</Chip>
+                    {#if isDm && item.origin}
+                        <Button variant="plain" size="sm" title="Identify {item.title} for the table" label="Identify {item.title}" onclick={() => identify(item)}>Identify</Button>
+                    {/if}
+                {/if}
                 {#if attunement && item.attunement?.required}
                     {#if item.attunement.attuned}
                         <Chip still glyph="sparkles">Attuned</Chip>

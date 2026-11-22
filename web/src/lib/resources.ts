@@ -1,4 +1,4 @@
-import { deleteFile, deleteResource, getReachedResources, getResources, isStoredFile, postResource, putResource } from './api'
+import { deleteFile, deleteResource, getReachedResources, getResource, getResources, isStoredFile, postResource, putResource } from './api'
 import type { Access, Owner } from './api/types'
 import type { CharacterInventoryItem, Properties } from './character.types'
 import { dropDoc } from './collab'
@@ -439,6 +439,35 @@ export function getCarriedItem(one: Item): CharacterInventoryItem {
     origin: { source: one.source, id: one.id },
     grants: one.grants,
     properties: one.properties
+  }
+}
+
+/** One homebrew item by its id, as far as the reader reads it. */
+export async function getRoomItem(id: string): Promise<Item> {
+  return getItem(await getResource<Stored>(id))
+}
+
+/**
+ * An item as it lands in a sheet it is handed to at a table: whole when the table reads it, else its head alone,
+ * unidentified, so the sheet the table reads gives nothing of it away.
+ */
+export function getGivenItem(one: Item, campaignId: string): CharacterInventoryItem {
+  const carried = getCarriedItem(one)
+  if (one.source === 'general' || one.share_campaigns.includes(campaignId)) return carried
+  return {
+    id: carried.id,
+    title: carried.title,
+    type: carried.type,
+    rarity: carried.rarity,
+    attributes: [],
+    description: '',
+    value: { amount: 0, currency: 'gp' },
+    weight: carried.weight,
+    quantity: 1,
+    equippable: carried.equippable,
+    equipped: false,
+    origin: carried.origin,
+    unidentified: true
   }
 }
 

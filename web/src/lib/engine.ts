@@ -6,7 +6,8 @@ import {writable, get, type Unsubscriber, type Writable} from "svelte/store";
 import type {Character, CharacterAbility, CharacterCurrency, CharacterInfo, CharacterSpell, ConditionInfo, DefenceInfo, SpellsInfo} from "./character.types";
 import { addChangeLogEntry, ChangeActions, createStateSnapshot, type ChangeAction } from "./changelog";
 import { getResolvedCharacter } from "./rules/derive";
-import { getAttunedInventory, getRecharging, getReplacedAttunement, getRestRecharges, getSheet, getSpentInventory, isConsumable } from "./rules/sheet";
+import { getAttunedInventory, getCoinShares, getRecharging, getReplacedAttunement, getRestRecharges, getSheet, getSpentInventory, isConsumable } from "./rules/sheet";
+import { getCarriedItem, getRoomItem } from "./resources";
 import { getSystemStack } from "./rules/system";
 import type { ResolvedCharacter, RuleSystem } from "./rules/spec.types";
 import type { ItemSpell } from "./rules/item.types";
@@ -1221,6 +1222,38 @@ export function putReplacedAttunement(ending: InventoryItem, beginning: Inventor
     `Attuned to ${beginning.title} in place of ${ending.title}`
   )
   return true
+}
+
+/** Hands carried items to a sheet the reader writes, as the dungeon master does to one at their table. */
+export async function postGift(characterId: string, items: InventoryItem[]) {
+  const held = await api.getCharacter(characterId)
+  if (!held) throw new Error('That character is gone, so nothing was handed over.')
+  await api.putCharacter(characterId, { ...held.character, inventory: [...(held.character.inventory ?? []), ...items] })
+}
+
+/** Splits a purse among sheets the reader writes, each share added to that sheet's own coin. */
+export async function postCoinShares(characterIds: string[], purse: CharacterCurrency, system: RuleSystem) {
+  const shares = getCoinShares(purse, characterIds.length, system)
+  for (const [index, characterId] of characterIds.entries()) {
+    const held = await api.getCharacter(characterId)
+    if (!held) throw new Error('A character at the table is gone, so the coin was not all shared.')
+    await api.putCharacter(characterId, { ...held.character, currency: addCurrencies(held.character.currency ?? {}, shares[index]) })
+  }
+}
+
+/** Identifies an item known by its head: shares its page with the table and writes it whole into the sheet in its place. */
+export async function putIdentified(item: InventoryItem, campaignId: string) {
+  if (!item.origin) return
+  const one = await getRoomItem(item.origin.id)
+  const share_campaigns = [...new Set([...one.share_campaigns, campaignId])]
+  await api.putResource(one.id, { share_campaigns, share_users: one.share_users })
+  const whole = getCarriedItem({ ...one, share_campaigns })
+  updateCharacterWithChangeLog(
+    'inventory',
+    inventory => inventory.map(entry => entry.id === item.id ? { ...whole, id: entry.id, quantity: entry.quantity, equipped: entry.equipped, inside: entry.inside } : entry),
+    ChangeActions.INVENTORY_CHANGE,
+    `Identified ${whole.title}`
+  )
 }
 
 export function putCurrency(currency: CharacterCurrency) {

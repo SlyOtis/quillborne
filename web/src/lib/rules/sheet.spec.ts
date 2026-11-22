@@ -7,7 +7,7 @@ import type { Character, CharacterInventoryItem } from '../character.types'
 import lars from '../character.fixture'
 import { getItemGrants } from '../resources'
 import { getResolvedCharacter } from './derive'
-import { getAmmunition, getAmmunitionType, getAppliedItems, getAttackReach, getAttributeId, getAttunedInventory, getAttunement, getCarriedWeight, getChargesLeft, getCoinValue, getCoinWeight, getContainers, getEncumbrance, getInventoryValue, getRecharging, getReplacedAttunement, getRestRecharges, getSaveNotes, getSheet, getSkillId, getSpentInventory, getTierId, getWeaponAttacks } from './sheet'
+import { getAmmunition, getAmmunitionType, getAppliedItems, getAttackReach, getAttributeId, getAttunedInventory, getAttunement, getCarriedWeight, getChargesLeft, getCoinShares, getCoinValue, getCoinWeight, getContainers, getEncumbrance, getInventoryValue, getRecharging, getReplacedAttunement, getRestRecharges, getSaveNotes, getSheet, getSkillId, getSpentInventory, getTierId, getWeaponAttacks } from './sheet'
 import type { RuleSystem } from './spec.types'
 import { getMergedSystem } from './system'
 
@@ -388,5 +388,17 @@ describe('what a pack holds and what a load weighs', () => {
 
   it('prices 2 pp, 3 gp, 1 ep, 4 sp and 5 cp at 23.95 gp', () => {
     expect(getCoinValue({ pp: 2, gp: 3, ep: 1, sp: 4, cp: 5 }, core)).toBe(23.95)
+  })
+})
+
+describe('coin shared at a table', () => {
+  it('splits 100 gp and 7 sp among three as 34, 33 and 33 gp and 3, 2 and 2 sp, losing none', () => {
+    const shares = getCoinShares({ gp: 100, sp: 7 }, 3, core)
+    expect(shares.map((one) => [one.gp, one.sp])).toEqual([[34, 3], [33, 2], [33, 2]])
+    expect(shares.reduce((all, one) => all + (one.gp ?? 0), 0)).toBe(100)
+  })
+
+  it('shares nothing among nobody', () => {
+    expect(getCoinShares({ gp: 10 }, 0, core)).toEqual([])
   })
 })

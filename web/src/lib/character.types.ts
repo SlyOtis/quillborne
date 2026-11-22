@@ -153,6 +153,8 @@ export interface CharacterInventoryItem {
   spent?: number
   /** The id of the carried container it sits in */
   inside?: string
+  /** Known by its head alone until the dungeon master identifies it */
+  unidentified?: boolean
   properties?: Properties
   requirements?: Requirements
   enchantments?: Enchantment[]

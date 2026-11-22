@@ -334,6 +334,18 @@ export function getEncumbrance(weight: number, resolved: ResolvedCharacter): Enc
   return (resolved.system.items?.encumbrance ?? []).filter((one) => weight > getExpressionValue(one.over, resolved.scope)).at(-1) ?? null
 }
 
+/** A purse split as evenly as each coin allows among a party, the coins left over going one each to the first. */
+export function getCoinShares(purse: CharacterCurrency, count: number, system: RuleSystem): CharacterCurrency[] {
+  return Array.from({ length: Math.max(0, count) }, (_, index) =>
+    Object.fromEntries(
+      (system.coins ?? []).map((coin) => {
+        const held = purse[coin.id as keyof CharacterCurrency] ?? 0
+        return [coin.id, Math.floor(held / count) + (index < held % count ? 1 : 0)]
+      })
+    )
+  )
+}
+
 /** What a purse is worth in the coin the system writes its prices in. */
 export function getCoinValue(currency: CharacterCurrency, system: RuleSystem): number {
   const value = (system.coins ?? []).reduce((all, coin) => all + (currency[coin.id as keyof CharacterCurrency] ?? 0) * coin.value, 0)
