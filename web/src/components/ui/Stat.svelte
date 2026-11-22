@@ -4,6 +4,9 @@
     value,
     score,
     sub,
+    over,
+    unit,
+    shape = 'arch',
     tone = 'metal',
     lit = false,
     title,
@@ -17,6 +20,12 @@
     score?: string | number
     /** A small line written under the figure. */
     sub?: string
+    /** A small caps line written above the figure. */
+    over?: string
+    /** A small unit written beside the figure, on its baseline. */
+    unit?: string
+    /** The outline of the plate: arched, or cut at all four corners inside a thin double rule. */
+    shape?: 'arch' | 'cut'
     /** Colours the plate against the active theme. */
     tone?: 'metal' | 'ember' | 'verdigris' | 'bane'
     /** Lights the plate to mark it as spent or charged. */
@@ -28,21 +37,23 @@
   } = $props()
 </script>
 
-<div class="dnd-stat dnd-stat-{tone}" class:dnd-stat-lit={lit}>
+<div class="dnd-stat dnd-stat-{tone} dnd-stat-{shape}" class:dnd-stat-lit={lit}>
   <span class="dnd-stat-label"><span class="dnd-stat-name">{label}</span></span>
 
   {#if onclick}
     <button type="button" class="dnd-stat-face" aria-label={title ?? label} title={title ?? label} {onclick}>
       <span class="dnd-stat-plate"></span>
       <span class="dnd-stat-sheen"></span>
-      <span class="dnd-stat-value">{value}</span>
+      {#if over}<span class="dnd-stat-over">{over}</span>{/if}
+      <span class="dnd-stat-value">{value}{#if unit}<span class="dnd-stat-unit">{unit}</span>{/if}</span>
       {#if sub}<span class="dnd-stat-sub">{sub}</span>{/if}
     </button>
   {:else}
     <span class="dnd-stat-face dnd-stat-face-still" {title}>
       <span class="dnd-stat-plate"></span>
       <span class="dnd-stat-sheen"></span>
-      <span class="dnd-stat-value">{value}</span>
+      {#if over}<span class="dnd-stat-over">{over}</span>{/if}
+      <span class="dnd-stat-value">{value}{#if unit}<span class="dnd-stat-unit">{unit}</span>{/if}</span>
       {#if sub}<span class="dnd-stat-sub">{sub}</span>{/if}
     </span>
   {/if}
@@ -280,6 +291,101 @@
     to {
       box-shadow: var(--shadow-sm), 0 0 26px color-mix(in srgb, var(--stat-light) 60%, transparent);
     }
+  }
+
+  .dnd-stat-over {
+    position: relative;
+    z-index: 2;
+    font-family: var(--font-display);
+    font-size: min(var(--text-xs), 9.5cqi);
+    font-weight: 600;
+    letter-spacing: min(var(--tracking-caps), 1.2cqi);
+    line-height: 1.2;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--ink-dim);
+    text-shadow: 0 1px 0 var(--shadow-ink);
+  }
+
+  .dnd-stat-unit {
+    margin-inline-start: var(--space-1);
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    font-weight: 400;
+    color: var(--ink-dim);
+  }
+
+  .dnd-stat-cut {
+    isolation: isolate;
+    padding: var(--space-1);
+    background: none;
+    border-radius: 0;
+    box-shadow: none;
+    filter: drop-shadow(0 1px 0 var(--shadow-ink));
+  }
+
+  .dnd-stat-cut::before,
+  .dnd-stat-cut::after,
+  .dnd-stat-cut .dnd-stat-face,
+  .dnd-stat-cut .dnd-stat-plate {
+    clip-path: polygon(var(--stat-notch) 0, calc(100% - var(--stat-notch)) 0, 100% var(--stat-notch), 100% calc(100% - var(--stat-notch)), calc(100% - var(--stat-notch)) 100%, var(--stat-notch) 100%, 0 calc(100% - var(--stat-notch)), 0 var(--stat-notch));
+  }
+
+  .dnd-stat-cut::before,
+  .dnd-stat-cut::after {
+    inset: 0;
+    z-index: -1;
+    width: auto;
+    height: auto;
+    border: none;
+    border-radius: 0;
+    opacity: 1;
+    filter: none;
+  }
+
+  .dnd-stat-cut::before {
+    --stat-notch: var(--chamfer);
+    background: var(--metal);
+  }
+
+  .dnd-stat-cut::after {
+    --stat-notch: calc(var(--chamfer) - 0.586 * var(--border-hair));
+    inset: var(--border-hair);
+    background:
+      radial-gradient(ellipse 90% 55% at 50% 0%, color-mix(in srgb, var(--ember) 8%, transparent) 0%, transparent 70%),
+      var(--texture-noise),
+      linear-gradient(180deg, var(--ground-raised) 0%, var(--ground-deep) 100%);
+  }
+
+  .dnd-stat-cut .dnd-stat-face {
+    --stat-notch: calc(var(--chamfer) - 0.586 * var(--space-1));
+    flex: 1;
+    align-self: stretch;
+    justify-content: flex-start;
+    gap: 0;
+    padding: var(--space-1) var(--space-2) var(--space-5);
+    background: var(--metal-dim);
+  }
+
+  .dnd-stat-cut .dnd-stat-plate {
+    --stat-notch: calc(var(--chamfer) - 0.586 * (var(--space-1) + var(--border-hair)));
+    inset: var(--border-hair);
+    background:
+      radial-gradient(ellipse 90% 55% at 50% 0%, color-mix(in srgb, var(--ember) 8%, transparent) 0%, transparent 70%),
+      var(--texture-noise),
+      linear-gradient(180deg, var(--ground-raised) 0%, var(--ground-deep) 100%);
+    box-shadow: none;
+  }
+
+  .dnd-stat-cut .dnd-stat-value {
+    margin-block: auto;
+    font-size: min(var(--text-2xl), 28cqi);
+    line-height: 1;
+  }
+
+  .dnd-stat-cut .dnd-stat-label {
+    z-index: 2;
+    inset-block-end: calc(var(--space-1) + var(--space-2));
   }
 
   @media (prefers-reduced-motion: reduce) {

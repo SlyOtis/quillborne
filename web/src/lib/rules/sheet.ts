@@ -1,6 +1,6 @@
 import type { Character, CharacterInventoryItem, CharacterSkill, Proficiency } from '../character.types'
 import { getResolvedCharacter } from './derive'
-import { getExpressionValue } from './expression'
+import { getExpressionNames, getExpressionValue } from './expression'
 import type { ItemGrants } from './item.types'
 import type { CharacterSheet, ProficiencyTier, ResolvedCharacter, RuleSystem } from './spec.types'
 
@@ -67,13 +67,21 @@ export function getSheet(character: Character, system: RuleSystem): CharacterShe
     pools[getSkillId(character.special.name)] = Math.max(0, character.special.max - character.special.current)
   }
 
+  const reaches: Record<string, number> = {}
+  for (const sense of character.senses ?? []) {
+    const ranged = system.senses.find((one) => one.unit && one.id === getSkillId(sense.title))
+    const range = Number.parseInt(String(sense.score), 10)
+    if (ranged && Number.isFinite(range)) reaches[`sense.${ranged.id}`] = range
+  }
+
   const base: CharacterSheet = {
     systems: [system.id],
     level: info?.level ?? 1,
     attributes,
     proficiencies,
     pools,
-    bonuses: {}
+    bonuses: {},
+    reaches
   }
 
   const scope = getResolvedCharacter(system, base).scope
@@ -103,6 +111,28 @@ export function isItemApplied(item: CharacterInventoryItem, system: RuleSystem):
 
 export function getAppliedItems(inventory: CharacterInventoryItem[], system: RuleSystem): AppliedItem[] {
   return inventory.filter((item): item is AppliedItem => Boolean(item.grants) && isItemApplied(item, system))
+}
+
+export type SaveNote = { kind: 'advantage'; title: string; note: string } | { kind: 'bonus'; title: string; value: number }
+
+/** What the items that apply give the saves: each advantage on a save the system lists, then each bonus a save formula reads. */
+export function getSaveNotes(items: AppliedItem[], system: RuleSystem): SaveNote[] {
+  const grants = items.map((item) => item.grants)
+  const advantages = grants.flatMap((entry) => entry.advantages).flatMap((one): SaveNote[] => {
+    const save = system.saves.find((entry) => one.id === `save.${entry.id}`)
+    return save ? [{ kind: 'advantage', title: save.title, note: one.note }] : []
+  })
+
+  const read = new Set(system.saves.flatMap((save) => getExpressionNames(save.modifier ?? '')))
+  const bonuses = new Map<string, number>()
+  for (const one of grants.flatMap((entry) => entry.bonuses)) {
+    if (read.has(`bonus.${one.id}`)) bonuses.set(one.id, (bonuses.get(one.id) ?? 0) + one.value)
+  }
+
+  return [
+    ...advantages,
+    ...[...bonuses].map(([id, value]): SaveNote => ({ kind: 'bonus', title: system.bonuses?.find((one) => one.id === id)?.title ?? id, value }))
+  ]
 }
 
 /**

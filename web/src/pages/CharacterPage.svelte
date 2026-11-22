@@ -290,7 +290,6 @@
     { id: 'saves', x: 0, y: 0, w: 3, h: 4, minW: 2, minH: 3 },
     { id: 'senses', x: 0, y: 4, w: 3, h: 7, minW: 2, minH: 3 },
     { id: 'proficiencies', x: 0, y: 11, w: 3, h: 8, minW: 2, minH: 3 },
-    { id: 'defences', x: 0, y: 19, w: 3, h: 7, minW: 2, minH: 3 },
     { id: 'skills', x: 3, y: 0, w: 3, h: 26, minW: 2, minH: 6 },
     { id: 'actions', x: 6, y: 4, w: 6, h: 22, minW: 4, minH: 8 },
     { id: 'rules', x: 3, y: 26, w: 9, h: 7, minW: 3, minH: 3 }
@@ -331,11 +330,13 @@
 
   const slots = $derived($rules.resolved?.derived.filter((entry) => !bespokeSlots.includes(entry.id)) ?? [])
   const bespoke = (id: string) => $rules.resolved?.derived.find((entry) => entry.id === id)?.value
-  const speeds = $derived($rules.resolved?.speeds.filter((entry) => entry.value > 0) ?? [])
-  const hitDice = $derived($rules.resolved?.pools.find((pool) => pool.id === 'hitDice'))
-  const slotPlaces = $derived<DynamicGridItem[]>(
-    ['initiative', 'armor', 'hitDice', ...slots.map((slot) => slot.id)].map((id, at) => ({ id: `slot/${id}`, x: 6 + at, y: 0, w: 1, h: 4, minW: 1, minH: 3 }))
-  )
+  const speed = $derived($rules.resolved?.speeds[0])
+  const slotPlaces = $derived<DynamicGridItem[]>([
+    ...['initiative', 'armor', ...slots.map((slot) => slot.id)].map((id, at) => ({ id: `slot/${id}`, x: 6 + at, y: 0, w: 1, h: 4, minW: 1, minH: 3 })),
+    slots.length > 2
+      ? { id: 'defences', x: 6, y: 4, w: 6, h: 4, minW: 2, minH: 3 }
+      : { id: 'defences', x: 8 + slots.length, y: 0, w: 4 - slots.length, h: 4, minW: 2, minH: 3 }
+  ])
   const places = $derived([...sheetPlaces, ...slotPlaces].filter((place) => place.id !== 'rules' || rulePanels.length > 0).map((place) => {
     const own = layout[place.id]
     const grown = natural[place.id]
@@ -584,11 +585,11 @@
                 subTitle="bonus"
                 prefix="+"
       />
-      {#each speeds as speed (speed.id)}
-        <PlainBox value="{speed.value}{speed.unit ? ` ${speed.unit}` : ''}" title={speed.title} subTitle="speed" />
+      {#if speed}
+        <Stat shape="cut" over={speed.title} value={speed.value} unit={speed.unit} label="Speed" />
       {:else}
-        <PlainBox value={$info.speed} title="Walking" subTitle="speed" />
-      {/each}
+        <Stat shape="cut" over="Walking" value={$info.speed} label="Speed" />
+      {/if}
     </div>
 
     <div class="sheet-grid" class:sheet-grid-arranging={arranging} bind:clientWidth={room}>
@@ -623,8 +624,6 @@
             <Initiative initiative={bespoke('initiative') ?? $info.initiative}/>
           {:else if placed.id === 'slot/armor'}
             <PlainBox value={bespoke('armorClass') ?? $info.ac} title="Armor" subTitle="class" />
-          {:else if placed.id === 'slot/hitDice'}
-            <Stat label="Hit dice" value="{hitDice?.remaining ?? 0}/{hitDice?.max ?? '--'}" sub="d{$info.class?.hitDice?.die || 8}" title="Hit dice left to spend" />
           {:else if placed.id.startsWith('slot/')}
             {@const slot = slots.find((one) => `slot/${one.id}` === placed.id)}
             {#if slot}

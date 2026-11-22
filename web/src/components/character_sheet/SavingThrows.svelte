@@ -1,10 +1,16 @@
 <script lang="ts">
+  import type {CharacterContext} from "$lib/types";
   import type {RulesState} from "$lib/rules/store";
+  import {getAppliedItems, getSaveNotes} from "$lib/rules/sheet";
   import SavingThrow from './SavingThrow.svelte'
+  import Glyph from "$components/ui/Glyph.svelte";
   import {getContext} from "svelte";
   import type {Readable} from "svelte/store";
 
+  const {inventory} = getContext<CharacterContext>('character')
   const rules = getContext<Readable<RulesState>>('rules')
+
+  const notes = $derived($rules.system ? getSaveNotes(getAppliedItems($inventory, $rules.system), $rules.system) : [])
 
   const saves = $derived.by(() => {
     const resolved = $rules.resolved
@@ -20,18 +26,33 @@
 </script>
 
 <div class="root dnd-panel dnd-keyline">
-    <div class="saves">
+    <div class="saves" style:grid-template-rows="repeat({Math.ceil(saves.length / 2)}, auto)">
         {#each saves as save (save.id)}
             <SavingThrow title={save.title} short={save.short} modifier={save.modifier} proficient={save.proficient}/>
         {/each}
     </div>
+    {#if notes.length > 0}
+        <ul class="notes">
+            {#each notes as note, at (at)}
+                <li class="note">
+                    {#if note.kind === 'advantage'}
+                        <Glyph name="arrowup" size="sm" />
+                        <span>{note.title} saves {note.note}</span>
+                    {:else}
+                        <Glyph name="plus" size="sm" />
+                        <span>{note.value < 0 ? note.value : `+${note.value}`} {note.title}</span>
+                    {/if}
+                </li>
+            {/each}
+        </ul>
+    {/if}
     <span class="dnd-caption">Saving Throws</span>
 </div>
 
 <style>
     .root {
         position: relative;
-        gap: var(--space-2);
+        gap: var(--space-3);
         display: flex;
         align-items: stretch;
         flex-direction: column;
@@ -45,10 +66,35 @@
     .saves {
         position: relative;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(100%, 6.5rem), 1fr));
-        gap: var(--space-2);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-auto-flow: column;
+        gap: var(--space-3);
         width: auto;
         height: auto;
+    }
+
+    .notes {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .note {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        min-width: 0;
+        color: var(--metal);
+    }
+
+    .note > span {
+        min-width: 0;
+        font-family: var(--font-body);
+        font-size: var(--text-sm);
+        color: var(--ink);
     }
 
     .root > .dnd-caption {
