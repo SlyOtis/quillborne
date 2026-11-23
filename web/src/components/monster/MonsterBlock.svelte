@@ -2,7 +2,7 @@
   import type { Monster } from '$lib/api/types'
   import { getInline, type Marks } from '$lib/blocks'
   import { rollAttack, rollDamage } from '$lib/engine'
-  import { getDamageDice, getFeatureSuffix, getHitDice, getMonsterAction, getMonsterBlock, getMonsterClauses, getMonsterStats, getSigned } from '$lib/rules/monster'
+  import { getDamageDice, getFeatureRuns, getHitDice, getMonsterAction, getMonsterBlock, getMonsterStats, getSigned } from '$lib/rules/monster'
   import type { MonsterFeature, MonsterFeatureKind, MonsterSystem } from '$lib/rules/monster.types'
   import Button from '$components/ui/Button.svelte'
   import Chip from '$components/ui/Chip.svelte'
@@ -71,13 +71,7 @@
 {#snippet feat(kind: MonsterFeatureKind, feature: MonsterFeature)}
   {@const action = getMonsterAction(system, block, feature)}
   {@const named = `${monster.name} ${feature.name}`}
-  <p class="dnd-monster-feat">
-    <b>{feature.name}{getFeatureSuffix(system, kind, feature)}.</b>
-    {#each getMonsterClauses(system, feature, action) as clause, index (index)}
-      <i>{clause.lead}:</i> {clause.text}
-    {/each}
-    {@render prose(feature.text)}
-  </p>
+  <p class="dnd-monster-feat">{#each getFeatureRuns(system, kind, feature, action) as run, index (index)}{#if run.mark === 'name'}<b>{run.text}</b>{:else if run.mark === 'lead'}<i>{run.text}</i>{:else}{run.text}{/if}{/each}{@render prose(feature.text)}</p>
   {#if rolls && (action.attack !== null || action.hit.length || action.failure.length)}
     <div class="dnd-monster-rolls">
       {#if action.attack !== null}

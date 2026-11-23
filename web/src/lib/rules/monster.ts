@@ -3,7 +3,6 @@ import { getExpressionValue, type Scope } from './expression'
 import type {
   MonsterAction,
   MonsterBlock,
-  MonsterClause,
   MonsterDamage,
   MonsterDifficulty,
   MonsterEntry,
@@ -12,6 +11,7 @@ import type {
   MonsterFigure,
   MonsterFilter,
   MonsterRoll,
+  MonsterRun,
   MonsterSource,
   MonsterStats,
   MonsterSystem
@@ -306,32 +306,26 @@ function getHits(system: MonsterSystem, hits: MonsterRoll[]): string {
     .join(` ${words.plus} `)
 }
 
-export function getMonsterClauses(system: MonsterSystem, feature: MonsterFeature, action: MonsterAction): MonsterClause[] {
+function getClauses(system: MonsterSystem, feature: MonsterFeature, action: MonsterAction): [string, string][] {
   const words = system.labels
-  const clauses: MonsterClause[] = []
+  const clauses: [string, string][] = []
   const { attack, save } = feature
   if (attack && action.attack !== null) {
     const reach = attack.reach > 0 ? `${words.reach} ${attack.reach} ${system.distance}` : ''
     const range = attack.range > 0 ? `${words.range} ${attack.range}${attack.long_range > attack.range ? `/${attack.long_range}` : ''} ${system.distance}` : ''
     const reaches = [reach, range].filter(Boolean).join(` ${words.or} `)
-    clauses.push({
-      lead: reach && range ? words.meleeOrRanged : range ? words.ranged : words.melee,
-      text: getEnded(`${getSigned(action.attack)}${reaches ? `, ${reaches}` : ''}`)
-    })
-    clauses.push({ lead: words.hit, text: action.hit.length ? getEnded(getHits(system, action.hit)) : '' })
+    clauses.push([reach && range ? words.meleeOrRanged : range ? words.ranged : words.melee, getEnded(`${getSigned(action.attack)}${reaches ? `, ${reaches}` : ''}`)])
+    clauses.push([words.hit, action.hit.length ? getEnded(getHits(system, action.hit)) : ''])
   }
   if (save && action.dc !== null) {
-    clauses.push({
-      lead: `${getEntryName(system.abilities, save.ability)} ${words.savingThrow}`,
-      text: getEnded(`${words.dc} ${action.dc}${save.area ? `, ${save.area}` : ''}`)
-    })
-    if (action.failure.length) clauses.push({ lead: words.failure, text: getEnded(getHits(system, action.failure)) })
-    if (save.half) clauses.push({ lead: words.success, text: words.half })
+    clauses.push([`${getEntryName(system.abilities, save.ability)} ${words.savingThrow}`, getEnded(`${words.dc} ${action.dc}${save.area ? `, ${save.area}` : ''}`)])
+    if (action.failure.length) clauses.push([words.failure, getEnded(getHits(system, action.failure))])
+    if (save.half) clauses.push([words.success, words.half])
   }
   return clauses
 }
 
-export function getFeatureSuffix(system: MonsterSystem, kind: MonsterFeatureKind, feature: MonsterFeature): string {
+function getFeatureSuffix(system: MonsterSystem, kind: MonsterFeatureKind, feature: MonsterFeature): string {
   const words = system.labels
   const marks = [
     feature.recharge ? `${words.recharge} ${feature.recharge < system.rechargeDie ? `${feature.recharge}\u2013${system.rechargeDie}` : feature.recharge}` : '',
@@ -339,6 +333,16 @@ export function getFeatureSuffix(system: MonsterSystem, kind: MonsterFeatureKind
     kind.legendary && (feature.cost ?? 1) > 1 ? `${words.costs} ${feature.cost} ${words.actions}` : ''
   ].filter(Boolean)
   return marks.length ? ` (${marks.join('; ')})` : ''
+}
+
+export function getFeatureRuns(system: MonsterSystem, kind: MonsterFeatureKind, feature: MonsterFeature, action: MonsterAction): MonsterRun[] {
+  const runs: MonsterRun[] = [{ text: `${feature.name}${getFeatureSuffix(system, kind, feature)}.`, mark: 'name' }]
+  for (const [lead, text] of getClauses(system, feature, action)) {
+    runs.push({ text: ' ', mark: 'plain' }, { text: `${lead}:`, mark: 'lead' })
+    if (text) runs.push({ text: ` ${text}`, mark: 'plain' })
+  }
+  if (feature.text) runs.push({ text: ' ', mark: 'plain' })
+  return runs
 }
 
 export function getRolledHitPoints(system: MonsterSystem, block: Pick<MonsterBlock, 'hitBonus'>, roll: number): number {

@@ -261,9 +261,9 @@ export type MonsterRoll = {
   type: string
 }
 
-export type MonsterClause = {
-  lead: string
+export type MonsterRun = {
   text: string
+  mark: 'name' | 'lead' | 'plain'
 }
 
 export type MonsterAction = {
