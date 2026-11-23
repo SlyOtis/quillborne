@@ -108,6 +108,7 @@
   ])
   const found = $derived(offers.filter((one) => one.beast.name.toLowerCase().includes(hunt.trim().toLowerCase())))
   const offer = $derived(offers.find((one) => one.id === offered) ?? null)
+  const many = $derived(Math.max(1, Math.floor(count)))
 
   const fought = $derived(
     combatants.flatMap((entry) => {
@@ -243,12 +244,12 @@
     const picked = offer
     const rules = picked && getSystem(picked.beast)
     if (!held || !picked || !rules) return
-    const many = Math.max(1, Math.floor(count))
+    const amount = many
     void write(async () => {
       const block = getMonsterBlock(rules, picked.beast)
       const dice = picked.beast.stats.hit_dice
-      const thrown = mode === 'rolled' ? (await rollDice([{ die: block.hitDie, amount: dice * many }]))[0] : []
-      const names = getCombatantNames(picked.beast.name, many, held.combatants.map((one) => one.name))
+      const thrown = mode === 'rolled' ? (await rollDice([{ die: block.hitDie, amount: dice * amount }]))[0] : []
+      const names = getCombatantNames(picked.beast.name, amount, held.combatants.map((one) => one.name))
       const joined = names.map((name, at): EncounterCombatant => {
         const hp = thrown.length ? getRolledHitPoints(rules, block, thrown.slice(at * dice, (at + 1) * dice).reduce((sum, one) => sum + one, 0)) : block.hitPoints
         return {
@@ -631,7 +632,7 @@
     <div class="fray-acts">
       <Button variant="ghost" size="sm" onclick={() => (adding = false)}>Cancel</Button>
       <Button variant="primary" size="sm" loading={busy} disabled={!offer} onclick={joinMonsters}>
-        {offer ? `Add ${Math.max(1, Math.floor(count))} ${offer.beast.name}` : 'Choose a monster'}
+        {offer ? (many > 1 ? `Add ${offer.beast.name} \u00d7 ${many}` : `Add ${offer.beast.name}`) : 'Choose a monster'}
       </Button>
     </div>
   </div>
