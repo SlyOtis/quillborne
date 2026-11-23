@@ -1,0 +1,60 @@
+{
+  "name": "Staff of Frost",
+  "description": "A staff of white wood rimed with frost that never melts.",
+  "category": "staff",
+  "subtype": "",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "by a druid, sorcerer, warlock, or wizard",
+  "consumable": false,
+  "weight": 4,
+  "value": 0,
+  "notes": "Cold, Damage",
+  "tags": [
+    "combat",
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nCold struggles to harm the one who holds it, and its charges call up ice and fog.\n\n## Charges\n\nIt holds ten and regains 1d6 + 4 each dawn. Spend the last and it may melt away.",
+  "grants": {
+    "defences": [
+      {
+        "id": "resistance",
+        "damage": "cold"
+      }
+    ],
+    "spells": [
+      {
+        "name": "Cone of Cold",
+        "level": 5,
+        "charges": 5,
+        "note": ""
+      },
+      {
+        "name": "Fog Cloud",
+        "level": 1,
+        "charges": 1,
+        "note": ""
+      },
+      {
+        "name": "Ice Storm",
+        "level": 4,
+        "charges": 4,
+        "note": ""
+      },
+      {
+        "name": "Wall of Ice",
+        "level": 6,
+        "charges": 4,
+        "note": ""
+      }
+    ],
+    "charges": {
+      "max": 10,
+      "regain": "1d6 + 4",
+      "at": "dawn",
+      "last": "roll a d20; on a 1 it turns to water and is gone"
+    }
+  }
+}

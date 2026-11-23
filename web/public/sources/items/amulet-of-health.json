@@ -1,0 +1,28 @@
+{
+  "name": "Amulet of Health",
+  "description": "A heavy gold pendant set with a polished bloodstone.",
+  "category": "wondrous item",
+  "subtype": "amulet",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Constitution",
+  "tags": [
+    "defence"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nWhile you wear it, your body is as hardy as the healthiest of folk. A wearer who is already tougher gains nothing.",
+  "grants": {
+    "attributes": [
+      {
+        "id": "con",
+        "mode": "set",
+        "value": 19
+      }
+    ]
+  }
+}

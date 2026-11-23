@@ -1,0 +1,62 @@
+{
+  "name": "Staff of Thunder and Lightning",
+  "description": "A staff of grey wood forked at the top like a lightning bolt.",
+  "category": "staff",
+  "subtype": "quarterstaff",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 4,
+  "value": 0,
+  "notes": "Lightning, Thunder",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt fights as a magic quarterstaff that strikes truer and harder than a plain one. Each of its powers works once a day: lightning on a hit, thunder on a hit, a bolt of lightning, a thunderclap, or both at once.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "bludgeoning",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 8,
+      "type": "bludgeoning",
+      "bonus": 0
+    },
+    "magic": 2
+  },
+  "grants": {
+    "damage": [
+      {
+        "dice": "2d6",
+        "damage": "lightning",
+        "note": "once per dawn, when you call lightning on a hit"
+      }
+    ],
+    "features": [
+      {
+        "name": "Thunder",
+        "text": "Once per dawn, on a hit, the target makes a DC 17 Constitution save or is stunned until the end of your next turn."
+      },
+      {
+        "name": "Lightning Strike",
+        "text": "Once per dawn, a 120-foot line of lightning, 5 feet wide; each creature in it makes a DC 17 Dexterity save, taking 9d6 lightning damage on a failure and half on a success."
+      },
+      {
+        "name": "Thunderclap",
+        "text": "Once per dawn, each creature within 60 feet makes a DC 17 Constitution save, taking 2d6 thunder damage and deafened for a minute on a failure, half and not deafened on a success."
+      },
+      {
+        "name": "Thunder and Lightning",
+        "text": "Once per dawn, use the strike and the thunderclap at once, without spending their own daily uses."
+      }
+    ]
+  }
+}

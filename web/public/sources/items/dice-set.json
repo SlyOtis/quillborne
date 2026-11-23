@@ -1,0 +1,17 @@
+{
+  "name": "Dice Set",
+  "description": "A cup and a handful of bone dice.",
+  "category": "tool",
+  "subtype": "gaming set",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0.1,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nProficiency with it adds your proficiency bonus to checks to play."
+}

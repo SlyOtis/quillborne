@@ -1,0 +1,56 @@
+{
+  "name": "Trident of Fish Command",
+  "description": "A coral-pink trident whose tines are carved as leaping fish.",
+  "category": "weapon",
+  "subtype": "trident",
+  "rarity": "uncommon",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 4,
+  "value": 0,
+  "notes": "Control",
+  "tags": [
+    "thrown",
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt holds three charges and regains 1d3 each dawn. Spend one to bend the will of a beast that swims by nature.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "piercing",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 8,
+      "type": "piercing",
+      "bonus": 0
+    },
+    "range": {
+      "normal": 20,
+      "max": 60
+    }
+  },
+  "grants": {
+    "spells": [
+      {
+        "name": "Dominate Beast",
+        "level": 4,
+        "charges": 1,
+        "dc": 15,
+        "note": "a beast with an innate swimming speed only"
+      }
+    ],
+    "charges": {
+      "max": 3,
+      "regain": "1d3",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

@@ -6,9 +6,11 @@ import {writable, get, type Unsubscriber, type Writable} from "svelte/store";
 import type {Character, CharacterAbility, CharacterCurrency, CharacterInfo, CharacterSpell, ConditionInfo, DefenceInfo, SpellsInfo} from "./character.types";
 import { addChangeLogEntry, ChangeActions, createStateSnapshot, type ChangeAction } from "./changelog";
 import { getResolvedCharacter } from "./rules/derive";
-import { getAttunedInventory, getReplacedAttunement, getSheet } from "./rules/sheet";
+import { getAttunedInventory, getCoinShares, getRecharging, getReplacedAttunement, getRestRecharges, getSheet, getSpentInventory, isConsumable } from "./rules/sheet";
+import { getCarriedItem, getRoomItem } from "./resources";
 import { getSystemStack } from "./rules/system";
-import type { ResolvedCharacter } from "./rules/spec.types";
+import type { ResolvedCharacter, RuleSystem } from "./rules/spec.types";
+import type { ItemSpell } from "./rules/item.types";
 import { user, userProfile } from "./stores/auth.store";
 import { currentCampaignId } from "./stores/campaign.store";
 
@@ -423,16 +425,6 @@ export function writeRollLog(
     state.push(item)
     return state
   })
-}
-
-export function asGold(currency: CharacterCurrency): number {
-  const totalGP =
-    (currency?.pp || 0) * 10 +    // Convert platinum to gold (1pp = 10gp)
-    (currency?.gp || 0) +         // Gold pieces as is
-    (currency?.sp || 0) * 0.1 +   // Convert silver to gold (1sp = 0.1gp)
-    (currency?.cp || 0) * 0.01;   // Convert copper to gold (1cp = 0.01gp)
-
-  return Number(totalGP.toFixed(3)); // Round to 2 decimal places
 }
 
 export function addCurrencies(currency: CharacterCurrency, currency2: CharacterCurrency): CharacterCurrency {
@@ -995,10 +987,12 @@ export async function postShortRest(dice: number, resolved: ResolvedCharacter) {
     'Short rest'
   )
 
+  await postRecharge(getRestRecharges(resolved.system, 'short'))
+
   return { spend, healing }
 }
 
-export function postLongRest(resolved: ResolvedCharacter) {
+export async function postLongRest(resolved: ResolvedCharacter) {
   const regain = resolved.pools.find(pool => pool.id === 'hitDice')?.regain ?? 0
 
   updateCharacterWithChangeLog(
@@ -1025,6 +1019,77 @@ export function postLongRest(resolved: ResolvedCharacter) {
     ChangeActions.LONG_REST,
     'Long rest'
   )
+
+  await postRecharge(getRestRecharges(resolved.system, 'long'))
+}
+
+/** Rolls a dice expression such as `1d6 + 1` into the roll log and answers its total. */
+export async function rollTotal(type: string, text: string, formula: string): Promise<number> {
+  const parsed = getFormula(formula)
+  if (!parsed) throw new Error(`${formula} is not a roll`)
+  const dice = parsed.terms.filter((term): term is Extract<FormulaTerm, { die: number }> => 'die' in term)
+  const rolled = await rollDice(dice.map(term => ({ die: term.die, amount: term.amount })))
+  const { roll, total } = getFormulaTotal(parsed.terms, rolled)
+  writeRollLog(type, text, parsed.text, roll, total, rolled.flat().join(','))
+  return total
+}
+
+/** Sets how many of an item's charges are spent. */
+export function putCharges(item: InventoryItem, spent: number) {
+  updateCharacterWithChangeLog(
+    'inventory',
+    inventory => inventory.map(entry => entry.id === item.id ? { ...entry, spent: Math.max(0, Math.min(entry.grants?.charges.max ?? 0, spent)) } : entry),
+    ChangeActions.INVENTORY_CHANGE,
+    `${item.title} has ${Math.max(0, (item.grants?.charges.max ?? 0) - spent)} charges left`
+  )
+}
+
+/**
+ * Gives back the charges of every carried item that regains them at one of the recharges, rolling its `regain`;
+ * a regain that is a plain number gives that many back, and one that is no roll at all gives every charge back.
+ */
+export async function postRecharge(at: string[]) {
+  const store = getCharacterStore()
+  for (const item of getRecharging(get(store.inventory), at)) {
+    const regain = item.grants?.charges.regain ?? ''
+    const plain = Number(regain)
+    const back = regain.trim() && Number.isFinite(plain)
+      ? plain
+      : getFormula(regain) ? await rollTotal('recharge', `${item.title} regains charges`, regain) : item.spent ?? 0
+    updateCharacterWithChangeLog(
+      'inventory',
+      inventory => inventory.map(entry => entry.id === item.id ? { ...entry, spent: Math.max(0, (entry.spent ?? 0) - back) } : entry),
+      ChangeActions.INVENTORY_CHANGE,
+      `${item.title} regained ${back} charges`
+    )
+  }
+}
+
+/** Casts a spell an item holds, spending its charges, and answers false without a change when too few are left. */
+export async function postItemCast(item: InventoryItem, spell: ItemSpell): Promise<boolean> {
+  const next = getSpentInventory(get(getCharacterStore().inventory), item.id, spell.charges)
+  if (!next) return false
+  if (spell.charges > 0) {
+    updateCharacterWithChangeLog('inventory', () => next, ChangeActions.INVENTORY_CHANGE, `Cast ${spell.name} from ${item.title}`)
+  }
+  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('playSpellCast'))
+  if (spell.attack !== undefined) await rollAttack(spell.name, spell.attack)
+  return true
+}
+
+const USES: Record<string, (amount: number) => void> = {
+  heal: putHealing,
+  temporary: putTemporaryHitPoints,
+  damage: putDamage
+}
+
+/** Uses an item: rolls what its use rolls and applies it, then spends one of it when it is used up. */
+export async function postItemUse(item: InventoryItem, system: RuleSystem) {
+  const use = item.properties?.use
+  if (use?.roll) USES[use.effect]?.(await rollTotal(use.effect === 'damage' ? 'damage' : 'heal', `Used ${item.title}`, use.roll))
+  if (!isConsumable(item, system)) return
+  const held = get(getCharacterStore().inventory).find(entry => entry.id === item.id)
+  if (held) putItem({ ...held, quantity: held.quantity - 1 })
 }
 
 export function putCondition(condition: ConditionInfo) {
@@ -1112,6 +1177,16 @@ export function deleteItem(id: string) {
   )
 }
 
+/** Puts an item in a carried container, or takes it out with no container named. */
+export function putInside(item: InventoryItem, inside: string) {
+  updateCharacterWithChangeLog(
+    'inventory',
+    inventory => inventory.map(entry => entry.id === item.id ? { ...entry, inside: inside || undefined } : entry),
+    ChangeActions.INVENTORY_CHANGE,
+    inside ? `Put ${item.title} away` : `Took ${item.title} out`
+  )
+}
+
 export function putEquipped(item: InventoryItem, equipped: boolean) {
   updateCharacterWithChangeLog(
     'inventory',
@@ -1147,6 +1222,38 @@ export function putReplacedAttunement(ending: InventoryItem, beginning: Inventor
     `Attuned to ${beginning.title} in place of ${ending.title}`
   )
   return true
+}
+
+/** Hands carried items to a sheet the reader writes, as the dungeon master does to one at their table. */
+export async function postGift(characterId: string, items: InventoryItem[]) {
+  const held = await api.getCharacter(characterId)
+  if (!held) throw new Error('That character is gone, so nothing was handed over.')
+  await api.putCharacter(characterId, { ...held.character, inventory: [...(held.character.inventory ?? []), ...items] })
+}
+
+/** Splits a purse among sheets the reader writes, each share added to that sheet's own coin. */
+export async function postCoinShares(characterIds: string[], purse: CharacterCurrency, system: RuleSystem) {
+  const shares = getCoinShares(purse, characterIds.length, system)
+  for (const [index, characterId] of characterIds.entries()) {
+    const held = await api.getCharacter(characterId)
+    if (!held) throw new Error('A character at the table is gone, so the coin was not all shared.')
+    await api.putCharacter(characterId, { ...held.character, currency: addCurrencies(held.character.currency ?? {}, shares[index]) })
+  }
+}
+
+/** Identifies an item known by its head: shares its page with the table and writes it whole into the sheet in its place. */
+export async function putIdentified(item: InventoryItem, campaignId: string) {
+  if (!item.origin) return
+  const one = await getRoomItem(item.origin.id)
+  const share_campaigns = [...new Set([...one.share_campaigns, campaignId])]
+  await api.putResource(one.id, { share_campaigns, share_users: one.share_users })
+  const whole = getCarriedItem({ ...one, share_campaigns })
+  updateCharacterWithChangeLog(
+    'inventory',
+    inventory => inventory.map(entry => entry.id === item.id ? { ...whole, id: entry.id, quantity: entry.quantity, equipped: entry.equipped, inside: entry.inside } : entry),
+    ChangeActions.INVENTORY_CHANGE,
+    `Identified ${whole.title}`
+  )
 }
 
 export function putCurrency(currency: CharacterCurrency) {

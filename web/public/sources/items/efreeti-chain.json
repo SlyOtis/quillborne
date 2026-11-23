@@ -1,0 +1,48 @@
+{
+  "name": "Efreeti Chain",
+  "description": "A shirt and hood of brass rings, hot as coals, that never burn the one who wears them.",
+  "category": "armor",
+  "subtype": "chain mail",
+  "rarity": "legendary",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 55,
+  "value": 0,
+  "notes": "Armor Class, Fire",
+  "tags": [
+    "heavy"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nThis chain mail guards far better than plain steel. Fire cannot harm you in it, you can speak and understand Primordial, and you can stand and walk on molten rock as on solid ground.",
+  "properties": {
+    "armor": "heavy",
+    "ac": {
+      "base": 16,
+      "bonus": 3,
+      "dexModifier": false,
+      "maxDexBonus": 0
+    },
+    "strength": 13,
+    "stealth": true
+  },
+  "grants": {
+    "defences": [
+      {
+        "id": "immunity",
+        "damage": "fire"
+      }
+    ],
+    "features": [
+      {
+        "name": "Primordial",
+        "text": "You can speak and understand Primordial."
+      },
+      {
+        "name": "Firewalker",
+        "text": "You can stand on and walk across molten rock as if it were solid ground."
+      }
+    ]
+  }
+}

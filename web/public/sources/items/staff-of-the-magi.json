@@ -1,0 +1,180 @@
+{
+  "name": "Staff of the Magi",
+  "description": "A tall staff of pale wood bound in silver and topped with a burning star.",
+  "category": "staff",
+  "subtype": "quarterstaff",
+  "rarity": "legendary",
+  "attunement": true,
+  "attuned_by": "by a sorcerer, warlock, or wizard",
+  "consumable": false,
+  "weight": 4,
+  "value": 0,
+  "notes": "Spells, Saving Throws",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt fights as a magic quarterstaff that strikes truer and harder than a plain one, your spell attacks strike truer, and spells have a hard time taking hold of you. It holds a great store of spells, some free to cast.\n\n## Spell absorption\n\nAs a reaction you can absorb a spell aimed only at you, cancelling it and gaining charges equal to its level, unless that would carry it past fifty, in which case it explodes.\n\n## Charges\n\nIt holds fifty and regains 4d6 + 2 each dawn.\n\n## Retributive strike\n\nYou can break it to unleash everything it holds in a 30-foot sphere, with an even chance of being flung to another plane before it reaches you.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "bludgeoning",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 8,
+      "type": "bludgeoning",
+      "bonus": 0
+    },
+    "magic": 2
+  },
+  "grants": {
+    "advantages": [
+      {
+        "id": "",
+        "name": "Saving throws",
+        "note": "against spells"
+      }
+    ],
+    "spells": [
+      {
+        "name": "Arcane Lock",
+        "level": 2,
+        "charges": 0,
+        "note": "at will"
+      },
+      {
+        "name": "Detect Magic",
+        "level": 1,
+        "charges": 0,
+        "note": "at will"
+      },
+      {
+        "name": "Enlarge/Reduce",
+        "level": 2,
+        "charges": 0,
+        "note": "at will"
+      },
+      {
+        "name": "Light",
+        "level": 0,
+        "charges": 0,
+        "note": "at will"
+      },
+      {
+        "name": "Mage Hand",
+        "level": 0,
+        "charges": 0,
+        "note": "at will"
+      },
+      {
+        "name": "Protection from Evil and Good",
+        "level": 1,
+        "charges": 0,
+        "note": "at will"
+      },
+      {
+        "name": "Conjure Elemental",
+        "level": 5,
+        "charges": 7,
+        "note": ""
+      },
+      {
+        "name": "Dispel Magic",
+        "level": 3,
+        "charges": 3,
+        "note": ""
+      },
+      {
+        "name": "Fireball",
+        "level": 7,
+        "charges": 7,
+        "note": ""
+      },
+      {
+        "name": "Flaming Sphere",
+        "level": 2,
+        "charges": 2,
+        "note": ""
+      },
+      {
+        "name": "Ice Storm",
+        "level": 4,
+        "charges": 4,
+        "note": ""
+      },
+      {
+        "name": "Invisibility",
+        "level": 2,
+        "charges": 2,
+        "note": ""
+      },
+      {
+        "name": "Knock",
+        "level": 2,
+        "charges": 2,
+        "note": ""
+      },
+      {
+        "name": "Lightning Bolt",
+        "level": 7,
+        "charges": 7,
+        "note": ""
+      },
+      {
+        "name": "Passwall",
+        "level": 5,
+        "charges": 5,
+        "note": ""
+      },
+      {
+        "name": "Plane Shift",
+        "level": 7,
+        "charges": 7,
+        "note": ""
+      },
+      {
+        "name": "Telekinesis",
+        "level": 5,
+        "charges": 5,
+        "note": ""
+      },
+      {
+        "name": "Wall of Fire",
+        "level": 4,
+        "charges": 4,
+        "note": ""
+      },
+      {
+        "name": "Web",
+        "level": 2,
+        "charges": 2,
+        "note": ""
+      }
+    ],
+    "features": [
+      {
+        "name": "Magi",
+        "text": "Your spell attack rolls gain +2."
+      },
+      {
+        "name": "Spell Absorption",
+        "text": "As a reaction, cancel a spell that targets only you and gain charges equal to its level."
+      },
+      {
+        "name": "Retributive Strike",
+        "text": "Break it as an action and it explodes in a 30-foot sphere. Half the time you escape to another plane; otherwise you take 16 force damage per charge left. Everyone else in it makes a DC 17 Dexterity save, taking 8, 6 or 4 per charge as they stand within 10, 20 or 30 feet, half on a success."
+      }
+    ],
+    "charges": {
+      "max": 50,
+      "regain": "4d6 + 2",
+      "at": "dawn",
+      "last": "roll a d20; on a 20 it regains 1d12 + 1 charges"
+    }
+  }
+}

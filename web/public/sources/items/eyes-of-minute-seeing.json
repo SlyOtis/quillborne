@@ -1,0 +1,27 @@
+{
+  "name": "Eyes of Minute Seeing",
+  "description": "Two crystal lenses that make the smallest things look large.",
+  "category": "wondrous item",
+  "subtype": "lenses",
+  "rarity": "uncommon",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Investigation",
+  "tags": [
+    "senses"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What they do\n\nYou see things within a foot of you in fine detail, and searching or studying what is that close comes easily.",
+  "grants": {
+    "advantages": [
+      {
+        "id": "skill.investigation",
+        "note": "that rely on sight, within 1 foot of you"
+      }
+    ]
+  }
+}

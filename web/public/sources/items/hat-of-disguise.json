@@ -1,0 +1,29 @@
+{
+  "name": "Hat of Disguise",
+  "description": "A soft felt hat that never looks quite the same twice.",
+  "category": "wondrous item",
+  "subtype": "hat",
+  "rarity": "uncommon",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Disguise",
+  "tags": [
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nWhenever you like, you can change how you look, as the disguise self spell does. The disguise ends if the hat comes off.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Disguise Self",
+        "level": 1,
+        "charges": 0,
+        "note": "at will; it ends if the hat is removed"
+      }
+    ]
+  }
+}

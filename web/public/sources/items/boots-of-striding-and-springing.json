@@ -1,0 +1,33 @@
+{
+  "name": "Boots of Striding and Springing",
+  "description": "Long boots of red leather with a spring in their heels.",
+  "category": "wondrous item",
+  "subtype": "boots",
+  "rarity": "uncommon",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Speed, Jumping",
+  "tags": [
+    "movement"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What they do\n\nWhile you wear them you walk at least 30 feet a round, and neither heavy loads nor heavy armor slow you. Every jump carries you three times as far as it would, though never further than you have movement left.",
+  "grants": {
+    "speeds": [
+      {
+        "id": "walk",
+        "value": 30
+      }
+    ],
+    "features": [
+      {
+        "name": "Springing",
+        "text": "You jump three times the normal distance, within your remaining movement. Encumbrance and heavy armor do not slow you."
+      }
+    ]
+  }
+}

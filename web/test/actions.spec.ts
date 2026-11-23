@@ -68,8 +68,8 @@ describe('an action name occupies one line', () => {
     const heading = row.elements('h4')
 
     expect(heading).toHaveLength(1)
-    expect(row.attribute(heading[0], 'title')).toBe('{action.name}')
-    expect(row.content(heading[0])).toBe('{action.name}')
+    expect(row.attribute(heading[0], 'title')).toBe('{attack.name}')
+    expect(row.content(heading[0])).toBe('{attack.name}')
   })
 })
 
@@ -121,10 +121,10 @@ describe('the No ammo badge sits in its own cell', () => {
     expect(placed(row.style('.ammo-warning') ?? {})).toEqual([])
   })
 
-  it('is no badge at all: the hit and damage cells carry the dry class and the button says No ammo', () => {
+  it('is no badge at all: the hit and damage cells carry the dry class and the button names the ammunition that ran out', () => {
     expect(row.listed('span', 'ammo-warning')).toEqual([])
-    expect(row.source).toContain('class:attack-dry={isRanged && buttonsDisabled}')
-    expect(row.source).toContain("'No ammo'")
+    expect(row.source).toContain('class:attack-dry={buttonsDisabled}')
+    expect(row.source).toContain('`No ${spent} left`')
   })
 
   it('stacks under the button it belongs to', () => {

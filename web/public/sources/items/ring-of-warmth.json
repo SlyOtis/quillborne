@@ -1,0 +1,33 @@
+{
+  "name": "Ring of Warmth",
+  "description": "A copper ring that glows faintly red in the cold.",
+  "category": "ring",
+  "subtype": "",
+  "rarity": "uncommon",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Cold",
+  "tags": [
+    "defence"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nThe cold struggles to harm you while you wear it, and you and what you wear stay comfortable in cold as deep as fifty below.",
+  "grants": {
+    "defences": [
+      {
+        "id": "resistance",
+        "damage": "cold"
+      }
+    ],
+    "features": [
+      {
+        "name": "Warmth",
+        "text": "You and what you wear and carry are unharmed by temperatures as low as -50 degrees Fahrenheit."
+      }
+    ]
+  }
+}

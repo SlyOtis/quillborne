@@ -58,9 +58,10 @@
   ],
   "derived": [
     { "id": "initiative", "title": "Initiative", "value": "mod.dex + bonus.initiative" },
-    { "id": "armorClass", "title": "Armor Class", "value": "10 + mod.dex + bonus.armorClass" },
+    { "id": "unarmored", "title": "Unarmored Defence", "value": "10 + mod.dex", "hidden": true },
+    { "id": "armorClass", "title": "Armor Class", "value": "(armor.worn ? armor.base + armor.dex * (armor.cap > 0 ? min(mod.dex, armor.cap) : mod.dex) : derived.unarmored) + armor.bonus + bonus.armorClass" },
     { "id": "carryCapacity", "title": "Carry Capacity", "value": "attr.str * 15", "unit": "lb", "hidden": true },
-    { "id": "speed", "title": "Speed", "value": "30 + bonus.speed", "unit": "ft" },
+    { "id": "speed", "title": "Speed", "value": "30 + bonus.speed - (armor.strength > attr.str ? 10 : 0)", "unit": "ft" },
     { "id": "maxHitPoints", "title": "Maximum Hit Points", "value": "max(1, bonus.hitPoints + mod.con * level)" },
     { "id": "spellSaveDc", "title": "Spell Save DC", "value": "8 + prof + bonus.spellcasting", "hidden": true },
     { "id": "spellAttack", "title": "Spell Attack", "value": "prof + bonus.spellcasting", "hidden": true },
@@ -128,10 +129,77 @@
   "recharges": [
     { "id": "dawn", "title": "Dawn" },
     { "id": "dusk", "title": "Dusk" },
-    { "id": "shortRest", "title": "Short Rest" },
-    { "id": "longRest", "title": "Long Rest" }
+    { "id": "shortRest", "title": "Short Rest", "rests": ["short", "long"] },
+    { "id": "longRest", "title": "Long Rest", "rests": ["long"] }
   ],
-  "items": { "attunement": "3", "applies": "equipped && (attuned || !attunement)" },
+  "items": {
+    "attunement": "3",
+    "applies": "equipped && (attuned || !attunement)",
+    "categories": [
+      { "id": "weapon", "title": "Weapon", "glyph": "weapon", "stats": "weapon" },
+      { "id": "armor", "title": "Armor", "glyph": "armor", "stats": "armor" },
+      { "id": "ammunition", "title": "Ammunition", "glyph": "ammunition" },
+      { "id": "adventuring gear", "title": "Adventuring gear", "glyph": "gear" },
+      { "id": "container", "title": "Container", "glyph": "chest", "stats": "container" },
+      { "id": "consumable", "title": "Consumable", "glyph": "potion", "consumable": true },
+      { "id": "potion", "title": "Potion", "glyph": "potion", "consumable": true },
+      { "id": "scroll", "title": "Scroll", "glyph": "scroll", "consumable": true },
+      { "id": "ring", "title": "Ring", "glyph": "gem" },
+      { "id": "rod", "title": "Rod", "glyph": "gear" },
+      { "id": "staff", "title": "Staff", "glyph": "gear" },
+      { "id": "wand", "title": "Wand", "glyph": "gear" },
+      { "id": "wondrous item", "title": "Wondrous item", "glyph": "gem" },
+      { "id": "tool", "title": "Tool", "glyph": "tool" },
+      { "id": "treasure", "title": "Treasure", "glyph": "gem" },
+      { "id": "misc", "title": "Other", "glyph": "scroll" }
+    ],
+    "weaponProperties": [
+      { "id": "ammunition", "title": "Ammunition", "description": "Each attack uses up one piece of the ammunition it fires.", "spends": "ammunition" },
+      { "id": "finesse", "title": "Finesse", "description": "Attack and damage use Strength or Dexterity, whichever is higher." },
+      { "id": "heavy", "title": "Heavy", "description": "Small creatures attack with it at disadvantage." },
+      { "id": "light", "title": "Light", "description": "Small enough to fight with one in each hand." },
+      { "id": "loading", "title": "Loading", "description": "Fires once per action, bonus action or reaction, whatever the attacks." },
+      { "id": "reach", "title": "Reach", "description": "Reaches 5 feet further than other melee weapons." },
+      { "id": "special", "title": "Special", "description": "Follows rules of its own, written on the weapon." },
+      { "id": "thrown", "title": "Thrown", "description": "Can be thrown for a ranged attack with the same ability as in melee." },
+      { "id": "two-handed", "title": "Two-handed", "description": "Needs both hands to attack with." },
+      { "id": "versatile", "title": "Versatile", "description": "Deals its larger die when held in both hands." }
+    ],
+    "weaponCategories": [
+      { "id": "simple", "title": "Simple Weapons" },
+      { "id": "martial", "title": "Martial Weapons" }
+    ],
+    "armorCategories": [
+      { "id": "light", "title": "Light Armor", "dex": true, "cap": 0 },
+      { "id": "medium", "title": "Medium Armor", "dex": true, "cap": 2 },
+      { "id": "heavy", "title": "Heavy Armor", "dex": false, "cap": 0 },
+      { "id": "shield", "title": "Shield", "shield": true }
+    ],
+    "attack": {
+      "reach": "reach ? 10 : 5",
+      "ability": "finesse ? max(mod.str, mod.dex) : ranged ? mod.dex : mod.str",
+      "hit": "ability + prof * proficient + magic",
+      "damage": "ability + magic"
+    },
+    "uses": [
+      { "id": "heal", "title": "Heals" },
+      { "id": "temporary", "title": "Temporary hit points" },
+      { "id": "damage", "title": "Damage" }
+    ],
+    "coinWeight": "coins / 50",
+    "encumbrance": [
+      { "id": "encumbered", "title": "Encumbered", "over": "attr.str * 5", "effect": "Speed drops by 10 feet." },
+      { "id": "heavilyEncumbered", "title": "Heavily encumbered", "over": "attr.str * 10", "effect": "Speed drops by 20 feet, with disadvantage on ability checks, attacks and saves that use Strength, Dexterity or Constitution." },
+      { "id": "overCapacity", "title": "Over capacity", "over": "derived.carryCapacity", "effect": "Speed drops to 5 feet, and no more than twice the capacity can be pushed, dragged or lifted." }
+    ]
+  },
+  "coins": [
+    { "id": "pp", "title": "Platinum", "value": 10 },
+    { "id": "gp", "title": "Gold", "value": 1 },
+    { "id": "ep", "title": "Electrum", "value": 0.5 },
+    { "id": "sp", "title": "Silver", "value": 0.1 },
+    { "id": "cp", "title": "Copper", "value": 0.01 }
+  ],
   "progression": {
     "maxLevel": 20,
     "proficiency": "2 + floor((level - 1) / 4)",

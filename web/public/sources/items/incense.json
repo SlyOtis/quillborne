@@ -1,0 +1,17 @@
+{
+  "name": "Incense",
+  "description": "A block of resin incense.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": true,
+  "weight": 0,
+  "value": 0,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nBurned in a censer during rites and prayer."
+}

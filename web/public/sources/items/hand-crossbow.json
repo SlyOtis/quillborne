@@ -1,0 +1,34 @@
+{
+  "name": "Hand Crossbow",
+  "description": "A small crossbow that fits in one hand.",
+  "category": "weapon",
+  "subtype": "hand crossbow",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 75,
+  "notes": "",
+  "tags": [
+    "ammunition",
+    "light",
+    "loading"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nLight enough to hold in one hand with a blade in the other, though every bolt must be loaded by hand.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "piercing",
+      "bonus": 0
+    },
+    "range": {
+      "normal": 30,
+      "max": 120
+    }
+  }
+}

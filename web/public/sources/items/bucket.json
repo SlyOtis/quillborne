@@ -1,0 +1,21 @@
+{
+  "name": "Bucket",
+  "description": "A wooden bucket with a rope handle.",
+  "category": "container",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 0.05,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nHolds 3 gallons of liquid or half a cubic foot of goods.",
+  "properties": {
+    "capacity": 15,
+    "weightless": false
+  }
+}

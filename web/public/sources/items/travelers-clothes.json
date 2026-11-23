@@ -1,0 +1,17 @@
+{
+  "name": "Traveler's Clothes",
+  "description": "Sturdy boots, a wool cloak with a hood and clothes that do not show the dirt.",
+  "category": "adventuring gear",
+  "subtype": "clothes",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 4,
+  "value": 2,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nMade for long roads and bad weather."
+}

@@ -1,0 +1,17 @@
+{
+  "name": "Arcane Staff",
+  "description": "A tall staff carved with runes along its length.",
+  "category": "adventuring gear",
+  "subtype": "arcane focus",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 4,
+  "value": 5,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nAn arcane focus. A sorcerer, warlock or wizard can channel spells through it in place of the material components that have no listed cost."
+}

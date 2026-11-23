@@ -1,0 +1,33 @@
+{
+  "name": "Eyes of the Eagle",
+  "description": "A pair of amber lenses ringed in gold.",
+  "category": "wondrous item",
+  "subtype": "lenses",
+  "rarity": "uncommon",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Perception",
+  "tags": [
+    "senses"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What they do\n\nYou miss little that can be seen, and in clear weather you can pick out things as small as 2 feet across at great distances.",
+  "grants": {
+    "advantages": [
+      {
+        "id": "skill.perception",
+        "note": "that rely on sight"
+      }
+    ],
+    "features": [
+      {
+        "name": "Far Sight",
+        "text": "In clear visibility you make out details of distant creatures and objects as small as 2 feet across."
+      }
+    ]
+  }
+}

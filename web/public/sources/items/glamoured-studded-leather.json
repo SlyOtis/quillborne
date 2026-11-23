@@ -1,0 +1,36 @@
+{
+  "name": "Glamoured Studded Leather",
+  "description": "Studded leather that looks like whatever its wearer last wished it to.",
+  "category": "armor",
+  "subtype": "studded leather armor",
+  "rarity": "rare",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 13,
+  "value": 0,
+  "notes": "Armor Class, Disguise",
+  "tags": [
+    "light"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt guards better than plain studded leather. As a bonus action you can make it look like ordinary clothes or any other armor you choose. It keeps its weight and feel, and the illusion ends when you take it off.",
+  "properties": {
+    "armor": "light",
+    "ac": {
+      "base": 12,
+      "bonus": 1,
+      "dexModifier": true,
+      "maxDexBonus": 0
+    }
+  },
+  "grants": {
+    "features": [
+      {
+        "name": "Glamour",
+        "text": "As a bonus action, make it look like ordinary clothing or another kind of armor."
+      }
+    ]
+  }
+}

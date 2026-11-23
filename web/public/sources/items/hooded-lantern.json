@@ -1,0 +1,17 @@
+{
+  "name": "Hooded Lantern",
+  "description": "A brass lantern with glass sides and a hood that slides down over them.",
+  "category": "adventuring gear",
+  "subtype": "lantern",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 5,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nIt sheds bright light for 30 feet and dim light for 30 feet beyond, and a flask of oil keeps it burning for six hours. As an action you can lower the hood, dimming it to dim light for 5 feet."
+}

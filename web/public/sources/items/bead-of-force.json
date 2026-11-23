@@ -1,0 +1,34 @@
+{
+  "name": "Bead of Force",
+  "description": "A black glass bead no bigger than a fingertip.",
+  "category": "wondrous item",
+  "subtype": "",
+  "rarity": "rare",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": true,
+  "weight": 0,
+  "value": 0,
+  "notes": "Force, Control",
+  "tags": [
+    "damage",
+    "control"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nThrow it up to 60 feet as an action. It bursts in a 10-foot sphere: everyone inside makes a DC 15 Dexterity saving throw or takes 5d4 force damage. Then a globe of force closes over the area for a minute. Those who failed are trapped within; the rest are pushed out. Nothing passes the globe's wall, though the trapped can push it along at half speed.",
+  "properties": {
+    "use": {
+      "roll": "5d4",
+      "effect": "damage"
+    }
+  },
+  "grants": {
+    "features": [
+      {
+        "name": "Sphere",
+        "text": "A 10-foot globe of force traps those who failed the save for a minute."
+      }
+    ]
+  }
+}

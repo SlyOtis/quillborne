@@ -1,0 +1,49 @@
+{
+  "name": "Sword of Sharpness",
+  "description": "A longsword with an edge so fine it seems to vanish when seen side on.",
+  "category": "weapon",
+  "subtype": "longsword",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 0,
+  "notes": "Slashing, Damage",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nAny sword that cuts can carry this edge; this one is a longsword. Against an object it always deals the most its dice can. On a 20 against a creature it cuts deeper, and if a second d20 also comes up 20 it lops off a limb, if the creature has one to lose.\n\n## Light\n\nSpeak its word and the blade sheds bright light for 10 feet and dim light for 10 beyond, until you speak again or sheathe it.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 10,
+      "type": "slashing",
+      "bonus": 0
+    }
+  },
+  "grants": {
+    "damage": [
+      {
+        "dice": "4d6",
+        "damage": "slashing",
+        "note": "on a 20"
+      }
+    ],
+    "features": [
+      {
+        "name": "Sharpness",
+        "text": "Against an object, its damage dice always roll their highest. After a 20 against a creature, roll another d20; on a 20 it loses a limb."
+      }
+    ]
+  }
+}

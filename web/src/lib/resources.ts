@@ -1,9 +1,11 @@
-import { deleteFile, deleteResource, getReachedResources, getResources, isStoredFile, postResource, putResource } from './api'
+import { deleteFile, deleteResource, getReachedResources, getResource, getResources, isStoredFile, postResource, putResource } from './api'
 import type { Access, Owner } from './api/types'
-import type { CharacterInventoryItem } from './character.types'
+import type { CharacterInventoryItem, Properties } from './character.types'
+import type { EquipmentEntry } from './class.types'
 import { dropDoc } from './collab'
 import type { ItemAttribute, ItemCharges, ItemGrants, ItemSpell } from './rules/item.types'
 import type { RuleSystem } from './rules/spec.types'
+import { getSystem } from './rules/system'
 
 /** A label the writer added to the head, with the line written next to it. */
 export interface Fact {
@@ -39,20 +41,16 @@ export interface Resource extends Access {
 }
 
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'very rare' | 'legendary' | 'artifact'
-export type ItemType =
-  | 'adventuring gear' | 'potion' | 'ring' | 'rod' | 'scroll' | 'staff' | 'wand' | 'wondrous item' | 'tool' | 'treasure'
-export type DamageKind =
-  | 'bludgeoning' | 'piercing' | 'slashing' | 'fire' | 'cold' | 'lightning' | 'necrotic' | 'radiant'
-export type ArmorWeight = 'light' | 'medium' | 'heavy' | 'shield'
 export type PlaceKind =
   | 'region' | 'city' | 'town' | 'village' | 'keep' | 'tower' | 'dungeon' | 'cave' | 'ruin' | 'temple' | 'inn'
 
 /** A story entry or a note. */
 export interface Entry extends Resource {}
 
-/** Any object that is not a weapon or armor. */
+/** Any object, a weapon and armor among them. */
 export interface Item extends Resource {
-  category: ItemType
+  /** One of the item categories of its rule system. */
+  category: string
   /** What it is within its type, such as lantern, key or book. */
   subtype: string
   rarity: Rarity
@@ -74,23 +72,10 @@ export interface Item extends Resource {
   book: string
   /** Kept by a campaign the reader sits at without reading it, so only its name, type and rarity arrived. */
   locked: boolean
-}
-
-export interface Weapon extends Resource {
-  damage: string
-  damage_kind: DamageKind
-  rarity: Rarity
-  reach: number
-  attunement: boolean
-  weight: number
-}
-
-export interface Armor extends Resource {
-  armor_class: number
-  category: ArmorWeight
-  rarity: Rarity
-  stealth_penalty: boolean
-  weight: number
+  /** What it is as a weapon or as armor, the shape a carried item has. */
+  properties: Properties
+  /** The items an equipment pack unpacks into, its container first. */
+  pack: EquipmentEntry[]
 }
 
 /** Somewhere an encounter can happen. Always placed on a map. */
@@ -171,7 +156,7 @@ export function putEntry(owner: Owner, id: string, one: Partial<Entry>): Promise
 
 const ITEM_PATH = '/sources/items'
 
-const ITEM: Omit<Item, keyof Resource | 'grants'> = {
+const ITEM: Omit<Item, keyof Resource | 'grants' | 'properties' | 'pack'> = {
   category: 'adventuring gear',
   subtype: '',
   rarity: 'common',
@@ -256,7 +241,7 @@ export function getItemGrants(value: unknown): ItemGrants {
 function getItem(one: Stored): Item {
   return {
     ...getShared(one),
-    category: (one.category as ItemType) ?? ITEM.category,
+    category: String(one.category ?? ITEM.category),
     subtype: String(one.subtype ?? ITEM.subtype),
     rarity: (one.rarity as Rarity) ?? ITEM.rarity,
     attunement: Boolean(one.attunement ?? ITEM.attunement),
@@ -269,8 +254,15 @@ function getItem(one: Stored): Item {
     grants: getItemGrants(one.grants),
     source: ITEM.source,
     book: ITEM.book,
-    locked: Boolean(one.locked)
+    locked: Boolean(one.locked),
+    properties: one.properties && typeof one.properties === 'object' ? (one.properties as Properties) : {},
+    pack: getList(one.pack, (entry) => (getText(entry.id) ? { id: getText(entry.id), quantity: Math.max(1, getFigure(entry.quantity) ?? 1) } : null))
   }
+}
+
+/** The rule system an item is written for when it names none, whose item categories the item room is narrowed by. */
+export function getItemSystem(): Promise<RuleSystem> {
+  return getSystem(ITEM.system)
 }
 
 export async function getItems(owner: Owner): Promise<Item[]> {
@@ -278,8 +270,18 @@ export async function getItems(owner: Owner): Promise<Item[]> {
   return stored.map(getItem)
 }
 
-/** The general items, the world's list that ships under `/sources/items` with an index naming them. */
-export async function getWorldItems(): Promise<Item[]> {
+let world: Promise<Item[]> | null = null
+
+/** The general items, the world's list that ships under `/sources/items` with an index naming them, read once. */
+export function getWorldItems(): Promise<Item[]> {
+  world ??= getWorldDocuments().catch((reason: unknown) => {
+    world = null
+    throw reason
+  })
+  return world
+}
+
+async function getWorldDocuments(): Promise<Item[]> {
   const answer = await fetch(`${ITEM_PATH}/index.json`)
   if (!answer.ok) throw new Error(`The item index did not load: ${answer.status} ${answer.statusText}`)
   const listed = (await answer.json()) as { items: string[] }
@@ -373,7 +375,9 @@ function putItemFields(one: Partial<Item>): Record<string, unknown> {
     value: one.value ?? ITEM.value,
     notes: one.notes ?? ITEM.notes,
     system: one.system ?? ITEM.system,
-    grants: getItemGrants(one.grants)
+    grants: getItemGrants(one.grants),
+    properties: one.properties ?? {},
+    pack: one.pack ?? []
   }
 }
 
@@ -401,7 +405,8 @@ export function getItemLine(one: Pick<Item, 'category' | 'subtype' | 'rarity' | 
 export interface ItemFilter {
   /** Words the name holds. */
   name: string
-  type: '' | ItemType
+  /** One of the item categories, or empty for every one. */
+  type: string
   rarities: Rarity[]
   bond: '' | 'required' | 'free'
   source: '' | Item['source']
@@ -434,7 +439,7 @@ export function getCarriedItem(one: Item): CharacterInventoryItem {
   return {
     id: crypto.randomUUID(),
     title: one.title,
-    type: one.consumable ? 'consumable' : one.category === 'tool' || one.category === 'treasure' ? one.category : 'misc',
+    type: one.category,
     subtype: getItemType(one),
     rarity: one.rarity,
     attributes: one.tags,
@@ -444,90 +449,72 @@ export function getCarriedItem(one: Item): CharacterInventoryItem {
     quantity: 1,
     equippable: !one.consumable,
     equipped: false,
+    consumable: one.consumable,
     ...(one.attunement ? { attunement: { required: true, attuned: false } } : {}),
     origin: { source: one.source, id: one.id },
-    grants: one.grants
+    grants: one.grants,
+    properties: one.properties
   }
+}
+
+/** One homebrew item by its id, as far as the reader reads it. */
+export async function getRoomItem(id: string): Promise<Item> {
+  return getItem(await getResource<Stored>(id))
+}
+
+/**
+ * An item as it lands in a sheet it is handed to at a table: whole when the table reads it, else its head alone,
+ * unidentified, so the sheet the table reads gives nothing of it away.
+ */
+export function getGivenItem(one: Item, campaignId: string): CharacterInventoryItem {
+  const carried = getCarriedItem(one)
+  if (one.source === 'general' || one.share_campaigns.includes(campaignId)) return carried
+  return {
+    id: carried.id,
+    title: carried.title,
+    type: carried.type,
+    rarity: carried.rarity,
+    attributes: [],
+    description: '',
+    value: { amount: 0, currency: 'gp' },
+    weight: carried.weight,
+    quantity: 1,
+    equippable: carried.equippable,
+    equipped: false,
+    origin: carried.origin,
+    unidentified: true
+  }
+}
+
+/**
+ * What an item of the room lands as in an inventory: itself, or for an equipment pack the items it unpacks into,
+ * each out of the room, the rest sitting in the first that is a container.
+ */
+export function getCarriedItems(one: Item, room: Item[]): CharacterInventoryItem[] {
+  if (one.pack.length === 0) return [getCarriedItem(one)]
+  const unpacked = one.pack.flatMap((entry) => {
+    const found = room.find((item) => item.id === entry.id)
+    return found ? [{ ...getCarriedItem(found), quantity: entry.quantity }] : []
+  })
+  const holder = unpacked.find((item) => (item.properties?.capacity ?? 0) > 0)
+  return unpacked.map((item) => (holder && item !== holder ? { ...item, inside: holder.id } : item))
+}
+
+/** The inventory a new character starts with: what the class gives every member and the first option of each choice. */
+export function getStartingInventory(equipment: { fixed: EquipmentEntry[]; choices: { options: EquipmentEntry[][] }[] } | undefined, room: Item[]): CharacterInventoryItem[] {
+  if (!equipment) return []
+  const entries = [...equipment.fixed, ...equipment.choices.flatMap((choice) => choice.options[0] ?? [])]
+  return entries.flatMap((entry) => {
+    const found = room.find((item) => item.id === entry.id)
+    if (!found) return []
+    if (found.pack.length > 0) return getCarriedItems(found, room)
+    return [{ ...getCarriedItem(found), quantity: entry.quantity }]
+  })
 }
 
 /** The token a rarity is written in under the active theme. */
 export function getRarityInk(rarity: Rarity): string {
   return `var(--rarity-${rarity.replace(' ', '-')})`
-}
-
-// Weapons
-
-export async function getWeapons(owner: Owner): Promise<Weapon[]> {
-  const stored = await getResources<Stored>(owner, 'weapons')
-  return stored.map((one) => ({
-    ...getShared(one),
-    damage: String(one.damage ?? ''),
-    damage_kind: (one.damage_kind as DamageKind) ?? 'slashing',
-    rarity: (one.rarity as Rarity) ?? 'common',
-    reach: Number(one.reach ?? 5),
-    attunement: Boolean(one.attunement),
-    weight: Number(one.weight ?? 0)
-  }))
-}
-
-export function postWeapon(owner: Owner, one: Partial<Weapon>): Promise<string> {
-  return postResource(owner, 'weapons', {
-    ...putShared(one),
-    damage: one.damage ?? '',
-    damage_kind: one.damage_kind ?? 'slashing',
-    rarity: one.rarity ?? 'common',
-    reach: one.reach ?? 5,
-    attunement: one.attunement ?? false,
-    weight: one.weight ?? 0
-  })
-}
-
-export function putWeapon(owner: Owner, id: string, one: Partial<Weapon>): Promise<void> {
-  return putResource(id, {
-    ...putShared(one),
-    damage: one.damage ?? '',
-    damage_kind: one.damage_kind ?? 'slashing',
-    rarity: one.rarity ?? 'common',
-    reach: one.reach ?? 5,
-    attunement: one.attunement ?? false,
-    weight: one.weight ?? 0
-  })
-}
-
-// Armor
-
-export async function getArmor(owner: Owner): Promise<Armor[]> {
-  const stored = await getResources<Stored>(owner, 'armor')
-  return stored.map((one) => ({
-    ...getShared(one),
-    armor_class: Number(one.armor_class ?? 10),
-    category: (one.category as ArmorWeight) ?? 'light',
-    rarity: (one.rarity as Rarity) ?? 'common',
-    stealth_penalty: Boolean(one.stealth_penalty),
-    weight: Number(one.weight ?? 0)
-  }))
-}
-
-export function postArmor(owner: Owner, one: Partial<Armor>): Promise<string> {
-  return postResource(owner, 'armor', {
-    ...putShared(one),
-    armor_class: one.armor_class ?? 10,
-    category: one.category ?? 'light',
-    rarity: one.rarity ?? 'common',
-    stealth_penalty: one.stealth_penalty ?? false,
-    weight: one.weight ?? 0
-  })
-}
-
-export function putArmor(owner: Owner, id: string, one: Partial<Armor>): Promise<void> {
-  return putResource(id, {
-    ...putShared(one),
-    armor_class: one.armor_class ?? 10,
-    category: one.category ?? 'light',
-    rarity: one.rarity ?? 'common',
-    stealth_penalty: one.stealth_penalty ?? false,
-    weight: one.weight ?? 0
-  })
 }
 
 // Places
@@ -604,7 +591,7 @@ export function putSession(owner: Owner, id: string, one: Partial<Session>): Pro
 // What a page needs to draw a resource it was handed by name
 
 export type ResourceKind =
-  | 'entries' | 'items' | 'weapons' | 'armor' | 'places' | 'maps' | 'sessions'
+  | 'entries' | 'items' | 'places' | 'maps' | 'sessions'
 
 export type FieldForm = 'text' | 'number' | 'choice' | 'flag'
 
@@ -655,34 +642,6 @@ The plain description, before anyone identifies it.
 ## Where it came from
 
 > Found in the silt under Duskin Keep.`,
-
-  weapons: `## What it is
-
-How it looks and how it feels to hold.
-
-## In a fight
-
-- The attack, and what it does on a hit
-- What it does on a critical
-- What it will not do
-
-## History
-
-Who carried it before, and how they lost it.`,
-
-  armor: `## What it is
-
-The make of it, and what it is worth to look at.
-
-## Wearing it
-
-- What it turns aside
-- What it makes harder
-- How long it takes to get into
-
-## History
-
-The battle it came out of.`,
 
   places: `## What you see
 
@@ -739,7 +698,6 @@ export const RESOURCES: Record<ResourceKind, ResourceShape> = {
     word: 'item',
     words: 'items',
     fields: [
-      { key: 'category', label: 'Type', form: 'choice', choices: ['adventuring gear', 'potion', 'ring', 'rod', 'scroll', 'staff', 'wand', 'wondrous item', 'tool', 'treasure'] },
       { key: 'subtype', label: 'Subtype', form: 'text' },
       { key: 'rarity', label: 'Rarity', form: 'choice', choices: ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact'] },
       { key: 'attunement', label: 'Requires attunement', form: 'flag' },
@@ -751,39 +709,6 @@ export const RESOURCES: Record<ResourceKind, ResourceShape> = {
     mark: (one) => (one as Item).rarity,
     example: EXAMPLES.items,
     locks: true
-  },
-  weapons: {
-    part: 'weapons',
-    one: 'Weapon',
-    many: 'Weapons',
-    word: 'weapon',
-    words: 'weapons',
-    fields: [
-      { key: 'damage', label: 'Damage', form: 'text' },
-      { key: 'damage_kind', label: 'Damage kind', form: 'choice', choices: ['bludgeoning', 'piercing', 'slashing', 'fire', 'cold', 'lightning', 'necrotic', 'radiant'] },
-      { key: 'rarity', label: 'Rarity', form: 'choice', choices: ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact'] },
-      { key: 'reach', label: 'Reach in feet', form: 'number' },
-      { key: 'attunement', label: 'Needs attunement', form: 'flag' },
-      { key: 'weight', label: 'Weight', form: 'number' }
-    ],
-    mark: (one) => (one as Weapon).damage,
-    example: EXAMPLES.weapons
-  },
-  armor: {
-    part: 'armor',
-    one: 'Armor',
-    many: 'Armor',
-    word: 'armor',
-    words: 'armor',
-    fields: [
-      { key: 'armor_class', label: 'Armor class', form: 'number' },
-      { key: 'category', label: 'Weight class', form: 'choice', choices: ['light', 'medium', 'heavy', 'shield'] },
-      { key: 'rarity', label: 'Rarity', form: 'choice', choices: ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact'] },
-      { key: 'stealth_penalty', label: 'Hinders stealth', form: 'flag' },
-      { key: 'weight', label: 'Weight', form: 'number' }
-    ],
-    mark: (one) => `AC ${(one as Armor).armor_class}`,
-    example: EXAMPLES.armor
   },
   places: {
     part: 'locations',
@@ -826,7 +751,7 @@ export function isResourceKind(value: string | undefined): value is ResourceKind
 /** A fresh resource of a kind, owned by whoever is writing it, opened on the kind's example page. */
 export function getBlank(kind: ResourceKind, userId: string): Record<string, unknown> & Resource {
   return {
-    ...(kind === 'items' ? { ...ITEM, grants: getItemGrants({}) } : {}),
+    ...(kind === 'items' ? { ...ITEM, grants: getItemGrants({}), properties: {}, pack: [] } : {}),
     id: '',
     title: '',
     description: '',
@@ -856,8 +781,6 @@ export async function getAll(owner: Owner, kind: ResourceKind, groups = false): 
 export function getEvery(owner: Owner, kind: ResourceKind): Promise<Resource[]> {
   if (kind === 'entries') return getEntries(owner)
   if (kind === 'items') return getItems(owner)
-  if (kind === 'weapons') return getWeapons(owner)
-  if (kind === 'armor') return getArmor(owner)
   if (kind === 'places') return getPlaces(owner)
   if (kind === 'maps') return getCharts(owner)
   return getSessions(owner)
@@ -866,8 +789,6 @@ export function getEvery(owner: Owner, kind: ResourceKind): Promise<Resource[]> 
 export function postOne(owner: Owner, kind: ResourceKind, one: Record<string, unknown>): Promise<string> {
   if (kind === 'entries') return postEntry(owner, one)
   if (kind === 'items') return postItem(owner, one)
-  if (kind === 'weapons') return postWeapon(owner, one)
-  if (kind === 'armor') return postArmor(owner, one)
   if (kind === 'places') return postPlace(owner, one)
   if (kind === 'maps') return postChart(owner, one)
   return postSession(owner, one)
@@ -881,8 +802,6 @@ export function putOne(
 ): Promise<void> {
   if (kind === 'entries') return putEntry(owner, id, one)
   if (kind === 'items') return putItem(owner, id, one)
-  if (kind === 'weapons') return putWeapon(owner, id, one)
-  if (kind === 'armor') return putArmor(owner, id, one)
   if (kind === 'places') return putPlace(owner, id, one)
   if (kind === 'maps') return putChart(owner, id, one)
   return putSession(owner, id, one)

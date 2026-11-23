@@ -1,0 +1,33 @@
+{
+  "name": "Potion of Heroism",
+  "description": "A blue liquid that bubbles as if it were boiling, though it is cold.",
+  "category": "potion",
+  "subtype": "",
+  "rarity": "rare",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": true,
+  "weight": 0.5,
+  "value": 0,
+  "notes": "Temporary Hit Points",
+  "tags": [
+    "healing"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nDrink it and you gain 10 temporary hit points, and for an hour you are blessed, as the bless spell does, without having to concentrate on it.",
+  "properties": {
+    "use": {
+      "roll": "10",
+      "effect": "temporary"
+    }
+  },
+  "grants": {
+    "features": [
+      {
+        "name": "Heroism",
+        "text": "For an hour after drinking you are under the bless spell, without concentration."
+      }
+    ]
+  }
+}

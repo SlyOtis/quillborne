@@ -83,6 +83,121 @@
     }
   ],
   "proficiencies": {},
+  "startingEquipment": {
+    "fixed": [],
+    "choices": [
+      {
+        "options": [
+          [
+            {
+              "id": "chain-mail",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "leather-armor",
+              "quantity": 1
+            },
+            {
+              "id": "longbow",
+              "quantity": 1
+            },
+            {
+              "id": "arrows",
+              "quantity": 20
+            }
+          ]
+        ]
+      },
+      {
+        "options": [
+          [
+            {
+              "id": "longsword",
+              "quantity": 1
+            },
+            {
+              "id": "shield",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "battleaxe",
+              "quantity": 1
+            },
+            {
+              "id": "shield",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "warhammer",
+              "quantity": 1
+            },
+            {
+              "id": "shield",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "greatsword",
+              "quantity": 1
+            },
+            {
+              "id": "longsword",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "shortsword",
+              "quantity": 2
+            }
+          ]
+        ]
+      },
+      {
+        "options": [
+          [
+            {
+              "id": "light-crossbow",
+              "quantity": 1
+            },
+            {
+              "id": "crossbow-bolts",
+              "quantity": 20
+            }
+          ],
+          [
+            {
+              "id": "handaxe",
+              "quantity": 2
+            }
+          ]
+        ]
+      },
+      {
+        "options": [
+          [
+            {
+              "id": "dungeoneers-pack",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "explorers-pack",
+              "quantity": 1
+            }
+          ]
+        ]
+      }
+    ]
+  },
   "subclasses": [],
   "source": "srd"
 }

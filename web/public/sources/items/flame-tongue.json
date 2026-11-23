@@ -1,0 +1,43 @@
+{
+  "name": "Flame Tongue",
+  "description": "A longsword whose blade is etched with tongues of fire.",
+  "category": "weapon",
+  "subtype": "longsword",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 0,
+  "notes": "Fire, Damage, Light",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nAny sword can carry this flame; this one is a longsword. Speak its word as a bonus action and fire runs the length of the blade, shedding bright light for 40 feet and dim light for 40 beyond and burning whatever it hits. The fire lasts until you speak again, drop it or sheathe it.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 10,
+      "type": "slashing",
+      "bonus": 0
+    }
+  },
+  "grants": {
+    "damage": [
+      {
+        "dice": "2d6",
+        "damage": "fire",
+        "note": "while the blade burns"
+      }
+    ]
+  }
+}

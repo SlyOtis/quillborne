@@ -1,0 +1,34 @@
+{
+  "name": "Longbow",
+  "description": "A tall bow of yew, as long as its archer.",
+  "category": "weapon",
+  "subtype": "longbow",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 50,
+  "notes": "",
+  "tags": [
+    "ammunition",
+    "heavy",
+    "two-handed"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nIt shoots further than any other bow. Small folk struggle to draw it.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "piercing",
+      "bonus": 0
+    },
+    "range": {
+      "normal": 150,
+      "max": 600
+    }
+  }
+}

@@ -116,6 +116,82 @@
     }
   ],
   "proficiencies": {},
+  "startingEquipment": {
+    "fixed": [
+      {
+        "id": "explorers-pack",
+        "quantity": 1
+      },
+      {
+        "id": "javelin",
+        "quantity": 4
+      }
+    ],
+    "choices": [
+      {
+        "options": [
+          [
+            {
+              "id": "greataxe",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "battleaxe",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "greatsword",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "maul",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "warhammer",
+              "quantity": 1
+            }
+          ]
+        ]
+      },
+      {
+        "options": [
+          [
+            {
+              "id": "handaxe",
+              "quantity": 2
+            }
+          ],
+          [
+            {
+              "id": "spear",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "mace",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "light-hammer",
+              "quantity": 1
+            }
+          ]
+        ]
+      }
+    ]
+  },
   "subclasses": [],
   "source": "srd"
 }

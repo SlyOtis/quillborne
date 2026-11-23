@@ -1,0 +1,17 @@
+{
+  "name": "Block and Tackle",
+  "description": "A set of pulleys threaded with a cable and finished with a hook.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 5,
+  "value": 1,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nHung above a load, it raises four times what you could lift by hand."
+}

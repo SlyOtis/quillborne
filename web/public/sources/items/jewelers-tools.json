@@ -1,0 +1,17 @@
+{
+  "name": "Jeweler's Tools",
+  "description": "A loupe, fine pliers, tiny files and a little hammer.",
+  "category": "tool",
+  "subtype": "artisan's tools",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 25,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nFor setting stones and working fine metal."
+}

@@ -32,11 +32,7 @@
     {
       id: 'gear',
       label: 'Gear',
-      under: [
-        { id: 'items', label: 'Items' },
-        { id: 'weapons', label: 'Weapons' },
-        { id: 'armor', label: 'Armor' }
-      ]
+      under: [{ id: 'items', label: 'Items' }]
     },
     {
       id: 'table',

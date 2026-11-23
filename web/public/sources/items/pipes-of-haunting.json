@@ -1,0 +1,33 @@
+{
+  "name": "Pipes of Haunting",
+  "description": "A set of bone pipes that sound like distant screaming.",
+  "category": "wondrous item",
+  "subtype": "pipes",
+  "rarity": "uncommon",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 0,
+  "notes": "Fear",
+  "tags": [
+    "control"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What they do\n\nThey hold three charges and regain 1d3 each dawn. If you can play wind instruments, spend one as an action to play a tune that terrifies: each creature within 30 feet that hears it makes a DC 15 Wisdom saving throw or is frightened of you for a minute, repeating the save at the end of each of its turns. You can let those not hostile to you pass, and one that succeeds is safe from the pipes for a day.",
+  "grants": {
+    "features": [
+      {
+        "name": "Haunting",
+        "text": "Spend a charge: creatures within 30 feet that hear it make a DC 15 Wisdom save or are frightened of you for a minute. Needs proficiency with wind instruments."
+      }
+    ],
+    "charges": {
+      "max": 3,
+      "regain": "1d3",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "Costume Clothes",
+  "description": "A bright outfit made to be seen from the back of a crowd.",
+  "category": "adventuring gear",
+  "subtype": "clothes",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 4,
+  "value": 5,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nFor playing a part on a stage, or off it."
+}

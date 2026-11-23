@@ -1,0 +1,47 @@
+{
+  "name": "Entertainer's Pack",
+  "description": "A backpack packed for life on the road between stages.",
+  "category": "adventuring gear",
+  "subtype": "equipment pack",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 40,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nA backpack holding a bedroll, two costumes, five candles, five days of rations, a waterskin and a disguise kit. Added to an inventory, it is unpacked into those items.",
+  "pack": [
+    {
+      "id": "backpack",
+      "quantity": 1
+    },
+    {
+      "id": "bedroll",
+      "quantity": 1
+    },
+    {
+      "id": "costume-clothes",
+      "quantity": 2
+    },
+    {
+      "id": "candle",
+      "quantity": 5
+    },
+    {
+      "id": "rations",
+      "quantity": 5
+    },
+    {
+      "id": "waterskin",
+      "quantity": 1
+    },
+    {
+      "id": "disguise-kit",
+      "quantity": 1
+    }
+  ]
+}

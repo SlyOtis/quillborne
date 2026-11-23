@@ -1,0 +1,21 @@
+{
+  "name": "Backpack",
+  "description": "A leather pack with straps for both shoulders.",
+  "category": "container",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 5,
+  "value": 2,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nHolds a cubic foot of gear, up to 30 pounds. Things can be strapped to the outside as well.",
+  "properties": {
+    "capacity": 30,
+    "weightless": false
+  }
+}

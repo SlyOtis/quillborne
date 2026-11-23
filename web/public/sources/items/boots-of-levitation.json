@@ -1,0 +1,30 @@
+{
+  "name": "Boots of Levitation",
+  "description": "Soft boots with soles that never seem to touch the floor.",
+  "category": "wondrous item",
+  "subtype": "boots",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Levitation",
+  "tags": [
+    "movement",
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What they do\n\nWhenever you like, you can rise and float in the air, as the levitate spell does, carrying only yourself.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Levitate",
+        "level": 2,
+        "charges": 0,
+        "note": "on yourself only, at will"
+      }
+    ]
+  }
+}

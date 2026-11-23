@@ -1,0 +1,43 @@
+{
+  "name": "Robe of Eyes",
+  "description": "A robe covered in embroidered eyes that sometimes blink.",
+  "category": "wondrous item",
+  "subtype": "robe",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Perception, Darkvision",
+  "tags": [
+    "senses"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nThe eyes see in every direction at once and through the dark, and they see what is invisible or out on the Ethereal Plane within 120 feet. A light spell cast on the robe, or a daylight spell cast within 5 feet of it, blinds you for a minute.",
+  "grants": {
+    "advantages": [
+      {
+        "id": "skill.perception",
+        "note": "that rely on sight"
+      }
+    ],
+    "senses": [
+      {
+        "id": "darkvision",
+        "value": 120
+      }
+    ],
+    "features": [
+      {
+        "name": "All Eyes",
+        "text": "You see in every direction, and you see invisible creatures and objects and into the Ethereal Plane out to 120 feet."
+      },
+      {
+        "name": "Blinded",
+        "text": "A light spell cast on the robe, or a daylight spell cast within 5 feet of it, blinds you for a minute."
+      }
+    ]
+  }
+}

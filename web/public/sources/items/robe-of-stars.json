@@ -1,0 +1,48 @@
+{
+  "name": "Robe of Stars",
+  "description": "A deep blue robe embroidered with six white stars that shine.",
+  "category": "wondrous item",
+  "subtype": "robe",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Saving Throws, Force",
+  "tags": [
+    "defence",
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nWhile you wear it, every saving throw you make is a little better. As an action you can pull a star from it and cast magic missile at 5th level; the star is gone until dusk, when 1d6 of the missing stars return. You can also step bodily into the Astral Plane and back.",
+  "grants": {
+    "bonuses": [
+      {
+        "id": "saves",
+        "value": 1
+      }
+    ],
+    "spells": [
+      {
+        "name": "Magic Missile",
+        "level": 5,
+        "charges": 1,
+        "note": "each star pulled is one charge"
+      }
+    ],
+    "features": [
+      {
+        "name": "Astral",
+        "text": "As an action, enter the Astral Plane with everything you carry, until you return."
+      }
+    ],
+    "charges": {
+      "max": 6,
+      "regain": "1d6",
+      "at": "dusk",
+      "last": ""
+    }
+  }
+}

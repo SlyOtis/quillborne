@@ -1,0 +1,34 @@
+{
+  "name": "Ring of Spell Turning",
+  "description": "A silver ring set with a small round mirror.",
+  "category": "ring",
+  "subtype": "",
+  "rarity": "legendary",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Saving Throws, Spells",
+  "tags": [
+    "defence"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nA spell aimed at you alone, and not at an area, has a hard time taking hold of you. If your save against it comes up 20 and the spell is 7th level or lower, it turns back on its caster instead.",
+  "grants": {
+    "advantages": [
+      {
+        "id": "",
+        "name": "Saving throws",
+        "note": "against spells that target only you, not an area"
+      }
+    ],
+    "features": [
+      {
+        "name": "Turning",
+        "text": "On a 20 on that save, a spell of 7th level or lower targets its caster instead, with the caster's slot, save DC, attack bonus and ability."
+      }
+    ]
+  }
+}

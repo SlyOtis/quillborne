@@ -1,0 +1,33 @@
+{
+  "name": "Ring of Evasion",
+  "description": "A plain band of quicksilver that will not sit still on the finger.",
+  "category": "ring",
+  "subtype": "",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Dexterity Saves",
+  "tags": [
+    "defence"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt holds three charges and regains 1d3 each dawn. When you fail a Dexterity saving throw, you can spend one as a reaction to succeed instead.",
+  "grants": {
+    "features": [
+      {
+        "name": "Evasion",
+        "text": "As a reaction, spend a charge to turn a failed Dexterity save into a success."
+      }
+    ],
+    "charges": {
+      "max": 3,
+      "regain": "1d3",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "Handy Haversack",
+  "description": "A leather backpack with two side pouches and a central pack that is always the right size.",
+  "category": "container",
+  "subtype": "wondrous item",
+  "rarity": "rare",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 5,
+  "value": 0,
+  "notes": "Storage",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nEach side pouch holds 20 pounds and the central pack 80, 120 pounds in all, and the haversack weighs 5 pounds whatever is inside. Whatever you reach for is always on top.\n\n## Careful\n\nPierced or torn, it is ruined and what it held is lost. Put inside another extradimensional space, it tears open a gate to the Astral Plane.",
+  "properties": {
+    "capacity": 120,
+    "weightless": true
+  }
+}

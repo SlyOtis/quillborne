@@ -1,0 +1,23 @@
+{
+  "name": "Alchemist's Fire",
+  "description": "A sealed clay flask, warm to hold, that must never be opened.",
+  "category": "consumable",
+  "subtype": "flask",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": true,
+  "weight": 1,
+  "value": 50,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nHurl it up to 20 feet as an action, a ranged attack with an improvised weapon. Whatever it hits catches fire and takes 1d4 fire damage at the start of each of its turns, until someone spends an action on a DC 10 Dexterity check to beat the flames out.",
+  "properties": {
+    "use": {
+      "roll": "1d4",
+      "effect": "damage"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "Glaive",
+  "description": "A long pole ending in a single broad blade like a cleaver.",
+  "category": "weapon",
+  "subtype": "glaive",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 6,
+  "value": 20,
+  "notes": "",
+  "tags": [
+    "heavy",
+    "reach",
+    "two-handed"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nIt strikes from 10 feet away. It takes both hands, and small folk struggle with its weight.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 10,
+      "type": "slashing",
+      "bonus": 0
+    }
+  }
+}

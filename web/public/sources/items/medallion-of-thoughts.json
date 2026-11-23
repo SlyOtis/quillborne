@@ -1,0 +1,37 @@
+{
+  "name": "Medallion of Thoughts",
+  "description": "A bronze medallion engraved with an open eye.",
+  "category": "wondrous item",
+  "subtype": "medallion",
+  "rarity": "uncommon",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Telepathy",
+  "tags": [
+    "spell",
+    "mind"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt holds three charges and regains 1d3 each dawn. Spend one to read the surface thoughts of those around you.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Detect Thoughts",
+        "level": 2,
+        "charges": 1,
+        "dc": 13,
+        "note": ""
+      }
+    ],
+    "charges": {
+      "max": 3,
+      "regain": "1d3",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

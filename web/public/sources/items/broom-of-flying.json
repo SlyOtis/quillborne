@@ -1,0 +1,33 @@
+{
+  "name": "Broom of Flying",
+  "description": "A plain birch broom that tugs gently upward when held.",
+  "category": "wondrous item",
+  "subtype": "broom",
+  "rarity": "uncommon",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 0,
+  "notes": "Flying",
+  "tags": [
+    "movement"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nStanding astride it, you fly at 50 feet, or 30 if it carries more than 200 pounds. Speak its word and name a place within a mile and it flies there alone, and it comes back to you from that far when called.",
+  "grants": {
+    "speeds": [
+      {
+        "id": "fly",
+        "value": 50
+      }
+    ],
+    "features": [
+      {
+        "name": "Burdened",
+        "text": "It flies at 30 feet while carrying over 200 pounds, and stops carrying more than 400."
+      }
+    ]
+  }
+}

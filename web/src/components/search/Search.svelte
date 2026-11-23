@@ -34,8 +34,6 @@
   const GLYPHS: Record<ResourceKind, GlyphName> = {
     entries: 'scroll',
     items: 'gear',
-    weapons: 'gear',
-    armor: 'gear',
     places: 'campaign',
     maps: 'picture',
     sessions: 'scroll'

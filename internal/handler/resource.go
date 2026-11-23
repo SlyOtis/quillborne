@@ -22,8 +22,7 @@ import (
 )
 
 var resourceKinds = map[string]bool{
-	"entries": true, "items": true, "weapons": true,
-	"armor": true, "locations": true, "maps": true, "sessions": true,
+	"entries": true, "items": true, "locations": true, "maps": true, "sessions": true,
 }
 
 // lockedHeads names the kinds a table member may know of without reading, and the fields of the head they see.

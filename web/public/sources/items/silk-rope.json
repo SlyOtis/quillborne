@@ -1,0 +1,17 @@
+{
+  "name": "Silk Rope",
+  "description": "Fifty feet of fine silk rope, light and strong.",
+  "category": "adventuring gear",
+  "subtype": "rope",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 5,
+  "value": 10,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nIt has 2 hit points, and bursting it takes a DC 17 Strength check. Half the weight of hemp."
+}

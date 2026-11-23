@@ -1,0 +1,17 @@
+{
+  "name": "Woodcarver's Tools",
+  "description": "Small knives, gouges and a whittling block.",
+  "category": "tool",
+  "subtype": "artisan's tools",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 5,
+  "value": 1,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nFor carving figures, bowls and arrow shafts."
+}

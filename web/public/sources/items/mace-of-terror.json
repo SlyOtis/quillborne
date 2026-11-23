@@ -1,0 +1,40 @@
+{
+  "name": "Mace of Terror",
+  "description": "A black iron mace with a head shaped like a screaming face.",
+  "category": "weapon",
+  "subtype": "mace",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 4,
+  "value": 0,
+  "notes": "Fear",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt holds three charges and regains 1d3 each dawn. Spend one, as an action, to send out a wave of dread: each creature you choose within 30 feet makes a DC 15 Wisdom saving throw or is frightened of you for a minute. A frightened creature spends its turns running from you, cannot come within 30 feet of you willingly and takes no reactions. It repeats the save at the end of each of its turns.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "bludgeoning",
+      "bonus": 0
+    }
+  },
+  "grants": {
+    "features": [
+      {
+        "name": "Terror",
+        "text": "Spend a charge: creatures you choose within 30 feet make a DC 15 Wisdom save or are frightened of you for a minute, repeating the save at the end of each of their turns."
+      }
+    ],
+    "charges": {
+      "max": 3,
+      "regain": "1d3",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

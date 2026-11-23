@@ -110,6 +110,86 @@
     }
   ],
   "proficiencies": {},
+  "startingEquipment": {
+    "fixed": [
+      {
+        "id": "leather-armor",
+        "quantity": 1
+      },
+      {
+        "id": "dagger",
+        "quantity": 2
+      },
+      {
+        "id": "thieves-tools",
+        "quantity": 1
+      }
+    ],
+    "choices": [
+      {
+        "options": [
+          [
+            {
+              "id": "rapier",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "shortsword",
+              "quantity": 1
+            }
+          ]
+        ]
+      },
+      {
+        "options": [
+          [
+            {
+              "id": "shortbow",
+              "quantity": 1
+            },
+            {
+              "id": "quiver",
+              "quantity": 1
+            },
+            {
+              "id": "arrows",
+              "quantity": 20
+            }
+          ],
+          [
+            {
+              "id": "shortsword",
+              "quantity": 1
+            }
+          ]
+        ]
+      },
+      {
+        "options": [
+          [
+            {
+              "id": "burglars-pack",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "dungeoneers-pack",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "explorers-pack",
+              "quantity": 1
+            }
+          ]
+        ]
+      }
+    ]
+  },
   "subclasses": [],
   "source": "srd"
 }

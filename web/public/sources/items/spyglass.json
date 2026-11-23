@@ -1,0 +1,17 @@
+{
+  "name": "Spyglass",
+  "description": "A brass tube of lenses that draws out to the length of an arm.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 1,
+  "value": 1000,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nWhatever you look at through it appears twice as large."
+}

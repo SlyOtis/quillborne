@@ -1,0 +1,48 @@
+{
+  "name": "Staff of Healing",
+  "description": "A staff of white ash bound with silver at both ends.",
+  "category": "staff",
+  "subtype": "",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "by a bard, cleric, or druid",
+  "consumable": false,
+  "weight": 4,
+  "value": 0,
+  "notes": "Healing",
+  "tags": [
+    "healing",
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIts charges close wounds and lift ailments.\n\n## Charges\n\nIt holds ten and regains 1d6 + 4 each dawn. Spend the last and it may vanish in a flash of light.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Cure Wounds",
+        "level": 1,
+        "charges": 1,
+        "note": "each further charge raises its level by one, up to 4 charges"
+      },
+      {
+        "name": "Lesser Restoration",
+        "level": 2,
+        "charges": 2,
+        "note": ""
+      },
+      {
+        "name": "Mass Cure Wounds",
+        "level": 5,
+        "charges": 5,
+        "note": ""
+      }
+    ],
+    "charges": {
+      "max": 10,
+      "regain": "1d6 + 4",
+      "at": "dawn",
+      "last": "roll a d20; on a 1 it vanishes in a flash of light, lost forever"
+    }
+  }
+}

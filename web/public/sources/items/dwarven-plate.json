@@ -1,0 +1,38 @@
+{
+  "name": "Dwarven Plate",
+  "description": "A heavy, squat suit of plate etched with runes of the deep halls.",
+  "category": "armor",
+  "subtype": "plate armor",
+  "rarity": "very rare",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 65,
+  "value": 0,
+  "notes": "Armor Class",
+  "tags": [
+    "heavy"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt guards much better than plain plate. When something tries to shove or drag you along the ground, you can use your reaction to be moved up to 10 feet less.",
+  "properties": {
+    "armor": "heavy",
+    "ac": {
+      "base": 18,
+      "bonus": 2,
+      "dexModifier": false,
+      "maxDexBonus": 0
+    },
+    "strength": 15,
+    "stealth": true
+  },
+  "grants": {
+    "features": [
+      {
+        "name": "Steadfast",
+        "text": "When an effect moves you along the ground against your will, use your reaction to reduce the distance by up to 10 feet."
+      }
+    ]
+  }
+}

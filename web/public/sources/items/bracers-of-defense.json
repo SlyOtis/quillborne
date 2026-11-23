@@ -1,0 +1,33 @@
+{
+  "name": "Bracers of Defense",
+  "description": "Steel bracers chased with interlocking shields.",
+  "category": "wondrous item",
+  "subtype": "bracers",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Armor Class",
+  "tags": [
+    "defence"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What they do\n\nIf you wear no armor and carry no shield, they turn blows aside and guard you better.",
+  "grants": {
+    "bonuses": [
+      {
+        "id": "armorClass",
+        "value": 2
+      }
+    ],
+    "features": [
+      {
+        "name": "Unarmored",
+        "text": "The bonus holds only while you wear no armor and use no shield."
+      }
+    ]
+  }
+}

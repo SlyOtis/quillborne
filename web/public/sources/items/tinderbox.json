@@ -1,0 +1,17 @@
+{
+  "name": "Tinderbox",
+  "description": "A palm-sized tin with a striker, a flint and a wad of oiled rag.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 1,
+  "value": 0.5,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nLighting a torch, a lamp or anything else with open fuel takes an action. Lighting anything else takes a minute."
+}

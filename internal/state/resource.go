@@ -30,7 +30,7 @@ func getResourceGroup() nstate.Group[ResourceData] {
 	return nstate.Group[ResourceData]{
 		Name: GroupResource,
 		Schema: getSchema(map[string]any{
-			"kind":            getProperty("string", "Which of the seven kinds the page is: entries, items, weapons, armor, locations, maps or sessions."),
+			"kind":            getProperty("string", "Which of the five kinds the page is: entries, items, locations, maps or sessions. A weapon or armor is an item."),
 			"user_id":         getOwner("The player who wrote it down."),
 			"owner_id":        getRef(GroupCampaign),
 			"parent_id":       getRef(GroupResource),

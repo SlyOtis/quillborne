@@ -1,0 +1,17 @@
+{
+  "name": "Drum",
+  "description": "A hide drum on a wooden frame, with a strap.",
+  "category": "tool",
+  "subtype": "musical instrument",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 6,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nProficiency with it adds your proficiency bonus to checks to play it. A bard can use it as a spellcasting focus."
+}

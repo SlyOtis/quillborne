@@ -1,0 +1,34 @@
+{
+  "name": "Light Crossbow",
+  "description": "A wooden stock with a short steel bow across its front and a trigger beneath.",
+  "category": "weapon",
+  "subtype": "light crossbow",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 5,
+  "value": 25,
+  "notes": "",
+  "tags": [
+    "ammunition",
+    "loading",
+    "two-handed"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nDraw it, seat a bolt and squeeze. It needs both hands, and a moment to load again after every shot.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "piercing",
+      "bonus": 0
+    },
+    "range": {
+      "normal": 80,
+      "max": 320
+    }
+  }
+}

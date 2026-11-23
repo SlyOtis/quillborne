@@ -1,0 +1,33 @@
+{
+  "name": "Shortbow",
+  "description": "A compact bow of horn and wood, short enough to draw from the saddle.",
+  "category": "weapon",
+  "subtype": "shortbow",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 25,
+  "notes": "",
+  "tags": [
+    "ammunition",
+    "two-handed"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nNeeds both hands and a supply of arrows.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "piercing",
+      "bonus": 0
+    },
+    "range": {
+      "normal": 80,
+      "max": 320
+    }
+  }
+}

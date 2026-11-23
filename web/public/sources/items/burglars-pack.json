@@ -1,0 +1,75 @@
+{
+  "name": "Burglar's Pack",
+  "description": "A backpack packed for getting in where you are not wanted.",
+  "category": "adventuring gear",
+  "subtype": "equipment pack",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 16,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nA backpack holding a bag of ball bearings, ten feet of string, a bell, five candles, a crowbar, a hammer, ten pitons, a hooded lantern, two flasks of oil, five days of rations, a tinderbox, a waterskin and fifty feet of hempen rope. Added to an inventory, it is unpacked into those items.",
+  "pack": [
+    {
+      "id": "backpack",
+      "quantity": 1
+    },
+    {
+      "id": "ball-bearings",
+      "quantity": 1
+    },
+    {
+      "id": "string",
+      "quantity": 1
+    },
+    {
+      "id": "bell",
+      "quantity": 1
+    },
+    {
+      "id": "candle",
+      "quantity": 5
+    },
+    {
+      "id": "crowbar",
+      "quantity": 1
+    },
+    {
+      "id": "hammer",
+      "quantity": 1
+    },
+    {
+      "id": "piton",
+      "quantity": 10
+    },
+    {
+      "id": "hooded-lantern",
+      "quantity": 1
+    },
+    {
+      "id": "oil",
+      "quantity": 2
+    },
+    {
+      "id": "rations",
+      "quantity": 5
+    },
+    {
+      "id": "tinderbox",
+      "quantity": 1
+    },
+    {
+      "id": "waterskin",
+      "quantity": 1
+    },
+    {
+      "id": "hempen-rope",
+      "quantity": 1
+    }
+  ]
+}

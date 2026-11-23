@@ -1,0 +1,17 @@
+{
+  "name": "Cook's Utensils",
+  "description": "A pot, a pan, a sharp knife and a bundle of spices.",
+  "category": "tool",
+  "subtype": "artisan's tools",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 8,
+  "value": 1,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nFor a hot meal that is worth eating."
+}

@@ -1,0 +1,34 @@
+{
+  "name": "Longsword",
+  "description": "A straight double-edged blade with a cross guard and a grip long enough for a second hand.",
+  "category": "weapon",
+  "subtype": "longsword",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 15,
+  "notes": "",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nThe knight's sword. One hand fights well with it; both hands on the grip drive each cut deeper.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 10,
+      "type": "slashing",
+      "bonus": 0
+    }
+  }
+}

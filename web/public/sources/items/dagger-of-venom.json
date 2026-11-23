@@ -1,0 +1,50 @@
+{
+  "name": "Dagger of Venom",
+  "description": "A black-bladed dagger with a groove down its length that beads with something dark.",
+  "category": "weapon",
+  "subtype": "dagger",
+  "rarity": "rare",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 1,
+  "value": 0,
+  "notes": "Poison, Damage",
+  "tags": [
+    "finesse",
+    "light",
+    "thrown"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nA magic dagger that strikes a little truer and harder than a plain one. Once a day, as an action, you can make its blade run with poison for a minute; the next creature it hits must make a DC 15 Constitution saving throw or take 2d10 poison damage and be poisoned for a minute.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 4,
+      "type": "piercing",
+      "bonus": 0
+    },
+    "range": {
+      "normal": 20,
+      "max": 60
+    },
+    "magic": 1
+  },
+  "grants": {
+    "damage": [
+      {
+        "dice": "2d10",
+        "damage": "poison",
+        "note": "on the next hit while the blade runs with poison, unless the target makes a DC 15 Constitution save; on a failure it is also poisoned for a minute"
+      }
+    ],
+    "charges": {
+      "max": 1,
+      "regain": "1",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

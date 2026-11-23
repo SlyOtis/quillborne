@@ -436,6 +436,8 @@ export async function postResource(owner: Owner, kind: string, values: Record<st
   return created.id
 }
 
+export const getResource = <T extends Row>(id: string) => apiGet<T>(`resource/${id}`)
+
 export const putResource = (id: string, values: Record<string, unknown>) => apiPut(`resource/${id}`, values)
 
 export const deleteResource = (id: string) => apiDelete(`resource/${id}`)

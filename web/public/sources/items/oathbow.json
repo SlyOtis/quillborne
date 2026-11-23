@@ -1,0 +1,49 @@
+{
+  "name": "Oathbow",
+  "description": "A tall elven longbow strung with silver, that whispers when drawn.",
+  "category": "weapon",
+  "subtype": "longbow",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 0,
+  "notes": "Ranged, Damage",
+  "tags": [
+    "ammunition",
+    "heavy",
+    "two-handed"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nWhen you nock an arrow it whispers in Elvish for the swift defeat of your enemies.\n\n## Sworn enemy\n\nWhen you make a ranged attack with it, you can swear its target your sworn enemy until it dies or seven dawns pass. You can have one at a time, and after one dies you can swear another at the next dawn. Against it you have advantage, it gains nothing from cover short of total, long range costs you nothing, and every hit deals more piercing damage. While it lives, you have disadvantage with every other weapon.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "piercing",
+      "bonus": 0
+    },
+    "range": {
+      "normal": 150,
+      "max": 600
+    }
+  },
+  "grants": {
+    "damage": [
+      {
+        "dice": "3d6",
+        "damage": "piercing",
+        "note": "against your sworn enemy"
+      }
+    ],
+    "features": [
+      {
+        "name": "Sworn Enemy",
+        "text": "Name the target of a ranged attack, one at a time, the next after the dawn that follows a death. Until it dies or seven dawns pass you have advantage against it, it gains no benefit from cover short of total, and long range gives you no disadvantage. While it lives you have disadvantage with other weapons."
+      }
+    ]
+  }
+}

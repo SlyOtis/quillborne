@@ -1,0 +1,41 @@
+{
+  "name": "Mace of Smiting",
+  "description": "An iron mace with a head shaped like a clenched fist.",
+  "category": "weapon",
+  "subtype": "mace",
+  "rarity": "rare",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 4,
+  "value": 0,
+  "notes": "Constructs, Damage",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt strikes truer and harder than a plain mace, and truer and harder still against a construct. On a 20 it smashes for more, and a construct left with 25 hit points or fewer by that blow is destroyed.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "bludgeoning",
+      "bonus": 0
+    },
+    "magic": 1
+  },
+  "grants": {
+    "damage": [
+      {
+        "dice": "2",
+        "damage": "",
+        "note": "against a construct, with 2 more to hit"
+      },
+      {
+        "dice": "2d6",
+        "damage": "bludgeoning",
+        "note": "on a 20, or 4d6 against a construct"
+      }
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "Studded Leather Armor",
+  "description": "Tough leather set close with iron rivets.",
+  "category": "armor",
+  "subtype": "studded leather armor",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 13,
+  "value": 45,
+  "notes": "",
+  "tags": [
+    "light"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nLeather made harder to cut. Light and quiet, and your quickness counts in full.",
+  "properties": {
+    "armor": "light",
+    "ac": {
+      "base": 12,
+      "bonus": 0,
+      "dexModifier": true,
+      "maxDexBonus": 0
+    }
+  }
+}

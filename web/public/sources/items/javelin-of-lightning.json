@@ -1,0 +1,53 @@
+{
+  "name": "Javelin of Lightning",
+  "description": "A javelin with a head of blue-white metal that smells of storms.",
+  "category": "weapon",
+  "subtype": "javelin",
+  "rarity": "uncommon",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 0,
+  "notes": "Lightning, Damage",
+  "tags": [
+    "thrown"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nOnce a day, hurl it and speak its word and it becomes a bolt of lightning, a line 5 feet wide that runs from you to a target within 120 feet. Everyone else in the line makes a DC 13 Dexterity saving throw, taking 4d6 lightning damage on a failure and half on a success. Then make a ranged attack against the target: a hit deals the javelin's damage and the lightning's besides. It turns back into a javelin when it arrives.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "piercing",
+      "bonus": 0
+    },
+    "range": {
+      "normal": 30,
+      "max": 120
+    }
+  },
+  "grants": {
+    "damage": [
+      {
+        "dice": "4d6",
+        "damage": "lightning",
+        "note": "when thrown as the bolt of lightning"
+      }
+    ],
+    "features": [
+      {
+        "name": "Bolt",
+        "text": "Every other creature in the 5-foot line to the target makes a DC 13 Dexterity save, taking 4d6 lightning damage on a failure and half on a success."
+      }
+    ],
+    "charges": {
+      "max": 1,
+      "regain": "1",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

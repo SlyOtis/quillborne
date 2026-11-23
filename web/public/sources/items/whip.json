@@ -1,0 +1,29 @@
+{
+  "name": "Whip",
+  "description": "A braided leather lash with a weighted tip.",
+  "category": "weapon",
+  "subtype": "whip",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 2,
+  "notes": "",
+  "tags": [
+    "finesse",
+    "reach"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nIt reaches 10 feet and stings. A practised hand makes it crack exactly where it is aimed.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 4,
+      "type": "slashing",
+      "bonus": 0
+    }
+  }
+}

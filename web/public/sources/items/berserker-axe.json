@@ -1,0 +1,47 @@
+{
+  "name": "Berserker Axe",
+  "description": "A heavy-bladed battleaxe whose haft is wrapped in hide stained dark.",
+  "category": "weapon",
+  "subtype": "battleaxe",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 4,
+  "value": 0,
+  "notes": "Hit Points, Curse",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nAny axe can carry this curse; this one is a battleaxe. It strikes truer and harder than a plain axe, and while you are attuned to it your body grows tougher with every level you have earned.\n\n## Curse\n\nOnce attuned, you will not part with it, and you fight at disadvantage with any other weapon. Whenever a hostile creature harms you, make a DC 15 Wisdom saving throw or go berserk, attacking the nearest creature each turn until none is left within 60 feet that you can see or hear.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 10,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "magic": 1
+  },
+  "grants": {
+    "features": [
+      {
+        "name": "Fury",
+        "text": "While attuned, your hit point maximum rises by 1 for each level you have."
+      },
+      {
+        "name": "Curse",
+        "text": "You will not part with it, you have disadvantage with other weapons, and when a hostile creature damages you a failed DC 15 Wisdom save sends you berserk."
+      }
+    ]
+  }
+}

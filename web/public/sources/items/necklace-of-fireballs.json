@@ -1,0 +1,37 @@
+{
+  "name": "Necklace of Fireballs",
+  "description": "A string of small glowing orange beads.",
+  "category": "wondrous item",
+  "subtype": "necklace",
+  "rarity": "rare",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Fire, Damage",
+  "tags": [
+    "combat",
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nAs an action, pull off a bead and throw it up to 60 feet, and it bursts as a fireball. Throw several at once and the fireball grows by a level for each bead past the first. It holds 1d6 + 3 beads when found, and they do not grow back.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Fireball",
+        "level": 3,
+        "charges": 1,
+        "dc": 15,
+        "note": "each further bead thrown with it raises its level by one"
+      }
+    ],
+    "charges": {
+      "max": 9,
+      "regain": "",
+      "at": "",
+      "last": "the necklace is only a string"
+    }
+  }
+}

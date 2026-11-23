@@ -2,7 +2,7 @@
   "name": "Staff of Striking",
   "description": "A quarterstaff of ironwood, its ends shod in dented bronze.",
   "category": "staff",
-  "subtype": "",
+  "subtype": "quarterstaff",
   "rarity": "very rare",
   "attunement": true,
   "attuned_by": "",
@@ -11,12 +11,27 @@
   "value": 0,
   "notes": "Damage, Force, Combat",
   "tags": [
-    "combat",
-    "damage"
+    "versatile"
   ],
   "system": "dnd5e",
   "book": "System Reference Document 5.1",
   "body": "## What it does\n\nIn the hand it fights as a magic quarterstaff that strikes truer and harder than any plain one. When it lands, you can pour its stored force into the blow.\n\n## Charges\n\nIt holds ten charges and gathers some back each dawn. Spend the last one and it may lose its magic for good.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "bludgeoning",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 8,
+      "type": "bludgeoning",
+      "bonus": 0
+    },
+    "magic": 3
+  },
   "grants": {
     "damage": [
       {

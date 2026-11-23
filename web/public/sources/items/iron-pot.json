@@ -1,0 +1,17 @@
+{
+  "name": "Iron Pot",
+  "description": "A heavy iron cook pot with a bail handle.",
+  "category": "adventuring gear",
+  "subtype": "pot",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 10,
+  "value": 2,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nHolds a gallon of stew, water or anything else."
+}

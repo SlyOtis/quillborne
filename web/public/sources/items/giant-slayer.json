@@ -1,0 +1,39 @@
+{
+  "name": "Giant Slayer",
+  "description": "A greataxe whose blade is notched with a tally of kills.",
+  "category": "weapon",
+  "subtype": "greataxe",
+  "rarity": "rare",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 7,
+  "value": 0,
+  "notes": "Giants, Damage",
+  "tags": [
+    "heavy",
+    "two-handed"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nAny axe or sword can carry this enchantment; this one is a greataxe. It strikes truer and harder than a plain one, and a giant it hits takes far more harm and must make a DC 15 Strength saving throw or fall prone.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 12,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "magic": 1
+  },
+  "grants": {
+    "damage": [
+      {
+        "dice": "2d6",
+        "damage": "",
+        "note": "against a giant, which also falls prone unless it makes a DC 15 Strength save"
+      }
+    ]
+  }
+}

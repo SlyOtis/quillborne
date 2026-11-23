@@ -1,0 +1,17 @@
+{
+  "name": "Vestments",
+  "description": "Priestly robes in the colours of a faith.",
+  "category": "adventuring gear",
+  "subtype": "clothes",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nWorn to lead worship and to be known as clergy."
+}

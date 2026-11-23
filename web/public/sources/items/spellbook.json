@@ -1,0 +1,17 @@
+{
+  "name": "Spellbook",
+  "description": "A heavy tome of vellum pages under a tooled cover.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 50,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nWhere a wizard keeps every spell they know. It holds a hundred pages."
+}

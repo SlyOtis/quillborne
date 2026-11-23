@@ -1,0 +1,30 @@
+{
+  "name": "Ring of Jumping",
+  "description": "A ring of green jade carved like a crouching frog.",
+  "category": "ring",
+  "subtype": "",
+  "rarity": "uncommon",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Jumping",
+  "tags": [
+    "movement",
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nWhenever you like, as a bonus action, you can leap as the jump spell lets you, though only yourself.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Jump",
+        "level": 1,
+        "charges": 0,
+        "note": "on yourself only, at will, as a bonus action"
+      }
+    ]
+  }
+}

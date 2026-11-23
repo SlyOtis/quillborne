@@ -1,0 +1,17 @@
+{
+  "name": "Sling Bullets",
+  "description": "Lead shot cast in the shape of an acorn.",
+  "category": "ammunition",
+  "subtype": "sling bullet",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0.075,
+  "value": 0.002,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nHurled from a sling. A shot spends one; after a fight, half of those spent can be found again with a minute of searching. Usually bought twenty at a time."
+}

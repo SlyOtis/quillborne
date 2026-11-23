@@ -1,0 +1,17 @@
+{
+  "name": "Rations",
+  "description": "A cloth bundle of salt meat, oatcakes and dried apples.",
+  "category": "consumable",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": true,
+  "weight": 2,
+  "value": 0.5,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nFood that keeps on a long road. One is a day's eating."
+}

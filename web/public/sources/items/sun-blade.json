@@ -1,0 +1,45 @@
+{
+  "name": "Sun Blade",
+  "description": "A sword hilt with no blade, until a word draws one of pure sunlight from it.",
+  "category": "weapon",
+  "subtype": "longsword",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 0,
+  "notes": "Radiant, Undead, Light",
+  "tags": [
+    "finesse",
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nAs a bonus action you call a blade of sunlight out of the hilt, or let it go out. It fights as a longsword that strikes truer and harder than steel, deals radiant damage, can be wielded with finesse, and burns undead all the more. Anyone proficient with longswords or shortswords is proficient with it.\n\n## Light\n\nThe blade sheds sunlight, bright for 15 feet and dim for 15 beyond. As an action you can widen or narrow both by 5 feet, to as much as 30 feet each or as little as 10.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "radiant",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 10,
+      "type": "radiant",
+      "bonus": 0
+    },
+    "magic": 2
+  },
+  "grants": {
+    "damage": [
+      {
+        "dice": "1d8",
+        "damage": "radiant",
+        "note": "against an undead"
+      }
+    ]
+  }
+}

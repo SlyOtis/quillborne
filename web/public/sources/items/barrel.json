@@ -1,0 +1,21 @@
+{
+  "name": "Barrel",
+  "description": "A wooden barrel bound with iron hoops.",
+  "category": "container",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 70,
+  "value": 2,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nHolds 40 gallons of liquid or 4 cubic feet of goods.",
+  "properties": {
+    "capacity": 120,
+    "weightless": false
+  }
+}

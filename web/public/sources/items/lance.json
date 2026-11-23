@@ -1,0 +1,29 @@
+{
+  "name": "Lance",
+  "description": "A long tapering pole of wood with a steel point, made for the charge.",
+  "category": "weapon",
+  "subtype": "lance",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 6,
+  "value": 10,
+  "notes": "",
+  "tags": [
+    "reach",
+    "special"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nIt reaches 10 feet. Attacks with it against a target within 5 feet of you have disadvantage, and it needs two hands unless you are mounted.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 12,
+      "type": "piercing",
+      "bonus": 0
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "name": "Wand of Polymorph",
+  "description": "A twisted wand of many woods grafted together.",
+  "category": "wand",
+  "subtype": "",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "by a spellcaster",
+  "consumable": false,
+  "weight": 1,
+  "value": 0,
+  "notes": "Transformation",
+  "tags": [
+    "spell",
+    "control"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nSpend a charge to change a creature into a beast.\n\n## Charges\n\nIt holds seven and regains 1d6 + 1 each dawn. Spend the last and it may crumble to ash.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Polymorph",
+        "level": 4,
+        "charges": 1,
+        "dc": 15,
+        "note": ""
+      }
+    ],
+    "charges": {
+      "max": 7,
+      "regain": "1d6 + 1",
+      "at": "dawn",
+      "last": "roll a d20; on a 1 it crumbles to ash"
+    }
+  }
+}

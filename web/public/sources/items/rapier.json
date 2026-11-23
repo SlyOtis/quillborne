@@ -1,0 +1,28 @@
+{
+  "name": "Rapier",
+  "description": "A slender thrusting blade with a swept hilt.",
+  "category": "weapon",
+  "subtype": "rapier",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 25,
+  "notes": "",
+  "tags": [
+    "finesse"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nFought with the wrist and the feet rather than the shoulder, so a quick fighter does as well with it as a strong one.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "piercing",
+      "bonus": 0
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "Ring of the Ram",
+  "description": "A heavy ring of beaten brass shaped like a ram's head.",
+  "category": "ring",
+  "subtype": "",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Force, Damage",
+  "tags": [
+    "combat"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt holds three charges and regains 1d3 each dawn. As an action, spend one to three to hurl a spectral ram's head at a creature within 60 feet. The ring attacks with +7: a hit deals 2d10 force damage for each charge spent and pushes the creature 5 feet away for each. Or spend one to three to try to break an object you can see within 60 feet that nobody wears or carries, with a Strength check of +5 for each charge.",
+  "grants": {
+    "features": [
+      {
+        "name": "Ram",
+        "text": "1 to 3 charges: a ranged attack at +7 against a creature within 60 feet, dealing 2d10 force damage and pushing it 5 feet per charge."
+      }
+    ],
+    "charges": {
+      "max": 3,
+      "regain": "1d3",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

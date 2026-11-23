@@ -75,6 +75,110 @@
     }
   ],
   "proficiencies": {},
+  "startingEquipment": {
+    "fixed": [
+      {
+        "id": "leather-armor",
+        "quantity": 1
+      },
+      {
+        "id": "explorers-pack",
+        "quantity": 1
+      }
+    ],
+    "choices": [
+      {
+        "options": [
+          [
+            {
+              "id": "shield",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "quarterstaff",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "spear",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "club",
+              "quantity": 1
+            }
+          ]
+        ]
+      },
+      {
+        "options": [
+          [
+            {
+              "id": "scimitar",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "quarterstaff",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "club",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "spear",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "sickle",
+              "quantity": 1
+            }
+          ]
+        ]
+      },
+      {
+        "options": [
+          [
+            {
+              "id": "sprig-of-mistletoe",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "totem",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "wooden-staff",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "yew-wand",
+              "quantity": 1
+            }
+          ]
+        ]
+      }
+    ]
+  },
   "subclasses": [],
   "source": "srd"
 }

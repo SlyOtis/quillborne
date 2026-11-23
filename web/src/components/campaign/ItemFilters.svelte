@@ -1,6 +1,7 @@
 <script lang="ts">
   import { userCampaigns } from '$lib/stores/campaign.store'
-  import { getChoices, getEmptyItemFilter, type ItemFilter, type ItemType, type Rarity } from '$lib/resources'
+  import { getChoices, getEmptyItemFilter, getItemSystem, type ItemFilter, type Rarity } from '$lib/resources'
+  import type { ItemCategorySpec } from '$lib/rules/spec.types'
   import Button from '$components/ui/Button.svelte'
   import Chip from '$components/ui/Chip.svelte'
   import Dropdown from '$components/ui/Dropdown.svelte'
@@ -15,8 +16,19 @@
     facets?: ('source' | 'lock' | 'table')[]
   } = $props()
 
-  const TYPES = getChoices('items', 'category') as readonly ItemType[]
   const RARITIES = getChoices('items', 'rarity') as readonly Rarity[]
+
+  let types = $state<ItemCategorySpec[]>([])
+
+  $effect(() => {
+    let live = true
+    getItemSystem()
+      .then((system) => live && (types = system.items?.categories ?? []))
+      .catch(() => live && (types = []))
+    return () => {
+      live = false
+    }
+  })
 
   const narrowed = $derived(
     Boolean(filter.type || filter.rarities.length > 0 || filter.bond || filter.source || filter.lock || filter.table)
@@ -35,8 +47,8 @@
   <Dropdown
     label="Filter by type"
     value={filter.type}
-    options={[{ value: '', label: 'Every type' }, ...TYPES.map((one) => ({ value: one, label: one }))]}
-    onchange={(value) => (filter.type = value as ItemFilter['type'])}
+    options={[{ value: '', label: 'Every type' }, ...types.map((one) => ({ value: one.id, label: one.title }))]}
+    onchange={(value) => (filter.type = value)}
   />
 
   <span class="dnd-item-filters-rarities" role="group" aria-label="Filter by rarity">

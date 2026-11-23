@@ -1,0 +1,17 @@
+{
+  "name": "Lock",
+  "description": "An iron padlock with its key.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 1,
+  "value": 10,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nIts key opens it. Anyone else needs thieves' tools, proficiency with them and a DC 15 Dexterity check. Better locks cost more and are harder to pick."
+}

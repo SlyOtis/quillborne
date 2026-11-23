@@ -1,0 +1,63 @@
+{
+  "name": "Luck Blade",
+  "description": "A longsword with a four-leafed clover worked into its pommel.",
+  "category": "weapon",
+  "subtype": "longsword",
+  "rarity": "legendary",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 0,
+  "notes": "Saving Throws, Wish",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nAny sword can carry this luck; this one is a longsword. It strikes truer and harder than a plain sword, and while it is on your person every saving throw you make is a little better.\n\n## Luck\n\nOnce a day you can reroll one attack roll, ability check or saving throw you dislike, and must keep the new roll.\n\n## Wishes\n\nIt holds up to three wishes, 1d4 - 1 when it is found, and never regains them. One can be spent a day.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 10,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "magic": 1
+  },
+  "grants": {
+    "bonuses": [
+      {
+        "id": "saves",
+        "value": 1
+      }
+    ],
+    "spells": [
+      {
+        "name": "Wish",
+        "level": 9,
+        "charges": 1,
+        "note": "once per dawn"
+      }
+    ],
+    "features": [
+      {
+        "name": "Luck",
+        "text": "Once per dawn, reroll an attack roll, an ability check or a saving throw and use the new roll."
+      }
+    ],
+    "charges": {
+      "max": 3,
+      "regain": "",
+      "at": "",
+      "last": "it keeps its other magic"
+    }
+  }
+}

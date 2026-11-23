@@ -11,6 +11,7 @@ import { currentCampaignId } from "./stores/campaign.store";
 import { currentCharacterId } from "./stores/character.store";
 import { getExpressionValue } from "./rules/expression";
 import type { ResolvedCharacter } from "./rules/spec.types";
+import { getItemLine, getItemRoom, type Item } from "./resources";
 
 export type ReplicateLogItem = {
   returnedAt: Date,
@@ -1361,7 +1362,7 @@ async function aiSearchItems(action: AiAction) {
     
     if (results.length > 0) {
       const itemsList = results.slice(0, 5).map(item => 
-        `• **${item.name}** (${item.rarity}) - ${item.description.substring(0, 80)}...`
+        `• **${item.title}** (${item.rarity}) - ${item.description.substring(0, 80)}...`
       ).join('\n');
       
       replicateStore.update(state => ([...state, {
@@ -1418,20 +1419,18 @@ async function aiSearchNPCs(action: AiAction) {
 }
 
 // Database lookup functions
-async function findItemInDatabase(itemName: string): Promise<any | null> {
+async function findItemInDatabase(itemName: string): Promise<Item | null> {
   try {
-    const response = await fetch('/sources/items/equipment.json');
-    const data = await response.json();
-    
-    // Find exact match or partial match
-    const items = Object.values(data.items) as any[];
-    return items.find(item => 
-      item.name.toLowerCase().includes(itemName) || 
-      item.id.toLowerCase().includes(itemName) ||
-      item.tags?.some((tag: string) => tag.toLowerCase().includes(itemName))
+    const items = await getItemRoom();
+    return items.find(item =>
+      !item.locked && (
+        item.title.toLowerCase().includes(itemName) ||
+        item.id.toLowerCase().includes(itemName) ||
+        item.tags.some(tag => tag.toLowerCase().includes(itemName))
+      )
     ) || null;
   } catch (error) {
-    console.error('Error loading items database:', error);
+    console.error('Error loading the item room:', error);
     return null;
   }
 }
@@ -1454,26 +1453,24 @@ async function findNPCInDatabase(npcName: string): Promise<any | null> {
   }
 }
 
-async function searchItemsDatabase(query: string, type: string): Promise<any[]> {
+async function searchItemsDatabase(query: string, type: string): Promise<Item[]> {
   try {
-    const response = await fetch('/sources/items/equipment.json');
-    const data = await response.json();
-    
-    const items = Object.values(data.items) as any[];
+    const items = await getItemRoom();
     return items.filter(item => {
-      const matchesQuery = !query || 
-        item.name.toLowerCase().includes(query) ||
+      if (item.locked) return false;
+      const matchesQuery = !query ||
+        item.title.toLowerCase().includes(query) ||
         item.description.toLowerCase().includes(query) ||
-        item.tags?.some((tag: string) => tag.toLowerCase().includes(query));
-      
-      const matchesType = !type || 
-        item.type.toLowerCase().includes(type) ||
-        item.subtype?.toLowerCase().includes(type);
-      
+        item.tags.some(tag => tag.toLowerCase().includes(query));
+
+      const matchesType = !type ||
+        item.category.toLowerCase().includes(type) ||
+        item.subtype.toLowerCase().includes(type);
+
       return matchesQuery && matchesType;
     });
   } catch (error) {
-    console.error('Error searching items database:', error);
+    console.error('Error searching the item room:', error);
     return [];
   }
 }
@@ -1649,27 +1646,28 @@ async function getImageForNPC(npc: any): Promise<string> {
 }
 
 // Card creation functions
-async function createItemCard(item: any): Promise<string> {
-  const cost = item.cost ? `${item.cost.amount} ${item.cost.currency}` : 'N/A';
+async function createItemCard(item: Item): Promise<string> {
+  const cost = item.value ? `${item.value} gp` : 'N/A';
   const weight = item.weight ? `${item.weight} lbs` : 'N/A';
-  const imageUrl = await getImageForItem(item);
+  const damage = item.properties.damage;
+  const imageUrl = await getImageForItem({ id: item.id, name: item.title, type: item.category, imageUrl: item.image });
   
   return `<div class="card">
 
-🗡️ **${item.name}**
-*${item.type} (${item.rarity})*
+🗡️ **${item.title}**
+*${getItemLine(item)}*
 
 **Description:** ${item.description}
 
 **Properties:**
 • **Cost:** ${cost}
 • **Weight:** ${weight}
-${item.damage ? `• **Damage:** ${item.damage}` : ''}
-${item.armorClass ? `• **AC:** ${item.armorClass}` : ''}
-${item.effect ? `• **Effect:** ${item.effect}` : ''}
-${item.properties?.length ? `• **Properties:** ${item.properties.join(', ')}` : ''}
+${damage ? `• **Damage:** ${damage.amount}d${damage.dice} ${damage.type}` : ''}
+${item.properties.ac ? `• **AC:** ${item.properties.ac.base}${item.properties.ac.bonus ? ` + ${item.properties.ac.bonus}` : ''}` : ''}
+${item.notes ? `• **Notes:** ${item.notes}` : ''}
+${item.tags.length ? `• **Properties:** ${item.tags.join(', ')}` : ''}
 
-![${item.name}](${imageUrl})
+![${item.title}](${imageUrl})
 
 </div>`;
 }

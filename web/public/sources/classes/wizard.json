@@ -61,6 +61,88 @@
     }
   ],
   "proficiencies": {},
+  "startingEquipment": {
+    "fixed": [
+      {
+        "id": "spellbook",
+        "quantity": 1
+      }
+    ],
+    "choices": [
+      {
+        "options": [
+          [
+            {
+              "id": "quarterstaff",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "dagger",
+              "quantity": 1
+            }
+          ]
+        ]
+      },
+      {
+        "options": [
+          [
+            {
+              "id": "component-pouch",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "arcane-crystal",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "arcane-orb",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "arcane-rod",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "arcane-staff",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "arcane-wand",
+              "quantity": 1
+            }
+          ]
+        ]
+      },
+      {
+        "options": [
+          [
+            {
+              "id": "scholars-pack",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "explorers-pack",
+              "quantity": 1
+            }
+          ]
+        ]
+      }
+    ]
+  },
   "subclasses": [],
   "source": "srd"
 }

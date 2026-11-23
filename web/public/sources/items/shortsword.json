@@ -1,0 +1,29 @@
+{
+  "name": "Shortsword",
+  "description": "A short straight blade made for stabbing in close quarters.",
+  "category": "weapon",
+  "subtype": "shortsword",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 10,
+  "notes": "",
+  "tags": [
+    "finesse",
+    "light"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nLight enough for the off hand and quick enough for a nimble fighter.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "piercing",
+      "bonus": 0
+    }
+  }
+}

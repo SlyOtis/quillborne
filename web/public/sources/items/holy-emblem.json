@@ -1,0 +1,17 @@
+{
+  "name": "Holy Emblem",
+  "description": "A god's sign worked in silver, to be fixed to a shield or sewn on a tabard.",
+  "category": "adventuring gear",
+  "subtype": "holy symbol",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 5,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nA holy symbol. A cleric or paladin can channel spells through it, borne on a shield or worn in plain sight, in place of the material components that have no listed cost."
+}

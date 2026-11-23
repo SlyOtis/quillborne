@@ -1,0 +1,21 @@
+{
+  "name": "Bag of Holding",
+  "description": "A cloth sack of plain grey, far roomier inside than out.",
+  "category": "container",
+  "subtype": "wondrous item",
+  "rarity": "uncommon",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 15,
+  "value": 0,
+  "notes": "Storage",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt opens into a space of its own that holds up to 500 pounds, 64 cubic feet, and it weighs 15 pounds whatever is in it. Reaching in for something takes an action.\n\n## Careful\n\nOverfilled, pierced or torn, it bursts and scatters what it held across the Astral Plane. Put inside another extradimensional space, it tears open a gate to the Astral Plane that swallows both. Breathing creatures inside share 10 minutes of air between them.",
+  "properties": {
+    "capacity": 500,
+    "weightless": true
+  }
+}

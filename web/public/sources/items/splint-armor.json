@@ -1,0 +1,30 @@
+{
+  "name": "Splint Armor",
+  "description": "Upright strips of steel riveted to leather, with mail at the joints.",
+  "category": "armor",
+  "subtype": "splint armor",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 60,
+  "value": 200,
+  "notes": "",
+  "tags": [
+    "heavy"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nHeavy armor. Your quickness does not count, it slows anyone with less than 15 Strength by 10 feet, and it makes moving quietly harder.",
+  "properties": {
+    "armor": "heavy",
+    "ac": {
+      "base": 17,
+      "bonus": 0,
+      "dexModifier": false,
+      "maxDexBonus": 0
+    },
+    "strength": 15,
+    "stealth": true
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "Dart",
+  "description": "A short weighted spike with a tuft of feathers at its tail.",
+  "category": "weapon",
+  "subtype": "dart",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0.25,
+  "value": 0.05,
+  "notes": "",
+  "tags": [
+    "finesse",
+    "thrown"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nThrown with a flick of the wrist, where a quick hand matters more than a strong arm.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 4,
+      "type": "piercing",
+      "bonus": 0
+    },
+    "range": {
+      "normal": 20,
+      "max": 60
+    }
+  }
+}

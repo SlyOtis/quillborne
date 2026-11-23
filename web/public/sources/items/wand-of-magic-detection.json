@@ -1,0 +1,36 @@
+{
+  "name": "Wand of Magic Detection",
+  "description": "A thin wand of white wood that glows faintly near enchantment.",
+  "category": "wand",
+  "subtype": "",
+  "rarity": "uncommon",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 1,
+  "value": 0,
+  "notes": "Detection",
+  "tags": [
+    "senses",
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nSpend a charge to sense magic around you.\n\n## Charges\n\nIt holds three and regains 1d3 each dawn.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Detect Magic",
+        "level": 1,
+        "charges": 1,
+        "note": ""
+      }
+    ],
+    "charges": {
+      "max": 3,
+      "regain": "1d3",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

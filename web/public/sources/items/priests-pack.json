@@ -1,0 +1,59 @@
+{
+  "name": "Priest's Pack",
+  "description": "A backpack packed for the service of a faith.",
+  "category": "adventuring gear",
+  "subtype": "equipment pack",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 19,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nA backpack holding a blanket, ten candles, a tinderbox, an alms box, two blocks of incense, a censer, vestments, two days of rations and a waterskin. Added to an inventory, it is unpacked into those items.",
+  "pack": [
+    {
+      "id": "backpack",
+      "quantity": 1
+    },
+    {
+      "id": "blanket",
+      "quantity": 1
+    },
+    {
+      "id": "candle",
+      "quantity": 10
+    },
+    {
+      "id": "tinderbox",
+      "quantity": 1
+    },
+    {
+      "id": "alms-box",
+      "quantity": 1
+    },
+    {
+      "id": "incense",
+      "quantity": 2
+    },
+    {
+      "id": "censer",
+      "quantity": 1
+    },
+    {
+      "id": "vestments",
+      "quantity": 1
+    },
+    {
+      "id": "rations",
+      "quantity": 2
+    },
+    {
+      "id": "waterskin",
+      "quantity": 1
+    }
+  ]
+}

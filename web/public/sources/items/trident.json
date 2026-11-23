@@ -1,0 +1,39 @@
+{
+  "name": "Trident",
+  "description": "A three-pronged spear, a fisher's tool made for war.",
+  "category": "weapon",
+  "subtype": "trident",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 4,
+  "value": 5,
+  "notes": "",
+  "tags": [
+    "thrown",
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nThrust with one hand or two, or thrown.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "piercing",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 8,
+      "type": "piercing",
+      "bonus": 0
+    },
+    "range": {
+      "normal": 20,
+      "max": 60
+    }
+  }
+}

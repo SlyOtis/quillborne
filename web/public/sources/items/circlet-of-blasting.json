@@ -1,0 +1,37 @@
+{
+  "name": "Circlet of Blasting",
+  "description": "A thin silver circlet set with a red stone above the brow.",
+  "category": "wondrous item",
+  "subtype": "circlet",
+  "rarity": "uncommon",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Fire, Damage",
+  "tags": [
+    "combat",
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nOnce a day, as an action, you can fire three rays of flame from the stone, as the scorching ray spell does.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Scorching Ray",
+        "level": 2,
+        "charges": 1,
+        "attack": 5,
+        "note": ""
+      }
+    ],
+    "charges": {
+      "max": 1,
+      "regain": "1",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

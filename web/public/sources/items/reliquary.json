@@ -1,0 +1,17 @@
+{
+  "name": "Reliquary",
+  "description": "A little silver casket with a saint's knucklebone inside.",
+  "category": "adventuring gear",
+  "subtype": "holy symbol",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 5,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nA holy symbol. A cleric or paladin can channel spells through it, held in hand, in place of the material components that have no listed cost."
+}

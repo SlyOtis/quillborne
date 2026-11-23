@@ -1,0 +1,58 @@
+{
+  "name": "Ring of Shooting Stars",
+  "description": "A ring of dark metal set with a stone that holds a night sky.",
+  "category": "ring",
+  "subtype": "",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "outdoors at night",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Lightning, Fire",
+  "tags": [
+    "combat",
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIn dim light or darkness you can call up dancing lights or light whenever you like, and once a day faerie fire.\n\n## Charges\n\nIt holds six and regains 1d6 each dawn. Spend two for ball lightning: one to four spheres of lightning that you steer, each striking the first creature that comes near it, a single sphere for 4d12 and more spheres for less each. Spend one to three for shooting stars: each a mote of light that bursts in a 15-foot cube for 5d4 fire damage.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Dancing Lights",
+        "level": 0,
+        "charges": 0,
+        "note": "at will, in dim light or darkness"
+      },
+      {
+        "name": "Light",
+        "level": 0,
+        "charges": 0,
+        "note": "at will, in dim light or darkness"
+      },
+      {
+        "name": "Faerie Fire",
+        "level": 1,
+        "charges": 0,
+        "note": "once per dawn, in dim light or darkness"
+      }
+    ],
+    "features": [
+      {
+        "name": "Ball Lightning",
+        "text": "2 charges: one to four spheres of lightning for up to a minute, with concentration. A creature other than you that comes within 5 feet of one makes a DC 15 Dexterity save as it discharges, taking 4d12 lightning damage if there was one sphere, 5d4 for two, 2d6 for three or 2d4 for four."
+      },
+      {
+        "name": "Shooting Stars",
+        "text": "1 to 3 charges: each star bursts in a 15-foot cube, and each creature there makes a DC 15 Dexterity save, taking 5d4 fire damage on a failure and half on a success."
+      }
+    ],
+    "charges": {
+      "max": 6,
+      "regain": "1d6",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

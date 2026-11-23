@@ -1,0 +1,33 @@
+{
+  "name": "Stone of Good Luck",
+  "description": "A polished agate that always seems to land the right way up.",
+  "category": "wondrous item",
+  "subtype": "stone",
+  "rarity": "uncommon",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Saving Throws, Ability Checks",
+  "tags": [
+    "luck"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nWhile it is on your person, every ability check and saving throw you make goes a little better.",
+  "grants": {
+    "bonuses": [
+      {
+        "id": "saves",
+        "value": 1
+      }
+    ],
+    "features": [
+      {
+        "name": "Luck",
+        "text": "You gain +1 to ability checks."
+      }
+    ]
+  }
+}

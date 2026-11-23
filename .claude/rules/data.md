@@ -35,6 +35,7 @@ The campaign is the one grouping at the table. Every player seated in it is the 
 - Everything the party lives through is a `resource` of one of the kinds, owned by the campaign. A player's own lore is the same row owned outside one.
 - An item row is homebrew: whatever a player makes. The general items are the world's list and no row at all: documents under `web/public/sources/items/` every player reads and nobody writes.
 - A page written in a campaign starts shared with it; an item written in a campaign starts kept from it and reaches the table locked. Its owner widens or narrows that in Access.
+- Loot is handed over by writing the receiving sheet, which the dungeon master holds write on at their table, and a coin split writes each seated sheet. An item the table does not read lands in a sheet as its head alone, unidentified, since whoever reads a sheet reads every item it carries; the dungeon master identifies it by sharing its page with the table and writing it whole into the sheet.
 - An NPC is a character carrying the `npc` tag, never a kind of its own, and is bound like every sheet at the table.
 - Prose is a block document, never loose markdown.
 - A map pin points at a record by kind and id and never carries prose of its own.

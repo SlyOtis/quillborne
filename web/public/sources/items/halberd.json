@@ -1,0 +1,30 @@
+{
+  "name": "Halberd",
+  "description": "An axe blade and a spike mounted together at the end of a long pole.",
+  "category": "weapon",
+  "subtype": "halberd",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 6,
+  "value": 20,
+  "notes": "",
+  "tags": [
+    "heavy",
+    "reach",
+    "two-handed"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nIt reaches 10 feet and hooks riders from their saddles. It takes both hands, and small folk struggle with its weight.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 10,
+      "type": "slashing",
+      "bonus": 0
+    }
+  }
+}

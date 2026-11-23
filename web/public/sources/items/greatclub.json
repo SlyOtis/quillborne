@@ -1,0 +1,28 @@
+{
+  "name": "Greatclub",
+  "description": "A knotted log of oak, shaped just enough to be gripped in two hands.",
+  "category": "weapon",
+  "subtype": "greatclub",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 10,
+  "value": 0.2,
+  "notes": "",
+  "tags": [
+    "two-handed"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nBrute weight, swung with both arms. There is nothing to it but the blow.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "bludgeoning",
+      "bonus": 0
+    }
+  }
+}

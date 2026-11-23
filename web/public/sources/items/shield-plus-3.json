@@ -1,0 +1,28 @@
+{
+  "name": "Shield +3",
+  "description": "A shield of bright steel that turns blows aside as if it moved by itself.",
+  "category": "armor",
+  "subtype": "shield",
+  "rarity": "very rare",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 6,
+  "value": 0,
+  "notes": "Armor Class",
+  "tags": [
+    "shield"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt guards 3 better than a plain shield, on top of what any shield gives.",
+  "properties": {
+    "armor": "shield",
+    "ac": {
+      "base": 2,
+      "bonus": 3,
+      "dexModifier": false,
+      "maxDexBonus": 0
+    }
+  }
+}

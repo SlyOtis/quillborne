@@ -1,0 +1,43 @@
+{
+  "name": "Robe of the Archmagi",
+  "description": "A long robe of white, grey or black cloth worked with silver runes.",
+  "category": "wondrous item",
+  "subtype": "robe",
+  "rarity": "legendary",
+  "attunement": true,
+  "attuned_by": "by a sorcerer, warlock, or wizard",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Armor Class, Spells",
+  "tags": [
+    "defence",
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nWorn without armor, it guards you as well as fine armor would, with your quickness counted in full. Spells and magic struggle to take hold of you, and your own spells are harder to resist and strike truer. The robe's colour follows its maker's outlook, and a wearer whose outlook clashes with it gains nothing.",
+  "properties": {
+    "ac": {
+      "base": 15,
+      "bonus": 0,
+      "dexModifier": true,
+      "maxDexBonus": 0
+    }
+  },
+  "grants": {
+    "bonuses": [
+      {
+        "id": "spellcasting",
+        "value": 2
+      }
+    ],
+    "advantages": [
+      {
+        "id": "",
+        "name": "Saving throws",
+        "note": "against spells and other magical effects"
+      }
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "Ioun Stone of Protection",
+  "description": "A dusty rose prism.",
+  "category": "wondrous item",
+  "subtype": "ioun stone",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Armor Class",
+  "tags": [
+    "defence"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nWhile it circles you, blows find you a little harder to land.\n\n## In flight\n\nToss it into the air as an action and it circles your head 1d3 feet away. Pluck it from the air or catch it in a net to stop it; another creature that wants it must hit it first (AC 24, 10 hit points, resistant to all damage). Stored, it does nothing.",
+  "grants": {
+    "bonuses": [
+      {
+        "id": "armorClass",
+        "value": 1
+      }
+    ]
+  }
+}

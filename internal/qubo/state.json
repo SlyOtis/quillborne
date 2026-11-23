@@ -404,7 +404,7 @@
             "description": "Everything else the page carries: tags, facts, pictures, frame, block document and the fields of its own kind, an item's grants among them."
           },
           "kind": {
-            "description": "Which of the seven kinds the page is: entries, items, weapons, armor, locations, maps or sessions.",
+            "description": "Which of the five kinds the page is: entries, items, locations, maps or sessions. A weapon or armor is an item.",
             "type": "string"
           },
           "name": {

@@ -1,0 +1,43 @@
+{
+  "name": "Wand of Fear",
+  "description": "A wand of bone carved with screaming faces.",
+  "category": "wand",
+  "subtype": "",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 1,
+  "value": 0,
+  "notes": "Fear",
+  "tags": [
+    "spell",
+    "control"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nSpend a charge to give a single command, flee or grovel, or two to send terror through everyone in a 60-foot cone.\n\n## Charges\n\nIt holds seven and regains 1d6 + 1 each dawn. Spend the last and it may crumble to ash.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Command",
+        "level": 1,
+        "charges": 1,
+        "dc": 15,
+        "note": "flee or grovel only"
+      }
+    ],
+    "features": [
+      {
+        "name": "Cone of Fear",
+        "text": "2 charges: each creature in a 60-foot cone makes a DC 15 Wisdom save or is frightened of you for a minute, moving away from you on its turns."
+      }
+    ],
+    "charges": {
+      "max": 7,
+      "regain": "1d6 + 1",
+      "at": "dawn",
+      "last": "roll a d20; on a 1 it crumbles to ash"
+    }
+  }
+}

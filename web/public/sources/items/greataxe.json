@@ -1,0 +1,29 @@
+{
+  "name": "Greataxe",
+  "description": "A great double-bitted axe on a long haft.",
+  "category": "weapon",
+  "subtype": "greataxe",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 7,
+  "value": 30,
+  "notes": "",
+  "tags": [
+    "heavy",
+    "two-handed"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nHeavy, slow and ruinous, swung in both hands. Small folk struggle with its weight.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 12,
+      "type": "slashing",
+      "bonus": 0
+    }
+  }
+}

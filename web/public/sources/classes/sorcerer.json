@@ -61,6 +61,104 @@
     }
   ],
   "proficiencies": {},
+  "startingEquipment": {
+    "fixed": [
+      {
+        "id": "dagger",
+        "quantity": 2
+      }
+    ],
+    "choices": [
+      {
+        "options": [
+          [
+            {
+              "id": "light-crossbow",
+              "quantity": 1
+            },
+            {
+              "id": "crossbow-bolts",
+              "quantity": 20
+            }
+          ],
+          [
+            {
+              "id": "quarterstaff",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "spear",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "mace",
+              "quantity": 1
+            }
+          ]
+        ]
+      },
+      {
+        "options": [
+          [
+            {
+              "id": "component-pouch",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "arcane-crystal",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "arcane-orb",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "arcane-rod",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "arcane-staff",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "arcane-wand",
+              "quantity": 1
+            }
+          ]
+        ]
+      },
+      {
+        "options": [
+          [
+            {
+              "id": "dungeoneers-pack",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "explorers-pack",
+              "quantity": 1
+            }
+          ]
+        ]
+      }
+    ]
+  },
   "subclasses": [],
   "source": "srd"
 }

@@ -1,0 +1,21 @@
+{
+  "name": "Sack",
+  "description": "A sack of rough cloth.",
+  "category": "container",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0.5,
+  "value": 0.01,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nHolds a cubic foot of goods, up to 30 pounds.",
+  "properties": {
+    "capacity": 30,
+    "weightless": false
+  }
+}

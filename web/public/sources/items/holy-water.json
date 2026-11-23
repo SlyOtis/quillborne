@@ -1,0 +1,23 @@
+{
+  "name": "Holy Water",
+  "description": "A flask of clear water, blessed and sealed with wax.",
+  "category": "consumable",
+  "subtype": "flask",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": true,
+  "weight": 1,
+  "value": 25,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nSplash it on a creature beside you or hurl the flask up to 20 feet, as an action, a ranged attack with an improvised weapon. A fiend or undead it hits takes 2d6 radiant damage. A cleric or paladin can bless more in an hour-long rite that spends a 1st-level spell slot and 25 gp of powdered silver.",
+  "properties": {
+    "use": {
+      "roll": "2d6",
+      "effect": "damage"
+    }
+  }
+}

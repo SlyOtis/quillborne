@@ -1,0 +1,23 @@
+{
+  "name": "Acid",
+  "description": "A stoppered glass vial of something that smokes faintly when shaken.",
+  "category": "consumable",
+  "subtype": "vial",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": true,
+  "weight": 1,
+  "value": 25,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nSplash it on a creature beside you or hurl the vial up to 20 feet, as an action. Either way it is a ranged attack with an improvised weapon, and a hit burns for 2d6 acid damage.",
+  "properties": {
+    "use": {
+      "roll": "2d6",
+      "effect": "damage"
+    }
+  }
+}

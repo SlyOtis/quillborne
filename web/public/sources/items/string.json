@@ -1,0 +1,17 @@
+{
+  "name": "String",
+  "description": "Ten feet of strong waxed string.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nFor tripwires, bundles and the hundred small things string is good for."
+}

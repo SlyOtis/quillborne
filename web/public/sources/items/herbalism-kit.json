@@ -1,0 +1,17 @@
+{
+  "name": "Herbalism Kit",
+  "description": "A satchel of clippers, a mortar and pestle, and twists of paper for drying leaves.",
+  "category": "tool",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 5,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nProficiency with it adds your proficiency bonus to checks to identify or use herbs, and only someone proficient can make antitoxin and potions of healing with it."
+}

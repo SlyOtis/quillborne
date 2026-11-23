@@ -1,0 +1,34 @@
+{
+  "name": "Quarterstaff",
+  "description": "A straight staff of seasoned wood, as tall as the one who carries it.",
+  "category": "weapon",
+  "subtype": "quarterstaff",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 4,
+  "value": 0.2,
+  "notes": "",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nA walking stick that turns into a weapon. One hand can fight with it; two hands strike harder.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "bludgeoning",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 8,
+      "type": "bludgeoning",
+      "bonus": 0
+    }
+  }
+}

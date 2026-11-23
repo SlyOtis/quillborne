@@ -1,0 +1,17 @@
+{
+  "name": "Wooden Staff",
+  "description": "A staff cut from a living tree, still growing a leaf or two.",
+  "category": "adventuring gear",
+  "subtype": "druidic focus",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 4,
+  "value": 5,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nA druidic focus. A druid can channel spells through it in place of the material components that have no listed cost."
+}

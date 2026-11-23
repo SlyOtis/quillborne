@@ -1,0 +1,48 @@
+{
+  "name": "Hammer of Thunderbolts",
+  "description": "A massive maul whose head crackles faintly in damp air.",
+  "category": "weapon",
+  "subtype": "maul",
+  "rarity": "legendary",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 10,
+  "value": 0,
+  "notes": "Strength, Thunder",
+  "tags": [
+    "heavy",
+    "two-handed"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nA magic maul that strikes truer and harder than a plain one.\n\n## Giant's bane\n\nOnly someone wearing a belt of giant strength and gauntlets of ogre power can attune to it, and the bond ends if either comes off. Attuned and holding it, your Strength rises by 4, as high as 30. A giant it hits on a 20 must make a DC 17 Constitution saving throw or die.\n\n## Thunderbolt\n\nIt holds five charges and regains 1d4 + 1 each dawn. Spend one to hurl it as a ranged attack out to 20 feet, or 60 at a stretch. If it hits, a thunderclap rolls out for 300 feet, and the target and everyone within 30 feet of it must make a DC 17 Constitution saving throw or be stunned until the end of your next turn.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 2,
+      "dice": 6,
+      "type": "bludgeoning",
+      "bonus": 0
+    },
+    "magic": 1
+  },
+  "grants": {
+    "features": [
+      {
+        "name": "Giant's Bane",
+        "text": "Attuned, which needs a belt of giant strength and gauntlets of ogre power, and holding it, your Strength rises by 4 to as much as 30, and a giant you hit on a 20 dies unless it makes a DC 17 Constitution save."
+      },
+      {
+        "name": "Thunderbolt",
+        "text": "Spend a charge to throw it, range 20/60. On a hit the target and every creature within 30 feet of it makes a DC 17 Constitution save or is stunned until the end of your next turn."
+      }
+    ],
+    "charges": {
+      "max": 5,
+      "regain": "1d4 + 1",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

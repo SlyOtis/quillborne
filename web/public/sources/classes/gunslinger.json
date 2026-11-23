@@ -609,39 +609,73 @@
   ],
   "startingEquipment": {
     "fixed": [
-      "Leather Armor"
+      {
+        "id": "leather-armor",
+        "quantity": 1
+      }
     ],
-    "options": [
+    "choices": [
       {
-        "type": "choice",
-        "items": [
-          "Simple Weapon"
-        ],
-        "count": 1
-      },
-      {
-        "type": "fixed",
-        "items": [
-          "Sidearm",
-          "20 Rounds"
+        "options": [
+          [
+            {
+              "id": "dagger",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "club",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "handaxe",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "light-hammer",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "mace",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "quarterstaff",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "spear",
+              "quantity": 1
+            }
+          ]
         ]
       },
       {
-        "type": "choice",
-        "items": [
-          "Hand Cannon and 20 Rounds",
-          "Repeating Rifle and 20 Rounds",
-          "Sawed-off Shotgun and 20 Shotshells"
-        ],
-        "count": 1
-      },
-      {
-        "type": "choice",
-        "items": [
-          "Dungeoneer's Pack",
-          "Explorer's Pack"
-        ],
-        "count": 1
+        "options": [
+          [
+            {
+              "id": "dungeoneers-pack",
+              "quantity": 1
+            }
+          ],
+          [
+            {
+              "id": "explorers-pack",
+              "quantity": 1
+            }
+          ]
+        ]
       }
     ]
   },

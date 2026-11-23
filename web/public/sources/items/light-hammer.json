@@ -1,0 +1,33 @@
+{
+  "name": "Light Hammer",
+  "description": "A small hammer with a square iron head, balanced for the hand or the throw.",
+  "category": "weapon",
+  "subtype": "light hammer",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 2,
+  "notes": "",
+  "tags": [
+    "light",
+    "thrown"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nA smith's hammer made for fighting. Light enough for the off hand, and it can be thrown.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 4,
+      "type": "bludgeoning",
+      "bonus": 0
+    },
+    "range": {
+      "normal": 20,
+      "max": 60
+    }
+  }
+}

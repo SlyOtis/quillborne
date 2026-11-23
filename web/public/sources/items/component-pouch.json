@@ -1,0 +1,17 @@
+{
+  "name": "Component Pouch",
+  "description": "A leather belt pouch of tiny pockets, each holding a pinch of something odd.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 25,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nIt holds the cheap odds and ends spells call for. A spellcaster can use it in place of any material component that has no listed cost."
+}

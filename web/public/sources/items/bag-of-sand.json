@@ -1,0 +1,17 @@
+{
+  "name": "Bag of Sand",
+  "description": "A little cloth bag of fine sand.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nSprinkled on wet ink, it dries the page."
+}

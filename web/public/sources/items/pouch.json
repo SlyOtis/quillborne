@@ -1,0 +1,21 @@
+{
+  "name": "Pouch",
+  "description": "A cloth or leather pouch with a drawstring.",
+  "category": "container",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 1,
+  "value": 0.5,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nHolds a fifth of a cubic foot, up to 6 pounds: coin, sling bullets, small things.",
+  "properties": {
+    "capacity": 6,
+    "weightless": false
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "Torch",
+  "description": "A wooden shaft wrapped in pitch-soaked rags.",
+  "category": "adventuring gear",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": true,
+  "weight": 1,
+  "value": 0.01,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nIt burns for an hour, shedding bright light for 20 feet and dim light for 20 feet beyond. As an improvised weapon it deals 1 fire damage."
+}

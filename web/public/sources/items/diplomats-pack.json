@@ -1,0 +1,63 @@
+{
+  "name": "Diplomat's Pack",
+  "description": "A chest packed for a visit to court.",
+  "category": "adventuring gear",
+  "subtype": "equipment pack",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 39,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nA chest holding two map or scroll cases, a set of fine clothes, a bottle of ink, an ink pen, a lamp, two flasks of oil, five sheets of paper, a vial of perfume, sealing wax and soap. Added to an inventory, it is unpacked into those items.",
+  "pack": [
+    {
+      "id": "chest",
+      "quantity": 1
+    },
+    {
+      "id": "map-or-scroll-case",
+      "quantity": 2
+    },
+    {
+      "id": "fine-clothes",
+      "quantity": 1
+    },
+    {
+      "id": "ink",
+      "quantity": 1
+    },
+    {
+      "id": "ink-pen",
+      "quantity": 1
+    },
+    {
+      "id": "lamp",
+      "quantity": 1
+    },
+    {
+      "id": "oil",
+      "quantity": 2
+    },
+    {
+      "id": "paper",
+      "quantity": 5
+    },
+    {
+      "id": "perfume",
+      "quantity": 1
+    },
+    {
+      "id": "sealing-wax",
+      "quantity": 1
+    },
+    {
+      "id": "soap",
+      "quantity": 1
+    }
+  ]
+}

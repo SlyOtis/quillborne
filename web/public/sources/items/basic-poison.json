@@ -1,0 +1,23 @@
+{
+  "name": "Basic Poison",
+  "description": "A small vial of dark, oily paste.",
+  "category": "consumable",
+  "subtype": "vial",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": true,
+  "weight": 0,
+  "value": 100,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nSpend an action to coat a slashing or piercing weapon, or up to three pieces of ammunition. For the next minute, until it dries, whatever the coated edge strikes makes a DC 10 Constitution saving throw or takes 1d4 poison damage.",
+  "properties": {
+    "use": {
+      "roll": "1d4",
+      "effect": "damage"
+    }
+  }
+}

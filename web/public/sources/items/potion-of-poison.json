@@ -1,0 +1,33 @@
+{
+  "name": "Potion of Poison",
+  "description": "A red draught that glitters when the vial is shaken, the very image of a healing potion.",
+  "category": "potion",
+  "subtype": "",
+  "rarity": "uncommon",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": true,
+  "weight": 0.5,
+  "value": 0,
+  "notes": "Poison",
+  "tags": [
+    "damage"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt looks, smells and tastes like a potion of healing. Whoever drinks it takes 3d6 poison damage and must make a DC 13 Constitution saving throw or be poisoned. Poisoned, they take 3d6 poison damage again at the start of each of their turns and repeat the save at the end; each success takes a die off, and the poison ends when none are left.",
+  "properties": {
+    "use": {
+      "roll": "3d6",
+      "effect": "damage"
+    }
+  },
+  "grants": {
+    "features": [
+      {
+        "name": "Poisoned",
+        "text": "A DC 13 Constitution save or poisoned, taking the poison damage again at the start of each turn; each later success takes a die off until none are left."
+      }
+    ]
+  }
+}

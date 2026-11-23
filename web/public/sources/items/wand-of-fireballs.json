@@ -1,0 +1,37 @@
+{
+  "name": "Wand of Fireballs",
+  "description": "A wand of red wood capped with a bead of glowing amber.",
+  "category": "wand",
+  "subtype": "",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "by a spellcaster",
+  "consumable": false,
+  "weight": 1,
+  "value": 0,
+  "notes": "Fire, Damage",
+  "tags": [
+    "combat",
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nPoint it and speak, and a bead of flame streaks out to burst as a fireball. Spend more charges for a greater blast.\n\n## Charges\n\nIt holds seven and regains 1d6 + 1 each dawn. Spend the last and it may crumble to ash.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Fireball",
+        "level": 3,
+        "charges": 1,
+        "dc": 15,
+        "note": "each further charge raises its level by one, up to 3 charges"
+      }
+    ],
+    "charges": {
+      "max": 7,
+      "regain": "1d6 + 1",
+      "at": "dawn",
+      "last": "roll a d20; on a 1 it crumbles to ash"
+    }
+  }
+}

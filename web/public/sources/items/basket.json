@@ -1,0 +1,21 @@
+{
+  "name": "Basket",
+  "description": "A woven wicker basket with a handle.",
+  "category": "container",
+  "subtype": "",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 2,
+  "value": 0.4,
+  "notes": "",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nHolds 2 cubic feet of goods, up to 40 pounds.",
+  "properties": {
+    "capacity": 40,
+    "weightless": false
+  }
+}

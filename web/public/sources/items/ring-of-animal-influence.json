@@ -1,0 +1,49 @@
+{
+  "name": "Ring of Animal Influence",
+  "description": "A ring of carved horn shaped like a ring of running beasts.",
+  "category": "ring",
+  "subtype": "",
+  "rarity": "rare",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Beasts",
+  "tags": [
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nIt holds three charges and regains 1d3 each dawn. Spend one to befriend a beast, to frighten beasts away, or to speak with them.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Animal Friendship",
+        "level": 1,
+        "charges": 1,
+        "dc": 13,
+        "note": ""
+      },
+      {
+        "name": "Fear",
+        "level": 3,
+        "charges": 1,
+        "dc": 13,
+        "note": "beasts with an Intelligence of 3 or less only"
+      },
+      {
+        "name": "Speak with Animals",
+        "level": 1,
+        "charges": 1,
+        "note": ""
+      }
+    ],
+    "charges": {
+      "max": 3,
+      "regain": "1d3",
+      "at": "dawn",
+      "last": ""
+    }
+  }
+}

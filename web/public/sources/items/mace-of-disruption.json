@@ -1,0 +1,41 @@
+{
+  "name": "Mace of Disruption",
+  "description": "A silver-flanged mace that hums when the dead are near.",
+  "category": "weapon",
+  "subtype": "mace",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 4,
+  "value": 0,
+  "notes": "Radiant, Undead",
+  "tags": [],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nA fiend or an undead it hits takes holy damage besides, and one left with 25 hit points or fewer must make a DC 15 Wisdom saving throw or be destroyed. A success leaves it frightened of you until the end of your next turn.\n\n## Light\n\nHeld, it sheds bright light for 20 feet and dim light for 20 beyond.",
+  "properties": {
+    "weapon": "simple",
+    "damage": {
+      "amount": 1,
+      "dice": 6,
+      "type": "bludgeoning",
+      "bonus": 0
+    }
+  },
+  "grants": {
+    "damage": [
+      {
+        "dice": "2d6",
+        "damage": "radiant",
+        "note": "against a fiend or an undead"
+      }
+    ],
+    "features": [
+      {
+        "name": "Disruption",
+        "text": "A fiend or undead it leaves at 25 hit points or fewer makes a DC 15 Wisdom save or is destroyed; on a success it is frightened of you until the end of your next turn."
+      }
+    ]
+  }
+}

@@ -170,16 +170,6 @@
       roll: () => import("./pages/resource/ItemListPage.svelte"),
       one: () => import("./pages/resource/ItemPage.svelte")
     },
-    weapons: {
-      name: "Weapon",
-      roll: () => import("./pages/resource/WeaponListPage.svelte"),
-      one: () => import("./pages/resource/WeaponPage.svelte")
-    },
-    armor: {
-      name: "Armor",
-      roll: () => import("./pages/resource/ArmorListPage.svelte"),
-      one: () => import("./pages/resource/ArmorPage.svelte")
-    },
     places: {
       name: "Place",
       roll: () => import("./pages/resource/PlaceListPage.svelte"),

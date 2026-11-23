@@ -2,16 +2,19 @@
   import {getContext, tick} from "svelte";
   import type {Readable} from "svelte/store";
   import type {CharacterContext} from "$lib/types";
-  import type {Character, CharacterCurrency, Currency, ItemType} from "$lib/character.types";
+  import type {Character, Currency} from "$lib/character.types";
   import type {RulesState} from "$lib/rules/store";
-  import {getAttunement, isItemApplied} from "$lib/rules/sheet";
-  import {getCarriedItem, getEmptyItemFilter, getGrantLines, getItemRoom, getRarityInk, isItemShown, type Item} from "$lib/resources";
-  import {addCurrencies, asGold, deleteItem, postItem, putAttunement, putCurrency, putEquipped, putItem, putReplacedAttunement} from "$lib/engine";
+  import {getAttunement, getCarriedWeight, getChargesLeft, getCoinValue, getContainer, getContainerLoad, getContainers, getEncumbrance, getInventoryValue, getRecharging, isConsumable, isItemApplied} from "$lib/rules/sheet";
+  import {getCarriedItems, getEmptyItemFilter, getGrantLines, getItemRoom, getRarityInk, isItemShown, type Item} from "$lib/resources";
+  import {addCurrencies, deleteItem, postItem, postItemUse, postRecharge, putAttunement, putCharges, putCurrency, putEquipped, putIdentified, putInside, putItem, putReplacedAttunement} from "$lib/engine";
+  import {user} from "$lib/stores/auth.store";
+  import {currentCampaignId, userCampaigns} from "$lib/stores/campaign.store";
   import BaseDialog from "$components/BaseDialog.svelte";
   import ItemFilters from "$components/campaign/ItemFilters.svelte";
   import ItemRow from "$components/campaign/ItemRow.svelte";
   import Button from "$components/ui/Button.svelte";
   import Chip from "$components/ui/Chip.svelte";
+  import Dropdown from "$components/ui/Dropdown.svelte";
   import Field from "$components/ui/Field.svelte";
   import Glyph, {type GlyphName} from "$components/ui/Glyph.svelte";
   import IconBtn from "$components/ui/IconBtn.svelte";
@@ -24,33 +27,35 @@
   const {inventory, info, currency} = getContext<CharacterContext>('character')
   const rules = getContext<Readable<RulesState>>('rules')
 
-  const COINS: Currency[] = ['pp', 'gp', 'sp', 'cp']
-  const ITEM_TYPES: ItemType[] = ['weapon', 'armor', 'consumable', 'tool', 'container', 'treasure', 'ammunition', 'misc']
+  let coins = $derived(($rules.system?.coins ?? []).map(coin => ({...coin, id: coin.id as Currency})))
+  let priced = $derived(coins.find(coin => coin.value === 1)?.id ?? '')
+  let categories = $derived($rules.system?.items?.categories ?? [])
+  let isDm = $derived(Boolean($currentCampaignId && $user && $userCampaigns.find(one => one.id === $currentCampaignId)?.dm_id === $user.user_id))
+  let identifyError = $state('')
+  let calls = $derived(($rules.system?.recharges ?? []).filter(one => !one.rests?.length && getRecharging($inventory, [one.id]).length > 0))
 
-  let carryCapacity = $derived($info.carry_capacity)
-  let carriedWeight = $derived($inventory.reduce((prev, curr) => prev + curr.weight, 0))
-  let encumbered = $derived(carriedWeight > carryCapacity)
-  let inventoryValue = $derived($inventory.reduce((prev, curr) => {
-    return {
-      ...prev,
-      [curr.value.currency]: curr.value.amount + (prev as any)?.[curr.value.currency] || 0,
-    }
-  }, {} as CharacterCurrency))
+  let carryCapacity = $derived($rules.resolved?.scope['derived.carryCapacity'] ?? $info.carry_capacity)
+  let carriedWeight = $derived($rules.system ? Number(getCarriedWeight($inventory, $currency, $rules.system).toFixed(2)) : 0)
+  let encumbrance = $derived($rules.resolved ? getEncumbrance(carriedWeight, $rules.resolved) : null)
+  let inventoryValue = $derived(getInventoryValue($inventory))
 
   let totalValuables = $derived(addCurrencies(inventoryValue, $currency))
   let searchInput = $state('')
   let draft = $state<InventoryItem | null>(null)
 
-  let filteredItems = $derived($inventory.filter(val => val.attributes.find(attr => attr.includes(searchInput)) ||
-    val.description.includes(searchInput) ||
-    val.enchantments?.find(ench => ench.name.includes(searchInput) || ench.description.includes(searchInput)) ||
-    val.rarity?.includes(searchInput) ||
-    val.subtype?.includes(searchInput) ||
-    val.type?.includes(searchInput) ||
-    val.id?.includes(searchInput) ||
-    val.title?.includes(searchInput)))
-  let equipment = $derived(filteredItems.filter(item => item.equipped))
-  let carried = $derived(filteredItems.filter(item => !item.equipped))
+  let asked = $derived(searchInput.trim().toLowerCase())
+  let filteredItems = $derived($inventory.filter(val => !asked || [
+    ...val.attributes,
+    val.description,
+    ...(val.enchantments ?? []).flatMap(ench => [ench.name, ench.description]),
+    val.rarity,
+    val.subtype,
+    val.type,
+    val.title
+  ].some(text => text?.toLowerCase().includes(asked))))
+  let loose = $derived(filteredItems.filter(item => !filteredItems.includes(getContainer($inventory, item) as InventoryItem)))
+  let equipment = $derived(loose.filter(item => item.equipped))
+  let carried = $derived(loose.filter(item => !item.equipped))
 
   let attunement = $derived($rules.resolved?.system.items ? getAttunement($inventory, $rules.resolved) : null)
   let attunable = $derived($inventory.filter(item => item.attunement?.required))
@@ -77,7 +82,7 @@
   }
 
   function addFromRoom(one: Item) {
-    postItem(getCarriedItem(one))
+    for (const carried of getCarriedItems(one, room ?? [])) postItem(carried)
     added = `${one.title} is in the pack.`
   }
 
@@ -92,7 +97,7 @@
   }
 
   function getTypeLine(item: InventoryItem): string {
-    return item.origin ? item.subtype ?? item.type : getDisplayType(item)
+    return item.origin ? item.subtype ?? item.type : item.type
   }
 
   async function attune(item: InventoryItem) {
@@ -114,38 +119,20 @@
   }
 
   function getEquipIcon(itemType: string): GlyphName {
-    const icons: {[key: string]: GlyphName} = {
-      weapon: 'weapon',
-      armor: 'armor',
-      ammunition: 'ammunition',
-      tool: 'tool',
-      consumable: 'potion',
-      treasure: 'gem',
-      container: 'chest',
-      misc: 'scroll'
-    }
-    return icons[itemType] || 'gear'
+    return (categories.find(one => one.id === itemType)?.glyph as GlyphName | undefined) ?? 'gear'
   }
 
-  function isAmmunition(item: InventoryItem): boolean {
-    return item.type === 'ammunition' || (
-      item.type === 'consumable' && (
-        item.title.toLowerCase().includes('ammunition') ||
-        item.title.toLowerCase().includes('rounds') ||
-        item.title.toLowerCase().includes('bullets') ||
-        item.title.toLowerCase().includes('shotshells') ||
-        item.title.toLowerCase().includes('arrows') ||
-        item.description.toLowerCase().includes('firearm')
-      )
-    );
+  function isUsed(item: InventoryItem): boolean {
+    return Boolean($rules.system && (item.properties?.use || isConsumable(item, $rules.system)))
   }
 
-  function getDisplayType(item: InventoryItem): string {
-    return isAmmunition(item) ? 'ammunition' : item.type;
+  function identify(item: InventoryItem) {
+    identifyError = ''
+    if ($currentCampaignId) putIdentified(item, $currentCampaignId).catch(reason => (identifyError = reason instanceof Error ? reason.message : String(reason)))
   }
 
-  function consumeItem(item: InventoryItem) {
-    putItem({...item, quantity: item.quantity - 1})
+  function useItem(item: InventoryItem) {
+    if ($rules.system) void postItemUse(item, $rules.system)
   }
 
   function openItem(item?: InventoryItem) {
@@ -178,6 +165,14 @@
     draft = null
   }
 
+  function getHeld(container: InventoryItem): InventoryItem[] {
+    return filteredItems.filter(item => getContainer($inventory, item)?.id === container.id)
+  }
+
+  function getPlaces(item: InventoryItem): {value: string, label: string}[] {
+    return [{value: '', label: 'Carried loose'}, ...getContainers($inventory, item).map(one => ({value: one.id, label: `In ${one.title}`}))]
+  }
+
   function putCoin(coin: Currency, event: Event) {
     putCurrency({...$currency, [coin]: Math.max(0, parseInt((event.target as HTMLInputElement).value) || 0)})
   }
@@ -187,28 +182,31 @@
     <div class="header">
         <div class="weight">
             <span><b>Weight carried:</b> {carriedWeight}/{carryCapacity} lb.</span>
-            <span class="encumbered">
-                {#if encumbered}
-                    ENCUMBERED
-                {:else}
-                    UNENCUMBERED
-                {/if}
-            </span>
+            <span class="encumbered">{encumbrance?.title ?? 'Unencumbered'}</span>
+            {#if encumbrance}<span>{encumbrance.effect}</span>{/if}
         </div>
         <div class="currency">
             <span class="coins">
-                {#each COINS as coin (coin)}
-                    <Field label={coin} id="coin-{coin}">
-                        <input id="coin-{coin}" class="dnd-num" type="number" min="0" value={$currency[coin] ?? 0} onchange={event => putCoin(coin, event)} />
+                {#each coins as coin (coin.id)}
+                    <Field label={coin.id} id="coin-{coin.id}">
+                        <input id="coin-{coin.id}" class="dnd-num" type="number" min="0" title={coin.title} value={$currency[coin.id] ?? 0} onchange={event => putCoin(coin.id, event)} />
                     </Field>
                 {/each}
             </span>
-            <span><b>Currency carried:</b> {asGold($currency)}gp</span>
-            <span><b>Total valuables:</b> {asGold(totalValuables)}gp</span>
+            {#if $rules.system}
+                <span><b>Currency carried:</b> {getCoinValue($currency, $rules.system)} {priced}</span>
+                <span><b>Total valuables:</b> {getCoinValue(totalValuables, $rules.system)} {priced}</span>
+            {/if}
         </div>
     </div>
+    {#if identifyError}
+        <span class="picker-note" role="alert">{identifyError}</span>
+    {/if}
     <div class="search">
         <SearchInput bind:value={searchInput} placeholder="Search the inventory..." label="Search the inventory" />
+        {#each calls as call (call.id)}
+            <Button variant="ghost" size="sm" title="Regain the charges that come back at {call.title.toLowerCase()}" onclick={() => postRecharge([call.id])}>{call.title}</Button>
+        {/each}
         <Button variant="secondary" size="sm" title="Add an item to the inventory" onclick={openRoom}>Add item</Button>
     </div>
     {#if draft}
@@ -218,8 +216,8 @@
             </Field>
             <Field label="Type" id="item-type">
                 <select id="item-type" bind:value={draft.type}>
-                    {#each ITEM_TYPES as type (type)}
-                        <option value={type}>{type}</option>
+                    {#each categories as type (type.id)}
+                        <option value={type.id}>{type.title}</option>
                     {/each}
                 </select>
             </Field>
@@ -234,8 +232,8 @@
             </Field>
             <Field label="Coin" id="item-coin">
                 <select id="item-coin" bind:value={draft.value.currency}>
-                    {#each COINS as coin (coin)}
-                        <option value={coin}>{coin}</option>
+                    {#each coins as coin (coin.id)}
+                        <option value={coin.id}>{coin.title}</option>
                     {/each}
                 </select>
             </Field>
@@ -265,14 +263,14 @@
                 <span>Worn and wielded. What applies changes the sheet.</span>
             </li>
             {#each equipment as item (item.id)}
-                {@render row(item)}
+                {@render row(item, 0)}
             {/each}
             <li class="items-section">
                 <b>Carried</b>
                 <span>In the pack. Changes nothing.</span>
             </li>
             {#each carried as item (item.id)}
-                {@render row(item)}
+                {@render row(item, 0)}
             {/each}
         </ul>
         {#if attunement}
@@ -336,19 +334,20 @@
     </div>
 </BaseDialog>
 
-{#snippet row(item: InventoryItem)}
+{#snippet row(item: InventoryItem, depth: number)}
     {@const gives = getGives(item)}
+    {@const places = getPlaces(item)}
     <li class="item">
         <div class="equippable center">
-            {#if item.type === 'consumable' && !isAmmunition(item)}
+            {#if isUsed(item)}
                 <Sigil
                     frame="ring"
                     size="sm"
                     tone="verdigris"
-                    title="Consume {item.title}"
-                    onclick={() => consumeItem(item)}
+                    title="Use {item.title}"
+                    onclick={() => useItem(item)}
                 >
-                    <Glyph name="potion" size="sm" />
+                    <Glyph name={getEquipIcon(item.type)} size="sm" />
                 </Sigil>
             {:else if item.equippable}
                 <Sigil
@@ -359,14 +358,20 @@
                     title="{item.equipped ? 'Unequip' : 'Equip'} {item.title}"
                     onclick={() => putEquipped(item, !item.equipped)}
                 >
-                    <Glyph name={isAmmunition(item) ? 'ammunition' : getEquipIcon(item.type)} size="sm" />
+                    <Glyph name={getEquipIcon(item.type)} size="sm" />
                 </Sigil>
             {/if}
         </div>
-        <div class="name">
+        <div class="name" style:padding-inline-start="calc(var(--space-4) * {depth})">
             <h4 title={item.title} style:--item-ink={getRarityInk(item.rarity)}>{item.title}</h4>
             <span class="kind">
                 <span class="kind-type">{getTypeLine(item)}</span>
+                {#if item.unidentified}
+                    <Chip still glyph="conceal">Unidentified</Chip>
+                    {#if isDm && item.origin}
+                        <Button variant="plain" size="sm" title="Identify {item.title} for the table" label="Identify {item.title}" onclick={() => identify(item)}>Identify</Button>
+                    {/if}
+                {/if}
                 {#if attunement && item.attunement?.required}
                     {#if item.attunement.attuned}
                         <Chip still glyph="sparkles">Attuned</Chip>
@@ -377,6 +382,12 @@
             </span>
             {#if gives}
                 <span class="gives" class:gives-on={$rules.system && isItemApplied(item, $rules.system)} title={gives}>{gives}</span>
+            {/if}
+            {#if (item.properties?.capacity ?? 0) > 0}
+                <span class="gives">Holds {getContainerLoad($inventory, item)}/{item.properties?.capacity} lb{item.properties?.weightless ? ', weighing nothing' : ''}</span>
+            {/if}
+            {#if item.grants && item.grants.charges.max > 0}
+                <Pool title="Charges" max={item.grants.charges.max} current={getChargesLeft(item)} view="pips" onput={current => putCharges(item, (item.grants?.charges.max ?? 0) - current)} />
             {/if}
         </div>
         <div class="qty center">
@@ -395,6 +406,9 @@
         </div>
         <div class="notes">
             <p title={item.description}>{item.description}</p>
+            {#if places.length > 1}
+                <Dropdown label="Put {item.title} in a container" value={item.inside && places.some(one => one.value === item.inside) ? item.inside : ''} options={places} glyph="chest" onchange={value => putInside(item, value)} />
+            {/if}
             <IconBtn title="Edit {item.title}" onclick={() => openItem(item)}>
                 <Glyph name="edit" size="sm" />
             </IconBtn>
@@ -403,6 +417,9 @@
             </IconBtn>
         </div>
     </li>
+    {#each (item.properties?.capacity ?? 0) > 0 ? getHeld(item) : [] as held (held.id)}
+        {@render row(held, depth + 1)}
+    {/each}
 {/snippet}
 
 <style>
@@ -459,6 +476,7 @@
         font-family: var(--font-display);
         font-weight: 700;
         letter-spacing: var(--tracking-caps);
+        text-transform: uppercase;
         color: var(--metal-bright);
         text-shadow: 0 1px 0 var(--shadow-ink), 0 0 0.5rem var(--ember-glow);
     }
@@ -478,7 +496,8 @@
 
     .coins {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, 1fr);
         gap: var(--space-1);
         min-width: 0;
     }

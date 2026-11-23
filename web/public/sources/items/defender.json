@@ -1,0 +1,43 @@
+{
+  "name": "Defender",
+  "description": "A plain-hilted longsword whose flat is engraved with a closed gate.",
+  "category": "weapon",
+  "subtype": "longsword",
+  "rarity": "legendary",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 3,
+  "value": 0,
+  "notes": "Armor Class, Combat",
+  "tags": [
+    "versatile"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nAny sword can carry this enchantment; this one is a longsword. It strikes far truer and harder than a plain sword. The first time you attack with it on your turn, you can move any part of that bonus off the blade and onto your Armor Class, until the start of your next turn, as long as you keep hold of it.",
+  "properties": {
+    "weapon": "martial",
+    "damage": {
+      "amount": 1,
+      "dice": 8,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "versatile": {
+      "amount": 1,
+      "dice": 10,
+      "type": "slashing",
+      "bonus": 0
+    },
+    "magic": 3
+  },
+  "grants": {
+    "features": [
+      {
+        "name": "Guard",
+        "text": "The first time you attack with it on your turn, move up to 3 of its attack and damage bonus to your Armor Class until the start of your next turn."
+      }
+    ]
+  }
+}

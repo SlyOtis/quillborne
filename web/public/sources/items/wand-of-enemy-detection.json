@@ -1,0 +1,33 @@
+{
+  "name": "Wand of Enemy Detection",
+  "description": "A wand of dark wood that twitches in the hand like a dowsing rod.",
+  "category": "wand",
+  "subtype": "",
+  "rarity": "rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 1,
+  "value": 0,
+  "notes": "Detection",
+  "tags": [
+    "senses"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nSpend a charge as an action and for a minute you know the direction of the nearest creature hostile to you within 60 feet, whatever hides it.\n\n## Charges\n\nIt holds seven and regains 1d6 + 1 each dawn. Spend the last and it may crumble to ash.",
+  "grants": {
+    "features": [
+      {
+        "name": "Enemy Detection",
+        "text": "1 charge: for a minute you know the direction of the nearest hostile creature within 60 feet, ethereal, invisible, disguised or hidden."
+      }
+    ],
+    "charges": {
+      "max": 7,
+      "regain": "1d6 + 1",
+      "at": "dawn",
+      "last": "roll a d20; on a 1 it crumbles to ash"
+    }
+  }
+}

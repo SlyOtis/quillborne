@@ -1,0 +1,29 @@
+{
+  "name": "Helm of Comprehending Languages",
+  "description": "An open-faced helm engraved with letters of a dozen scripts.",
+  "category": "wondrous item",
+  "subtype": "helm",
+  "rarity": "uncommon",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Languages",
+  "tags": [
+    "spell"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nWhenever you like, you can understand any spoken language you hear and any writing you touch, as the comprehend languages spell does.",
+  "grants": {
+    "spells": [
+      {
+        "name": "Comprehend Languages",
+        "level": 1,
+        "charges": 0,
+        "note": "at will"
+      }
+    ]
+  }
+}

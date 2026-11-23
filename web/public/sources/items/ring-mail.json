@@ -1,0 +1,29 @@
+{
+  "name": "Ring Mail",
+  "description": "Leather armor with heavy iron rings sewn across it.",
+  "category": "armor",
+  "subtype": "ring mail",
+  "rarity": "common",
+  "attunement": false,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 40,
+  "value": 30,
+  "notes": "",
+  "tags": [
+    "heavy"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it is\n\nHeavy armor for those who cannot afford better. Your quickness does not count, and it makes moving quietly harder.",
+  "properties": {
+    "armor": "heavy",
+    "ac": {
+      "base": 14,
+      "bonus": 0,
+      "dexModifier": false,
+      "maxDexBonus": 0
+    },
+    "stealth": true
+  }
+}

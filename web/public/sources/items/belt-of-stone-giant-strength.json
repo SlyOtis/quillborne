@@ -1,0 +1,28 @@
+{
+  "name": "Belt of Stone Giant Strength",
+  "description": "A belt of grey leather set with smooth river stones.",
+  "category": "wondrous item",
+  "subtype": "belt",
+  "rarity": "very rare",
+  "attunement": true,
+  "attuned_by": "",
+  "consumable": false,
+  "weight": 0,
+  "value": 0,
+  "notes": "Strength",
+  "tags": [
+    "strength"
+  ],
+  "system": "dnd5e",
+  "book": "System Reference Document 5.1",
+  "body": "## What it does\n\nWhile you wear it, you have the strength of a stone giant: your Strength becomes 23. A wearer who is already stronger gains nothing.",
+  "grants": {
+    "attributes": [
+      {
+        "id": "str",
+        "mode": "set",
+        "value": 23
+      }
+    ]
+  }
+}

@@ -1,8 +1,8 @@
-import type { Character, CharacterInventoryItem, CharacterSkill, Proficiency } from '../character.types'
+import type { Character, CharacterAction, CharacterCurrency, CharacterInventoryItem, CharacterProficiency, CharacterSkill, Damage, Proficiency, Range } from '../character.types'
 import { getResolvedCharacter } from './derive'
 import { getExpressionNames, getExpressionValue } from './expression'
 import type { ItemGrants } from './item.types'
-import type { CharacterSheet, ProficiencyTier, ResolvedCharacter, RuleSystem } from './spec.types'
+import type { ArmorCategorySpec, CharacterSheet, EncumbranceSpec, ProficiencyTier, ResolvedCharacter, RuleSystem } from './spec.types'
 
 export type AppliedItem = CharacterInventoryItem & { grants: ItemGrants }
 
@@ -42,7 +42,8 @@ function getProficiencyMap(skills: CharacterSkill[], tiers: ProficiencyTier[]): 
 
 /**
  * The stored character as the engine reads it. The stored totals leave out what worn items grant: the bonuses are
- * recovered from them first, and the items that apply are laid over last, so each grant counts once.
+ * recovered from them first, and the items that apply are laid over last, so each grant counts once. Armor class is
+ * never recovered: the system works it out from the armor worn.
  */
 export function getSheet(character: Character, system: RuleSystem): CharacterSheet {
   const tiers = system.proficiencyTiers
@@ -88,14 +89,13 @@ export function getSheet(character: Character, system: RuleSystem): CharacterShe
   const level = base.level
   const bonuses: Record<string, number> = {}
 
-  if (info?.ac !== undefined) bonuses.armorClass = info.ac - 10 - (scope['mod.dex'] ?? 0)
   if (info?.hp?.max !== undefined) bonuses.hitPoints = info.hp.max - (scope['mod.con'] ?? 0) * level
   if (info?.initiative !== undefined) bonuses.initiative = info.initiative - (scope['mod.dex'] ?? 0)
 
   const speed = Number.parseInt(String(info?.speed ?? ''), 10)
   if (Number.isFinite(speed)) bonuses.speed = speed - 30
 
-  const worn = getWornSheet({ ...base, bonuses }, getAppliedItems(character.inventory ?? [], system), system)
+  const worn = getWornSheet({ ...base, bonuses, armor: getWornArmor(character.inventory ?? [], system) }, getAppliedItems(character.inventory ?? [], system), system)
   if (!info?.spells?.modifier) return worn
 
   const spellcasting = getResolvedCharacter(system, worn).scope[`mod.${getAttributeId(info.spells.modifier)}`] ?? 0
@@ -133,6 +133,231 @@ export function getSaveNotes(items: AppliedItem[], system: RuleSystem): SaveNote
     ...advantages,
     ...[...bonuses].map(([id, value]): SaveNote => ({ kind: 'bonus', title: system.bonuses?.find((one) => one.id === id)?.title ?? id, value }))
   ]
+}
+
+/** The system's armor category a carried item is, from its own field or else the first of its tags the system names. */
+export function getArmorCategory(item: CharacterInventoryItem, system: RuleSystem): ArmorCategorySpec | undefined {
+  const categories = system.items?.armorCategories ?? []
+  const id = item.properties?.armor ?? item.attributes.find((tag) => categories.some((one) => one.id === tag))
+  return categories.find((one) => one.id === id)
+}
+
+/**
+ * The armor and shields worn, as the `armor.` names the system's armor class reads: `worn` when body armor is on,
+ * its `base`, whether its `dex` counts and the `cap` on it, its `strength`, and the `bonus` of it and every shield.
+ */
+export function getWornArmor(inventory: CharacterInventoryItem[], system: RuleSystem): Record<string, number> {
+  const worn = inventory.filter((item) => item.equipped && item.properties?.ac)
+  const shields = worn.filter((item) => getArmorCategory(item, system)?.shield)
+  const body = worn.find((item) => !shields.includes(item))
+  const ac = body?.properties?.ac
+  return {
+    worn: body ? 1 : 0,
+    base: ac?.base ?? 0,
+    dex: ac?.dexModifier ? 1 : 0,
+    cap: ac?.maxDexBonus ?? 0,
+    strength: body?.properties?.strength ?? 0,
+    bonus: (ac?.bonus ?? 0) + shields.reduce((all, item) => all + (item.properties?.ac?.base ?? 0) + (item.properties?.ac?.bonus ?? 0), 0)
+  }
+}
+
+/** The item category one attack with a weapon uses up, by the system's weapon properties, or empty when it uses none. */
+export function getAmmunitionType(weapon: CharacterInventoryItem, system: RuleSystem): string {
+  return system.items?.weaponProperties?.find((one) => one.spends && weapon.attributes.includes(one.id))?.spends ?? ''
+}
+
+/** The equipped item a weapon's next attack uses up, or null when it uses none or none is left. */
+export function getAmmunition(inventory: CharacterInventoryItem[], weapon: CharacterInventoryItem, system: RuleSystem): CharacterInventoryItem | null {
+  const type = getAmmunitionType(weapon, system)
+  return (type && inventory.find((item) => item.type === type && item.equipped && item.quantity > 0)) || null
+}
+
+/** How an attack reaches: in melee, by firing what its weapon uses up or as a ranged attack of no weapon, or by throwing a melee weapon. */
+export function getAttackReach(range: Range | undefined, weapon: CharacterInventoryItem | undefined, system: RuleSystem): 'melee' | 'ranged' | 'thrown' {
+  const far = (range?.normal ?? 5) > 5
+  if (weapon ? getAmmunitionType(weapon, system) : far) return 'ranged'
+  return far ? 'thrown' : 'melee'
+}
+
+/** An attack as the actions tab draws it, built from an equipped weapon or read from a stored action such as a spell. */
+export type Attack = {
+  name: string
+  reach: 'melee' | 'ranged' | 'thrown'
+  /** The feet a melee attack reaches. */
+  melee: number
+  range?: Range
+  hit: number
+  damage: Damage[]
+  /** The damage dealt held in two hands, for a versatile weapon. */
+  versatile?: Damage
+  properties: string[]
+  /** The item category each attack uses up, or empty. */
+  spends: string
+  itemId?: string
+}
+
+function getComparable(name: string): string {
+  return name.toLowerCase().replace(/[^a-z]/g, '').replace(/s$/, '')
+}
+
+/** Whether a character's proficiencies name a weapon, by its category's title, its name or what it is. */
+export function isWeaponProficient(proficients: CharacterProficiency[], weapon: CharacterInventoryItem, system: RuleSystem): boolean {
+  const category = system.items?.weaponCategories?.find((one) => one.id === weapon.properties?.weapon)?.title
+  const names = [category, weapon.title, weapon.subtype].filter((one): one is string => Boolean(one)).map(getComparable)
+  return proficients.some((group) => group.value.some((one) => names.includes(getComparable(one))))
+}
+
+/** Every attack the equipped weapons make, each worked out by the system's attack formulas against the resolved character. */
+export function getWeaponAttacks(inventory: CharacterInventoryItem[], proficients: CharacterProficiency[], resolved: ResolvedCharacter): Attack[] {
+  const system = resolved.system
+  const rule = system.items?.attack
+  if (!rule) return []
+  const properties = system.items?.weaponProperties ?? []
+  return inventory
+    .filter((item) => item.equipped && item.properties?.damage)
+    .map((weapon) => {
+      const reach = getAttackReach(weapon.properties?.range, weapon, system)
+      const flags = Object.fromEntries(properties.filter((one) => /^[a-z]\w*$/i.test(one.id)).map((one) => [one.id, weapon.attributes.includes(one.id) ? 1 : 0]))
+      const locals = {
+        ...resolved.scope,
+        ...flags,
+        ranged: reach === 'ranged' ? 1 : 0,
+        proficient: isWeaponProficient(proficients, weapon, system) ? 1 : 0,
+        magic: weapon.properties?.magic ?? 0
+      }
+      const ability = getExpressionValue(rule.ability, locals)
+      const bonus = getExpressionValue(rule.damage, { ...locals, ability })
+      const dealt = (damage: Damage): Damage => ({ ...damage, bonus })
+      return {
+        name: weapon.title,
+        reach,
+        melee: getExpressionValue(rule.reach, locals),
+        range: reach === 'melee' ? undefined : weapon.properties?.range,
+        hit: getExpressionValue(rule.hit, { ...locals, ability }),
+        damage: [dealt(weapon.properties!.damage!)],
+        ...(weapon.properties?.versatile ? { versatile: dealt(weapon.properties.versatile) } : {}),
+        properties: weapon.attributes.map((tag) => properties.find((one) => one.id === tag)?.title ?? tag),
+        spends: getAmmunitionType(weapon, system),
+        itemId: weapon.id
+      }
+    })
+}
+
+/** A stored attack action, such as a spell, as the actions tab draws it; one tied to a carried weapon is built from the weapon instead. */
+export function getStoredAttack(action: CharacterAction, inventory: CharacterInventoryItem[], system: RuleSystem): Attack | null {
+  const weapon = action.itemId ? inventory.find((item) => item.id === action.itemId) : undefined
+  if (weapon?.properties?.damage) return null
+  const reach = getAttackReach(action.range, weapon, system)
+  return {
+    name: action.name,
+    reach,
+    melee: reach === 'melee' ? action.range?.normal ?? 5 : 5,
+    range: reach === 'melee' ? undefined : action.range,
+    hit: action.toHit ?? 0,
+    damage: action.damage ?? [],
+    properties: action.properties ?? [],
+    spends: weapon ? getAmmunitionType(weapon, system) : '',
+    itemId: action.itemId
+  }
+}
+
+/** Whether an item is used up when it is used: by its own flag, or else by its category. */
+export function isConsumable(item: CharacterInventoryItem, system: RuleSystem): boolean {
+  return item.consumable ?? Boolean(system.items?.categories?.find((one) => one.id === item.type)?.consumable)
+}
+
+/** How many of the charges an item's grants hold are left. */
+export function getChargesLeft(item: CharacterInventoryItem): number {
+  return Math.max(0, (item.grants?.charges.max ?? 0) - (item.spent ?? 0))
+}
+
+/** The inventory with charges of one item spent, or null when fewer than that are left. */
+export function getSpentInventory(inventory: CharacterInventoryItem[], id: string, charges: number): CharacterInventoryItem[] | null {
+  const item = inventory.find((one) => one.id === id)
+  if (!item || getChargesLeft(item) < charges) return null
+  return inventory.map((one) => (one.id === id ? { ...one, spent: (one.spent ?? 0) + charges } : one))
+}
+
+/** The recharges of the system a rest brings about. */
+export function getRestRecharges(system: RuleSystem, rest: 'short' | 'long'): string[] {
+  return (system.recharges ?? []).filter((one) => one.rests?.includes(rest)).map((one) => one.id)
+}
+
+/** The carried items with charges spent that regain them at one of the recharges. */
+export function getRecharging(inventory: CharacterInventoryItem[], at: string[]): CharacterInventoryItem[] {
+  return inventory.filter((item) => (item.spent ?? 0) > 0 && item.grants && at.includes(item.grants.charges.at))
+}
+
+/** The carried container an item sits in, or none when it sits in none or in one no longer carried. */
+export function getContainer(inventory: CharacterInventoryItem[], item: CharacterInventoryItem): CharacterInventoryItem | undefined {
+  return item.inside ? inventory.find((one) => one.id === item.inside && (one.properties?.capacity ?? 0) > 0) : undefined
+}
+
+/** Whether an item weighs nothing because it sits, however deep, in a container whose contents weigh nothing. */
+export function isWeightless(inventory: CharacterInventoryItem[], item: CharacterInventoryItem): boolean {
+  const seen: string[] = []
+  for (let holder = getContainer(inventory, item); holder && !seen.includes(holder.id); holder = getContainer(inventory, holder)) {
+    if (holder.properties?.weightless) return true
+    seen.push(holder.id)
+  }
+  return false
+}
+
+/** The containers an item may be put in: every carried container but itself and those inside it. */
+export function getContainers(inventory: CharacterInventoryItem[], item: CharacterInventoryItem): CharacterInventoryItem[] {
+  const holds = (holder: CharacterInventoryItem, seen: string[]): boolean => {
+    const container = getContainer(inventory, holder)
+    return Boolean(container && !seen.includes(container.id) && (container.id === item.id || holds(container, [...seen, container.id])))
+  }
+  return inventory.filter((one) => one.id !== item.id && (one.properties?.capacity ?? 0) > 0 && !holds(one, []))
+}
+
+/** What the items in a container weigh, whether or not the container lets them weigh on its carrier. */
+export function getContainerLoad(inventory: CharacterInventoryItem[], container: CharacterInventoryItem): number {
+  return inventory.filter((one) => one.inside === container.id).reduce((all, one) => all + one.weight * one.quantity, 0)
+}
+
+/** What carried coins weigh, by the system. */
+export function getCoinWeight(currency: CharacterCurrency, system: RuleSystem): number {
+  const coins = (system.coins ?? []).reduce((all, coin) => all + (currency[coin.id as keyof CharacterCurrency] ?? 0), 0)
+  return system.items?.coinWeight ? getExpressionValue(system.items.coinWeight, { coins }) : 0
+}
+
+/** What everything carried weighs, each item as many times as there are of it, its coins with it, less what a weightless container holds. */
+export function getCarriedWeight(inventory: CharacterInventoryItem[], currency: CharacterCurrency, system: RuleSystem): number {
+  const items = inventory.filter((item) => !isWeightless(inventory, item)).reduce((all, item) => all + item.weight * item.quantity, 0)
+  return items + getCoinWeight(currency, system)
+}
+
+/** The heaviest load of the system a weight is past, or null when it is past none. */
+export function getEncumbrance(weight: number, resolved: ResolvedCharacter): EncumbranceSpec | null {
+  return (resolved.system.items?.encumbrance ?? []).filter((one) => weight > getExpressionValue(one.over, resolved.scope)).at(-1) ?? null
+}
+
+/** A purse split as evenly as each coin allows among a party, the coins left over going one each to the first. */
+export function getCoinShares(purse: CharacterCurrency, count: number, system: RuleSystem): CharacterCurrency[] {
+  return Array.from({ length: Math.max(0, count) }, (_, index) =>
+    Object.fromEntries(
+      (system.coins ?? []).map((coin) => {
+        const held = purse[coin.id as keyof CharacterCurrency] ?? 0
+        return [coin.id, Math.floor(held / count) + (index < held % count ? 1 : 0)]
+      })
+    )
+  )
+}
+
+/** What a purse is worth in the coin the system writes its prices in. */
+export function getCoinValue(currency: CharacterCurrency, system: RuleSystem): number {
+  const value = (system.coins ?? []).reduce((all, coin) => all + (currency[coin.id as keyof CharacterCurrency] ?? 0) * coin.value, 0)
+  return Number(value.toFixed(3))
+}
+
+/** What everything carried is worth, by the coin each is priced in, each item as many times as there are of it. */
+export function getInventoryValue(inventory: CharacterInventoryItem[]): CharacterCurrency {
+  return inventory.reduce<CharacterCurrency>(
+    (all, item) => ({ ...all, [item.value.currency]: (all[item.value.currency] ?? 0) + item.value.amount * item.quantity }),
+    {}
+  )
 }
 
 /**
