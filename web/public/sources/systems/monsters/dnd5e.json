@@ -825,7 +825,8 @@
     {
       "id": "legendary_actions",
       "name": "Legendary Actions",
-      "one": "Legendary action"
+      "one": "Legendary action",
+      "legendary": true
     }
   ],
   "labels": {
@@ -847,7 +848,31 @@
     "challenge": "CR",
     "experience": "XP",
     "proficiency": "PB",
-    "habitats": "Habitat"
+    "habitats": "Habitat",
+    "melee": "Melee Attack Roll",
+    "ranged": "Ranged Attack Roll",
+    "meleeOrRanged": "Melee or Ranged Attack Roll",
+    "reach": "reach",
+    "range": "range",
+    "hit": "Hit",
+    "plus": "plus",
+    "damage": "damage",
+    "savingThrow": "Saving Throw",
+    "dc": "DC",
+    "failure": "Failure",
+    "success": "Success",
+    "half": "Half damage.",
+    "recharge": "Recharge",
+    "perDay": "/Day",
+    "costs": "Costs",
+    "actions": "Actions",
+    "legendaryUses": "Legendary Action Uses",
+    "inLair": "in Lair",
+    "source": "Source",
+    "homebrew": "Homebrew",
+    "mine": "Mine",
+    "difficulty": "Difficulty",
+    "or": "or"
   },
   "formulas": {
     "modifier": "floor((score - 10) / 2)",
@@ -857,6 +882,153 @@
     "initiative": "mod.dex + prof * tier",
     "initiativeScore": "10 + initiative",
     "hitPoints": "max(1, floor(dice * (die + 1) / 2) + dice * mod.con)",
-    "hitBonus": "dice * mod.con"
-  }
+    "hitBonus": "dice * mod.con",
+    "attack": "mod + prof + bonus",
+    "dc": "8 + mod + prof + bonus",
+    "damage": "mod * ability + bonus",
+    "average": "max(0, floor(dice * (die + 1) / 2) + flat)",
+    "rolledHitPoints": "max(1, roll + hitBonus)",
+    "recharged": "roll >= recharge"
+  },
+  "rechargeDie": 6,
+  "difficulties": [
+    {
+      "id": "low",
+      "name": "Low"
+    },
+    {
+      "id": "moderate",
+      "name": "Moderate"
+    },
+    {
+      "id": "high",
+      "name": "High"
+    },
+    {
+      "id": "beyond",
+      "name": "Beyond High"
+    }
+  ],
+  "budgets": [
+    {
+      "level": 1,
+      "low": 50,
+      "moderate": 75,
+      "high": 100
+    },
+    {
+      "level": 2,
+      "low": 100,
+      "moderate": 150,
+      "high": 200
+    },
+    {
+      "level": 3,
+      "low": 150,
+      "moderate": 225,
+      "high": 400
+    },
+    {
+      "level": 4,
+      "low": 250,
+      "moderate": 375,
+      "high": 500
+    },
+    {
+      "level": 5,
+      "low": 500,
+      "moderate": 750,
+      "high": 1100
+    },
+    {
+      "level": 6,
+      "low": 600,
+      "moderate": 1000,
+      "high": 1400
+    },
+    {
+      "level": 7,
+      "low": 750,
+      "moderate": 1300,
+      "high": 1700
+    },
+    {
+      "level": 8,
+      "low": 1000,
+      "moderate": 1700,
+      "high": 2100
+    },
+    {
+      "level": 9,
+      "low": 1300,
+      "moderate": 2000,
+      "high": 2600
+    },
+    {
+      "level": 10,
+      "low": 1600,
+      "moderate": 2300,
+      "high": 3100
+    },
+    {
+      "level": 11,
+      "low": 1900,
+      "moderate": 2900,
+      "high": 4100
+    },
+    {
+      "level": 12,
+      "low": 2200,
+      "moderate": 3700,
+      "high": 4700
+    },
+    {
+      "level": 13,
+      "low": 2600,
+      "moderate": 4200,
+      "high": 5400
+    },
+    {
+      "level": 14,
+      "low": 2900,
+      "moderate": 4900,
+      "high": 6200
+    },
+    {
+      "level": 15,
+      "low": 3300,
+      "moderate": 5400,
+      "high": 7800
+    },
+    {
+      "level": 16,
+      "low": 3800,
+      "moderate": 6100,
+      "high": 9800
+    },
+    {
+      "level": 17,
+      "low": 4500,
+      "moderate": 7200,
+      "high": 11700
+    },
+    {
+      "level": 18,
+      "low": 5000,
+      "moderate": 8700,
+      "high": 14200
+    },
+    {
+      "level": 19,
+      "low": 5500,
+      "moderate": 10700,
+      "high": 17200
+    },
+    {
+      "level": 20,
+      "low": 6400,
+      "moderate": 13200,
+      "high": 22000
+    }
+  ]
 }

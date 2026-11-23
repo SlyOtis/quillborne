@@ -342,11 +342,15 @@
             "type": "string"
           },
           "is_public": {
-            "description": "Whether every signed in player reads it; a private monster is its maker's homebrew.",
+            "description": "Whether every signed in player reads it; a private monster is its maker's homebrew, and a campaign's monster is never public.",
             "type": "boolean"
           },
           "name": {
             "description": "The monster name.",
+            "type": "string"
+          },
+          "owner_id": {
+            "description": "The key of the campaign record.",
             "type": "string"
           },
           "size": {
@@ -378,9 +382,14 @@
         ],
         "type": "object"
       },
-      "depends_on": [],
-      "refs": {},
+      "depends_on": [
+        "campaign"
+      ],
+      "refs": {
+        "owner_id": "campaign"
+      },
       "filters": [
+        "owner_id",
         "user_id"
       ],
       "fields": {
@@ -550,7 +559,7 @@
       "schema": {
         "properties": {
           "combatants": {
-            "description": "Every combatant with its kind, initiative, hit points and conditions; character ids are those of the export and are mapped on import."
+            "description": "Every combatant with its kind, initiative, hit points and conditions; its character_id and monster_id are those of the export and are mapped on import, and a monster_slug names a shipped monster and is kept."
           },
           "is_active": {
             "description": "Whether the encounter is running.",
@@ -604,7 +613,8 @@
       },
       "depends_on": [
         "campaign",
-        "character"
+        "character",
+        "monster"
       ],
       "refs": {
         "owner_id": "campaign"

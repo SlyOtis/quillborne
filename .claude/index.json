@@ -637,7 +637,7 @@
     {
       "path": "internal/handler/monster.go",
       "kind": "source",
-      "answers": "The /api/monster routes: list what the reader may read, make, read, change and delete a monster. Any player makes one; is_public decides the Member binding through putPublicBinding, and only the maker writes or deletes it.",
+      "answers": "The /api/monster routes: list what the reader may read, or with ?owner_id a campaign's bestiary, make, read, change and delete a monster. Any player makes a homebrew monster, where is_public decides the Member binding through putPublicBinding; the DM makes one in a campaign with owner_id, which its seated players read and which is never public. Only the maker writes or deletes it.",
       "keywords": [
         "monster",
         "bestiary",
@@ -650,7 +650,7 @@
     {
       "path": "web/public/sources/systems/monsters/dnd5e.json",
       "kind": "data",
-      "answers": "The fifth edition monster system: abilities, sizes with hit dice, creature types with their glyphs, alignments, damage types, conditions, senses, movement, languages, habitats, skills, challenge ratings with experience and proficiency bonus, flags, stat block sections, defaults and the formulas of every figure.",
+      "answers": "The fifth edition monster system: abilities, sizes with hit dice, creature types with their glyphs, alignments, damage types, conditions, senses, movement, languages, habitats, skills, challenge ratings with experience and proficiency bonus, flags, stat block sections, defaults, the words of the structured attack and save lines, the recharge die, the difficulties and the XP budget per character level, and the formulas of every figure, to-hit, DC and damage included.",
       "keywords": [
         "monster",
         "bestiary",
@@ -667,7 +667,7 @@
     {
       "path": "web/src/lib/rules/monster.ts",
       "kind": "source",
-      "answers": "The monster engine. Loads a monster system, reads stored stats into their full shape, works out the stat block from the system formulas, and decides which monsters the bestiary filters show.",
+      "answers": "The monster engine. Loads a monster system and the shipped SRD documents, reads stored stats and their feature structure into their full shape, works out the stat block and each feature's to-hit, DC and damage from the system formulas, the difficulty of a fight against a party, the names, recharges and legendary uses of monsters in a fight and the copy into a campaign bestiary, and decides which monsters the bestiary filters show.",
       "keywords": [
         "monster",
         "bestiary",
@@ -681,7 +681,7 @@
     {
       "path": "web/src/lib/rules/monster.types.ts",
       "kind": "source",
-      "answers": "The shape of a monster system, a monster's stored stats, the worked out stat block and the bestiary filter.",
+      "answers": "The shape of a monster system, a monster's stored stats and the attack, save, recharge, uses and cost a feature may carry, the worked out stat block and feature, the SRD documents, the difficulty and the bestiary filter.",
       "keywords": [
         "monster",
         "types",
@@ -694,7 +694,7 @@
     {
       "path": "web/src/pages/MonstersPage.svelte",
       "kind": "page",
-      "answers": "The bestiary at /main/monsters: the type row, name, challenge, size and habitat filters, the advanced filters, the sortable list with Homebrew under the reader's own private monsters, and New monster.",
+      "answers": "The bestiary at /main/monsters: the SRD documents beside the rows, the type row, name, challenge, size, habitat and source filters (an SRD document, homebrew, mine, a campaign), the advanced filters, the sortable list with each monster's source under its name, and New monster.",
       "keywords": [
         "monster",
         "bestiary",
@@ -708,7 +708,7 @@
     {
       "path": "web/src/pages/MonsterPage.svelte",
       "kind": "page",
-      "answers": "One monster at /main/monsters/:id: the stat block with the abilities drawn as on the sheet, the portrait beside it, the tags and flags, the lore, and for its maker editing in place, sharing and deleting.",
+      "answers": "One monster at /main/monsters/:id, a row by its id or an SRD monster by its slug read only with its attribution: the stat block, the portrait beside it, the tags and flags, the lore, Copy to homebrew for a monster not the reader's own, Add to bestiary for a campaign the reader runs, and for its maker editing in place, sharing and deleting.",
       "keywords": [
         "monster",
         "stat",
@@ -722,7 +722,7 @@
     {
       "path": "web/src/components/character_sheet/main_tabs/BestiaryTab.svelte",
       "kind": "component",
-      "answers": "The Bestiary tab of the character sheet: an empty bestiary of unwritten pages until the campaign bestiary is built.",
+      "answers": "The Bestiary tab of the character sheet: the monsters of the character's campaign bestiary as tiles opening their monster page, or the empty bestiary of unwritten pages when the party has met none.",
       "keywords": [
         "bestiary",
         "monster",
@@ -1068,6 +1068,46 @@
         "fix",
         "latest",
         "agent"
+      ]
+    },
+    {
+      "path": "web/public/sources/monsters/index.json",
+      "kind": "data",
+      "answers": "The list of the shipped monster documents the bestiary reads beside the rows.",
+      "keywords": [
+        "monster",
+        "bestiary",
+        "srd",
+        "sources",
+        "index"
+      ]
+    },
+    {
+      "path": "web/public/sources/monsters/srd-5.2.json",
+      "kind": "data",
+      "answers": "The SRD 5.2 monsters as one read-only document: its system, license and attribution, and every monster by slug with the fields a monster row's body takes, its attacks and saves structured.",
+      "keywords": [
+        "monster",
+        "bestiary",
+        "srd",
+        "sources",
+        "license",
+        "attribution"
+      ]
+    },
+    {
+      "path": "web/src/components/campaign/CampaignEncounter.svelte",
+      "kind": "component",
+      "answers": "The encounter tracker of a campaign: the initiative order, characters, NPCs and monsters added from the bestiary by count with average or rolled hit points, conditions from the monster system, recharge, uses and legendary trackers, the compact stat block with rolls on a monster's turn, the difficulty against the party, and the end of a fight writing its monsters into the campaign bestiary.",
+      "keywords": [
+        "encounter",
+        "initiative",
+        "combatant",
+        "monster",
+        "bestiary",
+        "difficulty",
+        "condition",
+        "roll"
       ]
     }
   ]

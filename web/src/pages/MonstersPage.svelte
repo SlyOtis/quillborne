@@ -4,17 +4,19 @@
     systems: import('$lib/rules/monster.types').MonsterSystem[]
     monsters: import('$lib/api/types').Monster[]
     tags: import('$lib/api/types').Tag[]
+    sources: import('$lib/rules/monster.types').MonsterSource[]
+    campaigns: import('$lib/api/types').Campaign[]
   }
 
-  let kept: Kept = { key: '', systems: [], monsters: [], tags: [] }
+  let kept: Kept = { key: '', systems: [], monsters: [], tags: [], sources: [], campaigns: [] }
 </script>
 
 <script lang="ts">
-  import { getMonsters, getObjectTags } from '$lib/api'
-  import { OBJECT_TYPE_MONSTER, type Monster, type Tag } from '$lib/api/types'
+  import { getCampaigns, getMonsters, getObjectTags } from '$lib/api'
+  import { OBJECT_TYPE_MONSTER, type Campaign, type Monster, type Tag } from '$lib/api/types'
   import { getTheme, setTheme } from '$lib/dialogs/theme'
-  import { getEmptyFilter, getMonsterBlock, getMonsterStats, getMonsterSystems, isMonsterShown } from '$lib/rules/monster'
-  import type { MonsterBlock as Block, MonsterEntry, MonsterFilter, MonsterStats, MonsterSystem } from '$lib/rules/monster.types'
+  import { getEmptyFilter, getMonsterBlock, getMonsterOrigins, getMonsterSources, getMonsterStats, getMonsterSystems, HOMEBREW, isMonsterShown, MINE } from '$lib/rules/monster'
+  import type { MonsterBlock as Block, MonsterEntry, MonsterFilter, MonsterSource, MonsterStats, MonsterSystem } from '$lib/rules/monster.types'
   import { user } from '$lib/stores/auth.store'
   import { onDestroy, onMount } from 'svelte'
   import { get } from 'svelte/store'
@@ -55,6 +57,7 @@
     | 'movement'
     | 'tag'
     | 'subtype'
+    | 'source'
 
   const FACETS: Facet[] = [
     'size',
@@ -70,16 +73,20 @@
     'language',
     'movement',
     'tag',
-    'subtype'
+    'subtype',
+    'source'
   ]
 
   type Line = {
-    monster: Monster
+    id: string
+    monster: Pick<Monster, 'name' | 'size' | 'type' | 'alignment' | 'challenge' | 'stats' | 'image' | 'updated_at'>
     system: MonsterSystem
     stats: MonsterStats
     block: Block
     tags: Tag[]
     glyph: GlyphName
+    origins: string[]
+    under: string
     homebrew: boolean
   }
 
@@ -107,6 +114,8 @@
   let systems = $state<MonsterSystem[]>(kept.systems)
   let monsters = $state<Monster[]>(kept.monsters)
   let tags = $state<Tag[]>(kept.tags)
+  let sources = $state<MonsterSource[]>(kept.sources)
+  let campaigns = $state<Campaign[]>(kept.campaigns)
   let loading = $state(kept.key === '')
   let error = $state<string | null>(null)
   let hunt = $state(new URLSearchParams($resolvedRoute.search ?? '').get('q') ?? '')
@@ -116,7 +125,7 @@
 
   onDestroy(() => {
     clearTimeout(huntTimer)
-    if (get(resolvedRoute).path !== HOME) kept = { key: '', systems: [], monsters: [], tags: [] }
+    if (get(resolvedRoute).path !== HOME) kept = { key: '', systems: [], monsters: [], tags: [], sources: [], campaigns: [] }
   })
 
   $effect(() => {
@@ -125,13 +134,15 @@
     if (kept.key === key) return
     let live = true
     loading = true
-    Promise.all([getMonsterSystems(), getMonsters(), getObjectTags(OBJECT_TYPE_MONSTER)])
-      .then(([loadedSystems, loadedMonsters, loadedTags]) => {
+    Promise.all([getMonsterSystems(), getMonsters(), getObjectTags(OBJECT_TYPE_MONSTER), getMonsterSources(), getCampaigns()])
+      .then(([loadedSystems, loadedMonsters, loadedTags, loadedSources, loadedCampaigns]) => {
         if (!live) return
-        kept = { key, systems: loadedSystems, monsters: loadedMonsters, tags: loadedTags }
+        kept = { key, systems: loadedSystems, monsters: loadedMonsters, tags: loadedTags, sources: loadedSources, campaigns: loadedCampaigns }
         systems = loadedSystems
         monsters = loadedMonsters
         tags = loadedTags
+        sources = loadedSources
+        campaigns = loadedCampaigns
       })
       .catch((reason) => live && (error = reason instanceof Error ? reason.message : String(reason)))
       .finally(() => live && (loading = false))
@@ -195,23 +206,49 @@
     }, SAVE_DELAY)
   }
 
-  const lines = $derived<Line[]>(
-    monsters.flatMap((monster) => {
+  const campaignIds = $derived(campaigns.map((one) => one.id))
+
+  const lines = $derived<Line[]>([
+    ...sources.flatMap((source) => {
+      const held = systems.find((one) => one.id === source.system)
+      if (!held) return []
+      return source.monsters.map((entry) => {
+        const monster = { ...entry, stats: getMonsterStats(held, entry.stats), image: '', updated_at: '' }
+        return {
+          id: entry.slug,
+          monster,
+          system: held,
+          stats: monster.stats,
+          block: getMonsterBlock(held, monster),
+          tags: [],
+          glyph: (held.types.find((one) => one.id === entry.type)?.glyph ?? held.typeGlyph) as GlyphName,
+          origins: [source.id],
+          under: source.title,
+          homebrew: false
+        }
+      })
+    }),
+    ...monsters.flatMap((monster) => {
       const held = systems.find((one) => one.id === monster.system)
       if (!held) return []
+      const origins = getMonsterOrigins(monster, $user?.user_id ?? '', campaignIds)
+      const homebrew = monster.user_id === $user?.user_id && !monster.is_public && origins.includes(HOMEBREW)
       return [
         {
+          id: monster.id,
           monster,
           system: held,
           stats: getMonsterStats(held, monster.stats),
           block: getMonsterBlock(held, monster),
           tags: tags.filter((tag) => tag.object_ids?.includes(monster.id)),
           glyph: (held.types.find((one) => one.id === monster.type)?.glyph ?? held.typeGlyph) as GlyphName,
-          homebrew: monster.user_id === $user?.user_id && !monster.is_public
+          origins,
+          under: homebrew ? held.labels.homebrew : (campaigns.find((one) => one.id === monster.owner_id)?.name ?? held.title),
+          homebrew
         }
       ]
     })
-  )
+  ])
 
   const counts = $derived(
     lines.reduce<Record<string, number>>((all, line) => ({ ...all, [line.monster.type]: (all[line.monster.type] ?? 0) + 1 }), {})
@@ -232,7 +269,7 @@
 
   const shown = $derived(
     lines
-      .filter((line) => isMonsterShown(line.monster, line.stats, line.block, line.tags.map((tag) => tag.id), filter))
+      .filter((line) => isMonsterShown(line.monster, line.stats, line.block, line.tags.map((tag) => tag.id), line.origins, filter))
       .sort((a, b) => {
         const left = getKey(a, sort.by)
         const right = getKey(b, sort.by)
@@ -243,7 +280,7 @@
 
   const narrowed = $derived(JSON.stringify(filter) !== JSON.stringify(getEmptyFilter()))
 
-  const held = $derived(new Map(shown.map((line) => [line.monster.id, line])))
+  const held = $derived(new Map(shown.map((line) => [line.id, line])))
 
   const columns = $derived((view === 'tree' ? TREE_COLUMNS : LIST_COLUMNS).filter((one) => one.key === 'name' || !hidden.includes(one.key)))
   const columnOptions = $derived<DropdownOption[]>(
@@ -260,13 +297,13 @@
 
   const items = $derived<FileItem[]>(
     shown.map((line) => ({
-      id: line.monster.id,
+      id: line.id,
       name: line.monster.name,
       kind: 'file',
       type: line.block.type,
       glyph: line.glyph,
       thumbnailUrl: line.monster.image || null,
-      updatedAt: line.monster.updated_at,
+      updatedAt: line.monster.updated_at || undefined,
       tags: line.tags.map((tag) => tag.name)
     }))
   )
@@ -290,7 +327,7 @@
     ...shown.filter((line) => !line.system.types.some((type) => type.id === line.monster.type)).map(getLeaf)
   ])
 
-  const listed = $derived<TableRow[]>(shown.map((line) => ({ id: line.monster.id })))
+  const listed = $derived<TableRow[]>(shown.map((line) => ({ id: line.id })))
 
   const challenges = $derived<MonsterEntry[]>((system?.challenges ?? []).map((one) => ({ id: String(one.value), name: one.name })))
 
@@ -298,7 +335,17 @@
     system
       ? [
           { key: 'size', label: 'Size', entries: system.sizes },
-          { key: 'habitat', label: 'Habitat', entries: system.habitats }
+          { key: 'habitat', label: 'Habitat', entries: system.habitats },
+          {
+            key: 'source',
+            label: system.labels.source,
+            entries: [
+              ...sources.map((one) => ({ id: one.id, name: one.title })),
+              { id: HOMEBREW, name: system.labels.homebrew },
+              { id: MINE, name: system.labels.mine },
+              ...campaigns.map((one) => ({ id: one.id, name: one.name }))
+            ]
+          }
         ]
       : []
   )
@@ -323,7 +370,7 @@
   )
 
   function getLeaf(line: Line): TreeRow {
-    return { id: line.monster.id, title: line.monster.name, glyph: line.glyph }
+    return { id: line.id, title: line.monster.name, glyph: line.glyph }
   }
 
   function getOptions(label: string, entries: MonsterEntry[]): DropdownOption[] {
@@ -479,8 +526,8 @@
           {/if}
         </span>
         <span class="lair-stack">
-          <a class="lair-title" href="{HOME}/{line.monster.id}">{line.monster.name}</a>
-          <span class="lair-under" class:lair-under-lit={line.homebrew}>{line.homebrew ? 'Homebrew' : line.system.title}</span>
+          <a class="lair-title" href="{HOME}/{line.id}">{line.monster.name}</a>
+          <span class="lair-under" class:lair-under-lit={line.homebrew}>{line.under}</span>
         </span>
       </span>
     {:else if key === 'challenge'}

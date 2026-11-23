@@ -1,22 +1,32 @@
 <script lang="ts">
   import type { Monster } from '$lib/api/types'
-  import { getHitDice, getMonsterBlock, getMonsterStats, getSigned } from '$lib/rules/monster'
-  import type { MonsterFeature, MonsterSystem } from '$lib/rules/monster.types'
+  import { getInline, type Marks } from '$lib/blocks'
+  import { rollAttack, rollDamage } from '$lib/engine'
+  import { getDamageDice, getFeatureRuns, getHitDice, getMonsterAction, getMonsterBlock, getMonsterStats, getSigned } from '$lib/rules/monster'
+  import type { MonsterFeature, MonsterFeatureKind, MonsterSystem } from '$lib/rules/monster.types'
+  import Button from '$components/ui/Button.svelte'
   import Chip from '$components/ui/Chip.svelte'
 
   const {
     system,
-    monster
+    monster,
+    layout = 'full',
+    rolls = false
   }: {
     /** The monster system every word and figure on the block is taken from. */
     system: MonsterSystem
     /** The monster drawn, as stored or as the builder holds it. */
     monster: Pick<Monster, 'name' | 'size' | 'type' | 'alignment' | 'challenge' | 'stats'>
+    /** Full draws every line of the block; compact leaves out the hit points and the languages and writes the abilities on one line, for a fight. */
+    layout?: 'full' | 'compact'
+    /** Draws a button for every to-hit and damage roll of a feature, written to the roll log. */
+    rolls?: boolean
   } = $props()
 
   const stats = $derived(getMonsterStats(system, monster.stats))
   const block = $derived(getMonsterBlock(system, monster))
   const words = $derived(system.labels)
+  const compact = $derived(layout === 'compact')
   const proficient = $derived(system.tiers.find((one) => one.value === 1)?.name ?? '')
   const half = $derived(Math.ceil(block.abilities.length / 2))
   const tables = $derived([block.abilities.slice(0, half), block.abilities.slice(half)])
@@ -34,11 +44,48 @@
   const sections = $derived(system.features.filter((kind) => (stats.features[kind.id] ?? []).length > 0))
 </script>
 
-{#snippet feat(feature: MonsterFeature)}
-  <p class="dnd-monster-feat"><b>{feature.name}.</b> {feature.text}</p>
+{#snippet marked(text: string, marks: Marks | undefined)}
+  {#if marks?.italic}
+    <em>{@render marked(text, { ...marks, italic: false })}</em>
+  {:else if marks?.bold}
+    <strong>{@render marked(text, { ...marks, bold: false })}</strong>
+  {:else}{text}{/if}
 {/snippet}
 
-<article class="dnd-monster" aria-label={monster.name}>
+{#snippet prose(text: string)}
+  {#each getInline(text) as run, index (index)}
+    {#if 'ref' in run && run.ref === 'break'}
+      <br />
+    {:else if 'ref' in run}
+      {run.mark}{run.label}
+    {:else}
+      {@render marked(run.text, run.marks)}
+    {/if}
+  {/each}
+{/snippet}
+
+{#snippet roll(title: string, word: string, onclick: () => void)}
+  <Button variant="secondary" size="sm" {title} label={title} {onclick}>{word}</Button>
+{/snippet}
+
+{#snippet feat(kind: MonsterFeatureKind, feature: MonsterFeature)}
+  {@const action = getMonsterAction(system, block, feature)}
+  {@const named = `${monster.name} ${feature.name}`}
+  <p class="dnd-monster-feat">{#each getFeatureRuns(system, kind, feature, action) as run, index (index)}{#if run.mark === 'name'}<b>{run.text}</b>{:else if run.mark === 'lead'}<i>{run.text}</i>{:else}{run.text}{/if}{/each}{@render prose(feature.text)}</p>
+  {#if rolls && (action.attack !== null || action.hit.length || action.failure.length)}
+    <div class="dnd-monster-rolls">
+      {#if action.attack !== null}
+        {@const bonus = action.attack}
+        {@render roll(`Roll ${feature.name} to hit`, getSigned(bonus), () => void rollAttack(named, bonus))}
+      {/if}
+      {#each [...action.hit, ...action.failure].filter((one) => one.dice > 0) as one, index (index)}
+        {@render roll(`Roll ${feature.name} ${one.type} damage`, `${getDamageDice(one)} ${one.type}`, () => void rollDamage(named, one.die, one.dice, one.flat))}
+      {/each}
+    </div>
+  {/if}
+{/snippet}
+
+<article class="dnd-monster" class:dnd-monster-compact={compact} aria-label={monster.name}>
   <div class="dnd-monster-flow" class:dnd-monster-flow-split={sections.length > 0}>
     <div class="dnd-monster-top">
       <header class="dnd-monster-head">
@@ -59,9 +106,21 @@
         </span>
         <span><b>{words.initiative}</b> {getSigned(block.initiative)} ({block.initiativeScore})</span>
       </p>
-      <p class="dnd-monster-line"><b>{words.hitPoints}</b> {block.hitPoints} ({getHitDice(stats.hit_dice, block)})</p>
+      {#if !compact}
+        <p class="dnd-monster-line"><b>{words.hitPoints}</b> {block.hitPoints} ({getHitDice(stats.hit_dice, block)})</p>
+      {/if}
       <p class="dnd-monster-line"><b>{words.speed}</b> {speeds || `0 ${system.distance}`}</p>
 
+      {#if compact}
+        <p class="dnd-monster-line">
+          {#each block.abilities as ability (ability.id)}
+            <span class="dnd-monster-score">
+              <b><abbr title={ability.name}>{ability.short}</abbr></b>
+              {getSigned(ability.mod)}{#if ability.proficient}{' '}({words.save} {getSigned(ability.save)}){/if}
+            </span>
+          {/each}
+        </p>
+      {:else}
       <div class="dnd-monster-abilities">
         {#each tables as table, place (place)}
           <table class="dnd-monster-scores">
@@ -89,6 +148,7 @@
           </table>
         {/each}
       </div>
+      {/if}
 
       {#if block.skills.length}
         <p class="dnd-monster-line">
@@ -103,7 +163,9 @@
         <b>{words.senses}</b>
         {senses ? `${senses}; ` : ''}{words.passivePerception} {block.passivePerception}
       </p>
-      <p class="dnd-monster-line"><b>{words.languages}</b> {block.languages.join(', ') || words.none}</p>
+      {#if !compact}
+        <p class="dnd-monster-line"><b>{words.languages}</b> {block.languages.join(', ') || words.none}</p>
+      {/if}
       <p class="dnd-monster-line">
         <b>{words.challenge}</b>
         {block.challenge?.name ?? ''} ({words.experience} {(block.challenge?.xp ?? 0).toLocaleString('en-US')}; {words.proficiency} {getSigned(block.prof)})
@@ -115,10 +177,16 @@
         <div class="dnd-monster-lead">
           <h3 class="dnd-monster-part-name">{kind.name}</h3>
           <span class="dnd-monster-rule" aria-hidden="true"></span>
-          {@render feat(stats.features[kind.id][0])}
+          {#if kind.legendary && stats.legendary_uses}
+            <p class="dnd-monster-feat">
+              <b>{words.legendaryUses}:</b>
+              {stats.legendary_uses}{#if stats.legendary_lair_uses}{' '}({stats.legendary_lair_uses} {words.inLair}){/if}.
+            </p>
+          {/if}
+          {@render feat(kind, stats.features[kind.id][0])}
         </div>
         {#each stats.features[kind.id].slice(1) as feature, index (index)}
-          {@render feat(feature)}
+          {@render feat(kind, feature)}
         {/each}
       </section>
     {/each}
@@ -315,7 +383,6 @@
 
   .dnd-monster-feat {
     margin: 0 0 var(--space-2);
-    white-space: pre-line;
     break-inside: avoid;
   }
 
@@ -324,6 +391,32 @@
     font-weight: 700;
     color: var(--metal-bright);
     text-shadow: 0 1px 0 var(--shadow-ink);
+  }
+
+  .dnd-monster-feat i {
+    color: var(--ink-dim);
+  }
+
+  .dnd-monster-rolls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-2);
+    break-inside: avoid;
+  }
+
+  .dnd-monster-score {
+    display: inline-block;
+    margin-inline-end: var(--space-3);
+    text-indent: 0;
+  }
+
+  .dnd-monster-score abbr {
+    text-decoration: none;
+  }
+
+  .dnd-monster-compact {
+    padding: var(--space-3) var(--space-4) var(--space-4);
   }
 
   @container (max-width: 30rem) {

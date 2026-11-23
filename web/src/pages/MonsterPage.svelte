@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { deleteMonster, getAssetTab, getMonster, getObjectTags, putMonster } from '$lib/api'
-  import { OBJECT_TYPE_MONSTER, type Monster, type Tag } from '$lib/api/types'
+  import { deleteMonster, getAssetTab, getCampaignId, getCampaigns, getMonster, getMonsters, getObjectTags, postMonster, putMonster } from '$lib/api'
+  import { OBJECT_TYPE_MONSTER, type Campaign, type Monster, type Tag } from '$lib/api/types'
   import { getTheme, setTheme } from '$lib/dialogs/theme'
-  import { getMonsterBlock, getMonsterSystem } from '$lib/rules/monster'
-  import type { MonsterSystem } from '$lib/rules/monster.types'
-  import { user } from '$lib/stores/auth.store'
+  import { getBestiaryMissing, getMonsterBlock, getMonsterFields, getMonsterSources, getMonsterStats, getMonsterSystem } from '$lib/rules/monster'
+  import type { MonsterSource, MonsterSourceEntry, MonsterSystem } from '$lib/rules/monster.types'
+  import { user, userProfile } from '$lib/stores/auth.store'
   import { anyDialogOpen, uiStore } from '$lib/stores/ui.store'
   import { onMount, setContext } from 'svelte'
   import { navigate, resolvedRoute } from 'sly-svelte-location-router'
@@ -16,6 +16,7 @@
   import Glyph from '$components/ui/Glyph.svelte'
   import IconBtn from '$components/ui/IconBtn.svelte'
   import Portrait from '$components/ui/Portrait.svelte'
+  import Row from '$components/ui/Row.svelte'
   import Section from '$components/ui/Section.svelte'
   import Shell from '$components/ui/Shell.svelte'
 
@@ -31,12 +32,18 @@
   const me = $derived($user?.user_id ?? '')
 
   let monster = $state<Monster | null>(null)
+  let source = $state<MonsterSource | null>(null)
+  let entry = $state<MonsterSourceEntry | null>(null)
   let system = $state<MonsterSystem | null>(null)
   let tags = $state<Tag[]>([])
+  let ruled = $state<Campaign[]>([])
+  let holding = $state<Record<string, boolean>>({})
   let missing = $state('')
   let error = $state<string | null>(null)
+  let added = $state('')
   let busy = $state(false)
   let deleting = $state(false)
+  let choosing = $state(false)
 
   onMount(() => setTheme(getTheme()))
 
@@ -45,8 +52,23 @@
     if (!id || !me) return
     let live = true
     error = null
+    added = ''
     void (async () => {
       try {
+        const [shipped, campaigns] = await Promise.all([getMonsterSources(), getCampaigns()])
+        if (!live) return
+        ruled = campaigns.filter((one) => one.dm_id === me)
+        const book = shipped.find((one) => one.monsters.some((held) => held.slug === id))
+        if (book) {
+          system = await getMonsterSystem(book.system)
+          if (!live) return
+          monster = null
+          tags = []
+          source = book
+          entry = book.monsters.find((held) => held.slug === id) ?? null
+          missing = ''
+          return
+        }
         const found = await getMonster(id)
         if (!live) return
         if (!found) {
@@ -58,6 +80,8 @@
         if (!live) return
         system = held
         tags = all
+        source = null
+        entry = null
         monster = found
         missing = ''
       } catch (reason) {
@@ -69,11 +93,62 @@
     }
   })
 
+  const read = $derived(
+    monster ?? (entry && source && system ? { ...entry, system: source.system, stats: getMonsterStats(system, entry.stats), image: '' } : null)
+  )
   const owned = $derived(Boolean(monster && monster.user_id === me))
   const held = $derived(monster ? tags.filter((tag) => tag.object_ids?.includes(monster?.id ?? '')) : [])
-  const habitats = $derived(system && monster ? getMonsterBlock(system, monster).habitats : [])
-  const lore = $derived(monster?.description.trim() ?? '')
-  const beside = $derived(Boolean(monster?.image || held.length || habitats.length))
+  const habitats = $derived(system && read ? getMonsterBlock(system, read).habitats : [])
+  const lore = $derived(read?.description.trim() ?? '')
+  const beside = $derived(Boolean(read?.image || held.length || habitats.length))
+
+  async function copy() {
+    if (!read) return
+    busy = true
+    error = null
+    try {
+      const made = await postMonster({ ...getMonsterFields(read.system, read), is_public: false })
+      navigate(`/main/monsters/${made.id}/build`)
+    } catch (reason) {
+      error = reason instanceof Error ? reason.message : String(reason)
+      busy = false
+    }
+  }
+
+  async function shelve() {
+    if (!read) return
+    busy = true
+    error = null
+    try {
+      const kept = await Promise.all(ruled.map(async (one) => [one.id, getBestiaryMissing([read.name], await getMonsters(one.id)).length === 0] as const))
+      holding = Object.fromEntries(kept)
+      if (ruled.length === 1) await bind(ruled[0])
+      else choosing = true
+    } catch (reason) {
+      error = reason instanceof Error ? reason.message : String(reason)
+    } finally {
+      busy = false
+    }
+  }
+
+  async function bind(campaign: Campaign) {
+    if (!read) return
+    if (holding[campaign.id]) {
+      added = `The bestiary of ${campaign.name} already holds ${read.name}.`
+      return
+    }
+    busy = true
+    error = null
+    try {
+      await postMonster({ ...getMonsterFields(read.system, read), owner_id: campaign.id })
+      holding = { ...holding, [campaign.id]: true }
+      added = `${read.name} is written into the bestiary of ${campaign.name}.`
+    } catch (reason) {
+      error = reason instanceof Error ? reason.message : String(reason)
+    } finally {
+      busy = false
+    }
+  }
 
   async function share() {
     if (!monster) return
@@ -102,10 +177,10 @@
   }
 </script>
 
-<Shell drawers title={monster?.name ?? 'Monster'} width="wide">
+<Shell drawers title={read?.name ?? 'Monster'} width="wide">
   {#if missing}
     <p class="beast-alarm" role="alert">{missing}</p>
-  {:else if !monster || !system}
+  {:else if !read || !system}
     {#if error}
       <p class="beast-alarm" role="alert">{error}</p>
     {:else}
@@ -119,41 +194,56 @@
             <Glyph name="back" size="md" />
           </IconBtn>
           <p class="dnd-label beast-eyebrow">
-            {owned ? (monster.is_public ? 'Yours, shared with every player' : 'Homebrew, yours alone') : 'From the bestiary'}
+            {owned && monster ? (monster.is_public ? 'Yours, shared with every player' : 'Homebrew, yours alone') : (source?.title ?? 'From the bestiary')}
           </p>
         </span>
-        {#if owned}
-          <span class="dnd-band-acts">
-            <IconBtn
-              title={monster.is_public ? 'Keep it to yourself' : 'Share it with every player'}
-              active={monster.is_public}
-              disabled={busy}
-              onclick={share}
-            >
-              <Glyph name={monster.is_public ? 'reveal' : 'conceal'} size="md" />
+        <span class="dnd-band-acts">
+          {#if !owned}
+            <IconBtn title="Copy {read.name} to your homebrew" disabled={busy} onclick={copy}>
+              <Glyph name="copy" size="md" />
             </IconBtn>
+          {/if}
+          {#if ruled.length}
+            <IconBtn title="Add {read.name} to the bestiary" disabled={busy} onclick={shelve}>
+              <Glyph name="book" size="md" />
+            </IconBtn>
+          {/if}
+          {#if owned && monster}
+            {#if !getCampaignId(monster, $userProfile)}
+              <IconBtn
+                title={monster.is_public ? 'Keep it to yourself' : 'Share it with every player'}
+                active={monster.is_public}
+                disabled={busy}
+                onclick={share}
+              >
+                <Glyph name={monster.is_public ? 'reveal' : 'conceal'} size="md" />
+              </IconBtn>
+            {/if}
             <IconBtn title="Edit this monster" disabled={busy} onclick={() => navigate(`/main/monsters/${monster?.id}/build`)}>
               <Glyph name="edit" size="md" />
             </IconBtn>
             <IconBtn title="Delete this monster" disabled={busy} onclick={() => (deleting = true)}>
               <Glyph name="remove" size="md" />
             </IconBtn>
-          </span>
-        {/if}
+          {/if}
+        </span>
       </div>
     </header>
 
     {#if error}
       <p class="beast-alarm" role="alert">{error}</p>
     {/if}
+    {#if added && !choosing}
+      <p class="beast-note" role="status">{added}</p>
+    {/if}
 
     <div class="beast-sheet" class:beast-sheet-beside={beside}>
-      <MonsterBlock {system} {monster} />
+      <MonsterBlock {system} monster={read} />
 
       {#if beside}
         <aside class="beast-side" aria-label="Portrait, habitat and tags">
-          {#if monster.image}
-            <Portrait src={monster.image} alt={monster.name} size="lg" />
+          {#if read.image}
+            <Portrait src={read.image} alt={read.name} size="lg" />
           {/if}
           {#if habitats.length || held.length}
             <div class="beast-marks">
@@ -171,15 +261,31 @@
       {/if}
     </div>
 
+    {#if source}
+      <p class="beast-note">{source.attribution} {source.license}</p>
+    {/if}
+
     {#if lore}
       <Section title="Lore">
-        <BlockReader value={monster.description} openAsset={getAssetTab} />
+        <BlockReader value={read.description} openAsset={getAssetTab} />
       </Section>
     {:else if owned}
       <p class="beast-note">No lore is written for this monster yet. Edit it to tell the table where it lairs and what it wants.</p>
     {/if}
   {/if}
 </Shell>
+
+<BaseDialog isOpen={choosing} onClose={() => (choosing = false)} title="Add {read?.name ?? 'this monster'} to a bestiary" width="32rem">
+  <div class="beast-doom">
+    {#each ruled as campaign (campaign.id)}
+      <Row title={campaign.name} mark={holding[campaign.id] ? 'In it' : 'Add'} on={holding[campaign.id]} onclick={() => bind(campaign)} />
+    {/each}
+    <p class="beast-note" role="status">{added}</p>
+    <div class="beast-doom-acts">
+      <Button variant="secondary" size="sm" onclick={() => (choosing = false)}>Done</Button>
+    </div>
+  </div>
+</BaseDialog>
 
 <BaseDialog isOpen={deleting} onClose={() => (deleting = false)} title="Delete {monster?.name ?? 'this monster'}?" width="32rem">
   <div class="beast-doom">

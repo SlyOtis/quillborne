@@ -156,19 +156,35 @@ else
   rows="[...document.querySelectorAll('.fray-row')]"
   pw goto "$base/main/campaign/$campaign_id?tab=encounter" >/dev/null
   wait_for "document.querySelector('.fray') !== null && document.querySelector('.dnd-loading') === null" "the encounter tab"
-  encounter_id="$(js "(async () => { const { postCampaignEncounter } = await import('/src/lib/api/index.ts'); return postCampaignEncounter('$campaign_id', { title: 'Walk Ambush', is_active: true, is_known: true, round: 3, turn: 1, combatants: [{ id: 'w1', name: 'Goblin Cutter', kind: 'npc', npc_id: 'w-n1', initiative: 8, hit_points: 5, max_hit_points: 12, conditions: ['prone'], is_hit_points_known: true }, { id: 'w2', name: 'Walk Hero', kind: 'character', character_id: 'w-c1', initiative: 17, hit_points: 22, max_hit_points: 30, conditions: [], is_hit_points_known: true }, { id: 'w3', name: 'Dire Wolf', kind: 'npc', npc_id: 'w-n2', initiative: 12, hit_points: 9, max_hit_points: 26, conditions: [], is_hit_points_known: true }] }) })()")"
+  encounter_id="$(js "(async () => { const { postCampaignEncounter } = await import('/src/lib/api/index.ts'); return postCampaignEncounter('$campaign_id', { title: 'Walk Ambush', is_active: true, is_known: true, round: 3, turn: 1, combatants: [{ id: 'w1', name: 'Goblin Cutter', kind: 'npc', npc_id: 'w-n1', initiative: 8, hit_points: 5, max_hit_points: 12, conditions: ['prone'], is_hit_points_known: true }, { id: 'w2', name: 'Walk Hero', kind: 'character', character_id: 'w-c1', initiative: 17, hit_points: 22, max_hit_points: 30, conditions: [], is_hit_points_known: true }, { id: 'w3', name: 'Dire Wolf', kind: 'npc', npc_id: 'w-n2', initiative: 12, hit_points: 9, max_hit_points: 26, conditions: [], is_hit_points_known: true }, { id: 'w4', name: 'Goblin Warrior 1', kind: 'monster', monster_slug: 'goblin-warrior', armor_class: 15, modifier: 2, initiative: 4, hit_points: 10, max_hit_points: 10, conditions: [], is_hit_points_known: false }] }) })()")"
   wait_for "document.querySelector('#fray-chosen option[value=\"$encounter_id\"]') !== null" "the new encounter in the picker"
   js "(() => { const pick = document.querySelector('#fray-chosen'); pick.value = '$encounter_id'; pick.dispatchEvent(new Event('change', { bubbles: true })); return true })()" >/dev/null
-  if wait_for "$rows.length === 3 && document.querySelector('.fray').textContent.includes('Walk Ambush')" "the combatants to stream into the tracker"; then
+  if wait_for "$rows.length === 4 && document.querySelector('.fray').textContent.includes('Walk Ambush')" "the combatants to stream into the tracker"; then
     order="$(js "$rows.map((e) => e.querySelector('.fray-initiative').textContent.trim()).join(',')")"
-    [ "$order" = "17,12,8" ] || fail "the combatants stand in $order, not in initiative order 17,12,8"
+    [ "$order" = "17,12,8,4" ] || fail "the combatants stand in $order, not in initiative order 17,12,8,4"
     current="$(js "String($rows.findIndex((e) => e.getAttribute('aria-current') === 'step'))")"
     [ "$current" = "1" ] || fail "turn 1 of the round points at row $current, not at the second in initiative order"
     [ "$(js "document.querySelector('.fray').textContent.includes('Walk Ambush')")" = "true" ] || fail "the tracker does not name the encounter it lists"
     [ "$(js "document.querySelector('.fray').textContent.includes('Round 3')")" = "true" ] || fail "the tracker does not show round 3"
+    wait_for "(async () => { const held = await (await fetch('/sources/systems/monsters/dnd5e.json')).json(); const read = document.querySelector('.fray-difficulty')?.textContent ?? ''; return held.difficulties.some((one) => read.includes(one.name)) })()" "a difficulty from the monster system for the goblin against the party"
   fi
   js "(async () => { const { deleteCampaignEncounter } = await import('/src/lib/api/index.ts'); await deleteCampaignEncounter('$campaign_id', '$encounter_id'); return true })()" >/dev/null
   wait_for "!document.querySelector('.fray').textContent.includes('Walk Ambush')" "the struck encounter to leave the tracker"
+fi
+
+page="bestiary tab"
+if [ -n "$campaign_id" ]; then
+  sheet_id="$(js "(async () => { const { getCampaignCharacters } = await import('/src/lib/api/index.ts'); const { user } = await import('/src/lib/stores/auth.store.ts'); let me = null; user.subscribe((one) => (me = one))(); const held = await getCampaignCharacters('$campaign_id'); return held.find((one) => one.user_id === me?.user_id)?.id ?? '' })()")"
+  if [ -z "$sheet_id" ]; then
+    fail "no sheet of the debug player in the campaign it runs"
+  else
+    pw goto "$base/main/character/$sheet_id" >/dev/null
+    tab="[...document.querySelectorAll('[role=tab]')].find((e) => e.textContent.trim() === 'Bestiary')"
+    if wait_for "$tab !== undefined" "the Bestiary tab on the sheet"; then
+      js "$tab.click() ?? null" >/dev/null
+      wait_for "document.querySelector('#panel-bestiaryTab .pages, #panel-bestiaryTab .slots') !== null" "the campaign bestiary or its unwritten pages"
+    fi
+  fi
 fi
 
 page="/main"
@@ -290,6 +306,26 @@ if visit /main/create/character/race "$catalog" "the race catalog"; then
 fi
 
 visit /main/create/campaign "document.querySelector('#campaign-prompt') !== null" "the campaign form" && check_page bar
+
+lair="document.querySelector('.lair-roll') !== null && document.querySelector('.lair-roll .dnd-loading') === null"
+visit /main/monsters "$lair && document.querySelector('.dnd-pagehead-count') !== null" "the bestiary" && check_page bar
+
+page="/main/monsters?source=srd-5.2"
+pw goto "$base/main/monsters?source=srd-5.2" >/dev/null
+if wait_for "$lair" "the bestiary narrowed to the SRD"; then
+  [ "$(js "location.search")" = "?source=srd-5.2" ] || fail "the source filter left the address as $(js "location.search")"
+  srd="$(js "(async () => String((await (await fetch('/sources/monsters/srd-5.2.json')).json()).monsters.length))()")"
+  [ "$(js "document.querySelector('.dnd-pagehead-count')?.textContent.trim().split(' ')[0] ?? ''")" = "$srd" ] || fail "the SRD source does not show the $srd SRD monsters alone"
+fi
+
+if visit /main/monsters/adult-red-dragon "document.querySelector('.dnd-monster') !== null" "the SRD Adult Red Dragon"; then
+  check_page bar
+  [ "$(js "document.querySelector('.dnd-monster').textContent.includes('+14, reach 10 ft.')")" = "true" ] || fail "Rend does not read its to-hit of +14 from the formulas"
+  [ "$(js "document.querySelector('[title^=\"Copy Adult Red Dragon\"]') !== null")" = "true" ] || fail "an SRD monster offers no copy to homebrew"
+  [ "$(js "document.querySelector('[title=\"Edit this monster\"]') === null")" = "true" ] || fail "an SRD monster offers to be edited"
+fi
+
+visit /main/monsters/new "[...document.querySelectorAll('.forge-check span')].some((e) => e.textContent === 'Attack roll')" "the monster builder with its attack fields" && check_page bar
 
 visit /main/user "document.querySelector('.user-crown') !== null" "the profile" && check_page bar
 

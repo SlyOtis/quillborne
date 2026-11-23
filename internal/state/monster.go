@@ -3,6 +3,7 @@ package state
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 
 	"github.com/SlyOtis/quillborne/internal/db"
 	"github.com/google/uuid"
@@ -13,6 +14,7 @@ const GroupMonster = "monster"
 
 type MonsterData struct {
 	UserID      string          `json:"user_id"`
+	OwnerID     *string         `json:"owner_id,omitempty"`
 	IsPublic    bool            `json:"is_public"`
 	System      string          `json:"system"`
 	Name        string          `json:"name"`
@@ -30,7 +32,8 @@ func getMonsterGroup() nstate.Group[MonsterData] {
 		Name: GroupMonster,
 		Schema: getSchema(map[string]any{
 			"user_id":     getOwner("The player who made it."),
-			"is_public":   getProperty("boolean", "Whether every signed in player reads it; a private monster is its maker's homebrew."),
+			"owner_id":    getRef(GroupCampaign),
+			"is_public":   getProperty("boolean", "Whether every signed in player reads it; a private monster is its maker's homebrew, and a campaign's monster is never public."),
 			"system":      getProperty("string", "The monster rule system id."),
 			"name":        getProperty("string", "The monster name."),
 			"size":        getProperty("string", "The size id from the monster system."),
@@ -41,10 +44,12 @@ func getMonsterGroup() nstate.Group[MonsterData] {
 			"description": getProperty("string", "The lore as a block document."),
 			"image":       getProperty("string", "The portrait as an asset address."),
 		}, "user_id", "system", "name"),
-		Filters: []string{"user_id"},
-		Export:  exportMonsters,
-		Import:  importMonster,
-		Delete:  deleteMonster,
+		DependsOn: []string{GroupCampaign},
+		Refs:      map[string]string{"owner_id": GroupCampaign},
+		Filters:   []string{"owner_id", "user_id"},
+		Export:    exportMonsters,
+		Import:    importMonster,
+		Delete:    deleteMonster,
 	}
 }
 
@@ -54,7 +59,7 @@ func exportMonsters(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[Mo
 		return nil, err
 	}
 	return getRecords(ctx, GroupMonster, query, rows, func(row db.Monster) uuid.UUID { return row.ID }, func(row db.Monster) MonsterData {
-		return MonsterData{
+		data := MonsterData{
 			UserID:      row.UserID.String(),
 			IsPublic:    row.IsPublic,
 			System:      row.System,
@@ -67,6 +72,10 @@ func exportMonsters(ctx *nstate.Context, query nstate.Query) ([]nstate.Record[Mo
 			Description: row.Description,
 			Image:       row.Image,
 		}
+		if home, err := uuid.Parse(os.Getenv("SERVER_OWNER_ID")); err == nil && row.OwnerID != home {
+			data.OwnerID = getText(&row.OwnerID)
+		}
+		return data
 	})
 }
 
@@ -95,6 +104,9 @@ func importMonster(ctx *nstate.Context, record nstate.Record[MonsterData]) (stri
 	}
 	rctx := ctx.Request().Context()
 	if record.ID == "" {
+		if record.Data.OwnerID != nil {
+			body["owner_id"] = *record.Data.OwnerID
+		}
 		data, err := call(ctx, actor, http.MethodPost, "/api/monster", body)
 		if err != nil {
 			return "", err

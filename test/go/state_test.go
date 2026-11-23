@@ -181,3 +181,51 @@ func TestAPlayerExportsOnlyWhatTheirClaimsBind(t *testing.T) {
 		}
 	}
 }
+
+func TestABestiaryMonsterAndTheFightThatMetItImportIntoTheirCampaign(t *testing.T) {
+	server := requireStateServer(t, dungeonMaster)
+	key := "state-bestiary-" + uuid.NewString()[:8]
+	campaign := `{"group":"campaign","key":"` + key + `","data":{"dm_id":"` + dungeonMaster.String() + `","name":"Bestiary Test","description":"","is_active":true,"player_ids":["` + player.String() + `"]}}`
+	monster := `{"group":"monster","key":"` + key + `-wight","data":{"user_id":"` + dungeonMaster.String() + `","is_public":false,"system":"dnd5e","name":"Barrow Wight","size":"medium","type":"undead","alignment":"neutral-evil","challenge":3},"refs":{"owner_id":"` + key + `"}}`
+	encounter := `{"group":"encounter","key":"` + key + `-fight","data":{"user_id":"` + dungeonMaster.String() + `","title":"The barrow","round":1,"turn":0,"is_active":false,"share_users":[],"share_campaigns":[],"combatants":[{"id":"wight","kind":"monster","monster_id":"` + key + `-wight"},{"id":"goblin","kind":"monster","monster_slug":"goblin"}]},"refs":{"owner_id":"` + key + `"}}`
+	first := server.importLines(campaign, monster, encounter)
+	if first.Counts[nstate.OutcomeCreated] != 3 {
+		t.Fatalf("first import: %+v", first)
+	}
+	second := server.importLines(campaign, monster, encounter)
+	if second.Counts[nstate.OutcomeCreated] != 0 || second.Counts[nstate.OutcomeRefused] != 0 {
+		t.Fatalf("second import created or refused: %+v", second)
+	}
+	var monsterID string
+	for _, line := range server.export(state.GroupMonster) {
+		if line.Key != key+"-wight" {
+			continue
+		}
+		if line.Refs["owner_id"] != key {
+			t.Fatalf("the monster is not in the campaign's bestiary: %v", line.Refs)
+		}
+		monsterID = line.ID
+	}
+	if monsterID == "" {
+		t.Fatalf("the monster %s-wight is not in the export", key)
+	}
+	for _, line := range server.export(state.GroupEncounter) {
+		if line.Key != key+"-fight" {
+			continue
+		}
+		combatants, _ := line.Data["combatants"].([]any)
+		if len(combatants) != 2 {
+			t.Fatalf("the encounter carries %v", line.Data["combatants"])
+		}
+		met, _ := combatants[0].(map[string]any)
+		shipped, _ := combatants[1].(map[string]any)
+		if met["monster_id"] != monsterID {
+			t.Fatalf("the combatant's monster_id is %v, not the monster %s", met["monster_id"], monsterID)
+		}
+		if shipped["monster_slug"] != "goblin" {
+			t.Fatalf("the shipped monster's slug became %v", shipped["monster_slug"])
+		}
+		return
+	}
+	t.Fatalf("the encounter %s-fight is not in the export", key)
+}

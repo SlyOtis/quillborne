@@ -1,11 +1,13 @@
 <script lang="ts">
-  import { deleteTagObject, getAssets, getAssetTab, getMonster, getObjectTags, postFile, postMonster, postTag, postTagObject, putMonster } from '$lib/api'
+  import { deleteTagObject, getAssets, getAssetTab, getCampaignId, getMonster, getObjectTags, postFile, postMonster, postTag, postTagObject, putMonster } from '$lib/api'
   import { OBJECT_TYPE_MONSTER, type Monster, type Tag } from '$lib/api/types'
   import type { MediaAsset, MediaKind } from '$lib/blocks'
   import { getTheme, setTheme } from '$lib/dialogs/theme'
+  import { FORMULA_DICE } from '$lib/engine'
   import { getEntryName, getHitDice, getMonsterBlock, getMonsterStats, getMonsterSystem, getMonsterSystems, getNewMonster } from '$lib/rules/monster'
-  import type { MonsterEntry, MonsterStats, MonsterSystem } from '$lib/rules/monster.types'
-  import { user } from '$lib/stores/auth.store'
+  import type { MonsterAttack, MonsterDamage, MonsterEntry, MonsterFeature, MonsterSave, MonsterStats, MonsterSystem } from '$lib/rules/monster.types'
+  import { unfold } from '$lib/unfold'
+  import { user, userProfile } from '$lib/stores/auth.store'
   import { anyDialogOpen, uiStore } from '$lib/stores/ui.store'
   import { onMount, setContext } from 'svelte'
   import { navigate, resolvedRoute } from 'sly-svelte-location-router'
@@ -30,8 +32,22 @@
 
   type ListKey = 'languages' | 'resistances' | 'immunities' | 'vulnerabilities' | 'condition_immunities' | 'habitats'
 
+  type DraftFeature = Pick<MonsterFeature, 'name' | 'text'> & {
+    attack: MonsterAttack
+    save: MonsterSave
+    attacks: boolean
+    saves: boolean
+    recharge: number
+    uses: number
+    cost: number
+  }
+
   type Draft = Pick<Monster, 'name' | 'system' | 'size' | 'type' | 'alignment' | 'challenge' | 'description' | 'image' | 'is_public'> & {
-    stats: MonsterStats
+    stats: Omit<MonsterStats, 'features' | 'legendary_uses' | 'legendary_lair_uses'> & {
+      features: Record<string, DraftFeature[]>
+      legendary_uses: number
+      legendary_lair_uses: number
+    }
     tags: Chip[]
   }
 
@@ -69,7 +85,8 @@
           monster = null
           system = held
           tags = all
-          draft = { ...getNewMonster(held), description: '', image: '', is_public: false, tags: [] }
+          const made = getNewMonster(held)
+          draft = { ...made, stats: getDraftStats(made.stats), description: '', image: '', is_public: false, tags: [] }
           return
         }
         const found = await getMonster(id)
@@ -97,7 +114,7 @@
           description: found.description,
           image: found.image,
           is_public: found.is_public,
-          stats: getMonsterStats(held, found.stats),
+          stats: getDraftStats(getMonsterStats(held, found.stats)),
           tags: all.filter((tag) => tag.object_ids?.includes(found.id)).map((tag) => ({ id: tag.id, mark: '#', name: tag.name }))
         }
       } catch (reason) {
@@ -109,7 +126,8 @@
     }
   })
 
-  const block = $derived(system && draft ? getMonsterBlock(system, draft) : null)
+  const shown = $derived(draft ? { ...draft, stats: getStoredStats(draft.stats) } : null)
+  const block = $derived(system && shown ? getMonsterBlock(system, shown) : null)
   const unnamed = $derived(tried && !draft?.name.trim())
   const tagOptions = $derived(tags.map((tag) => ({ id: tag.id, mark: '#', name: tag.name })))
   const defences = $derived<{ key: ListKey; label: string; entries: MonsterEntry[]; free?: boolean }[]>(
@@ -123,6 +141,57 @@
         ]
       : []
   )
+
+  function getDamage(): MonsterDamage {
+    return { dice: 1, die: FORMULA_DICE[1], bonus: 0, type: system?.damageTypes[0]?.id ?? '', ability: true }
+  }
+
+  function getDraftFeature(feature: MonsterFeature): DraftFeature {
+    const first = system?.abilities[0]?.id ?? ''
+    return {
+      name: feature.name,
+      text: feature.text,
+      attack: feature.attack ?? { ability: first, bonus: 0, reach: 5, range: 0, long_range: 0, damage: [getDamage()] },
+      save: feature.save ?? { ability: first, dc_ability: first, bonus: 0, area: '', damage: [{ ...getDamage(), ability: false }], half: true },
+      attacks: Boolean(feature.attack),
+      saves: Boolean(feature.save),
+      recharge: feature.recharge ?? 0,
+      uses: feature.uses ?? 0,
+      cost: feature.cost ?? 0
+    }
+  }
+
+  function getDraftStats(stats: MonsterStats): Draft['stats'] {
+    return {
+      ...stats,
+      features: Object.fromEntries(Object.entries(stats.features).map(([kind, features]) => [kind, features.map(getDraftFeature)])),
+      legendary_uses: stats.legendary_uses ?? 0,
+      legendary_lair_uses: stats.legendary_lair_uses ?? 0
+    }
+  }
+
+  function getStoredStats(stats: Draft['stats']): MonsterStats {
+    const { legendary_uses, legendary_lair_uses, features, ...rest } = stats
+    return {
+      ...rest,
+      features: Object.fromEntries(
+        Object.entries(features).map(([kind, held]) => [
+          kind,
+          held.map((one) => ({
+            name: one.name,
+            text: one.text,
+            ...(one.attacks && { attack: one.attack }),
+            ...(one.saves && { save: one.save }),
+            ...(one.recharge > 0 && { recharge: one.recharge }),
+            ...(one.uses > 0 && { uses: one.uses }),
+            ...(one.cost > 0 && { cost: one.cost })
+          }))
+        ])
+      ),
+      ...(legendary_uses > 0 && { legendary_uses }),
+      ...(legendary_lair_uses > 0 && { legendary_lair_uses })
+    }
+  }
 
   function getPicks(entries: MonsterEntry[], ids: string[], mark: string): Chip[] {
     return ids.map((id) => ({ id, mark, word: '', name: getEntryName(entries, id) }))
@@ -145,7 +214,8 @@
     if (!draft) return
     tried = true
     if (!draft.name.trim()) return
-    const { tags: wanted, ...fields } = $state.snapshot(draft)
+    const { tags: wanted, stats, ...rest } = $state.snapshot(draft)
+    const fields = { ...rest, stats: getStoredStats(stats) }
     busy = true
     error = null
     try {
@@ -176,6 +246,41 @@
   }
 </script>
 
+{#snippet damages(at: string, lines: MonsterDamage[], put: (next: MonsterDamage[]) => void)}
+  <div class="forge-damages">
+    {#each lines as line, index (index)}
+      <div class="forge-damage">
+        <Field id="{at}-{index}-dice" label="Dice">
+          <input id="{at}-{index}-dice" type="number" min="0" bind:value={line.dice} />
+        </Field>
+        <Field id="{at}-{index}-die" label="Die">
+          <select id="{at}-{index}-die" bind:value={line.die}>
+            {#each FORMULA_DICE as die (die)}<option value={die}>d{die}</option>{/each}
+          </select>
+        </Field>
+        <Field id="{at}-{index}-bonus" label="Flat bonus">
+          <input id="{at}-{index}-bonus" type="number" bind:value={line.bonus} />
+        </Field>
+        <Field id="{at}-{index}-type" label="Damage type">
+          <select id="{at}-{index}-type" bind:value={line.type}>
+            {#each system?.damageTypes ?? [] as one (one.id)}<option value={one.id}>{one.name}</option>{/each}
+          </select>
+        </Field>
+        <label class="forge-check">
+          <input type="checkbox" bind:checked={line.ability} />
+          <span>Add the modifier</span>
+        </label>
+        <IconBtn title="Remove this damage" onclick={() => put(lines.filter((_, place) => place !== index))}>
+          <Glyph name="remove" size="sm" />
+        </IconBtn>
+      </div>
+    {/each}
+    <Button variant="plain" size="sm" onclick={() => put([...lines, getDamage()])}>
+      <Glyph name="add" size="sm" />Add damage
+    </Button>
+  </div>
+{/snippet}
+
 {#snippet acts()}
   <Button variant="ghost" size="sm" disabled={busy} onclick={cancel}>Cancel</Button>
   <Button variant="primary" size="sm" loading={busy} onclick={save}>Save</Button>
@@ -184,7 +289,7 @@
 <Shell drawers title={monster ? `Building ${monster.name}` : 'New monster'} width="full">
   {#if missing}
     <p class="forge-alarm" role="alert">{missing}</p>
-  {:else if !draft || !system || !block}
+  {:else if !draft || !shown || !system || !block}
     {#if error}
       <p class="forge-alarm" role="alert">{error}</p>
     {:else}
@@ -342,26 +447,110 @@
               <Button
                 variant="ghost"
                 size="sm"
-                onclick={() => draft && (draft.stats.features[kind.id] = [...(draft.stats.features[kind.id] ?? []), { name: '', text: '' }])}
+                onclick={() => draft && (draft.stats.features[kind.id] = [...(draft.stats.features[kind.id] ?? []), getDraftFeature({ name: '', text: '' })])}
               >
                 Add {kind.one.toLowerCase()}
               </Button>
             {/snippet}
             <div class="forge-group">
-              {#each draft.stats.features[kind.id] as feature, index (index)}
-                <div class="forge-feat">
-                  <Field id="forge-{kind.id}-{index}-name" label="{kind.one} name">
-                    <input id="forge-{kind.id}-{index}-name" type="text" bind:value={feature.name} />
+              {#if kind.legendary}
+                <div class="forge-fields">
+                  <Field id="forge-legendary-uses" label="Legendary uses" help="Left at 0 when it has none">
+                    <input id="forge-legendary-uses" type="number" min="0" bind:value={draft.stats.legendary_uses} />
                   </Field>
-                  <Field id="forge-{kind.id}-{index}-text" label="What it does">
-                    <textarea id="forge-{kind.id}-{index}-text" rows="3" bind:value={feature.text}></textarea>
+                  <Field id="forge-legendary-lair" label="Uses in its lair">
+                    <input id="forge-legendary-lair" type="number" min="0" bind:value={draft.stats.legendary_lair_uses} />
+                  </Field>
+                </div>
+              {/if}
+              {#each draft.stats.features[kind.id] as feature, index (index)}
+                {@const at = `forge-${kind.id}-${index}`}
+                <div class="forge-feat">
+                  <Field id="{at}-name" label="{kind.one} name">
+                    <input id="{at}-name" type="text" bind:value={feature.name} />
+                  </Field>
+                  <Field id="{at}-text" label="What it does" help="Only what the attack and the save below do not say">
+                    <textarea id="{at}-text" rows="3" bind:value={feature.text}></textarea>
                   </Field>
                   <IconBtn
                     title="Remove this {kind.one.toLowerCase()}"
-                    onclick={() => draft && (draft.stats.features[kind.id] = draft.stats.features[kind.id].filter((_, at) => at !== index))}
+                    onclick={() => draft && (draft.stats.features[kind.id] = draft.stats.features[kind.id].filter((_, place) => place !== index))}
                   >
                     <Glyph name="remove" size="sm" />
                   </IconBtn>
+                  <div class="forge-shape">
+                    <label class="forge-check">
+                      <input type="checkbox" bind:checked={feature.attacks} />
+                      <span>Attack roll</span>
+                    </label>
+                    <label class="forge-check">
+                      <input type="checkbox" bind:checked={feature.saves} />
+                      <span>Saving throw</span>
+                    </label>
+                    <Field id="{at}-recharge" label={system.labels.recharge}>
+                      <select id="{at}-recharge" bind:value={feature.recharge}>
+                        <option value={0}>None</option>
+                        {#each Array.from({ length: system.rechargeDie - 1 }, (_, step) => step + 2) as low (low)}
+                          <option value={low}>{low < system.rechargeDie ? `${low}\u2013${system.rechargeDie}` : low}</option>
+                        {/each}
+                      </select>
+                    </Field>
+                    <Field id="{at}-uses" label="Uses per day">
+                      <input id="{at}-uses" type="number" min="0" bind:value={feature.uses} />
+                    </Field>
+                    {#if kind.legendary}
+                      <Field id="{at}-cost" label="Cost in actions">
+                        <input id="{at}-cost" type="number" min="0" bind:value={feature.cost} />
+                      </Field>
+                    {/if}
+                  </div>
+                  <div class="forge-shape-part" use:unfold={feature.attacks}>
+                    <div class="forge-fields">
+                      <Field id="{at}-attack-ability" label="Attack ability">
+                        <select id="{at}-attack-ability" bind:value={feature.attack.ability}>
+                          {#each system.abilities as one (one.id)}<option value={one.id}>{one.name}</option>{/each}
+                        </select>
+                      </Field>
+                      <Field id="{at}-attack-bonus" label="Bonus to hit">
+                        <input id="{at}-attack-bonus" type="number" bind:value={feature.attack.bonus} />
+                      </Field>
+                      <Field id="{at}-attack-reach" label="{system.labels.reach} ({system.distance})">
+                        <input id="{at}-attack-reach" type="number" min="0" step="5" bind:value={feature.attack.reach} />
+                      </Field>
+                      <Field id="{at}-attack-range" label="{system.labels.range} ({system.distance})">
+                        <input id="{at}-attack-range" type="number" min="0" step="5" bind:value={feature.attack.range} />
+                      </Field>
+                      <Field id="{at}-attack-long" label="Long range ({system.distance})">
+                        <input id="{at}-attack-long" type="number" min="0" step="5" bind:value={feature.attack.long_range} />
+                      </Field>
+                    </div>
+                    {@render damages(`${at}-attack`, feature.attack.damage, (next) => (feature.attack.damage = next))}
+                  </div>
+                  <div class="forge-shape-part" use:unfold={feature.saves}>
+                    <div class="forge-fields">
+                      <Field id="{at}-save-ability" label="Saving throw of">
+                        <select id="{at}-save-ability" bind:value={feature.save.ability}>
+                          {#each system.abilities as one (one.id)}<option value={one.id}>{one.name}</option>{/each}
+                        </select>
+                      </Field>
+                      <Field id="{at}-save-dc" label="{system.labels.dc} set by">
+                        <select id="{at}-save-dc" bind:value={feature.save.dc_ability}>
+                          {#each system.abilities as one (one.id)}<option value={one.id}>{one.name}</option>{/each}
+                        </select>
+                      </Field>
+                      <Field id="{at}-save-bonus" label="Bonus to the {system.labels.dc}">
+                        <input id="{at}-save-bonus" type="number" bind:value={feature.save.bonus} />
+                      </Field>
+                      <Field id="{at}-save-area" label="Who it reaches">
+                        <input id="{at}-save-area" type="text" placeholder="each creature in a 60-foot Cone" bind:value={feature.save.area} />
+                      </Field>
+                      <label class="forge-check">
+                        <input type="checkbox" bind:checked={feature.save.half} />
+                        <span>{system.labels.success}: {system.labels.half}</span>
+                      </label>
+                    </div>
+                    {@render damages(`${at}-save`, feature.save.damage, (next) => (feature.save.damage = next))}
+                  </div>
                 </div>
               {:else}
                 <p class="forge-note">No {kind.name.toLowerCase()} yet.</p>
@@ -422,10 +611,12 @@
                 {/if}
               </span>
             </div>
-            <label class="forge-check">
-              <input type="checkbox" bind:checked={draft.is_public} />
-              <span>Share it with every player</span>
-            </label>
+            {#if !monster || !getCampaignId(monster, $userProfile)}
+              <label class="forge-check">
+                <input type="checkbox" bind:checked={draft.is_public} />
+                <span>Share it with every player</span>
+              </label>
+            {/if}
           </div>
         </Section>
 
@@ -443,7 +634,7 @@
       </div>
 
       <aside class="forge-preview dnd-scroll" aria-label="Preview">
-        <MonsterBlock {system} monster={draft} />
+        <MonsterBlock {system} monster={shown} />
       </aside>
     </div>
   {/if}
@@ -565,6 +756,37 @@
     min-width: 0;
   }
 
+  .forge-shape {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-3) var(--space-4);
+    grid-column: 1 / -1;
+  }
+
+  .forge-shape-part {
+    display: grid;
+    gap: var(--space-3);
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  .forge-damages {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .forge-damage {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) auto auto;
+    align-items: end;
+    gap: var(--space-3);
+    justify-self: stretch;
+    min-width: 0;
+  }
+
   .forge-note {
     margin: 0;
     font-size: var(--text-sm);
@@ -613,6 +835,10 @@
   @container page (max-width: 640px) {
     .forge-feat {
       grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .forge-damage {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .forge-feat > :global(.dnd-field:nth-child(2)) {

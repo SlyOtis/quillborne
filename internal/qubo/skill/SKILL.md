@@ -43,7 +43,7 @@ Every resource command is `qubo <resource> <verb> [id...] [--data '{...}' | --fi
 
 3. `vehicle get [id]`, `create`, `replace <id>`, `delete <id>`, `stream <id>`. A `components` change carries the `revision` it was drafted on and answers 409 when stale.
 
-4. `monster get [id]`, `create`, `replace <id>`, `delete <id>`. A monster body names its `system`; `size`, `type`, `alignment` and `challenge` are columns, and the rest of the stat block sits in `stats`. `is_public` true lets every player read it; false keeps it the maker's homebrew, and only the maker changes or deletes it. Its monster tags are `tag object create <tag_id>` with `object_type` `public.monster`.
+4. `monster get [id]`, `monster get --query owner_id=<campaign_id>`, `create`, `replace <id>`, `delete <id>`. A monster body names its `system`; `size`, `type`, `alignment` and `challenge` are columns, and the rest of the stat block sits in `stats`. `is_public` true lets every player read it; false keeps it the maker's homebrew, and only the maker changes or deletes it. `owner_id` on create puts it in the bestiary of a campaign you run: every seated player reads it, only the dungeon master changes it, and it is never public. Its monster tags are `tag object create <tag_id>` with `object_type` `public.monster`.
 
 5. `song get`, `song get --query owner_id=<campaign_id>`, `create`, `replace <id>`, `delete <id>`. Without `owner_id` the list is your own songs; with it, the songs of that campaign you read. A body is `title`, `address`, `duration`, `share_users`, `share_campaigns`, and `owner_id` on create to keep the song in a campaign you are seated at.
 
