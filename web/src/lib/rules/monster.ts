@@ -3,10 +3,12 @@ import { getExpressionValue, type Scope } from './expression'
 import type {
   MonsterAction,
   MonsterBlock,
+  MonsterClause,
   MonsterDamage,
   MonsterDifficulty,
   MonsterEntry,
   MonsterFeature,
+  MonsterFeatureKind,
   MonsterFigure,
   MonsterFilter,
   MonsterRoll,
@@ -286,6 +288,57 @@ export function getMonsterAction(system: MonsterSystem, block: Pick<MonsterBlock
     hit: attack ? rolls(attack.damage, attack.ability) : [],
     failure: save ? rolls(save.damage, save.dc_ability) : []
   }
+}
+
+export function getDamageDice(roll: MonsterRoll): string {
+  const dice = `${roll.dice}d${roll.die}`
+  return roll.flat ? `${dice} ${roll.flat < 0 ? '-' : '+'} ${Math.abs(roll.flat)}` : dice
+}
+
+function getEnded(text: string): string {
+  return text.endsWith('.') ? text : `${text}.`
+}
+
+function getHits(system: MonsterSystem, hits: MonsterRoll[]): string {
+  const words = system.labels
+  return hits
+    .map((roll) => (roll.dice > 0 ? `${roll.average} (${getDamageDice(roll)}) ${roll.type} ${words.damage}` : `${roll.flat} ${roll.type} ${words.damage}`))
+    .join(` ${words.plus} `)
+}
+
+export function getMonsterClauses(system: MonsterSystem, feature: MonsterFeature, action: MonsterAction): MonsterClause[] {
+  const words = system.labels
+  const clauses: MonsterClause[] = []
+  const { attack, save } = feature
+  if (attack && action.attack !== null) {
+    const reach = attack.reach > 0 ? `${words.reach} ${attack.reach} ${system.distance}` : ''
+    const range = attack.range > 0 ? `${words.range} ${attack.range}${attack.long_range > attack.range ? `/${attack.long_range}` : ''} ${system.distance}` : ''
+    const reaches = [reach, range].filter(Boolean).join(` ${words.or} `)
+    clauses.push({
+      lead: reach && range ? words.meleeOrRanged : range ? words.ranged : words.melee,
+      text: getEnded(`${getSigned(action.attack)}${reaches ? `, ${reaches}` : ''}`)
+    })
+    clauses.push({ lead: words.hit, text: action.hit.length ? getEnded(getHits(system, action.hit)) : '' })
+  }
+  if (save && action.dc !== null) {
+    clauses.push({
+      lead: `${getEntryName(system.abilities, save.ability)} ${words.savingThrow}`,
+      text: getEnded(`${words.dc} ${action.dc}${save.area ? `, ${save.area}` : ''}`)
+    })
+    if (action.failure.length) clauses.push({ lead: words.failure, text: getEnded(getHits(system, action.failure)) })
+    if (save.half) clauses.push({ lead: words.success, text: words.half })
+  }
+  return clauses
+}
+
+export function getFeatureSuffix(system: MonsterSystem, kind: MonsterFeatureKind, feature: MonsterFeature): string {
+  const words = system.labels
+  const marks = [
+    feature.recharge ? `${words.recharge} ${feature.recharge < system.rechargeDie ? `${feature.recharge}\u2013${system.rechargeDie}` : feature.recharge}` : '',
+    feature.uses ? `${feature.uses}${words.perDay}` : '',
+    kind.legendary && (feature.cost ?? 1) > 1 ? `${words.costs} ${feature.cost} ${words.actions}` : ''
+  ].filter(Boolean)
+  return marks.length ? ` (${marks.join('; ')})` : ''
 }
 
 export function getRolledHitPoints(system: MonsterSystem, block: Pick<MonsterBlock, 'hitBonus'>, roll: number): number {

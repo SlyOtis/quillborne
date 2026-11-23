@@ -2,8 +2,8 @@
   import type { Monster } from '$lib/api/types'
   import { getInline, type Marks } from '$lib/blocks'
   import { rollAttack, rollDamage } from '$lib/engine'
-  import { getEntryName, getHitDice, getMonsterAction, getMonsterBlock, getMonsterStats, getSigned } from '$lib/rules/monster'
-  import type { MonsterFeature, MonsterFeatureKind, MonsterRoll, MonsterSystem } from '$lib/rules/monster.types'
+  import { getDamageDice, getFeatureSuffix, getHitDice, getMonsterAction, getMonsterBlock, getMonsterClauses, getMonsterStats, getSigned } from '$lib/rules/monster'
+  import type { MonsterFeature, MonsterFeatureKind, MonsterSystem } from '$lib/rules/monster.types'
   import Button from '$components/ui/Button.svelte'
   import Chip from '$components/ui/Chip.svelte'
 
@@ -42,43 +42,6 @@
     ].filter((one) => one.names.length > 0)
   )
   const sections = $derived(system.features.filter((kind) => (stats.features[kind.id] ?? []).length > 0))
-
-  function getDice(roll: MonsterRoll): string {
-    const dice = `${roll.dice}d${roll.die}`
-    return roll.flat ? `${dice} ${roll.flat < 0 ? '-' : '+'} ${Math.abs(roll.flat)}` : dice
-  }
-
-  function getHit(roll: MonsterRoll): string {
-    return roll.dice > 0 ? `${roll.average} (${getDice(roll)}) ${roll.type} ${words.damage}` : `${roll.flat} ${roll.type} ${words.damage}`
-  }
-
-  function getHits(hits: MonsterRoll[]): string {
-    return hits.map(getHit).join(` ${words.plus} `)
-  }
-
-  function getSuffix(kind: MonsterFeatureKind, feature: MonsterFeature): string {
-    const marks = [
-      feature.recharge ? `${words.recharge} ${feature.recharge < system.rechargeDie ? `${feature.recharge}\u2013${system.rechargeDie}` : feature.recharge}` : '',
-      feature.uses ? `${feature.uses}${words.perDay}` : '',
-      kind.legendary && (feature.cost ?? 1) > 1 ? `${words.costs} ${feature.cost} ${words.actions}` : ''
-    ].filter(Boolean)
-    return marks.length ? ` (${marks.join('; ')})` : ''
-  }
-
-  function getAttackLine(feature: MonsterFeature, figure: number): { lead: string; rest: string } {
-    const attack = feature.attack
-    if (!attack) return { lead: '', rest: '' }
-    const reach = attack.reach > 0 ? `${words.reach} ${attack.reach} ${system.distance}` : ''
-    const range = attack.range > 0 ? `${words.range} ${attack.range}${attack.long_range > attack.range ? `/${attack.long_range}` : ''} ${system.distance}` : ''
-    const reaches = [reach, range].filter(Boolean).join(` ${words.or} `)
-    return { lead: reach && range ? words.meleeOrRanged : range ? words.ranged : words.melee, rest: `${getSigned(figure)}${reaches ? `, ${reaches}` : ''}.` }
-  }
-
-  function getSaveLine(feature: MonsterFeature, dc: number): { lead: string; rest: string } {
-    const save = feature.save
-    if (!save) return { lead: '', rest: '' }
-    return { lead: `${getEntryName(system.abilities, save.ability)} ${words.savingThrow}`, rest: `${words.dc} ${dc}${save.area ? `, ${save.area}` : ''}.` }
-  }
 </script>
 
 {#snippet marked(text: string, marks: Marks | undefined)}
@@ -109,19 +72,10 @@
   {@const action = getMonsterAction(system, block, feature)}
   {@const named = `${monster.name} ${feature.name}`}
   <p class="dnd-monster-feat">
-    <b>{feature.name}{getSuffix(kind, feature)}.</b>
-    {#if action.attack !== null}
-      {@const line = getAttackLine(feature, action.attack)}
-      <i>{line.lead}:</i> {line.rest}
-      <i>{words.hit}:</i>
-      {getHits(action.hit)}{action.hit.length ? '.' : ''}
-    {/if}
-    {#if action.dc !== null}
-      {@const line = getSaveLine(feature, action.dc)}
-      <i>{line.lead}:</i> {line.rest}
-      {#if action.failure.length}<i>{words.failure}:</i> {getHits(action.failure)}.{/if}
-      {#if feature.save?.half}<i>{words.success}:</i> {words.half}{/if}
-    {/if}
+    <b>{feature.name}{getFeatureSuffix(system, kind, feature)}.</b>
+    {#each getMonsterClauses(system, feature, action) as clause, index (index)}
+      <i>{clause.lead}:</i> {clause.text}
+    {/each}
     {@render prose(feature.text)}
   </p>
   {#if rolls && (action.attack !== null || action.hit.length || action.failure.length)}
@@ -131,7 +85,7 @@
         {@render roll(`Roll ${feature.name} to hit`, getSigned(bonus), () => void rollAttack(named, bonus))}
       {/if}
       {#each [...action.hit, ...action.failure].filter((one) => one.dice > 0) as one, index (index)}
-        {@render roll(`Roll ${feature.name} ${one.type} damage`, `${getDice(one)} ${one.type}`, () => void rollDamage(named, one.die, one.dice, one.flat))}
+        {@render roll(`Roll ${feature.name} ${one.type} damage`, `${getDamageDice(one)} ${one.type}`, () => void rollDamage(named, one.die, one.dice, one.flat))}
       {/each}
     </div>
   {/if}

@@ -261,6 +261,11 @@ export type MonsterRoll = {
   type: string
 }
 
+export type MonsterClause = {
+  lead: string
+  text: string
+}
+
 export type MonsterAction = {
   attack: number | null
   dc: number | null

@@ -8,9 +8,11 @@ import {
   getCombatantNames,
   getDifficulty,
   getEmptyFilter,
+  getFeatureSuffix,
   getHitDice,
   getMonsterAction,
   getMonsterBlock,
+  getMonsterClauses,
   getMonsterOrigins,
   getMonsterStats,
   getRechargeKeys,
@@ -111,6 +113,25 @@ describe('a monster action', () => {
       { dice: 1, die: 10, flat: 8, average: 13, type: 'Slashing' },
       { dice: 2, die: 4, flat: 0, average: 5, type: 'Fire' }
     ])
+  })
+
+  const sentence = (monster: { stats: ReturnType<typeof getMonsterStats> }, block: ReturnType<typeof getMonsterBlock>, name: string) => {
+    const feature = monster.stats.features.actions.find((one) => one.name === name)!
+    return getMonsterClauses(system, feature, getMonsterAction(system, block, feature))
+      .map((clause) => `${clause.lead}: ${clause.text}`)
+      .join(' ')
+  }
+
+  it('writes each attack and save as the 2024 sentence, a period once after a distance', () => {
+    expect(sentence(dragon, scaled, 'Rend')).toBe('Melee Attack Roll: +14, reach 10 ft. Hit: 13 (1d10 + 8) Slashing damage plus 5 (2d4) Fire damage.')
+    expect(sentence(dragon, scaled, 'Fire Breath')).toBe(
+      'Dexterity Saving Throw: DC 21, each creature in a 60-foot Cone. Failure: 59 (17d6) Fire damage. Success: Half damage.'
+    )
+    const goblin = srd.monsters.find((one) => one.slug === 'goblin-warrior')!
+    const warrior = { ...goblin, stats: getMonsterStats(system, goblin.stats) }
+    expect(sentence(warrior, getMonsterBlock(system, warrior), 'Shortbow')).toBe('Ranged Attack Roll: +4, range 80/320 ft. Hit: 5 (1d6 + 2) Piercing damage.')
+    const actions = system.features.find((one) => one.id === 'actions')!
+    expect(getFeatureSuffix(system, actions, dragon.stats.features.actions.find((one) => one.name === 'Fire Breath')!)).toBe(' (Recharge 5\u20136)')
   })
 
   it('works out its Fire Breath at DC 21 for 59 fire, a Recharge 5-6 halved on a success', () => {
